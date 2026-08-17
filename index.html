@@ -247,6 +247,26 @@ body {
   border-radius: 24px; padding: 22px; margin-bottom: 22px;
   box-shadow: 0 5px 0 #d9c4a0, 0 10px 20px rgba(0,0,0,0.08);
 }
+
+/* ===== K75P Full-Route Live Board ===== */
+.k75p-wrap { display: flex; flex-direction: column; gap: 8px; }
+.k75p-stop {
+  display: flex; align-items: center; gap: 10px;
+  background: #fffdf5; border: 2px solid #e8d5b5; border-radius: 14px;
+  padding: 7px 12px;
+}
+.k75p-name { flex: 1; font-weight: 700; color: #5a4632; font-size: 0.95rem; }
+.k75p-buses { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.k75p-bus {
+  background: #eef7ee; border: 1px solid #bcd9bc; color: #2e6b2e;
+  border-radius: 10px; padding: 2px 9px; font-size: 0.85rem; font-weight: 700;
+  white-space: nowrap; font-family: 'Baloo 2', 'Nunito', sans-serif;
+}
+.k75p-bus.soon { background: #ffe9e9; border-color: #e8a0a0; color: #c0392b; }
+.k75p-bus.delayed { background: #fff3d6; border-color: #e8c56a; color: #a06a00; }
+.k75p-bus.scheduled { background: #eef2ff; border-color: #b8c4e8; color: #3a5a9a; }
+.k75p-bus.k75p-none { background: #f4f1ea; border-color: #ddd5c5; color: #a08d6f; }
+
 .weather-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;
 }
@@ -362,6 +382,17 @@ body {
     </div>
     <div id="favoritesContainer">
       <div class="empty-hint"><span class="icon">📌</span>搜寻路线后按 ☆ 收藏到首页</div>
+    </div>
+  </section>
+
+  <!-- ===== K75P Full-Route Live Board ===== -->
+  <section class="info-section">
+    <div class="section-title">
+      <span>🚌</span> K75P 全线实时
+      <span class="badge" id="k75pUpdate"></span>
+    </div>
+    <div id="k75pContainer">
+      <div class="empty-hint"><span class="icon">🚌</span>载入 K75P 全线资料中...</div>
     </div>
   </section>
 
@@ -1446,6 +1477,105 @@ async function refreshSushiro() {
 }
 
 /* ==========================================================================
+   K75P Full-Route Live Board
+   ========================================================================== */
+
+/* K75P 循环线 23 站（按真实经过顺序：去程 D010-D080，回程 U011→U010→U020→...→U140） */
+const K75P_STOPS = [
+  { id: 'D010', name: '天瑞' },
+  { id: 'D020', name: '天水围公园' },
+  { id: 'D030', name: '天耀邨耀盛楼' },
+  { id: 'D040', name: '轻铁天耀站' },
+  { id: 'D050', name: '天盛苑' },
+  { id: 'D060', name: '石埗路' },
+  { id: 'D070', name: '沙洲里村' },
+  { id: 'D080', name: '厦村市' },
+  { id: 'U011', name: '新屋村' },
+  { id: 'U010', name: '李屋村' },
+  { id: 'U020', name: '新生村' },
+  { id: 'U030', name: '新李屋村' },
+  { id: 'U040', name: '田心' },
+  { id: 'U050', name: '乡事委员会' },
+  { id: 'U060', name: '轻铁洪水桥站' },
+  { id: 'U070', name: '洪水桥巴士厂' },
+  { id: 'U080', name: '洪福邨' },
+  { id: 'U090', name: '石埗村' },
+  { id: 'U100', name: '天盛苑' },
+  { id: 'U110', name: '天水围警署' },
+  { id: 'U120', name: '赏湖居' },
+  { id: 'U130', name: '天水围公园' },
+  { id: 'U140', name: '天瑞' }
+];
+
+/** 解析 departureTimeText（HH:MM 或 HH:MM:SS）为 "HH:MM" */
+function parseDepartureText(text) {
+  if (!text) return '';
+  const m = String(text).match(/(\d{1,2}):(\d{2})/);
+  return m ? m[1] + ':' + m[2] : '';
+}
+
+/** 载入 K75P 全线 23 站实时班次并渲染 */
+async function loadK75PAllStops() {
+  const container = document.getElementById('k75pContainer');
+  const badge = document.getElementById('k75pUpdate');
+  if (!container) return;
+  try {
+    const data = await getMTRBusETA('K75P');
+    if (!data || !data.busStop) throw new Error('无资料');
+
+    /* 按站分组：过滤占位班次（arrival>=108000），保留发车时间；按到站秒数排序取前 3 班 */
+    const stopMap = {};
+    for (const stop of data.busStop) {
+      const buses = (stop.bus || []).map(b => {
+        const sec = parseInt(b.arrivalTimeInSecond) || 0;
+        return {
+          sec,
+          depText: parseDepartureText(b.departureTimeText),
+          isDelayed: b.isDelayed === '1',
+          isScheduled: b.isScheduled === '1'
+        };
+      }).filter(b => (b.sec > 0 && b.sec < 108000) || b.depText)
+        .sort((a, b) => (a.sec > 0 && a.sec < 108000 ? a.sec : 999999) - (b.sec > 0 && b.sec < 108000 ? b.sec : 999999))
+        .slice(0, 3);
+      stopMap[stop.busStopId] = buses;
+    }
+
+    let html = '<div class="k75p-wrap">';
+    for (const stop of K75P_STOPS) {
+      const buses = stopMap[stop.id] || [];
+      html += '<div class="k75p-stop">';
+      html += `<span class="k75p-name">${escapeHtml(stop.name)}</span>`;
+      html += '<span class="k75p-buses">';
+      if (buses.length === 0) {
+        html += '<span class="k75p-bus k75p-none">暂无班次</span>';
+      } else {
+        for (const b of buses) {
+          let cls = '';
+          let label = '';
+          if (b.sec > 0 && b.sec < 108000) {
+            const mins = Math.max(1, Math.ceil(b.sec / 60));
+            if (b.sec <= 60) { cls = 'soon'; label = '即将到站'; }
+            else { label = mins + ' 分钟'; }
+            if (b.isDelayed) { cls = 'delayed'; label += ' · 延误'; }
+            else if (b.isScheduled) { cls = 'scheduled'; label += ' · 定时'; }
+          } else if (b.depText) {
+            cls = 'scheduled'; label = b.depText + ' 发车';
+          }
+          html += `<span class="k75p-bus ${cls}">${label}</span>`;
+        }
+      }
+      html += '</span></div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
+    badge.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
+  } catch (err) {
+    container.innerHTML = '<div class="error-msg">K75P 全线资料载入失败：' + (err.message || '网络错误') + '</div>';
+    badge.textContent = '';
+  }
+}
+
+/* ==========================================================================
    Refresh & Auto-Refresh
    ========================================================================== */
 
@@ -1465,9 +1595,10 @@ async function refreshAll() {
     renderFavorites();
   }
 
-  /* Weather & Sushiro refresh in parallel (non-blocking) */
+  /* Weather & Sushiro & K75P refresh in parallel (non-blocking) */
   refreshWeather();
   refreshSushiro();
+  loadK75PAllStops();
 
   btn.disabled = false;
   btn.textContent = '手动刷新';
@@ -1508,9 +1639,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderFavorites();
   startAutoRefresh();
 
-  /* Initial weather & sushiro load */
+  /* Initial weather & sushiro & K75P load */
   refreshWeather();
   refreshSushiro();
+  loadK75PAllStops();
 
   /* Initial status */
   setStatus('ok');
