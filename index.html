@@ -266,6 +266,17 @@ body {
 .k75p-bus.delayed { background: #fff3d6; border-color: #e8c56a; color: #a06a00; }
 .k75p-bus.scheduled { background: #eef2ff; border-color: #b8c4e8; color: #3a5a9a; }
 .k75p-bus.k75p-none { background: #f4f1ea; border-color: #ddd5c5; color: #a08d6f; }
+.k75p-fold-btn {
+  display: block; width: 100%; margin: 2px 0;
+  padding: 7px 10px; cursor: pointer;
+  background: #fdf3e0; border: 2px dashed #d9b98a; border-radius: 12px;
+  font-size: 0.9rem; font-weight: 800; color: #8a6a3a;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif;
+  text-align: center; transition: background 0.2s;
+}
+.k75p-fold-btn:hover { background: #f7e6c8; }
+.k75p-fold { display: none; }
+.k75p-fold.open { display: block; }
 
 .weather-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;
@@ -1426,9 +1437,18 @@ async function refreshSushiro() {
       }
       throw new Error(`HTTP ${resp.status}`);
     }
-    const stores = await resp.json();
-    if (!Array.isArray(stores) || stores.length === 0) {
+    const allStores = await resp.json();
+    if (!Array.isArray(allStores) || allStores.length === 0) {
       container.innerHTML = '<div class="empty-hint">暂时没有分店资料</div>';
+      badge.textContent = '';
+      return;
+    }
+
+    /* 只显示新界西分店（葵青/荃湾/屯门/元朗/离岛） */
+    const NTW_AREAS = ['葵青區', '荃灣區', '屯門區', '元朗區', '離島區'];
+    const stores = allStores.filter(s => NTW_AREAS.includes(s.area));
+    if (stores.length === 0) {
+      container.innerHTML = '<div class="empty-hint">新界西暂时没有分店资料</div>';
       badge.textContent = '';
       return;
     }
@@ -1487,15 +1507,15 @@ const K75P_STOPS = [
   { id: 'D030', name: '天耀邨耀盛楼' },
   { id: 'D040', name: '轻铁天耀站' },
   { id: 'D050', name: '天盛苑' },
-  { id: 'D060', name: '石埗路' },
-  { id: 'D070', name: '沙洲里村' },
-  { id: 'D080', name: '厦村市' },
-  { id: 'U011', name: '新屋村' },
-  { id: 'U010', name: '李屋村' },
-  { id: 'U020', name: '新生村' },
-  { id: 'U030', name: '新李屋村' },
-  { id: 'U040', name: '田心' },
-  { id: 'U050', name: '乡事委员会' },
+  { id: 'D060', name: '石埗路', fold: true },
+  { id: 'D070', name: '沙洲里村', fold: true },
+  { id: 'D080', name: '厦村市', fold: true },
+  { id: 'U011', name: '新屋村', fold: true },
+  { id: 'U010', name: '李屋村', fold: true },
+  { id: 'U020', name: '新生村', fold: true },
+  { id: 'U030', name: '新李屋村', fold: true },
+  { id: 'U040', name: '田心', fold: true },
+  { id: 'U050', name: '乡事委员会', fold: true },
   { id: 'U060', name: '轻铁洪水桥站' },
   { id: 'U070', name: '洪水桥巴士厂' },
   { id: 'U080', name: '洪福邨' },
@@ -1541,7 +1561,16 @@ async function loadK75PAllStops() {
     }
 
     let html = '<div class="k75p-wrap">';
+    let foldOpen = false;
     for (const stop of K75P_STOPS) {
+      if (stop.fold && !foldOpen) {
+        foldOpen = true;
+        html += '<button type="button" class="k75p-fold-btn" id="k75pFoldBtn" onclick="toggleK75PFold()">厦村市 ▾</button>';
+        html += '<div class="k75p-fold" id="k75pFold">';
+      } else if (!stop.fold && foldOpen) {
+        foldOpen = false;
+        html += '</div>';
+      }
       const buses = stopMap[stop.id] || [];
       html += '<div class="k75p-stop">';
       html += `<span class="k75p-name">${escapeHtml(stop.name)}</span>`;
@@ -1566,6 +1595,7 @@ async function loadK75PAllStops() {
       }
       html += '</span></div>';
     }
+    if (foldOpen) html += '</div>';
     html += '</div>';
     container.innerHTML = html;
     badge.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
@@ -1573,6 +1603,15 @@ async function loadK75PAllStops() {
     container.innerHTML = '<div class="error-msg">K75P 全线资料载入失败：' + (err.message || '网络错误') + '</div>';
     badge.textContent = '';
   }
+}
+
+/** 展开/折叠 K75P 石埗路至乡事委员会段（厦村市按钮） */
+function toggleK75PFold() {
+  const fold = document.getElementById('k75pFold');
+  const btn = document.getElementById('k75pFoldBtn');
+  if (!fold || !btn) return;
+  const open = fold.classList.toggle('open');
+  btn.textContent = open ? '厦村市 ▴' : '厦村市 ▾';
 }
 
 /* ==========================================================================
