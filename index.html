@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>森友出行手册 🍃</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#5fae82">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="森友出行">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  font-family: 'Nunito', 'ZCOOL KuaiLe', 'Baloo 2', -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  background: linear-gradient(180deg, #e6f4e8 0%, #fdf6e3 45%, #f9ead6 100%);
+  color: #4a3f35; line-height: 1.5;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ===== Background Decorations (leaves / flowers / stars) ===== */
+.bg-decor { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.bg-decor .deco { position: absolute; opacity: 0.28; font-size: 2.2rem; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.08)); }
+.deco-1 { top: 6%; left: 4%; transform: rotate(-15deg); }
+.deco-2 { top: 14%; right: 5%; transform: rotate(12deg); }
+.deco-3 { top: 42%; left: 2%; transform: rotate(8deg); }
+.deco-4 { top: 68%; right: 3%; transform: rotate(-10deg); }
+.deco-5 { bottom: 8%; left: 6%; transform: rotate(20deg); }
+.deco-6 { bottom: 18%; right: 7%; transform: rotate(-18deg); }
+
+/* ===== Top Navbar (wooden sign style) ===== */
+.navbar {
+  background: linear-gradient(180deg, #8fd3a8 0%, #5fae82 100%);
+  color: #fff; padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 5px solid #3f8a63;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+.navbar h1 {
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif;
+  font-size: 1.35rem; font-weight: 800; letter-spacing: 0.5px;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.15);
+}
+.navbar .refresh-btn {
+  background: linear-gradient(180deg, #ffd166, #f4a261);
+  border: none; color: #5a4632;
+  padding: 8px 18px; border-radius: 14px; cursor: pointer; font-size: 0.9rem;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; font-weight: 700;
+  box-shadow: 0 4px 0 #d98a3d, 0 5px 10px rgba(0,0,0,0.15);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.navbar .refresh-btn:hover { filter: brightness(1.05); }
+.navbar .refresh-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #d98a3d; }
+.navbar .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: 0 4px 0 #d98a3d; }
+
+/* ===== Main Container ===== */
+.container { max-width: 900px; margin: 0 auto; padding: 24px 16px 40px; position: relative; z-index: 1; }
+
+/* ===== Search Section (wooden board) ===== */
+.search-section {
+  background: linear-gradient(180deg, #fffdf5, #fdf3e0);
+  border: 3px solid #e8d5b5;
+  border-radius: 24px; padding: 22px; margin-bottom: 22px;
+  box-shadow: 0 5px 0 #d9c4a0, 0 10px 20px rgba(0,0,0,0.08);
+}
+.search-row {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
+.search-input {
+  flex: 1; min-width: 200px; padding: 13px 18px;
+  border: 3px solid #e0d3b8; border-radius: 16px; font-size: 1rem;
+  font-family: 'Nunito', 'ZCOOL KuaiLe', sans-serif;
+  background: #fffef9; color: #4a3f35;
+  outline: none; transition: border 0.2s, box-shadow 0.2s;
+}
+.search-input:focus { border-color: #7ec8a0; box-shadow: 0 0 0 4px rgba(126,200,160,0.25); }
+.search-input::placeholder { color: #b8a98f; }
+.transport-toggle {
+  display: flex; gap: 6px; background: #f0e6d6; border-radius: 18px; padding: 4px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
+}
+.transport-toggle button {
+  padding: 9px 18px; border: none; background: transparent;
+  border-radius: 14px; cursor: pointer; font-size: 0.9rem; color: #6b5b45;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; font-weight: 600;
+  transition: all 0.2s; white-space: nowrap;
+}
+.transport-toggle button.active {
+  background: linear-gradient(180deg, #8fd3a8, #5fae82); color: #fff;
+  box-shadow: 0 3px 0 #3f8a63, 0 3px 6px rgba(0,0,0,0.12);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.12);
+}
+.search-btn {
+  padding: 13px 26px; background: linear-gradient(180deg, #ffd166, #f4a261); color: #5a4632;
+  border: none; border-radius: 16px; cursor: pointer; font-size: 1rem;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; font-weight: 800;
+  box-shadow: 0 5px 0 #d98a3d, 0 6px 12px rgba(0,0,0,0.12);
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.2s; white-space: nowrap;
+}
+.search-btn:hover { filter: brightness(1.05); }
+.search-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #d98a3d; }
+.search-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: 0 5px 0 #d98a3d; }
+
+/* ===== Section Title (wooden sign) ===== */
+.section-title {
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif;
+  font-size: 1.2rem; font-weight: 800; color: #5a4632;
+  background: linear-gradient(180deg, #eccfa4, #d9b380);
+  border: 3px solid #b98a5a;
+  border-radius: 18px;
+  padding: 8px 20px;
+  display: inline-flex; align-items: center; gap: 8px;
+  box-shadow: 0 4px 0 #a97a4a, 0 6px 12px rgba(0,0,0,0.1);
+  margin-bottom: 16px;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+}
+.section-title .badge {
+  font-size: 0.8rem; background: #fff8e7; color: #8a6a3a;
+  padding: 2px 12px; border-radius: 12px; font-weight: 700;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+}
+
+/* ===== Favorites Area ===== */
+.favorites-section {
+  background: linear-gradient(180deg, #fffdf5, #fdf3e0);
+  border: 3px solid #e8d5b5;
+  border-radius: 24px; padding: 22px; margin-bottom: 22px;
+  box-shadow: 0 5px 0 #d9c4a0, 0 10px 20px rgba(0,0,0,0.08); min-height: 80px;
+}
+.empty-hint {
+  text-align: center; color: #a08d6f; padding: 28px 0; font-size: 0.95rem;
+  font-family: 'ZCOOL KuaiLe', 'Nunito', sans-serif;
+}
+.empty-hint .icon { font-size: 2.4rem; display: block; margin-bottom: 10px; opacity: 0.6; }
+.card-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* ===== Search Results ===== */
+.results-section {
+  background: linear-gradient(180deg, #fffdf5, #fdf3e0);
+  border: 3px solid #e8d5b5;
+  border-radius: 24px; padding: 22px; margin-bottom: 22px;
+  box-shadow: 0 5px 0 #d9c4a0, 0 10px 20px rgba(0,0,0,0.08); min-height: 60px;
+}
+
+/* ===== Transport Card (wooden plaque) ===== */
+.transport-card {
+  border: 3px solid #e8d5b5; border-radius: 20px; padding: 16px 18px;
+  background: linear-gradient(180deg, #fffef9, #fdf6e3);
+  box-shadow: 0 4px 0 #d9c4a0, 0 8px 16px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative; cursor: default;
+}
+.transport-card:hover { box-shadow: 0 6px 0 #d9c4a0, 0 12px 22px rgba(0,0,0,0.12); transform: translateY(-2px); }
+
+/* Card header with route number */
+.card-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.card-header .route-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 12px; font-weight: 800; font-size: 1.05rem;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.badge-kmb { background: linear-gradient(180deg, #ff8a80, #e53935); color: #fff; }
+.badge-ctb { background: linear-gradient(180deg, #ffd54f, #ffb300); color: #5a4632; }
+.badge-mtr { background: linear-gradient(180deg, #64b5f6, #1565c0); color: #fff; }
+.badge-mtrbus { background: linear-gradient(180deg, #ba68c8, #7b1fa2); color: #fff; }
+.company-label { font-size: 0.7rem; font-weight: 700; opacity: 0.9; }
+
+.card-dest { font-size: 0.9rem; color: #6b5b45; margin-bottom: 6px; }
+.card-stop { font-size: 0.8rem; color: #a08d6f; margin-bottom: 8px; }
+
+/* ETA items */
+.eta-list { list-style: none; }
+.eta-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0; font-size: 0.9rem;
+}
+.eta-time {
+  font-family: 'Baloo 2', 'Nunito', sans-serif;
+  font-weight: 800; font-size: 1.2rem; color: #4caf50;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+}
+.eta-time.soon { color: #e53935; }
+.eta-time.medium { color: #ef6c00; }
+.eta-detail { color: #a08d6f; font-size: 0.8rem; }
+
+/* Favorite button (candy star) */
+.fav-btn {
+  position: absolute; top: 12px; right: 12px;
+  background: linear-gradient(180deg, #fff, #f0e6d6);
+  border: 2px solid #e0d3b8; font-size: 1.2rem; cursor: pointer;
+  color: #c9b896; transition: all 0.2s; padding: 4px 9px; border-radius: 12px;
+  box-shadow: 0 2px 0 #d9c4a0;
+}
+.fav-btn:hover { background: #fff8e7; transform: scale(1.1); }
+.fav-btn:active { transform: translateY(2px); box-shadow: 0 0 0 #d9c4a0; }
+.fav-btn.favorited { color: #e53935; background: linear-gradient(180deg, #ffd6d6, #ffb3b3); border-color: #f0a0a0; }
+
+/* Remove favorite button (inline in favorites) */
+.fav-remove-btn {
+  background: linear-gradient(180deg, #fff, #f7e6e6); border: 2px solid #e8c4c4; color: #c98a8a;
+  padding: 4px 12px; border-radius: 10px; cursor: pointer; font-size: 0.75rem;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; font-weight: 700;
+  box-shadow: 0 2px 0 #d9a8a8;
+  transition: all 0.2s;
+}
+.fav-remove-btn:hover { background: #ffe0e0; color: #c62828; border-color: #ef9a9a; }
+.fav-remove-btn:active { transform: translateY(2px); box-shadow: 0 0 0 #d9a8a8; }
+
+/* ===== Export button (overrides inline styles from JS) ===== */
+#exportQuote0Btn, #exportQuote0Btn2 {
+  background: linear-gradient(180deg, #ffd166, #f4a261) !important;
+  color: #5a4632 !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 3px 0 #d98a3d, 0 4px 8px rgba(0,0,0,0.12) !important;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  transition: transform 0.1s, box-shadow 0.1s !important;
+}
+#exportQuote0Btn:hover, #exportQuote0Btn2:hover { filter: brightness(1.05); }
+#exportQuote0Btn:active, #exportQuote0Btn2:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 1px 0 #d98a3d !important;
+}
+
+/* ===== Weather & Sushiro Info Sections ===== */
+.info-section {
+  background: linear-gradient(180deg, #fffdf5, #fdf3e0);
+  border: 3px solid #e8d5b5;
+  border-radius: 24px; padding: 22px; margin-bottom: 22px;
+  box-shadow: 0 5px 0 #d9c4a0, 0 10px 20px rgba(0,0,0,0.08);
+}
+.weather-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;
+}
+.weather-item {
+  background: linear-gradient(180deg, #eaf6ee, #dcefe2);
+  border: 2px solid #c5e0cd; border-radius: 16px; padding: 12px 14px; text-align: center;
+}
+.weather-item .w-label { font-size: 0.75rem; color: #6b8f7a; font-weight: 700; }
+.weather-item .w-value { font-size: 1.3rem; font-weight: 800; color: #3f8a63; font-family: 'Baloo 2', 'Nunito', sans-serif; }
+.weather-item .w-sub { font-size: 0.75rem; color: #8aa89a; }
+.weather-desc {
+  text-align: center; font-size: 1.05rem; font-weight: 800; color: #3f8a63;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; margin-bottom: 12px;
+}
+.sushiro-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;
+}
+.sushiro-card {
+  border: 2px solid #e8d5b5; border-radius: 16px; padding: 12px 14px;
+  background: linear-gradient(180deg, #fffef9, #fdf6e3);
+  box-shadow: 0 3px 0 #d9c4a0;
+}
+.sushiro-card .s-name { font-weight: 800; font-size: 0.95rem; color: #5a4632; }
+.sushiro-card .s-wait { font-family: 'Baloo 2', 'Nunito', sans-serif; font-weight: 800; font-size: 1.2rem; color: #4caf50; }
+.sushiro-card .s-wait.soon { color: #e53935; }
+.sushiro-card .s-wait.medium { color: #ef6c00; }
+.sushiro-card .s-status { font-size: 0.7rem; color: #a08d6f; }
+.sushiro-card.closed { opacity: 0.6; }
+.sushiro-note { font-size: 0.75rem; color: #a08d6f; margin-top: 10px; text-align: center; }
+
+/* ===== Footer ===== */
+.footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; color: #a08d6f; font-size: 0.8rem; flex-wrap: wrap; gap: 8px;
+}
+.footer .status { display: flex; align-items: center; gap: 6px; }
+.footer .dot {
+  width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.dot-green { background: #4caf50; }
+.dot-red { background: #e53935; }
+.dot-yellow { background: #ff9800; }
+
+/* ===== Loading & Errors ===== */
+.loading { text-align: center; padding: 30px; color: #a08d6f; font-family: 'ZCOOL KuaiLe', 'Nunito', sans-serif; }
+.loading .spinner {
+  display: inline-block; width: 30px; height: 30px;
+  border: 4px solid #e8d5b5; border-top: 4px solid #5fae82;
+  border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg {
+  background: #fff3e0; border: 2px solid #ffe0b2; color: #e65100;
+  padding: 12px 16px; border-radius: 14px; font-size: 0.9rem; margin: 10px 0;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .navbar { padding: 12px 14px; }
+  .navbar h1 { font-size: 1.1rem; }
+  .container { padding: 14px 8px 24px; }
+  .search-row { flex-direction: column; }
+  .search-input { width: 100%; }
+  .transport-toggle { width: 100%; justify-content: center; }
+  .search-btn { width: 100%; }
+  .card-grid { grid-template-columns: 1fr; }
+  .search-section, .favorites-section, .results-section { padding: 16px; }
+  .bg-decor .deco { font-size: 1.6rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Background Decorations ===== -->
+<div class="bg-decor" aria-hidden="true">
+  <span class="deco deco-1">🍃</span>
+  <span class="deco deco-2">🌸</span>
+  <span class="deco deco-3">⭐</span>
+  <span class="deco deco-4">🍄</span>
+  <span class="deco deco-5">🌼</span>
+  <span class="deco deco-6">🍀</span>
+</div>
+
+<!-- ===== Navbar ===== -->
+<nav class="navbar">
+  <h1>🍃 森友出行手册</h1>
+  <button class="refresh-btn" onclick="refreshAll()" id="refreshBtn">手动刷新</button>
+</nav>
+
+<div class="container">
+
+  <!-- ===== Search Section ===== -->
+  <section class="search-section">
+    <div class="search-row">
+      <input type="text" class="search-input" id="searchInput"
+             placeholder="输入巴士路线编号（如 1A）或港铁车站名称（如 中环）..."
+             onkeydown="if(event.key==='Enter') doSearch()">
+      <div class="transport-toggle" id="transportToggle">
+        <button class="active" data-type="bus">九巴/城巴</button>
+        <button data-type="mtrbus">港铁巴士</button>
+        <button data-type="mtr">港铁</button>
+      </div>
+      <button class="search-btn" onclick="doSearch()" id="searchBtn">搜寻</button>
+    </div>
+  </section>
+
+  <!-- ===== Favorites ===== -->
+  <section class="favorites-section">
+    <div class="section-title">
+      <span>⭐</span> 我的收藏
+      <span class="badge" id="favCount"></span>
+    </div>
+    <div id="favoritesContainer">
+      <div class="empty-hint"><span class="icon">📌</span>搜寻路线后按 ☆ 收藏到首页</div>
+    </div>
+  </section>
+
+  <!-- ===== Search Results ===== -->
+  <section class="results-section">
+    <div class="section-title">🍀 搜寻结果</div>
+    <div id="resultsContainer">
+      <div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>
+    </div>
+  </section>
+
+  <!-- ===== Weather ===== -->
+  <section class="info-section">
+    <div class="section-title">
+      <span>🌤️</span> 香港天气
+      <span class="badge" id="weatherUpdate"></span>
+    </div>
+    <div id="weatherContainer">
+      <div class="empty-hint"><span class="icon">🌤️</span>载入天气中...</div>
+    </div>
+  </section>
+
+  <!-- ===== Sushiro Queue ===== -->
+  <section class="info-section">
+    <div class="section-title">
+      <span>🍣</span> 寿司郎排队
+      <span class="badge" id="sushiroUpdate"></span>
+    </div>
+    <div id="sushiroContainer">
+      <div class="empty-hint"><span class="icon">🍣</span>载入排队资料中...</div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <div class="footer">
+    <span>🌿 数据来源：data.gov.hk / 资料一线通</span>
+    <div class="status">
+      <span id="statusDot" class="dot dot-green"></span>
+      <span id="statusText">就绪</span>
+      <span>· 更新于 <span id="lastUpdate">--:--:--</span></span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   Global State & Constants
+   ========================================================================== */
+
+const STORAGE_KEY = 'hk_transport_favorites';
+
+/* API endpoints */
+const KMB_BASE = 'https://data.etabus.gov.hk/v1/transport/kmb';
+const CTB_BASE = 'https://rt.data.gov.hk/v2/transport/citybus';
+const MTR_BASE = 'https://rt.data.gov.hk/v1/transport/mtr';
+
+/* Weather API (HKO open data, supports CORS) */
+const WEATHER_API = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc';
+
+/* Sushiro official queue API (no CORS header → must go through corsproxy.io) */
+const SUSHIRO_STORE_API = 'https://sushipass.sushiro.com.hk/api/2.0/info/storelist?latitude=22&longitude=114&numresults=50&region=HK';
+const SUSHIRO_PROXY = (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+
+/* HKO weather icon → description mapping */
+const HKO_ICONS = {
+  50: '阳光充沛', 51: '间有阳光', 52: '短暂阳光', 53: '间有阳光几阵骤雨', 54: '短暂阳光有骤雨',
+  60: '多云', 61: '密云', 62: '微雨', 63: '雨', 64: '大雨', 65: '雷暴',
+  70: '天色良好', 71: '天色良好', 72: '天色良好', 73: '天色良好', 74: '天色良好', 75: '天色良好',
+  76: '大致多云', 77: '天色大致良好',
+  80: '大风', 81: '干燥', 82: '潮湿', 83: '雾', 84: '薄雾', 85: '烟霞',
+  90: '热', 91: '暖', 92: '凉', 93: '冷'
+};
+const HKO_ICON_EMOJI = {
+  50: '☀️', 51: '🌤️', 52: '🌤️', 53: '🌦️', 54: '🌦️',
+  60: '☁️', 61: '☁️', 62: '🌧️', 63: '🌧️', 64: '🌧️', 65: '⛈️',
+  70: '🌙', 71: '🌙', 72: '🌙', 73: '🌙', 74: '🌙', 75: '🌙',
+  76: '☁️', 77: '🌙',
+  80: '💨', 81: '💧', 82: '💦', 83: '🌫️', 84: '🌫️', 85: '🌫️',
+  90: '🥵', 91: '🌡️', 92: '🍂', 93: '🥶'
+};
+
+/* MTR line code → display name mapping */
+const MTR_LINES = {
+  AEL: '机场快线', TCL: '东涌线', TML: '屯马线', TKL: '将军澳线',
+  EAL: '东铁线', SIL: '南港岛线', TWL: '荃湾线', ISL: '港岛线',
+  KTL: '观塘线', DRL: '迪士尼线'
+};
+
+/* MTR Bus route data */
+const MTR_BUS_ROUTES = {
+  'K51': { orig: '富泰', dest: '大榄', orig_en: 'Fu Tai', dest_en: 'Tai Lam' },
+  'K52': { orig: '屯门站', dest: '龙鼓滩', orig_en: 'Tuen Mun Station', dest_en: 'Lung Kwu Tan' },
+  'K53': { orig: '屯门站', dest: '扫管笏', orig_en: 'Tuen Mun Station', dest_en: 'So Kwun Wat' },
+  'K58': { orig: '富泰', dest: '青山湾', orig_en: 'Fu Tai', dest_en: 'Castle Peak Bay' },
+  'K65': { orig: '元朗站', dest: '流浮山', orig_en: 'Yuen Long Station', dest_en: 'Lau Fau Shan' },
+  'K66': { orig: '大棠', dest: '朗屏', orig_en: 'Tai Tong', dest_en: 'Long Ping' },
+  'K68': { orig: '元朗公园', dest: '元朗站(循环线)', orig_en: 'Yuen Long Park', dest_en: 'Yuen Long Station (Circular)' },
+  'K73': { orig: '天恒', dest: '元朗西', orig_en: 'Tin Heng', dest_en: 'Yuen Long West' },
+  'K74': { orig: '天瑞', dest: '凹头(循环线)', orig_en: 'Tin Shui', dest_en: 'Au Tau (Circular)' },
+  'K75': { orig: '天水围站', dest: '洪水桥(循环线)', orig_en: 'Tin Shui Wai Station', dest_en: 'Hung Shui Kiu (Circular)' },
+  'K76': { orig: '天恒', dest: '天水围站', orig_en: 'Tin Heng', dest_en: 'Tin Shui Wai Station' },
+  'K12': { orig: '大埔墟站', dest: '大埔八号花园', orig_en: 'Tai Po Market Station', dest_en: 'Eightland Gardens' },
+  'K14': { orig: '大埔中心', dest: '大埔墟站', orig_en: 'Tai Po Centre', dest_en: 'Tai Po Market Station' },
+  'K17': { orig: '大埔墟站', dest: '富善', orig_en: 'Tai Po Market Station', dest_en: 'Fu Shin' },
+  'K18': { orig: '大埔墟站', dest: '广福', orig_en: 'Tai Po Market Station', dest_en: 'Kwong Fuk' },
+};
+
+/* CORS proxy list – try each in order on failure */
+const CORS_PROXIES = [
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+];
+
+/* Currently selected transport type */
+let currentTransport = 'bus';
+
+/* Timer for auto-refresh */
+let autoRefreshTimer = null;
+
+/* ==========================================================================
+   Utility Functions
+   ========================================================================== */
+
+/** Fetch with CORS proxy fallback */
+async function fetchWithProxy(url, proxyIndex = 0) {
+  try {
+    const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      throw new Error('请求超时，服务可能暂时不可用');
+    }
+    /* If it looks like a CORS / network error and we have proxies left, retry */
+    if ((err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('CORS')) && proxyIndex < CORS_PROXIES.length) {
+      const proxyUrl = CORS_PROXIES[proxyIndex](url);
+      return fetchWithProxy(proxyUrl, proxyIndex + 1);
+    }
+    throw err;
+  }
+}
+
+/** Format Unix timestamp (seconds) to HH:MM:SS */
+function formatTime(ts) {
+  const d = new Date(ts * 1000);
+  return d.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+/** Calculate minutes remaining from now */
+function minsFromNow(etaTs) {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = etaTs - now;
+  if (diff < 0) return '<1分钟';
+  if (diff < 60) return '<1分钟';
+  return `${Math.floor(diff / 60)}分钟`;
+}
+
+/** Get ETA time class for color coding */
+function etaColorClass(etaTs) {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = etaTs - now;
+  if (diff < 120) return 'soon';      /* < 2 min → red */
+  if (diff < 600) return 'medium';    /* < 10 min → orange */
+  return '';
+}
+
+/** Update status indicator */
+function setStatus(state, text) {
+  const dot = document.getElementById('statusDot');
+  const st = document.getElementById('statusText');
+  dot.className = 'dot';
+  if (state === 'ok') { dot.classList.add('dot-green'); st.textContent = text || '就绪'; }
+  else if (state === 'error') { dot.classList.add('dot-red'); st.textContent = text || '错误'; }
+  else { dot.classList.add('dot-yellow'); st.textContent = text || '载入中'; }
+  document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+/** Debounce utility */
+function debounce(fn, ms) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+
+/* ==========================================================================
+   Favorites Management
+   ========================================================================== */
+
+function getFavorites() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveFavorites(favs) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(favs));
+}
+
+/** Check if a route is in favorites */
+function isFavorited(item) {
+  const favs = getFavorites();
+  if (item.type === 'mtr') {
+    return favs.some(f => f.type === 'mtr' && f.line === item.line && f.station_id === item.station_id);
+  }
+  if (item.type === 'mtrbus') {
+    return favs.some(f => f.type === 'mtrbus' && f.route === item.route && f.stop_id === item.stop_id);
+  }
+  return favs.some(f => f.type === 'bus' && f.company === item.company && f.route === item.route && f.stop_id === item.stop_id);
+}
+
+/** Add to favorites */
+function addFavorite(item) {
+  const favs = getFavorites();
+  if (isFavorited(item)) return;
+  favs.push(item);
+  saveFavorites(favs);
+  renderFavorites();
+}
+
+/** Remove from favorites */
+function removeFavorite(index) {
+  const favs = getFavorites();
+  favs.splice(index, 1);
+  saveFavorites(favs);
+  renderFavorites();
+}
+
+/* ==========================================================================
+   KMB API Calls
+   ========================================================================== */
+
+/** Search KMB route by number */
+async function searchKMBRoute(routeNum) {
+  try {
+    const data = await fetchWithProxy(`${KMB_BASE}/route/`);
+    if (!data || !data.data) return [];
+    /* Filter routes matching the number (case-insensitive) */
+    const matches = data.data.filter(r =>
+      r.route.toUpperCase() === routeNum.toUpperCase()
+    );
+    return matches;
+  } catch (err) {
+    console.warn('KMB route search failed:', err.message);
+    return [];
+  }
+}
+
+/** Get KMB stops for a route */
+async function getKMBStops(route, direction, serviceType = '1') {
+  try {
+    const url = `${KMB_BASE}/route-stop/${route}/${direction}/${serviceType}`;
+    const data = await fetchWithProxy(url);
+    return data && data.data ? data.data : [];
+  } catch { return []; }
+}
+
+/** Get KMB ETA for a stop */
+async function getKMBETA(stopId) {
+  try {
+    const data = await fetchWithProxy(`${KMB_BASE}/stop-eta/${stopId}`);
+    return data && data.data ? data.data : [];
+  } catch { return []; }
+}
+
+/* ==========================================================================
+   CTB API Calls
+   ========================================================================== */
+
+/** Search CTB route by number */
+async function searchCTBRoute(routeNum) {
+  try {
+    const data = await fetchWithProxy(`${CTB_BASE}/route/ctb`);
+    if (!data || !data.data) return [];
+    const matches = data.data.filter(r =>
+      String(r.route).toUpperCase() === routeNum.toUpperCase()
+    );
+    return matches;
+  } catch (err) {
+    console.warn('CTB route search failed:', err.message);
+    return [];
+  }
+}
+
+/** Get CTB stops for a route */
+async function getCTBStops(route, dir) {
+  try {
+    const data = await fetchWithProxy(`${CTB_BASE}/route-stop/ctb/${route}/${dir}`);
+    return data && data.data ? data.data : [];
+  } catch { return []; }
+}
+
+/** Get CTB ETA for a stop & route */
+async function getCTBETA(stopId, route) {
+  try {
+    const data = await fetchWithProxy(`${CTB_BASE}/eta/ctb/${stopId}/${route}`);
+    return data && data.data ? data.data : [];
+  } catch { return []; }
+}
+
+/* ==========================================================================
+   MTR API Calls
+   ========================================================================== */
+
+/** Get MTR schedule for a line + station */
+async function getMTRSchedule(line, stationId) {
+  try {
+    const data = await fetchWithProxy(
+      `${MTR_BASE}/getSchedule?line=${line}&sta=${stationId}`
+    );
+    return data && data.data ? data.data : null;
+  } catch { return null; }
+}
+
+/* ==========================================================================
+   MTR Bus API Calls
+   ========================================================================== */
+
+/** Get MTR Bus ETA for a route (POST method) */
+async function getMTRBusETA(routeName) {
+  const url = 'https://rt.data.gov.hk/v1/transport/mtr/bus/getSchedule';
+  const body = JSON.stringify({ language: 'zh', routeName: routeName });
+  try {
+    const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (err) {
+    for (const proxyFn of CORS_PROXIES) {
+      try {
+        const proxyUrl = proxyFn(url);
+        const resp = await fetch(proxyUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        if (resp.ok) return await resp.json();
+      } catch {}
+    }
+    return null;
+  }
+}
+
+/** Parse MTR Bus ETA response (busStop → flat eta list) */
+function parseMTRBusETAData(etaData) {
+  if (!etaData || !etaData.busStop || !Array.isArray(etaData.busStop)) return [];
+  const etas = [];
+  const nowMs = Date.now();
+  for (const stop of etaData.busStop) {
+    const stopName = stop.busStopId || '';
+    for (const bus of (stop.bus || [])) {
+      const arrivalSec = parseInt(bus.arrivalTimeInSecond) || 0;
+      etas.push({
+        eta: new Date(nowMs + arrivalSec * 1000).toISOString(),
+        stop_name: stopName,
+        arrivalText: bus.arrivalTimeText || '',
+        departureText: bus.departureTimeText || '',
+        isScheduled: bus.isScheduled === '1'
+      });
+    }
+  }
+  return etas;
+}
+
+/* ==========================================================================
+   Search Logic
+   ========================================================================== */
+
+/** Main search function */
+async function doSearch() {
+  const input = document.getElementById('searchInput').value.trim();
+  if (!input) return;
+
+  const resultsContainer = document.getElementById('resultsContainer');
+  resultsContainer.innerHTML = '<div class="loading"><div class="spinner"></div>搜寻中...</div>';
+  setStatus('loading', '搜寻中');
+
+  if (currentTransport === 'bus') {
+    await searchBusRoute(input, resultsContainer);
+  } else if (currentTransport === 'mtrbus') {
+    await searchMTRBus(input, resultsContainer);
+  } else {
+    await searchMTRStation(input, resultsContainer);
+  }
+}
+
+/** Search bus routes across KMB and CTB */
+async function searchBusRoute(query, container) {
+  const routeNum = query.toUpperCase().replace(/\s/g, '');
+  let allResults = [];
+
+  /* Search both companies in parallel */
+  const [kmbRoutes, ctbRoutes] = await Promise.all([
+    searchKMBRoute(routeNum),
+    searchCTBRoute(routeNum)
+  ]);
+
+  /* For each KMB route, get stops and first stop ETA */
+  for (const route of kmbRoutes) {
+    const direction = route.bound === 'O' ? 'outbound' : 'inbound';
+    const stops = await getKMBStops(route.route, direction, '1');
+    if (stops.length > 0) {
+      const firstStop = stops[0];
+      allResults.push({
+        type: 'bus', company: 'kmb',
+        route: route.route,
+        direction: direction,
+        origDest: route.orig_en ? `${route.orig_tc || route.orig_en} → ${route.dest_tc || route.dest_en}` : '',
+        stop_id: firstStop.stop_id || firstStop.stop,
+        stop_name: firstStop.name_tc || firstStop.name_en || firstStop.stop_id,
+        serviceType: '1'
+      });
+    }
+  }
+
+  /* For each CTB route, get stops and first stop ETA */
+  for (const route of ctbRoutes) {
+    /* CTB route-stop API needs 'outbound'/'inbound' (lowercase), not 'O'/'I' */
+    for (const dir of ['outbound', 'inbound']) {
+      const stops = await getCTBStops(route.route, dir);
+      if (stops.length > 0) {
+        const firstStop = stops[0];
+        allResults.push({
+          type: 'bus', company: 'ctb',
+          route: String(route.route),
+          direction: dir,
+          origDest: route.orig_tc && route.dest_tc ? `${route.orig_tc} → ${route.dest_tc}` : '',
+          stop_id: firstStop.stop || firstStop.stop_id,
+          stop_name: firstStop.stop || firstStop.stop_id,
+        });
+      }
+    }
+  }
+
+  if (allResults.length === 0) {
+    container.innerHTML = '<div class="empty-hint">找不到路线「' + escapeHtml(query) + '」，请确认路线编号是否正确</div>';
+    setStatus('ok');
+    return;
+  }
+
+  /* Fetch ETA for each result stop and render */
+  const etaResults = await Promise.all(
+    allResults.map(async (item) => {
+      let etas = [];
+      if (item.company === 'kmb') {
+        etas = await getKMBETA(item.stop_id);
+        /* Filter to only this route */
+        etas = etas.filter(e => e.route === item.route);
+      } else {
+        etas = await getCTBETA(item.stop_id, item.route);
+      }
+      return { ...item, etas: etas.slice(0, 3) };
+    })
+  );
+
+  renderSearchResults(etaResults, container);
+  setStatus('ok');
+}
+
+/** Search MTR station by name */
+async function searchMTRStation(query, container) {
+  /* MTR station name → station_id mapping (common stations) */
+  const stationMap = {
+    '中环': 'CEN', '金钟': 'ADM', '尖沙咀': 'TST', '旺角': 'MOK', '九龙塘': 'KOT',
+    '铜锣湾': 'CAB', '北角': 'NOP', '太古': 'TAK', '鲗鱼涌': 'QUB', '湾仔': 'WAC',
+    '上环': 'SHW', '佐敦': 'JOR', '油麻地': 'YMT', '太子': 'PRE',
+    '深水埗': 'SSP', '长沙湾': 'CSW', '荔枝角': 'LCK', '美孚': 'MEF', '荔景': 'LAK',
+    '葵芳': 'KWF', '葵兴': 'KWH', '大窝口': 'TWH', '荃湾': 'TSW',
+    '彩虹': 'CHH', '钻石山': 'DIH', '黄大仙': 'WTS', '乐富': 'LOF', '石硖尾': 'SKM',
+    '九龙湾': 'KOB', '牛头角': 'NTK', '观塘': 'KWT', '蓝田': 'LAT', '调景岭': 'TIK',
+    '油塘': 'YAT', '坑口': 'HAH', '宝琳': 'POA', '康城': 'LHP',
+    '香港': 'HOK', '九龙': 'KOW', '青衣': 'TSY', '东涌': 'TUC', '欣澳': 'SUN',
+    '红磡': 'HUH', '大围': 'TAW', '沙田': 'SHT', '火炭': 'FOT', '大学': 'UNI',
+    '大埔墟': 'TPM', '太和': 'TWO', '粉岭': 'FAN', '上水': 'SHS', '落马洲': 'LMC',
+    '罗湖': 'LOH', '马鞍山': 'MOS', '恒安': 'HEO', '大水坑': 'TSH',
+    '石门': 'SHM', '第一城': 'CKT', '美林': 'MLN', '显径': 'HIK', '启德': 'KAT',
+    '宋皇台': 'SUW', '土瓜湾': 'TKW', '何文田': 'HOM', '黄埔': 'WHA',
+    '南昌': 'NAC', '柯士甸': 'AUS', '尖东': 'ETS', '屯门': 'TUM', '兆康': 'SIO',
+    '天水围': 'TIS', '朗屏': 'LOP', '元朗': 'YUL', '锦上路': 'KSR',
+    '海洋公园': 'OCP', '黄竹坑': 'WCH', '利东': 'LET', '海怡半岛': 'SOH'
+  };
+
+  /* Find matching stations */
+  const matchedStations = [];
+  const q = query.trim();
+  for (const [name, code] of Object.entries(stationMap)) {
+    if (name.includes(q) || q.includes(name)) {
+      matchedStations.push({ name, code });
+    }
+  }
+
+  if (matchedStations.length === 0) {
+    /* Try direct station code match */
+    const upperQuery = q.toUpperCase();
+    for (const [name, code] of Object.entries(stationMap)) {
+      if (code === upperQuery) {
+        matchedStations.push({ name, code });
+      }
+    }
+  }
+
+  if (matchedStations.length === 0) {
+    container.innerHTML = '<div class="empty-hint">找不到车站「' + escapeHtml(query) + '」，请尝试输入车站名称（如：中环、旺角）</div>';
+    setStatus('ok');
+    return;
+  }
+
+  /* Fetch schedules for all matched stations across all lines */
+  const allLineResults = [];
+  for (const station of matchedStations) {
+    const lineChecks = Object.keys(MTR_LINES).map(async (lineCode) => {
+      try {
+        const schedule = await getMTRSchedule(lineCode, station.code);
+        if (schedule && Object.keys(schedule).length > 0) {
+          return {
+            type: 'mtr',
+            line: lineCode,
+            lineName: MTR_LINES[lineCode] || lineCode,
+            station_id: station.code,
+            station_name: station.name,
+            schedule: schedule
+          };
+        }
+      } catch {}
+      return null;
+    });
+    const results = await Promise.all(lineChecks);
+    for (const r of results) {
+      if (r) allLineResults.push(r);
+    }
+  }
+
+  if (allLineResults.length === 0) {
+    container.innerHTML = '<div class="empty-hint">车站「' + escapeHtml(query) + '」目前没有即时到站数据</div>';
+    setStatus('ok');
+    return;
+  }
+
+  renderMTRSearchResults(allLineResults, container);
+  setStatus('ok');
+}
+
+/** Search MTR Bus route by number */
+async function searchMTRBus(query, container) {
+  const routeNum = query.toUpperCase().replace(/\s/g, '');
+  const routeInfo = MTR_BUS_ROUTES[routeNum];
+
+  /* Try API even if route not in built-in list (for variants like K75P) */
+  const etaData = await getMTRBusETA(routeNum);
+
+  if (!routeInfo && (!etaData || !etaData.busStop || !Array.isArray(etaData.busStop) || etaData.busStop.length === 0)) {
+    container.innerHTML = '<div class="empty-hint">找不到港铁巴士路线「' + escapeHtml(query) + '」，请确认路线编号（如 K51、K65、K75P）</div>';
+    setStatus('ok');
+    return;
+  }
+
+  const item = {
+    type: 'mtrbus',
+    route: routeNum,
+    orig: routeInfo ? routeInfo.orig : routeNum,
+    dest: routeInfo ? routeInfo.dest : '',
+    orig_en: routeInfo ? routeInfo.orig_en : '',
+    dest_en: routeInfo ? routeInfo.dest_en : '',
+    etas: []
+  };
+
+  if (etaData) {
+    item.etas = parseMTRBusETAData(etaData).slice(0, 8);
+    /* Capture dest from built-in route info if available */
+    if (!item.dest && item.etas.length > 0) {
+      const first = item.etas[0];
+      if (first.stop_name) item.dest = first.stop_name;
+    }
+  }
+
+  renderMTRBusResults([item], container);
+  setStatus('ok');
+}
+
+/* ==========================================================================
+   Render Functions
+   ========================================================================== */
+
+/** Escape HTML entities */
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/** Render bus search results */
+function renderSearchResults(items, container) {
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty-hint">没有结果</div>';
+    return;
+  }
+
+  let html = '<div class="card-grid">';
+  for (const item of items) {
+    const faved = isFavorited(item);
+    const companyClass = item.company === 'kmb' ? 'badge-kmb' : 'badge-ctb';
+    const companyName = item.company === 'kmb' ? '九巴 KMB' : '城巴 CTB';
+
+    html += '<div class="transport-card">';
+    html += '<div class="card-header">';
+    html += `<span class="route-badge ${companyClass}"><span class="company-label">${companyName}</span> ${escapeHtml(item.route)}</span>`;
+    html += '</div>';
+
+    if (item.origDest) {
+      html += `<div class="card-dest">🚏 ${escapeHtml(item.origDest)}</div>`;
+    }
+
+    const favStar = faved ? '★' : '☆';
+    const favClass = faved ? 'favorited' : '';
+    html += `<button class="fav-btn ${favClass}" data-fav-item='${JSON.stringify(item).replace(/'/g, "&#39;")}' title="收藏 / 取消收藏">${favStar}</button>`;
+
+    html += '<ul class="eta-list">';
+    if (item.etas && item.etas.length > 0) {
+      for (const eta of item.etas) {
+        let etaTs, remark;
+        if (item.company === 'kmb') {
+          etaTs = eta.eta ? new Date(eta.eta).getTime() / 1000 : null;
+          remark = eta.rmk_tc || eta.rmk_en || '';
+        } else {
+          etaTs = eta.eta ? new Date(eta.eta).getTime() / 1000 : null;
+          remark = eta.eta ? '' : (eta.eta_seq ? '未有预定班次' : '');
+        }
+
+        if (etaTs) {
+          const mins = minsFromNow(etaTs);
+          const colorClass = etaColorClass(etaTs);
+          html += `<li class="eta-item"><span>🚌 ${formatTime(etaTs)}</span><span class="eta-time ${colorClass}">${mins}</span></li>`;
+        } else if (remark) {
+          html += `<li class="eta-item"><span>🚌 --:--:--</span><span class="eta-detail">${escapeHtml(remark)}</span></li>`;
+        }
+      }
+    } else {
+      html += '<li class="eta-item"><span class="eta-detail">暂无到站资讯</span></li>';
+    }
+    html += '</ul></div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+/** Render MTR search results */
+function renderMTRSearchResults(items, container) {
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty-hint">没有结果</div>';
+    return;
+  }
+
+  let html = '<div class="card-grid">';
+  for (const item of items) {
+    const faved = isFavorited(item);
+    const favStar = faved ? '★' : '☆';
+    const favClass = faved ? 'favorited' : '';
+
+    html += '<div class="transport-card">';
+    html += '<div class="card-header">';
+    html += `<span class="route-badge badge-mtr"><span class="company-label">港铁</span> ${escapeHtml(item.lineName)}</span>`;
+    html += '</div>';
+    html += `<div class="card-dest">🚉 ${escapeHtml(item.station_name)}（${escapeHtml(item.station_id)}）</div>`;
+
+    html += `<button class="fav-btn ${favClass}" data-fav-item='${JSON.stringify(item).replace(/'/g, "&#39;")}' title="收藏 / 取消收藏">${favStar}</button>`;
+
+    /* Parse MTR schedule */
+    html += '<ul class="eta-list">';
+    if (item.schedule) {
+      const keys = Object.keys(item.schedule);
+      /* Keys are like "UP-TWL_1", "DOWN-TWL_1" */
+      for (const key of keys.slice(0, 4)) {
+        const data = item.schedule[key];
+        if (data && data.time) {
+          /* Parse ISO time string */
+          const etaTs = new Date(data.time).getTime() / 1000;
+          const mins = minsFromNow(etaTs);
+          const colorClass = etaColorClass(etaTs);
+          const dirLabel = key.startsWith('UP') ? '上行' : '下行';
+          html += `<li class="eta-item"><span>🚇 ${dirLabel} ${formatTime(etaTs)}</span><span class="eta-time ${colorClass}">${mins}</span></li>`;
+        }
+      }
+      if (keys.length === 0) {
+        html += '<li class="eta-item"><span class="eta-detail">暂无到站资讯</span></li>';
+      }
+    } else {
+      html += '<li class="eta-item"><span class="eta-detail">暂无到站资讯</span></li>';
+    }
+    html += '</ul></div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+/** Render MTR Bus search results */
+function renderMTRBusResults(items, container) {
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty-hint">没有结果</div>';
+    return;
+  }
+
+  let html = '<div class="card-grid">';
+  for (const item of items) {
+    const faved = isFavorited(item);
+    const favStar = faved ? '★' : '☆';
+    const favClass = faved ? 'favorited' : '';
+    html += '<div class="transport-card">';
+    html += '<div class="card-header">';
+    html += `<span class="route-badge badge-mtrbus"><span class="company-label">港铁巴士</span> ${escapeHtml(item.route)}</span>`;
+    html += '</div>';
+    html += `<div class="card-dest">🚏 ${escapeHtml(item.orig)} → ${escapeHtml(item.dest)}</div>`;
+
+    html += `<button class="fav-btn ${favClass}" data-fav-item='${JSON.stringify(item).replace(/'/g, "&#39;")}' title="收藏 / 取消收藏">${favStar}</button>`;
+
+    html += '<ul class="eta-list">';
+    if (item.etas && item.etas.length > 0) {
+      for (const eta of item.etas) {
+        const etaTs = eta.eta ? new Date(eta.eta).getTime() / 1000 : null;
+        if (etaTs) {
+          const mins = minsFromNow(etaTs);
+          const colorClass = etaColorClass(etaTs);
+          const stopLabel = eta.stop_name ? ` (${escapeHtml(eta.stop_name)})` : '';
+          html += `<li class="eta-item"><span>🚌 ${formatTime(etaTs)}${stopLabel}</span><span class="eta-time ${colorClass}">${mins}</span></li>`;
+        }
+      }
+    } else {
+      html += '<li class="eta-item"><span class="eta-detail">暂无到站资讯</span></li>';
+    }
+    html += '</ul></div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+/** Render favorites section with live ETA */
+function renderFavorites() {
+  const container = document.getElementById('favoritesContainer');
+  const favs = getFavorites();
+  document.getElementById('favCount').textContent = favs.length;
+
+  if (favs.length === 0) {
+    container.innerHTML = '<div class="empty-hint"><span class="icon">📌</span>搜寻路线后按 ☆ 收藏到首页</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <button id="exportQuote0Btn" style="background:#555;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" onclick="exportFavoritesForQuote0()" title="汇出收藏路线为 JSON，用于 Quote/0 推送脚本">⬇ 汇出收藏</button>
+    </div>
+    <div class="loading" id="favLoading"><div class="spinner"></div>载入实时数据中...</div>
+  `;
+
+  /* Fetch ETA for all favorites */
+  loadFavoritesETA(favs, container);
+}
+
+/** Load live ETA data for all favorites */
+async function loadFavoritesETA(favs, container) {
+  const promises = favs.map(async (fav, index) => {
+    let etas = [];
+    if (fav.type === 'bus') {
+      if (fav.company === 'kmb') {
+        const allEta = await getKMBETA(fav.stop_id);
+        etas = allEta.filter(e => e.route === fav.route).slice(0, 3);
+      } else { /* ctb */
+        etas = await getCTBETA(fav.stop_id, fav.route);
+        etas = etas.slice(0, 3);
+      }
+    } else if (fav.type === 'mtrbus') {
+      const etaData = await getMTRBusETA(fav.route);
+      if (etaData) {
+        etas = parseMTRBusETAData(etaData).slice(0, 8);
+      }
+    } else { /* mtr */
+      const schedule = await getMTRSchedule(fav.line, fav.station_id);
+      if (schedule) {
+        const keys = Object.keys(schedule).slice(0, 4);
+        for (const key of keys) {
+          const data = schedule[key];
+          if (data && data.time) {
+            const etaTs = new Date(data.time).getTime() / 1000;
+            const dirLabel = key.startsWith('UP') ? '上行' : '下行';
+            etas.push({ time: data.time, etaTs, dirLabel });
+          }
+        }
+      }
+    }
+    return { ...fav, index, etas };
+  });
+
+  const results = await Promise.all(promises);
+  renderFavoritesCards(results, container);
+  setStatus('ok');
+}
+
+/** Render favorite cards */
+function renderFavoritesCards(items, container) {
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty-hint">暂无收藏路线</div>';
+    return;
+  }
+
+  let html = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <button id="exportQuote0Btn2" style="background:#555;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" onclick="exportFavoritesForQuote0()" title="汇出收藏路线为 JSON，用于 Quote/0 推送脚本">⬇ 汇出收藏</button>
+    </div>
+    <div class="card-grid">
+  `;
+  for (const item of items) {
+    if (item.type === 'bus') {
+      const companyClass = item.company === 'kmb' ? 'badge-kmb' : 'badge-ctb';
+      const companyName = item.company === 'kmb' ? '九巴' : '城巴';
+      html += '<div class="transport-card">';
+      html += '<div class="card-header">';
+      html += `<span class="route-badge ${companyClass}"><span class="company-label">${companyName}</span> ${escapeHtml(item.route)}</span>`;
+      html += `<button class="fav-remove-btn" onclick="removeFavorite(${item.index})">移除</button>`;
+      html += '</div>';
+
+      if (item.stop_name) {
+        html += `<div class="card-stop">📍 ${escapeHtml(item.stop_name)}</div>`;
+      }
+      if (item.destination) {
+        html += `<div class="card-dest">➡️ 往 ${escapeHtml(item.destination)}</div>`;
+      }
+
+      html += '<ul class="eta-list">';
+      if (item.etas && item.etas.length > 0) {
+        for (const eta of item.etas) {
+          let etaTs;
+          if (item.company === 'kmb') {
+            etaTs = eta.eta ? new Date(eta.eta).getTime() / 1000 : null;
+          } else {
+            etaTs = eta.eta ? new Date(eta.eta).getTime() / 1000 : null;
+          }
+          if (etaTs) {
+            const mins = minsFromNow(etaTs);
+            const colorClass = etaColorClass(etaTs);
+            html += `<li class="eta-item"><span>🚌 ${formatTime(etaTs)}</span><span class="eta-time ${colorClass}">${mins}</span></li>`;
+          } else if (eta.rmk_tc || eta.rmk_en) {
+            html += `<li class="eta-item"><span>🚌 --:--:--</span><span class="eta-detail">${escapeHtml(eta.rmk_tc || eta.rmk_en)}</span></li>`;
+          }
+        }
+      } else {
+        html += '<li class="eta-item"><span class="eta-detail">暂无到站资讯</span></li>';
+      }
+      html += '</ul></div>';
+    } else if (item.type === 'mtrbus') {
+      html += '<div class="transport-card">';
+      html += '<div class="card-header">';
+      html += `<span class="route-badge badge-mtrbus"><span class="company-label">港铁巴士</span> ${escapeHtml(item.route)}</span>`;
+      html += `<button class="fav-remove-btn" onclick="removeFavorite(${item.index})">移除</button>`;
+      html += '</div>';
+      if (item.orig && item.dest) {
+        html += `<div class="card-dest">🚏 ${escapeHtml(item.orig)} → ${escapeHtml(item.dest)}</div>`;
+      }
+
+      html += '<ul class="eta-list">';
+      if (item.etas && item.etas.length > 0) {
+        for (const eta of item.etas) {
+          const etaTs = eta.eta ? new Date(eta.eta).getTime() / 1000 : null;
+          if (etaTs) {
+            const mins = minsFromNow(etaTs);
+            const colorClass = etaColorClass(etaTs);
+            const stopLabel = eta.stop_name ? ` (${escapeHtml(eta.stop_name)})` : '';
+            html += `<li class="eta-item"><span>🚌 ${formatTime(etaTs)}${stopLabel}</span><span class="eta-time ${colorClass}">${mins}</span></li>`;
+          }
+        }
+      } else {
+        html += '<li class="eta-item"><span class="eta-detail">暂无到站资讯</span></li>';
+      }
+      html += '</ul></div>';
+    } else { /* mtr */
+      html += '<div class="transport-card">';
+      html += '<div class="card-header">';
+      html += `<span class="route-badge badge-mtr"><span class="company-label">港铁</span> ${escapeHtml(item.lineName || MTR_LINES[item.line] || item.line)}</span>`;
+      html += `<button class="fav-remove-btn" onclick="removeFavorite(${item.index})">移除</button>`;
+      html += '</div>';
+      html += `<div class="card-dest">🚉 ${escapeHtml(item.station_name)}（${escapeHtml(item.station_id)}）</div>`;
+
+      html += '<ul class="eta-list">';
+      if (item.etas && item.etas.length > 0) {
+        for (const eta of item.etas) {
+          const mins = minsFromNow(eta.etaTs);
+          const colorClass = etaColorClass(eta.etaTs);
+          html += `<li class="eta-item"><span>🚇 ${eta.dirLabel} ${formatTime(eta.etaTs)}</span><span class="eta-time ${colorClass}">${mins}</span></li>`;
+        }
+      } else {
+        html += '<li class="eta-item"><span class="eta-detail">暂无到站资讯</span></li>';
+      }
+      html += '</ul></div>';
+    }
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+/* ==========================================================================
+   Favorite Toggle (from search results)
+   ========================================================================== */
+
+function toggleFav(btn, itemJson) {
+  const item = JSON.parse(itemJson);
+  toggleFavByItem(item, btn);
+}
+
+function toggleFavByItem(item, btn) {
+  if (isFavorited(item)) {
+    /* Remove from favorites */
+    const favs = getFavorites();
+    let idx = -1;
+    if (item.type === 'mtr') {
+      idx = favs.findIndex(f => f.type === 'mtr' && f.line === item.line && f.station_id === item.station_id);
+    } else if (item.type === 'mtrbus') {
+      idx = favs.findIndex(f => f.type === 'mtrbus' && f.route === item.route && f.stop_id === item.stop_id);
+    } else {
+      idx = favs.findIndex(f => f.type === 'bus' && f.company === item.company && f.route === item.route && f.stop_id === item.stop_id);
+    }
+    if (idx >= 0) {
+      favs.splice(idx, 1);
+      saveFavorites(favs);
+    }
+    btn.classList.remove('favorited');
+    btn.textContent = '☆';
+  } else {
+    /* Build a clean favorite item */
+    const fav = { type: item.type };
+    if (item.type === 'bus') {
+      fav.company = item.company;
+      fav.route = item.route;
+      fav.stop_id = item.stop_id || '';
+      fav.stop_name = item.stop_name || '';
+      fav.destination = item.origDest || '';
+      fav.direction = item.direction || (item.company === 'kmb' ? 'outbound' : 'outbound');
+    } else if (item.type === 'mtrbus') {
+      fav.route = item.route;
+      fav.orig = item.orig;
+      fav.dest = item.dest;
+      fav.stop_id = item.stop_id || '';
+    } else {
+      fav.line = item.line;
+      fav.lineName = item.lineName || (MTR_LINES[item.line] || item.line);
+      fav.station_id = item.station_id;
+      fav.station_name = item.station_name;
+    }
+    addFavorite(fav);
+    btn.classList.add('favorited');
+    btn.textContent = '★';
+  }
+  renderFavorites();
+}
+
+/** Export favorites as JSON file for Quote/0 push script */
+function exportFavoritesForQuote0() {
+  const favs = getFavorites();
+  if (favs.length === 0) {
+    alert('暂无收藏路线');
+    return;
+  }
+  const exportData = favs.map(f => {
+    const clean = { ...f };
+    delete clean.index;
+    delete clean.etas;
+    return clean;
+  });
+  const jsonStr = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'hk-favorites.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ==========================================================================
+   Weather (HKO)
+   ========================================================================== */
+
+/** Fetch & render HKO real-time weather */
+async function refreshWeather() {
+  const container = document.getElementById('weatherContainer');
+  const badge = document.getElementById('weatherUpdate');
+  try {
+    const resp = await fetch(WEATHER_API, { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    /* Temperature: prefer 元朗公園 station */
+    const temps = (data.temperature && data.temperature.data) || [];
+    const hkoTemp = temps.find(t => t.place === '元朗公園') || temps.find(t => t.place === '香港天文台') || temps[0];
+    /* Humidity */
+    const hum = (data.humidity && data.humidity.data && data.humidity.data[0]) || null;
+    /* Rainfall: prefer 元朗 district */
+    const rains = (data.rainfall && data.rainfall.data) || [];
+    const rain = rains.find(r => r.place === '元朗') || rains.find(r => r.main === 'TRUE') || rains[0] || null;
+    /* Icon */
+    const icon = Array.isArray(data.icon) ? data.icon[0] : data.icon;
+    const desc = HKO_ICONS[icon] || '未知';
+    const emoji = HKO_ICON_EMOJI[icon] || '🌤️';
+
+    let html = `<div class="weather-desc">${emoji} ${desc}</div><div class="weather-grid">`;
+    if (hkoTemp) {
+      html += `<div class="weather-item"><div class="w-label">温度</div><div class="w-value">${hkoTemp.value}°C</div><div class="w-sub">${hkoTemp.place}</div></div>`;
+    }
+    if (hum) {
+      html += `<div class="weather-item"><div class="w-label">湿度</div><div class="w-value">${hum.value}%</div><div class="w-sub">${hum.place}</div></div>`;
+    }
+    if (rain) {
+      html += `<div class="weather-item"><div class="w-label">雨量</div><div class="w-value">${rain.max}mm</div><div class="w-sub">${rain.place}</div></div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+    badge.textContent = data.updateTime ? data.updateTime.slice(11, 16) : '';
+  } catch (err) {
+    container.innerHTML = '<div class="error-msg">天气载入失败：' + (err.message || '网络错误') + '</div>';
+    badge.textContent = '';
+  }
+}
+
+/* ==========================================================================
+   Sushiro Queue (via corsproxy.io)
+   ========================================================================== */
+
+/** Fetch & render Sushiro store queue status */
+async function refreshSushiro() {
+  const container = document.getElementById('sushiroContainer');
+  const badge = document.getElementById('sushiroUpdate');
+  try {
+    const resp = await fetch(SUSHIRO_PROXY(SUSHIRO_STORE_API), { signal: AbortSignal.timeout(20000) });
+    if (!resp.ok) {
+      if (resp.status === 403) {
+        container.innerHTML = '<div class="error-msg">寿司郎资料需从 http://localhost 打开网页才能载入（corsproxy.io 限制）。请用「启动网页.bat」或 python -m http.server 开启本地服务。</div>';
+        badge.textContent = '';
+        return;
+      }
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    const stores = await resp.json();
+    if (!Array.isArray(stores) || stores.length === 0) {
+      container.innerHTML = '<div class="empty-hint">暂时没有分店资料</div>';
+      badge.textContent = '';
+      return;
+    }
+
+    /* Sort: open stores first, then by wait time */
+    const sorted = [...stores].sort((a, b) => {
+      const aOpen = a.storeStatus === 'OPEN' ? 0 : 1;
+      const bOpen = b.storeStatus === 'OPEN' ? 0 : 1;
+      if (aOpen !== bOpen) return aOpen - bOpen;
+      return (a.wait || 0) - (b.wait || 0);
+    });
+
+    let html = '<div class="sushiro-grid">';
+    for (const s of sorted) {
+      const open = s.storeStatus === 'OPEN';
+      const wait = s.wait || 0;
+      const groups = s.waitingGroup || 0;
+      const closed = !open || s.netTicketStatus === 'OFFLINE_CLOSING' || s.netTicketStatus === 'CLOSED';
+      let waitClass = '';
+      let waitText;
+      if (closed) {
+        waitText = '已停飞';
+        waitClass = 'soon';
+      } else if (wait <= 0) {
+        waitText = '直入';
+      } else if (wait < 30) {
+        waitText = `${wait}分钟`;
+        waitClass = 'medium';
+      } else {
+        waitText = `${wait}分钟`;
+      }
+      html += `<div class="sushiro-card${closed ? ' closed' : ''}">
+        <div class="s-name">${s.name || ('分店' + s.id)}</div>
+        <div class="s-wait ${waitClass}">${waitText}</div>
+        <div class="s-status">${closed ? '未营业/停止派飞' : (groups > 0 ? `等候 ${groups} 组` : '无需等候')} · ${s.area || ''}</div>
+      </div>`;
+    }
+    html += '</div>';
+    html += '<div class="sushiro-note">数据来源：寿司郎官方 sushipass API（经 corsproxy.io 代理）· 每 15 秒自动更新</div>';
+    container.innerHTML = html;
+    badge.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
+  } catch (err) {
+    container.innerHTML = '<div class="error-msg">寿司郎排队资料载入失败：' + (err.message || '网络错误') + '</div>';
+    badge.textContent = '';
+  }
+}
+
+/* ==========================================================================
+   Refresh & Auto-Refresh
+   ========================================================================== */
+
+/** Refresh all favorites ETA */
+async function refreshAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = '更新中...';
+  setStatus('loading', '更新中');
+
+  const favs = getFavorites();
+  if (favs.length > 0) {
+    const container = document.getElementById('favoritesContainer');
+    container.innerHTML = '<div class="loading"><div class="spinner"></div>更新中...</div>';
+    await loadFavoritesETA(favs, container);
+  } else {
+    renderFavorites();
+  }
+
+  /* Weather & Sushiro refresh in parallel (non-blocking) */
+  refreshWeather();
+  refreshSushiro();
+
+  btn.disabled = false;
+  btn.textContent = '手动刷新';
+  setStatus('ok');
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(refreshAll, 15000);
+}
+
+/* ==========================================================================
+   Event Listeners & Init
+   ========================================================================== */
+
+document.addEventListener('DOMContentLoaded', () => {
+  /* Transport type toggle */
+  document.getElementById('transportToggle').addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') {
+      document.querySelectorAll('#transportToggle button').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentTransport = e.target.dataset.type;
+      /* Update placeholder */
+      const input = document.getElementById('searchInput');
+      if (currentTransport === 'bus') {
+        input.placeholder = '输入巴士路线编号（如 1A、10）...';
+      } else if (currentTransport === 'mtrbus') {
+        input.placeholder = '输入港铁巴士路线编号（如 K51、K65）...';
+      } else {
+        input.placeholder = '输入港铁车站名称（如 中环、旺角）...';
+      }
+      /* Clear results */
+      document.getElementById('resultsContainer').innerHTML = '<div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>';
+    }
+  });
+
+  /* Initial render */
+  renderFavorites();
+  startAutoRefresh();
+
+  /* Initial weather & sushiro load */
+  refreshWeather();
+  refreshSushiro();
+
+  /* Initial status */
+  setStatus('ok');
+
+  /* Global event delegation for favorite buttons */
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.fav-btn');
+    if (!btn) return;
+    e.preventDefault();
+    const itemJson = btn.getAttribute('data-fav-item');
+    if (!itemJson) return;
+    try {
+      const item = JSON.parse(itemJson);
+      toggleFavByItem(item, btn);
+    } catch (err) {
+      console.error('Favorite parse error:', err);
+    }
+  });
+});
+
+/* Cleanup on page unload */
+window.addEventListener('beforeunload', () => {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+});
+</script>
+<script>
+/* PWA: register service worker for offline & installability */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').catch(function (err) {
+      console.warn('Service Worker 注册失败:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
