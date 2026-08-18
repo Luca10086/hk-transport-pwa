@@ -1307,6 +1307,25 @@ async function getKMBETA(stopId) {
   } catch { return []; }
 }
 
+/* 全港巴士站表缓存：stop_id -> 中文站名（KMB/CTB 共用全港统一站码） */
+let _stopNameMapCache = null;
+async function getStopNameMap() {
+  if (_stopNameMapCache) return _stopNameMapCache;
+  try {
+    const data = await fetchWithProxy(`${KMB_BASE}/stop`);
+    const map = {};
+    if (data && Array.isArray(data.data)) {
+      for (const s of data.data) {
+        if (s && s.stop) map[String(s.stop)] = s.name_tc || s.name_en || String(s.stop);
+      }
+    }
+    _stopNameMapCache = map;
+  } catch {
+    _stopNameMapCache = {};
+  }
+  return _stopNameMapCache;
+}
+
 /* ==========================================================================
    CTB API Calls
    ========================================================================== */
@@ -2350,12 +2369,13 @@ async function renderDetailContent(item, inner) {
         /* CTB：按方向取站，逐站取 ETA */
         const dir = item.direction || 'outbound';
         const stops = await getCTBRouteStops(item.route, dir);
+        const nameMap = await getStopNameMap();
         const rows = [];
         for (const s of stops) {
           const sid = s.stop || s.stop_id;
           const etas = await getCTBETA(sid, item.route);
           const times = etas.slice(0, 2).map(e => e.eta ? new Date(e.eta).getTime() / 1000 : null).filter(Boolean);
-          rows.push({ name: sid, times });
+          rows.push({ name: nameMap[sid] || ('站 ' + sid), times });
         }
         listHtml = rows.map(r => {
           const cells = r.times.length ? r.times.map(em).join('') : '<span class="ds-none">—</span>';
