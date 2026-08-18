@@ -353,6 +353,51 @@ body {
 .dot-red { background: #e53935; }
 .dot-yellow { background: #ff9800; }
 
+/* ===== Bottom Navigation（AC：木牌风格） ===== */
+body { padding-bottom: 86px; }
+.bottom-nav {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: stretch;
+  background: var(--card-bg);
+  border-top: 3px solid var(--card-border);
+  box-shadow: 0 -4px 14px rgba(0,0,0,0.12);
+  z-index: 200;
+  padding: 4px 8px calc(6px + env(safe-area-inset-bottom));
+}
+.bn-item {
+  flex: 1; border: none; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 4px 5px;
+  font-family: inherit;
+  color: var(--text); opacity: 0.65;
+  font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px;
+  border-radius: 14px; transition: opacity .2s ease, color .2s ease;
+  position: relative;
+}
+.bn-item svg { width: 24px; height: 24px; fill: currentColor; }
+.bn-item:hover { opacity: 0.9; }
+.bn-item.active { color: var(--primary); opacity: 1; }
+.bn-item.active::before {
+  content: ''; position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+  width: 58px; height: 30px; border-radius: 15px; background: var(--primary-light);
+  opacity: 0.45; z-index: -1;
+}
+
+/* ===== FAB（AC：糖果风格） ===== */
+.fab-main {
+  position: fixed; right: 18px; bottom: 104px;
+  width: 56px; height: 56px; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer;
+  background: linear-gradient(180deg, #ffd166, var(--primary));
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  z-index: 190; transition: transform .15s ease;
+}
+.fab-main svg { width: 26px; height: 26px; fill: currentColor; }
+.fab-main:hover { transform: translateY(-2px); }
+.fab-main:active { transform: translateY(0) scale(0.96); }
+
 /* ===== Loading & Errors ===== */
 .loading { text-align: center; padding: 30px; color: #a08d6f; font-family: 'ZCOOL KuaiLe', 'Nunito', sans-serif; }
 .loading .spinner {
@@ -684,6 +729,45 @@ body[data-skin="md"] .eta-item { font-size: 0.875rem; }
 /* 收藏/刷新按钮：概念图 icon/text button 状态层 */
 body[data-skin="md"] .navbar .skin-btn, body[data-skin="md"] .navbar .refresh-btn { letter-spacing: 0.4px; }
 
+/* ===== M3 底部导航栏（Navigation Bar）：surface + secondary-container 指示药丸 ===== */
+body[data-skin="md"] { padding-bottom: 96px; }
+body[data-skin="md"] .bottom-nav {
+  background: var(--md-surface);
+  border-top: 1px solid var(--md-outline-variant);
+  box-shadow: var(--md-elev-2);
+  height: 80px; align-items: center;
+  padding: 0 12px calc(8px + env(safe-area-inset-bottom));
+}
+body[data-skin="md"] .bn-item {
+  height: 64px; justify-content: center;
+  gap: 2px; padding: 6px 4px 4px;
+  font-size: 0.72rem; font-weight: 500; letter-spacing: 0.3px;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  color: var(--md-on-surface-variant); opacity: 1;
+  border-radius: var(--md-corner-m);
+  transition: color .2s var(--md-motion-ease);
+}
+body[data-skin="md"] .bn-item svg { width: 22px; height: 22px; }
+body[data-skin="md"] .bn-item.active { color: var(--md-on-surface); }
+body[data-skin="md"] .bn-item.active::before {
+  top: 8px; width: 64px; height: 32px; border-radius: var(--md-corner-full);
+  background: var(--md-secondary-container); opacity: 1;
+  box-shadow: var(--md-elev-1);
+}
+
+/* ===== M3 FAB（大号 FAB：primary-container） ===== */
+body[data-skin="md"] .fab-main {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border-radius: var(--md-corner-l);
+  box-shadow: var(--md-elev-3);
+}
+body[data-skin="md"] .fab-main:hover {
+  transform: translateY(-2px);
+  background: var(--md-primary-container);
+  box-shadow: var(--md-elev-3);
+}
+
 /* ===== 折叠屏 / 宽屏优化 (Foldable & Large Screens) ===== */
 @media (min-width: 700px) {
   .container { padding: 28px 24px 44px; }
@@ -730,7 +814,7 @@ body[data-skin="md"] .navbar .skin-btn, body[data-skin="md"] .navbar .refresh-bt
 <div class="container">
 
   <!-- ===== Search Section ===== -->
-  <section class="search-section">
+  <section class="search-section" data-page="home">
     <div class="search-row">
       <input type="text" class="search-input" id="searchInput"
              placeholder="输入巴士路线编号（如 1A）或港铁车站名称（如 中环）..."
@@ -745,7 +829,7 @@ body[data-skin="md"] .navbar .skin-btn, body[data-skin="md"] .navbar .refresh-bt
   </section>
 
   <!-- ===== Search Results ===== -->
-  <section class="results-section">
+  <section class="results-section" data-page="home">
     <div class="section-title"><span class="ac-emoji">🍀</span> 搜寻结果</div>
     <div id="resultsContainer">
       <div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>
@@ -753,7 +837,7 @@ body[data-skin="md"] .navbar .skin-btn, body[data-skin="md"] .navbar .refresh-bt
   </section>
 
   <!-- ===== K75P Full-Route Live Board ===== -->
-  <section class="info-section">
+  <section class="info-section" data-page="home">
     <div class="section-title">
       <span class="ac-emoji">🚌</span> K75P 全线实时
       <span class="badge" id="k75pUpdate"></span>
@@ -764,7 +848,7 @@ body[data-skin="md"] .navbar .skin-btn, body[data-skin="md"] .navbar .refresh-bt
   </section>
 
   <!-- ===== Favorites ===== -->
-  <section class="favorites-section">
+  <section class="favorites-section" data-page="favs">
     <div class="section-title">
       <span class="ac-emoji">⭐</span> 我的收藏
       <span class="badge" id="favCount"></span>
@@ -775,7 +859,7 @@ body[data-skin="md"] .navbar .skin-btn, body[data-skin="md"] .navbar .refresh-bt
   </section>
 
   <!-- ===== Weather ===== -->
-  <section class="info-section">
+  <section class="info-section" data-page="home">
     <div class="section-title">
       <span>🌤️</span> 香港天气
       <span class="badge" id="weatherUpdate"></span>
@@ -786,7 +870,7 @@ body[data-skin="md"] .navbar .skin-btn, body[data-skin="md"] .navbar .refresh-bt
   </section>
 
   <!-- ===== Sushiro Queue ===== -->
-  <section class="info-section">
+  <section class="info-section" data-page="sushi">
     <div class="section-title">
       <span class="ac-emoji">🍣</span> 寿司郎排队
       <span class="badge" id="sushiroUpdate"></span>
@@ -806,6 +890,27 @@ body[data-skin="md"] .navbar .skin-btn, body[data-skin="md"] .navbar .refresh-bt
     </div>
   </div>
 </div>
+
+<!-- ===== FAB（收藏当前路线，仅首页显示） ===== -->
+<button class="fab-main" id="fabMain" onclick="fabAction()" aria-label="收藏当前路线" title="收藏当前路线">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+</button>
+
+<!-- ===== Bottom Navigation（搜寻 / 收藏 / 寿司郎） ===== -->
+<nav class="bottom-nav" id="bottomNav" aria-label="主要导航">
+  <button class="bn-item active" data-page="home" onclick="switchPage('home')" aria-label="搜寻">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <span>搜寻</span>
+  </button>
+  <button class="bn-item" data-page="favs" onclick="switchPage('favs')" aria-label="收藏">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    <span>收藏</span>
+  </button>
+  <button class="bn-item" data-page="sushi" onclick="switchPage('sushi')" aria-label="寿司郎">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.05 17.56l-17.97.94L3 17l17.98-.94.07 1.5zM21 19.49H3v1.5h18v-1.5zM22 5v7c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-2 1c-1.68 0-3.04.98-3.21 2.23-.64-.73-2.73-2.73-6.54-2.73-4.67 0-6.75 3-6.75 3s2.08 3 6.75 3c3.81 0 5.9-2 6.54-2.73C16.96 10.02 18.32 11 20 11V6z"/></svg>
+    <span>寿司郎</span>
+  </button>
+</nav>
 
 <script>
 /* ==========================================================================
@@ -2050,11 +2155,47 @@ function toggleSkin() {
   try { localStorage.setItem(SKIN_KEY, next); } catch (e) {}
 }
 
+/* ==========================================================================
+   Bottom Navigation（搜寻 / 收藏 / 寿司郎）& FAB
+   ========================================================================== */
+const PAGE_KEY = 'marvis_page';
+function switchPage(page) {
+  document.querySelectorAll('section[data-page]').forEach(el => {
+    el.style.display = (el.getAttribute('data-page') === page) ? '' : 'none';
+  });
+  document.querySelectorAll('.bn-item').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-page') === page);
+  });
+  const fab = document.getElementById('fabMain');
+  if (fab) fab.style.display = (page === 'home') ? 'flex' : 'none';
+  document.body.dataset.page = page;
+  try { localStorage.setItem(PAGE_KEY, page); } catch (e) {}
+  if (page === 'favs') renderFavorites();   /* 进入收藏页时同步最新收藏 */
+  window.scrollTo({ top: 0 });
+}
+
+/** FAB：收藏当前第一条搜索结果路线；无结果时跳转收藏页 */
+function fabAction() {
+  const card = document.querySelector('.results-section .transport-card');
+  const btn = card ? card.querySelector('.fav-btn[data-fav-item]') : null;
+  if (!btn) { switchPage('favs'); return; }
+  try {
+    const item = JSON.parse(btn.getAttribute('data-fav-item'));
+    toggleFavByItem(item, btn);
+    renderFavorites();
+  } catch (err) { switchPage('favs'); }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   /* Apply saved skin */
   let savedSkin = 'ac';
   try { savedSkin = localStorage.getItem(SKIN_KEY) || 'ac'; } catch (e) {}
   applySkin(savedSkin);
+
+  /* Apply saved page (bottom nav) */
+  let savedPage = 'home';
+  try { savedPage = localStorage.getItem(PAGE_KEY) || 'home'; } catch (e) {}
+  switchPage(savedPage);
 
   /* Transport type toggle */
   document.getElementById('transportToggle').addEventListener('click', (e) => {

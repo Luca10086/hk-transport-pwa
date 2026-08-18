@@ -1,5 +1,5 @@
 /* 森友出行手册 - Service Worker */
-const CACHE_NAME = 'senyou-transport-v6';
+const CACHE_NAME = 'senyou-transport-v7';
 const CORE_ASSETS = [
   './',
   './index.html',
