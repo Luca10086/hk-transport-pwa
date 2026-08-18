@@ -512,17 +512,24 @@ body[data-skin="md"] .navbar h1 {
   font-weight: 400; letter-spacing: 0; text-shadow: none;
   font-size: var(--md-type-title-large);
 }
-body[data-skin="md"] .navbar .refresh-btn,
-body[data-skin="md"] .navbar .skin-btn {
+body[data-skin="md"] .navbar .refresh-btn {
   font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
   background: transparent; color: var(--md-primary); border: none;
   border-radius: 20px; box-shadow: none; font-weight: 500;
   padding: 8px 16px;
 }
+body[data-skin="md"] .navbar .skin-btn {
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  background: transparent; color: var(--md-primary); border: none;
+  border-radius: 50%; box-shadow: none; font-weight: 500;
+  width: 40px; height: 40px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
 body[data-skin="md"] .navbar .refresh-btn:hover,
 body[data-skin="md"] .navbar .skin-btn:hover { background: rgba(103,80,164,0.08); }
 body[data-skin="md"] .navbar .refresh-btn:active,
 body[data-skin="md"] .navbar .skin-btn:active { background: rgba(103,80,164,0.12); }
+body[data-skin="md"] .navbar .skin-btn svg { fill: var(--md-primary); }
 
 /* M3 区块卡片：outlined/elevated card（M3 Card = corner-large 16dp, elevation 1） */
 body[data-skin="md"] .search-section,
@@ -805,7 +812,7 @@ body[data-skin="md"] .fab-main:hover {
 .route-card .rc-stop { min-width: 0; font-size: 0.8rem; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .route-card .rc-more { min-width: 0; font-size: 0.7rem; color: #a08d6f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .route-card .fav-btn { position: static; flex: none; align-self: center; }
-.route-card .fav-remove-btn { position: absolute; top: 12px; right: 14px; }
+.route-card .fav-remove-btn { position: static; flex: none; margin-left: auto; align-self: center; }
 .route-card .rc-progress { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
 .route-card .rc-bar { flex: 1; height: 4px; border-radius: 999px; background: rgba(95,174,130,0.2); overflow: hidden; }
 .route-card .rc-bar i { display: block; height: 100%; border-radius: 999px; background: var(--primary); opacity: 0.7; }
@@ -823,7 +830,7 @@ body[data-skin="md"] .fab-main:hover {
   padding: 6px 18px calc(20px + env(safe-area-inset-bottom));
 }
 .detail-sheet.show { transform: translateY(0); }
-.detail-sheet .ds-head { position: sticky; top: 0; background: inherit; padding: 10px 36px 12px 2px; z-index: 1; }
+.detail-sheet .ds-head { position: sticky; top: 0; background: var(--card-bg); padding: 10px 36px 12px 2px; z-index: 2; border-bottom: 1px solid rgba(160,141,111,0.28); margin-bottom: 6px; }
 .detail-sheet .ds-close { position: absolute; top: 10px; right: 2px; background: transparent; border: none; font-size: 1.5rem; color: var(--text-dark); cursor: pointer; padding: 6px; line-height: 1; }
 .detail-sheet .ds-no { font-size: 1.6rem; font-weight: 800; color: var(--primary-dark); font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; }
 .detail-sheet .ds-name { font-size: 0.85rem; color: #6b5b45; margin-top: 2px; }
@@ -857,6 +864,7 @@ body[data-skin="md"] .route-card .rc-bar { background: var(--md-surface-variant)
 body[data-skin="md"] .route-card .rc-bar i { background: var(--md-primary); }
 body[data-skin="md"] .route-card .rc-pcnt { color: var(--md-on-surface-variant); }
 body[data-skin="md"] .detail-sheet { background: var(--md-surface); color: var(--md-on-surface); border-radius: 28px 28px 0 0; box-shadow: var(--md-elev-3); }
+body[data-skin="md"] .detail-sheet .ds-head { background: var(--md-surface); border-bottom-color: var(--md-outline-variant); }
 body[data-skin="md"] .detail-sheet .ds-no { color: var(--md-primary); font-family: 'Roboto', 'Nunito', sans-serif; }
 body[data-skin="md"] .detail-sheet .ds-name, body[data-skin="md"] .detail-sheet .ds-meta,
 body[data-skin="md"] .detail-sheet .ds-refresh, body[data-skin="md"] .detail-sheet .ds-close,
@@ -871,6 +879,7 @@ body[data-skin="md"] .detail-mask { background: rgba(29,27,32,0.4); }
 .detail-sheet .ds-colhead .ds-sn { flex: 0 0 38%; }
 .detail-sheet .ds-colhead .ds-col { flex: 1; }
 .detail-sheet .ds-stop.ds-tri .ds-sn { flex: 0 0 38%; }
+.detail-sheet .ds-stop.ds-tri .ds-e { flex: 1; justify-content: flex-start; }
 .detail-sheet .ds-stop .ds-none { font-size: 0.8rem; color: #a08d6f; }
 .detail-sheet .ds-stop .ds-em.scheduled { color: #6d4c41; font-size: 0.95rem; }
 body[data-skin="md"] .detail-sheet .ds-colhead,
@@ -916,6 +925,7 @@ body.sheet-open { overflow: hidden; }
         <button class="active" data-type="bus">九巴/城巴</button>
         <button data-type="mtrbus">港铁巴士</button>
         <button data-type="mtr">港铁</button>
+        <button data-type="lrt">轻铁</button>
       </div>
       <button class="search-btn" onclick="doSearch()" id="searchBtn">搜寻</button>
     </div>
@@ -1251,6 +1261,9 @@ function isFavorited(item) {
   if (item.type === 'mtrbus') {
     return favs.some(f => f.type === 'mtrbus' && f.route === item.route && f.stop_id === item.stop_id);
   }
+  if (item.type === 'lrt') {
+    return favs.some(f => f.type === 'lrt' && f.route === item.route);
+  }
   return favs.some(f => f.type === 'bus' && f.company === item.company && f.route === item.route && f.stop_id === item.stop_id);
 }
 
@@ -1344,6 +1357,124 @@ async function getCTBETA(stopId, route) {
 }
 
 /* ==========================================================================
+   NLB (新大屿山巴士) API Calls
+   ========================================================================== */
+
+const NLB_BASE = 'https://rt.data.gov.hk/v2/transport/nlb';
+const _nlbStopCache = {};
+
+/** Search NLB routes by route number */
+async function searchNLBRoute(routeNum) {
+  try {
+    const data = await fetchWithProxy(`${NLB_BASE}/route.php?action=list`);
+    const list = (data && data.routes) || [];
+    const upper = String(routeNum).toUpperCase();
+    return list.filter(r => String(r.routeNo || '').toUpperCase() === upper);
+  } catch { return []; }
+}
+
+/** Get stops of an NLB route (cached) */
+async function getNLBRouteStops(routeId) {
+  if (_nlbStopCache[routeId]) return _nlbStopCache[routeId];
+  try {
+    const data = await fetchWithProxy(`${NLB_BASE}/stop.php?action=list&routeId=${encodeURIComponent(routeId)}`);
+    const list = (data && data.stops) || [];
+    _nlbStopCache[routeId] = list;
+    return list;
+  } catch { return []; }
+}
+
+/** Get NLB ETA for a route + stop */
+async function getNLBETA(routeId, stopId) {
+  try {
+    const data = await fetchWithProxy(
+      `${NLB_BASE}/stop.php?action=estimatedArrivals&routeId=${encodeURIComponent(routeId)}&stopId=${encodeURIComponent(stopId)}&language=zh`
+    );
+    const list = (data && data.estimatedArrivals) || [];
+    return list.map(e => {
+      const eta = e && e.estimatedArrivalTime ? new Date(e.estimatedArrivalTime.replace(' ', 'T')) : null;
+      return {
+        etaTs: eta && !isNaN(eta.getTime()) ? eta.getTime() / 1000 : null,
+        eta: e && e.estimatedArrivalTime ? e.estimatedArrivalTime : null,
+        departed: e ? !!e.departed : false
+      };
+    }).filter(e => e.etaTs);
+  } catch { return []; }
+}
+
+/* ==========================================================================
+   Light Rail (轻铁) API Calls
+   ========================================================================== */
+
+const LRT_BASE = 'https://rt.data.gov.hk/v1/transport/mtr/lrt';
+/* Station ID → 中文名（来自港铁轻铁数据字典 v1.2，2026-07-05 更新） */
+const LRT_STATIONS = {
+  1:'屯門碼頭',10:'美樂',15:'蝴蝶',20:'輕鐵車廠',30:'龍門',40:'青山村',50:'青雲',60:'建安',
+  70:'河田',75:'蔡意橋',80:'澤豐',90:'屯門醫院',100:'兆康',110:'麒麟',120:'青松',130:'建生',
+  140:'田景',150:'良景',160:'新圍',170:'石排',180:'山景(北)',190:'山景(南)',200:'鳴琴',
+  212:'大興(北)',220:'大興(南)',230:'銀圍',240:'兆禧',250:'海皇路',260:'豐景園',265:'兆麟',
+  270:'安定',275:'友愛',280:'市中心',295:'屯門',300:'杯渡',310:'何福堂',320:'新墟',330:'景峰',
+  340:'鳳地',350:'藍地',360:'泥圍',370:'鍾屋村',380:'洪水橋',390:'塘坊村',400:'屏山',425:'坑尾村',
+  430:'天水圍',435:'天慈',445:'天耀',448:'樂湖',450:'天湖',455:'銀座',460:'天瑞',468:'頌富',
+  480:'天富',490:'翠湖',500:'天榮',510:'天悅',520:'天秀',530:'濕地公園',540:'天恒',550:'天逸',
+  560:'水邊圍',570:'豐年路',580:'康樂路',590:'大棠路',600:'元朗',920:'三聖'
+};
+
+/** 获取某轻铁站的实时到站（各平台 / 各路线） */
+async function getLRTEta(stationId) {
+  const url = `${LRT_BASE}/getSchedule?station_id=${encodeURIComponent(stationId)}&with_special=1`;
+  try {
+    const data = await fetchWithProxy(url);
+    const platforms = (data && data.platform_list) || [];
+    const entries = [];
+    for (const p of platforms) {
+      for (const r of (p.route_list || [])) {
+        const routeNo = (r.special === 1 && r.additionalInfo1) ? r.additionalInfo1 : (r.route_no || '');
+        let mins = 0;
+        const tc = String(r.time_ch || '').trim();
+        const m = tc.match(/(\d+)\s*分鐘/);
+        if (m) mins = parseInt(m[1], 10);
+        else if (tc.includes('即將抵達') || tc.includes('正在離開') || tc === '-') mins = 0;
+        else {
+          const me = String(r.time_en || '').match(/(\d+)\s*mins?/);
+          if (me) mins = parseInt(me[1], 10);
+        }
+        entries.push({
+          platformId: p.platform_id, routeNo: routeNo || '?', dest: r.dest_ch || r.dest_en || '',
+          mins, dep: r.arrival_departure === 'D', special: r.special === 1
+        });
+      }
+    }
+    entries.sort((a, b) => a.mins - b.mins);
+    return entries;
+  } catch { return []; }
+}
+
+/** 搜索轻铁：按站名匹配，显示该站实时到站 */
+async function searchLRT(query, container) {
+  const q = String(query).trim();
+  const matches = Object.keys(LRT_STATIONS)
+    .filter(id => LRT_STATIONS[id].includes(q))
+    .map(id => ({ id: Number(id), name: LRT_STATIONS[id] }));
+  if (matches.length === 0) {
+    container.innerHTML = '<div class="empty-hint">找不到轻铁车站「' + escapeHtml(query) + '」，请尝试输入站名（如 屯門碼頭、元朗、天水圍）</div>';
+    setStatus('ok');
+    return;
+  }
+  const results = await Promise.all(matches.slice(0, 8).map(async (st) => {
+    const entries = await getLRTEta(st.id);
+    const now = Math.floor(Date.now() / 1000);
+    const etas = entries.slice(0, 3).map(e => ({ etaTs: now + e.mins * 60 }));
+    return {
+      type: 'lrt', route: st.name, station_id: st.id, stop_name: st.name,
+      origDest: st.name + ' · 轻铁', direction: '', totalStops: 1, etas, platformData: entries
+    };
+  }));
+  renderSearchResults(results, container);
+  setStatus('ok');
+}
+
+/* ==========================================================================
    MTR API Calls
    ========================================================================== */
 
@@ -1419,6 +1550,8 @@ async function doSearch() {
     await searchBusRoute(input, resultsContainer);
   } else if (currentTransport === 'mtrbus') {
     await searchMTRBus(input, resultsContainer);
+  } else if (currentTransport === 'lrt') {
+    await searchLRT(input, resultsContainer);
   } else {
     await searchMTRStation(input, resultsContainer);
   }
@@ -1429,10 +1562,11 @@ async function searchBusRoute(query, container) {
   const routeNum = query.toUpperCase().replace(/\s/g, '');
   let allResults = [];
 
-  /* Search both companies in parallel */
-  const [kmbRoutes, ctbRoutes] = await Promise.all([
+  /* Search all companies in parallel */
+  const [kmbRoutes, ctbRoutes, nlbRoutes] = await Promise.all([
     searchKMBRoute(routeNum),
-    searchCTBRoute(routeNum)
+    searchCTBRoute(routeNum),
+    searchNLBRoute(routeNum)
   ]);
 
   /* For each KMB route, get stops and first stop ETA */
@@ -1481,11 +1615,31 @@ async function searchBusRoute(query, container) {
             ? (dir === 'inbound' ? `${route.dest_tc} → ${route.orig_tc}` : `${route.orig_tc} → ${route.dest_tc}`)
             : '',
           stop_id: firstStop.stop || firstStop.stop_id,
-          stop_name: firstStop.stop || firstStop.stop_id,
+          stop_name: await getCTBStopName(firstStop.stop || firstStop.stop_id),
           totalStops: stops.length,
           stopIndex: Math.max(0, stops.indexOf(firstStop))
         });
       }
+    }
+  }
+
+  /* For each NLB route, get stops and first stop ETA */
+  for (const route of nlbRoutes) {
+    const routeId = route.routeId;
+    const stops = await getNLBRouteStops(routeId);
+    if (stops.length > 0) {
+      const firstStop = stops[0];
+      allResults.push({
+        type: 'bus', company: 'nlb',
+        route: String(route.routeNo || route.routeId),
+        routeId: routeId,
+        direction: 'outbound',
+        origDest: route.routeName_c || route.routeName_s || `${route.routeNo || route.routeId} 新大屿山巴士`,
+        stop_id: firstStop.stopId,
+        stop_name: firstStop.stopName_c || firstStop.stopName_s || String(firstStop.stopId || ''),
+        totalStops: stops.length,
+        stopIndex: 0
+      });
     }
   }
 
@@ -1503,11 +1657,13 @@ async function searchBusRoute(query, container) {
         etas = await getKMBETA(item.stop_id);
         /* Filter to only this route */
         etas = etas.filter(e => e.route === item.route);
-      } else {
+      } else if (item.company === 'ctb') {
         etas = await getCTBETA(item.stop_id, item.route);
         /* Filter to this direction: O=outbound(去铜锣湾), I=inbound(回天水围) */
         const wantDir = item.direction === 'inbound' ? 'I' : 'O';
         etas = etas.filter(e => (e.dir || '').toUpperCase() === wantDir);
+      } else { /* nlb */
+        etas = await getNLBETA(item.routeId, item.stop_id);
       }
       return { ...item, etas: etas.slice(0, 3) };
     })
@@ -1718,8 +1874,9 @@ function routeCardHTML(item, opts) {
 
   const tagText = item.type === 'mtr' ? '港铁'
     : item.type === 'mtrbus' ? '港铁巴士'
-    : (item.company === 'kmb' ? '九巴' : '城巴');
-  const no = (item.type === 'bus' || item.type === 'mtrbus')
+    : item.type === 'lrt' ? '轻铁'
+    : (item.company === 'kmb' ? '九巴' : item.company === 'nlb' ? '新大屿山' : '城巴');
+  const no = (item.type === 'bus' || item.type === 'mtrbus' || item.type === 'lrt')
     ? String(item.route)
     : item.lineName;
 
@@ -1728,6 +1885,8 @@ function routeCardHTML(item, opts) {
     nameText = item.origDest || item.stop_name || '';
   } else if (item.type === 'mtrbus') {
     nameText = (item.orig && item.dest) ? `${item.orig} → ${item.dest}` : item.route;
+  } else if (item.type === 'lrt') {
+    nameText = item.origDest || '轻铁路线';
   } else {
     nameText = item.mode === 'line'
       ? `全线 ${(MTR_LINE_STOPS[item.line] || []).length} 个车站候车时间`
@@ -1738,7 +1897,11 @@ function routeCardHTML(item, opts) {
 
   let html = '<div class="transport-card route-card clickable" data-route-item=\'' + json + '\'>';
   html += '<div class="rc-head"><span class="rc-no">' + escapeHtml(no) + '</span>';
-  html += '<span class="rc-tag">' + tagText + '</span></div>';
+  html += '<span class="rc-tag">' + tagText + '</span>';
+  if (opts.removeIndex != null) {
+    html += `<button class="fav-remove-btn" onclick="removeFavorite(${opts.removeIndex})" title="移除收藏">移除</button>`;
+  }
+  html += '</div>';
   html += '<div class="rc-name">' + escapeHtml(nameText) + '</div>';
   html += '<div class="rc-main">';
   if (mainMins !== null) {
@@ -1751,9 +1914,7 @@ function routeCardHTML(item, opts) {
   html += '<div class="rc-stop">' + (mainMins !== null ? escapeHtml(moreText) : '暂无到站资讯') + '</div>';
   html += '<div class="rc-more">点按查看全线候车</div>';
   html += '</div>';
-  if (opts.removeIndex != null) {
-    html += `<button class="fav-remove-btn" onclick="removeFavorite(${opts.removeIndex})" title="移除收藏">移除</button>`;
-  } else {
+  if (opts.removeIndex == null) {
     html += `<button class="fav-btn ${favClass}" data-fav-item='${json}' title="收藏 / 取消收藏">${favStar}</button>`;
   }
   html += '</div>';
@@ -1768,6 +1929,9 @@ function routeCardHTML(item, opts) {
   } else if (item.type === 'mtrbus' && total > 0) {
     html += '<div class="rc-progress"><div class="rc-bar"><i style="width:4%"></i></div>';
     html += `<span class="rc-pcnt">共 ${total} 个巴士站</span></div>`;
+  } else if (item.type === 'lrt' && total > 0) {
+    html += '<div class="rc-progress"><div class="rc-bar"><i style="width:4%"></i></div>';
+    html += `<span class="rc-pcnt">共 ${total} 个车站 · 轻铁</span></div>`;
   } else if (item.type === 'mtr') {
     const n = (MTR_LINE_STOPS[item.line] || []).length;
     html += '<div class="rc-progress"><div class="rc-bar"><i style="width:4%"></i></div>';
@@ -1834,9 +1998,31 @@ async function loadFavoritesETA(favs, container) {
       if (fav.company === 'kmb') {
         const allEta = await getKMBETA(fav.stop_id);
         etas = allEta.filter(e => e.route === fav.route).slice(0, 3);
-      } else { /* ctb */
+      } else if (fav.company === 'ctb') {
+        /* 旧收藏可能存的是数字站码，转中文并回写 */
+        if (/^\d{4,6}$/.test(fav.stop_name || '')) {
+          fav.stop_name = await getCTBStopName(fav.stop_id);
+          const fs = getFavorites();
+          if (fs[index]) fs[index].stop_name = fav.stop_name;
+          saveFavorites(fs);
+        }
         etas = await getCTBETA(fav.stop_id, fav.route);
         etas = etas.slice(0, 3);
+      } else if (fav.company === 'nlb') {
+        if (fav.routeId && fav.stop_id) {
+          etas = await getNLBETA(fav.routeId, fav.stop_id);
+          etas = etas.slice(0, 3);
+        }
+      }
+    } else if (fav.type === 'lrt') {
+      fav.origDest = fav.destination || '';
+      if (fav.station_id != null && fav.station_id !== '') {
+        const entries = await getLRTEta(fav.station_id);
+        if (entries.length) {
+          fav.platformData = entries;
+          const now = Math.floor(Date.now() / 1000);
+          etas = entries.slice(0, 3).map(e => ({ etaTs: now + e.mins * 60 }));
+        }
       }
     } else if (fav.type === 'mtrbus') {
       const etaData = await getMTRBusETA(fav.route);
@@ -1923,6 +2109,8 @@ function toggleFavByItem(item, btn) {
       idx = favs.findIndex(f => f.type === 'mtr' && f.line === item.line && f.station_id === item.station_id);
     } else if (item.type === 'mtrbus') {
       idx = favs.findIndex(f => f.type === 'mtrbus' && f.route === item.route && f.stop_id === item.stop_id);
+    } else if (item.type === 'lrt') {
+      idx = favs.findIndex(f => f.type === 'lrt' && f.route === item.route);
     } else {
       idx = favs.findIndex(f => f.type === 'bus' && f.company === item.company && f.route === item.route && f.stop_id === item.stop_id);
     }
@@ -1947,6 +2135,12 @@ function toggleFavByItem(item, btn) {
       fav.orig = item.orig;
       fav.dest = item.dest;
       fav.stop_id = item.stop_id || '';
+    } else if (item.type === 'lrt') {
+      fav.route = item.route;
+      fav.destination = item.origDest || '';
+      fav.station_id = item.station_id != null ? item.station_id : '';
+      fav.stop_name = item.stop_name || item.route || '';
+      fav.totalStops = item.totalStops || 0;
     } else {
       fav.line = item.line;
       fav.lineName = item.lineName || (MTR_LINES[item.line] || item.line);
@@ -2337,6 +2531,26 @@ async function renderDetailContent(item, inner) {
         }).join('') : '<span class="ds-none">—</span>';
         return `<div class="ds-stop"><span class="ds-sn">${escapeHtml(r.name)}</span><span class="ds-e">${cells}</span></div>`;
       }).join('');
+    } else if (item.type === 'lrt') {
+      /* 轻铁：显示该站各平台实时到站 */
+      title = item.stop_name || item.route || '轻铁车站';
+      sub = '轻铁实时到站';
+      meta = '路线 · 方向（分钟）';
+      let entries = item.platformData || null;
+      if ((!entries || entries.length === 0) && item.station_id != null) {
+        entries = await getLRTEta(item.station_id);
+      }
+      if (!entries || entries.length === 0) {
+        listHtml = '<div class="ds-stop"><span class="ds-sn">暂无实时到站数据</span><span class="ds-e"></span></div>';
+      } else {
+        listHtml = entries.map(e => {
+          const cls = e.mins <= 1 ? 'soon' : '';
+          const suffix = e.dep ? '分开' : '分';
+          const cells = `<span class="ds-em ${cls}">${e.mins}<i class="ds-eu">${suffix}</i></span>`;
+          const sn = `${e.routeNo} · ${e.dest}` + (e.special ? '（特别）' : '');
+          return `<div class="ds-stop"><span class="ds-sn">${escapeHtml(sn)}</span><span class="ds-e">${cells}</span></div>`;
+        }).join('');
+      }
     } else {
       /* 巴士：展示该路线全部站候车 */
       title = String(item.route);
@@ -2361,7 +2575,7 @@ async function renderDetailContent(item, inner) {
           const cells = r.times.length ? r.times.map(em).join('') : '<span class="ds-none">—</span>';
           return `<div class="ds-stop"><span class="ds-sn">${escapeHtml(r.name)}</span><span class="ds-e">${cells}</span></div>`;
         }).join('');
-      } else {
+      } else if (item.company === 'ctb') {
         /* CTB：按方向取站，逐站取站名 + ETA（分批并行，避免并发过多被限流） */
         const dir = item.direction || 'outbound';
         const stops = await getCTBRouteStops(item.route, dir);
@@ -2372,6 +2586,22 @@ async function renderDetailContent(item, inner) {
             const [name, etas] = await Promise.all([getCTBStopName(sid), getCTBETA(sid, item.route)]);
             const times = etas.slice(0, 2).map(e => e.eta ? new Date(e.eta).getTime() / 1000 : null).filter(Boolean);
             return { name, times };
+          }));
+          rows.push(...batch);
+        }
+        listHtml = rows.map(r => {
+          const cells = r.times.length ? r.times.map(em).join('') : '<span class="ds-none">—</span>';
+          return `<div class="ds-stop"><span class="ds-sn">${escapeHtml(r.name)}</span><span class="ds-e">${cells}</span></div>`;
+        }).join('');
+      } else {
+        /* NLB（新大屿山巴士）：按路线取站，逐站取 ETA */
+        const stops = await getNLBRouteStops(item.routeId);
+        const rows = [];
+        for (let i = 0; i < stops.length; i += 5) {
+          const batch = await Promise.all(stops.slice(i, i + 5).map(async (s) => {
+            const etas = await getNLBETA(item.routeId, s.stopId);
+            const times = etas.slice(0, 2).map(e => e.etaTs || (e.eta ? new Date(e.eta).getTime() / 1000 : null)).filter(Boolean);
+            return { name: s.stopName_c || s.stopName_s || String(s.stopId || ''), times };
           }));
           rows.push(...batch);
         }
@@ -2513,6 +2743,8 @@ document.addEventListener('DOMContentLoaded', () => {
         input.placeholder = '输入巴士路线编号（如 1A、10）...';
       } else if (currentTransport === 'mtrbus') {
         input.placeholder = '输入港铁巴士路线编号（如 K51、K65）...';
+      } else if (currentTransport === 'lrt') {
+        input.placeholder = '输入轻铁车站名称（如 屯門碼頭、元朗）...';
       } else {
         input.placeholder = '输入港铁车站名称（如 中环、旺角）...';
       }
