@@ -2176,14 +2176,14 @@ function routeCardHTML(item, opts) {
   if (opts.removeIndex != null) {
     html += '<div class="rc-actions">';
     if (item.type === 'bus') {
-      html += `<button class="ds-pick" onclick="openStopPicker(${opts.removeIndex})" title="选择显示哪一站等候时间">换站</button>`;
+      html += `<button class="ds-pick" onclick="event.stopPropagation();openStopPicker(${opts.removeIndex})" title="选择显示哪一站等候时间">换站</button>`;
     }
-    html += `<button class="fav-remove-btn" onclick="removeFavorite(${opts.removeIndex})" title="移除收藏">移除</button>`;
+    html += `<button class="fav-remove-btn" onclick="event.stopPropagation();removeFavorite(${opts.removeIndex})" title="移除收藏">移除</button>`;
     if (opts.showPick) {
       let showIdx = -1;
       try { showIdx = parseInt(localStorage.getItem(FAV_SHOW_KEY) || '-1', 10); } catch (e) {}
       const used = (showIdx === opts.removeIndex);
-      html += `<button class="ds-pick ${used ? 'used' : ''}" onclick="setFavShow(${opts.removeIndex})" title="固定显示该站到站时间">${used ? '✓ 显示中' : '设为显示'}</button>`;
+      html += `<button class="ds-pick ${used ? 'used' : ''}" onclick="event.stopPropagation();setFavShow(${opts.removeIndex})" title="固定显示该站到站时间">${used ? '✓ 显示中' : '设为显示'}</button>`;
     }
     html += '</div>';
   }
@@ -2664,15 +2664,15 @@ const K75P_STOPS = [
   { id: 'D030', name: '天耀邨耀盛楼', fold: true },
   { id: 'D040', name: '轻铁天耀站', fold: true },
   { id: 'D050', name: '天盛苑', fold: true },
-  { id: 'D060', name: '石埗路' },
-  { id: 'D070', name: '沙洲里村' },
-  { id: 'D080', name: '厦村市' },
-  { id: 'U011', name: '新屋村' },
-  { id: 'U010', name: '李屋村' },
-  { id: 'U020', name: '新生村' },
-  { id: 'U030', name: '新李屋村' },
-  { id: 'U040', name: '田心' },
-  { id: 'U050', name: '乡事委员会' },
+  { id: 'D060', name: '石埗路', fold: true },
+  { id: 'D070', name: '沙洲里村', fold: true },
+  { id: 'D080', name: '厦村市', fold: true },
+  { id: 'U011', name: '新屋村', fold: true },
+  { id: 'U010', name: '李屋村', fold: true },
+  { id: 'U020', name: '新生村', fold: true },
+  { id: 'U030', name: '新李屋村', fold: true },
+  { id: 'U040', name: '田心', fold: true },
+  { id: 'U050', name: '乡事委员会', fold: true },
   { id: 'U060', name: '轻铁洪水桥站' },
   { id: 'U070', name: '洪水桥巴士厂' },
   { id: 'U080', name: '洪福邨' },
@@ -2836,6 +2836,14 @@ async function openStopPicker(favIndex) {
       stops = await getKMBStops(fav.route, fav.direction === 'inbound' ? 'inbound' : 'outbound', '1');
     } else if (fav.company === 'ctb') {
       stops = await getCTBStops(fav.route, fav.direction === 'inbound' ? 'inbound' : 'outbound');
+      /* route-stop 只返回 6 位站码，批量补中文站名 */
+      if (stops.length) {
+        stops = await Promise.all(stops.map(async (s) => {
+          const sid = s.stop || s.stop_id;
+          const name = sid ? await getCTBStopName(sid) : '';
+          return { ...s, name_tc: name };
+        }));
+      }
     } else if (fav.company === 'nlb') {
       let rid = fav.routeId;
       if (!rid && fav.route) {
