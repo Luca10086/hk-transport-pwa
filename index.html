@@ -886,6 +886,168 @@ body[data-skin="md"] .detail-sheet .ds-colhead,
 body[data-skin="md"] .detail-sheet .ds-stop .ds-none { color: var(--md-on-surface-variant); }
 body[data-skin="md"] .detail-sheet .ds-stop .ds-em.scheduled { color: var(--md-on-surface-variant); }
 body.sheet-open { overflow: hidden; }
+
+/* =====================================================================
+   v12: 通用点击反馈动画 / 搜索区溢出修复 / 设定页 / iOS 皮肤 / MTR接驳
+   ===================================================================== */
+/* --- 1. 全局点击动画 --- */
+button, .bn-item, .skin-opt, .transport-card.clickable, .sushiro-card, .fav-btn {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .12s ease, filter .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease, opacity .2s ease;
+}
+button:active, .bn-item:active, .skin-opt:active, .fav-btn:active { filter: brightness(.93); }
+.transport-card.clickable:active, .sushiro-card:active { transform: scale(.985); }
+.bn-item:active { transform: scale(.9); }
+.fab-main { transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
+.fab-main:active { transform: scale(.92); }
+
+/* --- 2. 搜索区：移动端按钮不突出页面 / 对齐 --- */
+.transport-toggle { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; -ms-overflow-style: none; }
+.transport-toggle::-webkit-scrollbar { display: none; }
+.transport-toggle button { flex: 0 0 auto; white-space: nowrap; }
+@media (max-width: 600px) {
+  .search-row { align-items: stretch; }
+  .search-row .search-input, .search-row .search-btn { width: 100%; box-sizing: border-box; }
+  .search-row .transport-toggle { width: 100%; justify-content: flex-start; }
+}
+
+/* --- 3. 设定页 --- */
+.settings-block { background: var(--card-bg-soft); border: 2px solid var(--card-border); border-radius: 16px; padding: 16px; }
+.settings-label { font-weight: 800; color: var(--text-dark); margin-bottom: 10px; font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; }
+.settings-skins { display: flex; gap: 10px; flex-wrap: wrap; }
+.skin-opt { flex: 1; min-width: 90px; padding: 12px 8px; border: 2px solid var(--card-border); background: var(--card-bg); color: var(--text-dark); border-radius: 14px; font-size: .95rem; font-weight: 800; font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; cursor: pointer; box-shadow: 0 3px 0 var(--card-shadow); }
+.skin-opt.active { background: linear-gradient(180deg, var(--primary-light), var(--primary)); color: #fff; border-color: var(--primary-dark); box-shadow: 0 3px 0 var(--primary-dark); }
+.settings-hint { margin-top: 10px; font-size: .78rem; color: #a08d6f; }
+body[data-skin="md"] .settings-block { background: var(--md-surface-container-high); border: none; border-radius: 16px; box-shadow: var(--md-elevation1); }
+body[data-skin="md"] .settings-label { color: var(--md-on-surface); font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
+body[data-skin="md"] .skin-opt { border: none; background: var(--md-surface-container); color: var(--md-on-surface); box-shadow: none; border-radius: 999px; font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
+body[data-skin="md"] .skin-opt.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+body[data-skin="md"] .settings-hint { color: var(--md-on-surface-variant); }
+
+/* --- 4. 收藏页：选择显示到站时间的站 --- */
+.ds-pick { margin-left: auto; flex: 0 0 auto; font-size: .72rem; font-weight: 700; color: #fff; background: linear-gradient(180deg, var(--primary-light), var(--primary)); border: none; border-radius: 8px; padding: 4px 8px; cursor: pointer; box-shadow: 0 2px 0 var(--primary-dark); }
+body[data-skin="md"] .ds-pick { background: var(--md-primary); box-shadow: none; border-radius: 8px; font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
+body[data-skin="ios"] .ds-pick { background: var(--ios-tint, #007AFF); box-shadow: none; border-radius: 7px; font-family: inherit; }
+.ds-pick.used { background: #a08d6f; box-shadow: 0 2px 0 #7d6a51; }
+body[data-skin="md"] .ds-pick.used { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+body[data-skin="ios"] .ds-pick.used { background: #C7C7CC; color: #fff; }
+
+/* --- 5. MTR 车站接驳区块 --- */
+.mtr-conn { margin: 14px 2px; }
+.mtr-conn .conn-block { background: var(--card-bg-soft); border: 2px solid var(--card-border); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; }
+.mtr-conn .conn-title { font-weight: 800; font-size: .9rem; color: var(--text-dark); margin-bottom: 8px; font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; }
+.mtr-conn .conn-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: .85rem; color: var(--text-dark); }
+.mtr-conn .conn-row + .conn-row { border-top: 1.5px dashed var(--card-border); }
+.mtr-conn .conn-badge { flex: 0 0 auto; border-radius: 6px; padding: 1px 7px; font-size: .75rem; font-weight: 800; color: #fff; }
+body[data-skin="md"] .mtr-conn .conn-block { background: var(--md-surface-container-high); border: none; border-radius: 16px; box-shadow: var(--md-elevation1); font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
+body[data-skin="md"] .mtr-conn .conn-title { color: var(--md-on-surface); font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
+body[data-skin="md"] .mtr-conn .conn-row { color: var(--md-on-surface-variant); }
+body[data-skin="md"] .mtr-conn .conn-row + .conn-row { border-top-color: var(--md-outline-variant); }
+body[data-skin="ios"] .mtr-conn .conn-block { background: #fff; border: 0.5px solid var(--ios-separator); border-radius: 12px; box-shadow: none; font-family: inherit; }
+body[data-skin="ios"] .mtr-conn .conn-title { color: #000; font-weight: 600; font-family: inherit; }
+body[data-skin="ios"] .mtr-conn .conn-row { color: #3C3C43; }
+body[data-skin="ios"] .mtr-conn .conn-row + .conn-row { border-top-color: rgba(60,60,67,.18); }
+
+/* --- 6. iOS 皮肤（依 Apple HIG） --- */
+body[data-skin="ios"] {
+  --ios-bg: #F2F2F7; --ios-card: #FFFFFF; --ios-label: #000000;
+  --ios-secondary: #8E8E93; --ios-separator: rgba(60,60,67,.18);
+  --ios-tint: #007AFF; --ios-search: rgba(118,118,128,.12);
+  --bg-top: #F2F2F7; --bg-mid: #F2F2F7; --bg-bottom: #F2F2F7;
+  --text: #000000; --text-dark: #3C3C43;
+  --primary: #007AFF; --primary-light: #E8F0FE; --primary-dark: #0062CC;
+  --card-bg: #FFFFFF; --card-bg2: #F9F9F9; --card-border: #E5E5EA; --card-shadow: #D8D8DD; --card-bg-soft: #FFFFFF;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "PingFang HK", "Helvetica Neue", "Segoe UI", "Microsoft JhengHei", sans-serif;
+  background: #F2F2F7;
+}
+body[data-skin="ios"] .bg-decor .deco { opacity: 0; }
+body[data-skin="ios"] .navbar {
+  background: rgba(249,249,249,.92); color: #000;
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  border-bottom: 0.5px solid var(--ios-separator); box-shadow: none;
+  padding: 20px 20px 10px;
+}
+body[data-skin="ios"] .navbar h1 { font-size: 1.85rem; font-weight: 700; letter-spacing: -0.3px; font-family: inherit; text-shadow: none; color: #000; }
+body[data-skin="ios"] .navbar h1 .ac-emoji, body[data-skin="ios"] .ac-emoji { display: none; }
+body[data-skin="ios"] .navbar .refresh-btn { background: var(--ios-tint); color: #fff; border: none; border-radius: 8px; font-family: inherit; font-weight: 600; font-size: .85rem; box-shadow: none; padding: 8px 14px; }
+body[data-skin="ios"] .search-section, body[data-skin="ios"] .favorites-section, body[data-skin="ios"] .results-section, body[data-skin="ios"] .info-section { background: transparent; border: none; box-shadow: none; border-radius: 0; }
+body[data-skin="ios"] .search-section { background: var(--ios-card); border-radius: 12px; padding: 12px; margin: 12px 16px 0; box-shadow: none; border: 0.5px solid var(--ios-separator); }
+body[data-skin="ios"] .search-input { background: var(--ios-search); border: none; border-radius: 10px; padding: 11px 14px; font-size: 17px; color: #000; font-family: inherit; }
+body[data-skin="ios"] .search-input:focus { border: none; box-shadow: 0 0 0 3px rgba(0,122,255,.25); }
+body[data-skin="ios"] .search-input::placeholder { color: var(--ios-secondary); }
+body[data-skin="ios"] .transport-toggle { background: rgba(118,118,128,.12); border: none; border-radius: 9px; padding: 2px; gap: 0; overflow-x: auto; }
+body[data-skin="ios"] .transport-toggle button { border: none; border-radius: 7px; background: transparent; color: var(--ios-secondary); font-weight: 500; font-family: inherit; font-size: .85rem; padding: 7px 12px; box-shadow: none; }
+body[data-skin="ios"] .transport-toggle button.active { background: #fff; color: #000; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+body[data-skin="ios"] .search-btn { background: var(--ios-tint); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-family: inherit; box-shadow: none; }
+body[data-skin="ios"] .section-title { background: transparent; border: none; box-shadow: none; color: #000; font-weight: 700; font-size: 1.15rem; padding: 10px 8px 6px; text-shadow: none; border-radius: 0; font-family: inherit; }
+body[data-skin="ios"] .section-title .badge { background: rgba(118,118,128,.12); color: var(--ios-secondary); box-shadow: none; font-family: inherit; }
+body[data-skin="ios"] .transport-card, body[data-skin="ios"] .sushiro-card, body[data-skin="ios"] .k75p-stop, body[data-skin="ios"] .weather-item {
+  background: var(--ios-card); border: 0.5px solid var(--ios-separator); border-radius: 12px; box-shadow: none; font-family: inherit;
+}
+body[data-skin="ios"] .transport-card:hover { transform: none; box-shadow: none; }
+body[data-skin="ios"] .rc-m, body[data-skin="ios"] .eta-time, body[data-skin="ios"] .ds-em, body[data-skin="ios"] .rc-name { font-variant-numeric: tabular-nums; }
+body[data-skin="ios"] .rc-no, body[data-skin="ios"] .rc-name, body[data-skin="ios"] .rc-sub, body[data-skin="ios"] .rc-tag, body[data-skin="ios"] .card-meta, body[data-skin="ios"] .k75p-name, body[data-skin="ios"] .k75p-info { font-family: inherit; }
+body[data-skin="ios"] .bottom-nav {
+  background: rgba(249,249,249,.92); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  border-top: 0.5px solid var(--ios-separator); box-shadow: none;
+}
+body[data-skin="ios"] .bn-item { color: var(--ios-secondary); font-weight: 400; font-size: .68rem; opacity: 1; font-family: inherit; }
+body[data-skin="ios"] .bn-item.active { color: var(--ios-tint); }
+body[data-skin="ios"] .bn-item.active::before { background: rgba(0,122,255,.12); opacity: 1; width: 64px; }
+body[data-skin="ios"] .detail-mask { background: rgba(0,0,0,.4); }
+body[data-skin="ios"] .detail-sheet { background: #fff; border-radius: 16px 16px 0 0; }
+body[data-skin="ios"] .detail-sheet .ds-head { background: #fff; border-bottom: 0.5px solid var(--ios-separator); }
+body[data-skin="ios"] .detail-sheet .ds-no, body[data-skin="ios"] .detail-sheet .ds-name { color: #000; font-family: inherit; text-shadow: none; }
+body[data-skin="ios"] .detail-sheet .ds-sub, body[data-skin="ios"] .detail-sheet .ds-colhead, body[data-skin="ios"] .detail-sheet .ds-none, body[data-skin="ios"] .detail-sheet .ds-stop .ds-none { color: var(--ios-secondary); }
+body[data-skin="ios"] .detail-sheet .ds-stop { background: #F2F2F7; border: 0.5px solid var(--ios-separator); border-radius: 10px; }
+body[data-skin="ios"] .detail-sheet .ds-em { color: #000; }
+body[data-skin="ios"] .detail-sheet .ds-stop .ds-em.scheduled { color: var(--ios-secondary); }
+body[data-skin="ios"] .footer { color: var(--ios-secondary); font-family: inherit; }
+body[data-skin="ios"] .empty-hint, body[data-skin="ios"] .loading { color: var(--ios-secondary); font-family: inherit; }
+body[data-skin="ios"] .settings-block { background: #fff; border: 0.5px solid var(--ios-separator); border-radius: 12px; box-shadow: none; }
+body[data-skin="ios"] .settings-label { color: #000; font-weight: 600; font-family: inherit; }
+body[data-skin="ios"] .skin-opt { border: 0.5px solid #D1D1D6; border-radius: 10px; font-weight: 600; font-family: inherit; box-shadow: none; color: var(--ios-tint); background: #fff; }
+body[data-skin="ios"] .skin-opt.active { background: var(--ios-tint); color: #fff; }
+body[data-skin="ios"] .settings-hint { color: var(--ios-secondary); }
+body[data-skin="ios"] .fav-btn { box-shadow: none; }
+/* ---- v12 追加：轻铁方向 / 第1班第2班 / 收藏固定显示站 / MTR接驳 ---- */
+.rc-head{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.rc-dir{ display:inline-block; background:rgba(0,0,0,.06); color:#555; font-size:11px; font-weight:700; border-radius:6px; padding:2px 7px; }
+body[data-skin="md"] .rc-dir, body[data-skin="ios"] .rc-dir{ background:var(--secondary-container); color:var(--on-secondary-container); }
+body[data-skin="ios"] .rc-dir{ background:#0A84FF1A; color:#0A84FF; }
+.rc-line{ display:flex; align-items:baseline; gap:8px; font-size:12px; line-height:1.7; }
+.rc-line-tag{ flex:0 0 auto; font-weight:600; color:#888; }
+body[data-skin="md"] .rc-line-tag, body[data-skin="ios"] .rc-line-tag{ color:var(--on-surface-variant); }
+body[data-skin="ios"] .rc-line-tag{ color:#3C3C43; }
+.rc-line-time{ font-variant-numeric:tabular-nums; font-weight:600; color:#222; }
+body[data-skin="ios"] .rc-line-time{ color:#1D1B20; }
+body[data-skin="md"] .rc-line-time{ color:var(--on-surface); }
+.ds-pick{ background:#fff; color:#007AFF; border:1px solid #007AFF; border-radius:8px; padding:3px 10px; font-size:11px; font-weight:600; cursor:pointer; margin-left:auto; }
+.ds-pick.used{ background:#007AFF; color:#fff; }
+.favshow{ margin-bottom:12px; }
+.favshow-hint{ font-size:12px; color:#999; text-align:center; padding:6px 0; }
+.favshow-head{ display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700; color:#444; margin-bottom:6px; padding:0 4px; }
+.favshow-clear{ background:none; border:none; color:#888; font-size:12px; cursor:pointer; text-decoration:underline; }
+.favshow-loading{ font-size:12px; color:#999; text-align:center; padding:12px 0; }
+.mtr-conn{ margin:10px 16px; }
+.conn-block{ background:#fff; border-radius:14px; padding:12px 14px; margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+body[data-skin="ios"] .conn-block{ background:var(--ios-card); border-radius:12px; box-shadow:none; }
+body[data-skin="md"] .conn-block{ background:var(--surface-container-low); border-radius:12px; }
+.conn-title{ font-size:13px; font-weight:700; color:#333; margin-bottom:8px; }
+body[data-skin="ios"] .conn-title{ color:var(--ios-label, #1D1B20); }
+body[data-skin="md"] .conn-title{ color:var(--on-surface); }
+.conn-row{ display:flex; align-items:center; gap:10px; padding:7px 0; }
+.conn-row + .conn-row{ border-top:0.5px solid rgba(60,60,67,.15); }
+body[data-skin="ios"] .conn-row + .conn-row{ border-top:0.5px solid var(--ios-separator); }
+.conn-badge{ flex:0 0 auto; border-radius:6px; padding:2px 8px; font-size:12px; font-weight:700; color:#fff; min-width:44px; text-align:center; }
+.conn-badge.lr{ background:#F7941D; }
+.conn-badge.mtrbus{ background:#1E6BB8; }
+.conn-dest{ flex:1; min-width:0; font-size:13px; color:#222; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+body[data-skin="ios"] .conn-dest{ color:var(--ios-label, #1D1B20); }
+body[data-skin="md"] .conn-dest{ color:var(--on-surface); }
+.conn-eta{ flex:0 0 auto; font-size:13px; font-weight:700; color:#007AFF; font-variant-numeric:tabular-nums; }
+body[data-skin="ios"] .conn-eta{ color:var(--ios-tint); }
+body[data-skin="md"] .conn-eta{ color:var(--primary); }
 </style>
 </head>
 <body>
@@ -908,7 +1070,6 @@ body.sheet-open { overflow: hidden; }
 <nav class="navbar">
   <h1><span class="ac-emoji">🍃</span> 森友出行手册</h1>
   <div class="navbar-actions">
-    <button class="skin-btn" onclick="toggleSkin()" id="skinBtn" title="切换皮肤">🎨</button>
     <button class="refresh-btn" onclick="refreshAll()" id="refreshBtn">手动刷新</button>
   </div>
 </nav>
@@ -983,6 +1144,24 @@ body.sheet-open { overflow: hidden; }
     </div>
   </section>
 
+  <!-- ===== Settings ===== -->
+  <section class="info-section" data-page="settings">
+    <div class="section-title">
+      <span class="ac-emoji">⚙️</span> 设定
+    </div>
+    <div id="settingsContainer">
+      <div class="settings-block">
+        <div class="settings-label">界面主题</div>
+        <div class="settings-skins" id="skinSelector">
+          <button class="skin-opt" data-skin="ac" onclick="setSkin('ac')">动森 AC</button>
+          <button class="skin-opt" data-skin="md" onclick="setSkin('md')">Material 3</button>
+          <button class="skin-opt" data-skin="ios" onclick="setSkin('ios')">iOS</button>
+        </div>
+        <div class="settings-hint">选择网页主题外观。iOS 模式依 Apple Human Interface Guidelines 设计。</div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== Footer ===== -->
   <div class="footer">
     <span>🌿 数据来源：data.gov.hk / 资料一线通</span>
@@ -1012,6 +1191,10 @@ body.sheet-open { overflow: hidden; }
   <button class="bn-item" data-page="sushi" onclick="switchPage('sushi')" aria-label="寿司郎">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.05 17.56l-17.97.94L3 17l17.98-.94.07 1.5zM21 19.49H3v1.5h18v-1.5zM22 5v7c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-2 1c-1.68 0-3.04.98-3.21 2.23-.64-.73-2.73-2.73-6.54-2.73-4.67 0-6.75 3-6.75 3s2.08 3 6.75 3c3.81 0 5.9-2 6.54-2.73C16.96 10.02 18.32 11 20 11V6z"/></svg>
     <span>寿司郎</span>
+  </button>
+  <button class="bn-item" data-page="settings" onclick="switchPage('settings')" aria-label="设定">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+    <span>设定</span>
   </button>
 </nav>
 
@@ -1196,10 +1379,10 @@ async function fetchWithProxy(url, proxyIndex = 0) {
   }
 }
 
-/** Format Unix timestamp (seconds) to HH:MM:SS */
+/** Format Unix timestamp (seconds) to HH:MM (no seconds) */
 function formatTime(ts) {
   const d = new Date(ts * 1000);
-  return d.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return d.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
 }
 
 /** Calculate minutes remaining from now */
@@ -1240,6 +1423,8 @@ function debounce(fn, ms) {
 /* ==========================================================================
    Favorites Management
    ========================================================================== */
+
+const FAV_SHOW_KEY = 'marvis_fav_show';   /* 收藏页固定显示到站时间的收藏下标 */
 
 function getFavorites() {
   try {
@@ -1521,6 +1706,8 @@ function parseMTRBusETAData(etaData) {
     const stopName = stop.busStopId || '';
     for (const bus of (stop.bus || [])) {
       const arrivalSec = parseInt(bus.arrivalTimeInSecond) || 0;
+      /* 过滤未运营/无班次占位值（0 与 >=108000 秒 = 30 小时） */
+      if (arrivalSec <= 0 || arrivalSec >= 108000) continue;
       etas.push({
         eta: new Date(nowMs + arrivalSec * 1000).toISOString(),
         stop_name: stopName,
@@ -1859,9 +2046,10 @@ function buildETACard(item) {
   const first = list[0];
   const mainMins = minsFromNow(first.ts);
   const mainClass = etaColorClass(first.ts);
-  let moreText = `下一班 ${formatTime(first.ts)}`;
-  if (list[1]) moreText += ` · 再一班 ${formatTime(list[1].ts)}`;
-  return { mainMins, mainClass, mainTime: formatTime(first.ts), moreText };
+  const line1 = { label: '第1班', time: formatTime(first.ts), mins: mainMins };
+  const line2 = list[1] ? { label: '第2班', time: formatTime(list[1].ts), mins: minsFromNow(list[1].ts) } : null;
+  const moreText = (line1 ? `第1班 ${line1.time}` : '') + (line2 ? ` · 第2班 ${line2.time}` : '');
+  return { mainMins, mainClass, mainTime: formatTime(first.ts), line1, line2, moreText };
 }
 
 /** 生成一张概念图风格 route-card 的 HTML */
@@ -1870,7 +2058,12 @@ function routeCardHTML(item, opts) {
   const faved = isFavorited(item);
   const favStar = faved ? '★' : '☆';
   const favClass = faved ? 'favorited' : '';
-  const { mainMins, mainClass, moreText } = buildETACard(item);
+  const eta = buildETACard(item);
+  const { mainMins, mainClass, moreText } = eta;
+
+  /* 轻铁 705/706 为天水围循环线：705 顺时针、706 逆时针 */
+  const lrtDir = (item.type === 'lrt' && (item.route === '705' || item.route === '706'))
+    ? (item.route === '705' ? '順時針' : '逆時針') : '';
 
   const tagText = item.type === 'mtr' ? '港铁'
     : item.type === 'mtrbus' ? '港铁巴士'
@@ -1897,9 +2090,16 @@ function routeCardHTML(item, opts) {
 
   let html = '<div class="transport-card route-card clickable" data-route-item=\'' + json + '\'>';
   html += '<div class="rc-head"><span class="rc-no">' + escapeHtml(no) + '</span>';
+  if (lrtDir) html += '<span class="rc-dir">' + lrtDir + '</span>';
   html += '<span class="rc-tag">' + tagText + '</span>';
   if (opts.removeIndex != null) {
     html += `<button class="fav-remove-btn" onclick="removeFavorite(${opts.removeIndex})" title="移除收藏">移除</button>`;
+    if (opts.showPick) {
+      let showIdx = -1;
+      try { showIdx = parseInt(localStorage.getItem(FAV_SHOW_KEY) || '-1', 10); } catch (e) {}
+      const used = (showIdx === opts.removeIndex);
+      html += `<button class="ds-pick ${used ? 'used' : ''}" onclick="setFavShow(${opts.removeIndex})" title="固定显示该站到站时间">${used ? '✓ 显示中' : '设为显示'}</button>`;
+    }
   }
   html += '</div>';
   html += '<div class="rc-name">' + escapeHtml(nameText) + '</div>';
@@ -1911,7 +2111,14 @@ function routeCardHTML(item, opts) {
     html += '<div class="rc-eta"><span class="rc-m">--</span><span class="rc-u">分钟</span></div>';
   }
   html += '<div class="rc-sub">';
-  html += '<div class="rc-stop">' + (mainMins !== null ? escapeHtml(moreText) : '暂无到站资讯') + '</div>';
+  if (eta.line1) {
+    html += '<div class="rc-line"><span class="rc-line-tag">' + eta.line1.label + '</span><span class="rc-line-time">' + eta.line1.time + '</span></div>';
+    if (eta.line2) {
+      html += '<div class="rc-line"><span class="rc-line-tag">' + eta.line2.label + '</span><span class="rc-line-time">' + eta.line2.time + '</span></div>';
+    }
+  } else {
+    html += '<div class="rc-stop">' + (mainMins !== null ? escapeHtml(moreText || '暂无到站资讯') : '暂无到站资讯') + '</div>';
+  }
   html += '<div class="rc-more">点按查看全线候车</div>';
   html += '</div>';
   if (opts.removeIndex == null) {
@@ -1983,11 +2190,50 @@ function renderFavorites() {
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
       <button id="exportQuote0Btn" style="background:#555;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" onclick="exportFavoritesForQuote0()" title="汇出收藏路线为 JSON，用于 Quote/0 推送脚本">⬇ 汇出收藏</button>
     </div>
+    <div id="favShowBox" class="favshow"></div>
     <div class="loading" id="favLoading"><div class="spinner"></div>载入实时数据中...</div>
   `;
+  renderFavShowHint();
 
   /* Fetch ETA for all favorites */
   loadFavoritesETA(favs, container);
+}
+
+/** 收藏页固定显示站提示（数据未到时） */
+function renderFavShowHint() {
+  const box = document.getElementById('favShowBox');
+  if (!box) return;
+  let showIdx = -1;
+  try { showIdx = parseInt(localStorage.getItem(FAV_SHOW_KEY) || '-1', 10); } catch (e) {}
+  if (showIdx >= 0) box.innerHTML = '<div class="favshow-head">固定显示站</div><div class="favshow-loading">载入中...</div>';
+  else box.innerHTML = '<div class="favshow-hint">在下方收藏卡点「设为显示」可固定该站到站时间</div>';
+}
+
+/** 收藏页固定显示站：把选中的收藏渲染为最上方的大号到站卡 */
+function updateFavShowBox(results) {
+  const box = document.getElementById('favShowBox');
+  if (!box) return;
+  let showIdx = -1;
+  try { showIdx = parseInt(localStorage.getItem(FAV_SHOW_KEY) || '-1', 10); } catch (e) {}
+  const item = (results || []).find(r => r.index === showIdx);
+  if (showIdx < 0 || !item) {
+    box.innerHTML = '<div class="favshow-hint">在下方收藏卡点「设为显示」可固定该站到站时间</div>';
+    return;
+  }
+  const card = routeCardHTML(item, { removeIndex: item.index, showPick: true });
+  box.innerHTML = '<div class="favshow-head">固定显示站 <button class="favshow-clear" onclick="clearFavShow()">取消固定</button></div>' + card;
+}
+
+/** 设为固定显示站 */
+function setFavShow(index) {
+  try { localStorage.setItem(FAV_SHOW_KEY, String(index)); } catch (e) {}
+  renderFavorites();
+}
+
+/** 取消固定显示站 */
+function clearFavShow() {
+  try { localStorage.removeItem(FAV_SHOW_KEY); } catch (e) {}
+  renderFavorites();
 }
 
 /** Load live ETA data for all favorites */
@@ -2009,8 +2255,21 @@ async function loadFavoritesETA(favs, container) {
         etas = await getCTBETA(fav.stop_id, fav.route);
         etas = etas.slice(0, 3);
       } else if (fav.company === 'nlb') {
-        if (fav.routeId && fav.stop_id) {
-          etas = await getNLBETA(fav.routeId, fav.stop_id);
+        let rid = fav.routeId;
+        if (!rid && fav.route) {
+          /* 兼容旧收藏：收藏未存 routeId 时按路线号反查一次并回写 */
+          try {
+            const rs = await searchNLBRoute(String(fav.route));
+            if (rs && rs[0]) {
+              rid = rs[0].routeId;
+              fav.routeId = rid;
+              const fs = getFavorites();
+              if (fs[index]) { fs[index].routeId = rid; saveFavorites(fs); }
+            }
+          } catch (e) {}
+        }
+        if (rid && fav.stop_id) {
+          etas = await getNLBETA(rid, fav.stop_id);
           etas = etas.slice(0, 3);
         }
       }
@@ -2087,8 +2346,20 @@ function renderFavoritesCards(items, container) {
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
       <button id="exportQuote0Btn2" style="background:#555;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" onclick="exportFavoritesForQuote0()" title="汇出收藏路线为 JSON，用于 Quote/0 推送脚本">⬇ 汇出收藏</button>
     </div>`;
-  const cards = items.map((item) => routeCardHTML(item, { removeIndex: item.index }));
-  container.innerHTML = exportBtn + '<div class="card-grid">' + cards.join('') + '</div>';
+  const cards = items.map((item) => routeCardHTML(item, { removeIndex: item.index, showPick: true }));
+  container.innerHTML = exportBtn + buildFavShowBox(items) + '<div class="card-grid">' + cards.join('') + '</div>';
+}
+
+/** 构建收藏页固定显示站提示框 HTML（renderFavoritesCards 内联使用，避免被整体覆盖） */
+function buildFavShowBox(results) {
+  let showIdx = -1;
+  try { showIdx = parseInt(localStorage.getItem(FAV_SHOW_KEY) || '-1', 10); } catch (e) {}
+  const item = (results || []).find(r => r.index === showIdx);
+  if (showIdx < 0 || !item) {
+    return '<div id="favShowBox" class="favshow"><div class="favshow-hint">在下方收藏卡点「设为显示」可固定该站到站时间</div></div>';
+  }
+  const card = routeCardHTML(item, { removeIndex: item.index, showPick: true });
+  return '<div id="favShowBox" class="favshow"><div class="favshow-head">固定显示站 <button class="favshow-clear" onclick="clearFavShow()">取消固定</button></div>' + card + '</div>';
 }
 
 /* ==========================================================================
@@ -2126,6 +2397,7 @@ function toggleFavByItem(item, btn) {
     if (item.type === 'bus') {
       fav.company = item.company;
       fav.route = item.route;
+      fav.routeId = item.routeId || '';
       fav.stop_id = item.stop_id || '';
       fav.stop_name = item.stop_name || '';
       fav.destination = item.origDest || '';
@@ -2466,6 +2738,64 @@ function closeRouteDetail() {
 }
 
 /** 渲染详情弹层内容 */
+/* ==========================================================================
+   MTR 车站接驳：轻铁 + 港铁巴士（iOS 概念图功能实装）
+   ========================================================================== */
+async function buildMTRConnections(item) {
+  const station = (item.station_name || '').trim();
+  if (!station) return '';
+  const parts = [];
+
+  /* --- 轻铁接驳：站名完全匹配 LRT_STATIONS --- */
+  const lrtId = Object.keys(LRT_STATIONS).find(k => LRT_STATIONS[k] === station);
+  if (lrtId != null) {
+    try {
+      const entries = await getLRTEta(Number(lrtId));
+      if (entries && entries.length) {
+        let h = '<div class="mtr-conn"><div class="conn-block">'
+          + '<div class="conn-title">🚈 轻铁接驳 · ' + escapeHtml(station) + '站</div>';
+        h += entries.slice(0, 4).map(e => {
+          const cls = e.mins <= 1 ? 'soon' : '';
+          return '<div class="conn-row"><span class="conn-badge lr">' + escapeHtml(e.routeNo) + '</span>'
+            + '<span class="conn-dest">' + escapeHtml(e.dest) + '</span>'
+            + '<span class="conn-eta ' + cls + '">' + e.mins + ' 分钟</span></div>';
+        }).join('');
+        h += '</div></div>';
+        parts.push(h);
+      }
+    } catch (e) {}
+  }
+
+  /* --- 港铁巴士接驳：路线 orig/dest 与站名匹配 --- */
+  const base = station.replace(/站$/, '');
+  const matchedRoutes = Object.keys(MTR_BUS_ROUTES).filter(r => {
+    const o = MTR_BUS_ROUTES[r];
+    return (o.orig && (o.orig.replace(/站$/, '') === base || o.orig.includes(station)))
+        || (o.dest && (o.dest.replace(/站$/, '') === base || o.dest.includes(station)));
+  });
+  for (const r of matchedRoutes.slice(0, 4)) {
+    try {
+      const data = await getMTRBusETA(r);
+      const parsed = parseMTRBusETAData(data);
+      if (!parsed.length) continue;
+      const o = MTR_BUS_ROUTES[r];
+      let h = '<div class="mtr-conn"><div class="conn-block">'
+        + '<div class="conn-title">🚌 港铁巴士 ' + escapeHtml(r) + ' · ' + escapeHtml(o.orig) + ' → ' + escapeHtml(o.dest) + '</div>';
+      h += parsed.slice(0, 3).map(p => {
+        if (!p.eta || isNaN(Date.parse(p.eta))) return '';
+        const minsText = minsFromNow(Math.floor(Date.parse(p.eta) / 1000));
+        const cls = minsText.indexOf('<1') === 0 ? 'soon' : '';
+        return '<div class="conn-row"><span class="conn-badge mtrbus">' + escapeHtml(r) + '</span>'
+          + '<span class="conn-dest">' + escapeHtml(p.stop_name || '') + '</span>'
+          + '<span class="conn-eta ' + cls + '">' + minsText + '</span></div>';
+      }).join('');
+      h += '</div></div>';
+      parts.push(h);
+    } catch (e) {}
+  }
+  return parts.join('');
+}
+
 async function renderDetailContent(item, inner) {
   try {
     let title = '', sub = '', meta = '', listHtml = '', tri = false;
@@ -2498,6 +2828,10 @@ async function renderDetailContent(item, inner) {
         const d = r.downs.length ? r.downs.map(em).join('') : '<span class="ds-none">—</span>';
         return `<div class="ds-stop ds-tri"><span class="ds-sn">${escapeHtml(r.name)}</span><span class="ds-e">${u}</span><span class="ds-e">${d}</span></div>`;
       }).join('');
+      /* 车站详情：附轻铁 / 港铁巴士接驳（仅车站模式） */
+      if (!isLine) {
+        listHtml += await buildMTRConnections(item);
+      }
     } else if (item.type === 'mtrbus') {
       title = String(item.route);
       sub = item.orig && item.dest ? `${item.orig} → ${item.dest}` : '港铁巴士';
@@ -2667,26 +3001,35 @@ function startAutoRefresh() {
    Event Listeners & Init
    ========================================================================== */
 
-/* ===== Skin switching (AC vs Material Design 3) ===== */
+/* ===== Skin switching (AC / Material Design 3 / iOS) ===== */
 const SKIN_KEY = 'marvis_skin';
 function applySkin(skin) {
   const s = skin === 'dog' ? 'md' : skin; /* 兼容旧版保存的 dog 值 */
   if (s === 'md') {
     document.body.dataset.skin = 'md';
+  } else if (s === 'ios') {
+    document.body.dataset.skin = 'ios';
   } else {
     delete document.body.dataset.skin;
   }
-  const btn = document.getElementById('skinBtn');
-  if (btn) btn.textContent = s === 'md' ? '🎨' : '🍃';
+  /* 高亮设定页皮肤按钮 */
+  document.querySelectorAll('.skin-opt').forEach(b => {
+    b.classList.toggle('active', b.dataset.skin === (s || 'ac'));
+  });
   /* 同步浏览器地址栏 / PWA 标题栏主题色 */
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', s === 'md' ? '#6750a4' : '#5fae82');
+  const color = s === 'md' ? '#6750a4' : s === 'ios' ? '#007AFF' : '#5fae82';
+  if (meta) meta.setAttribute('content', color);
+}
+function setSkin(skin) {
+  applySkin(skin);
+  try { localStorage.setItem(SKIN_KEY, skin); } catch (e) {}
 }
 function toggleSkin() {
-  const current = document.body.dataset.skin === 'md' ? 'md' : 'ac';
-  const next = current === 'md' ? 'ac' : 'md';
-  applySkin(next);
-  try { localStorage.setItem(SKIN_KEY, next); } catch (e) {}
+  const current = document.body.dataset.skin || 'ac';
+  const order = ['ac', 'md', 'ios'];
+  const next = order[(order.indexOf(current) + 1) % order.length];
+  setSkin(next);
 }
 
 /* ==========================================================================
