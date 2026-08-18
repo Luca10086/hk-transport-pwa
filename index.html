@@ -1110,7 +1110,18 @@ async function searchBusRoute(query, container) {
     for (const dir of ['outbound', 'inbound']) {
       const stops = await getCTBStops(route.route, dir);
       if (stops.length > 0) {
-        const firstStop = stops[0];
+        /* 城巴 ETA API 对部分站点(尤其总站/前几站)返回空数据，
+           并行探测前几个站，取第一个有本方向班次的站作为展示站 */
+        const wantDir = dir === 'inbound' ? 'I' : 'O';
+        const probes = await Promise.all(
+          stops.slice(0, 6).map(async (s) => {
+            const etas = await getCTBETA(s.stop || s.stop_id, route.route);
+            return { s, ok: etas.some(e => (e.dir || '').toUpperCase() === wantDir) };
+          })
+        );
+        let firstStop = null;
+        for (const p of probes) { if (p.ok) { firstStop = p.s; break; } }
+        if (!firstStop) firstStop = stops[0];
         allResults.push({
           type: 'bus', company: 'ctb',
           route: String(route.route),
