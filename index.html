@@ -381,152 +381,239 @@ body {
 }
 
 /* ==========================================================================
-   Line Puppy (线条小狗) Skin — Material Design 3 版
+   Material Design 3 Skin
+   依照 m3.material.io 规范：M3 baseline 色板(seed #6750A4) + 形状 token + 状态层
    ========================================================================== */
-body[data-skin="dog"] {
-  --bg-top: #f7f4fb;
-  --bg-mid: #f2edf8;
-  --bg-bottom: #eae3f3;
+body[data-skin="md"] {
+  /* M3 color tokens (light scheme) */
+  --md-primary: #6750a4;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #eaddff;
+  --md-on-primary-container: #21005d;
+  --md-secondary-container: #e8def8;
+  --md-on-secondary-container: #1d192b;
+  --md-tertiary-container: #ffd8e4;
+  --md-error: #b3261e;
+  --md-error-container: #f9dedc;
+  --md-on-error-container: #410e0b;
+  --md-surface: #fef7ff;
+  --md-on-surface: #1d1b20;
+  --md-on-surface-variant: #49454f;
+  --md-surface-variant: #e7e0ec;
+  --md-outline: #79747e;
+  --md-outline-variant: #cac4d0;
+  --md-surface-lowest: #ffffff;
+  --md-surface-container: #f3edf7;
+  --md-surface-high: #ece6f0;
+  --md-surface-highest: #e6e0e9;
+  /* M3 shape tokens */
+  --md-corner-xs: 4px;
+  --md-corner-s: 8px;
+  --md-corner-m: 12px;
+  --md-corner-l: 16px;
+  --md-corner-xl: 28px;
+  --md-corner-full: 999px;
+  /* M3 elevation tokens（shadow + 表面色调分层） */
+  --md-elev-0: none;
+  --md-elev-1: 0 1px 2px rgba(29,27,32,0.3), 0 1px 3px 1px rgba(29,27,32,0.15);
+  --md-elev-2: 0 1px 2px rgba(29,27,32,0.3), 0 2px 6px 2px rgba(29,27,32,0.15);
+  --md-elev-3: 0 4px 8px 3px rgba(29,27,32,0.15), 0 1px 3px rgba(29,27,32,0.3);
+  /* M3 type scale tokens（Roboto, 参考 title-large / title-medium / body-medium / label-large） */
+  --md-type-title-large: 1.375rem;   /* 22px */
+  --md-type-title-medium: 1rem;      /* 16px */
+  --md-type-body-medium: 0.875rem;   /* 14px */
+  --md-type-label-large: 0.875rem;   /* 14px */
+  /* M3 motion：emphasized easing */
+  --md-motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  /* 映射到既有变量（页面其它样式仍可用） */
+  --bg-top: #f7f2fa;
+  --bg-mid: #f3edf7;
+  --bg-bottom: #ece6f0;
   --text: #1d1b20;
   --text-dark: #49454f;
   --primary: #6750a4;
   --primary-light: #eaddff;
   --primary-dark: #4f378b;
-  --card-bg: #fef7ff;
-  --card-bg2: #f8f3fb;
+  --card-bg: #ffffff;
+  --card-bg2: #f7f2fa;
   --card-border: #cac4d0;
-  --card-shadow: #e4ddec;
+  --card-shadow: #e6e0e9;
   --card-bg-soft: #ffffff;
   font-family: 'Roboto', 'Nunito', 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
 }
-/* 小狗皮肤：隐藏动森装饰，改为低透明爪印（Material 点缀） */
-body[data-skin="dog"] .bg-decor .deco { opacity: 0; }
-body[data-skin="dog"] .bg-decor::before {
+
+/* M3 皮肤：隐藏动森装饰，替换为 M3 有机形状色块背景 */
+body[data-skin="md"] .bg-decor .deco { opacity: 0; }
+body[data-skin="md"] .bg-decor::before {
   content: '';
   position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='66' rx='22' ry='26' fill='%236750a4'/%3E%3Ccircle cx='30' cy='40' r='10' fill='%236750a4'/%3E%3Ccircle cx='48' cy='31' r='10' fill='%236750a4'/%3E%3Ccircle cx='66' cy='40' r='10' fill='%236750a4'/%3E%3C/svg%3E");
-  background-size: 140px;
-  opacity: 0.05;
+  background:
+    radial-gradient(circle at 86% 6%, var(--md-primary-container) 0, rgba(234,221,255,0) 36%),
+    radial-gradient(circle at 6% 28%, var(--md-tertiary-container) 0, rgba(255,216,228,0) 40%),
+    radial-gradient(circle at 93% 66%, var(--md-secondary-container) 0, rgba(232,222,248,0) 38%),
+    radial-gradient(circle at 10% 90%, var(--md-primary-container) 0, rgba(234,221,255,0) 44%);
 }
-/* 小狗皮肤：AppBar → Material 表面 + 柔和阴影 */
-body[data-skin="dog"] .navbar {
-  background: #fef7ff;
-  color: #1d1b20;
-  border-bottom: none;
-  box-shadow: 0 2px 4px rgba(29,27,32,0.08), 0 1px 2px rgba(29,27,32,0.06);
+
+/* M3 App Bar：surface 顶栏 + outline-variant 细分隔线，无重阴影 */
+body[data-skin="md"] .navbar {
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  border-bottom: 1px solid var(--md-outline-variant);
+  box-shadow: none;
 }
-body[data-skin="dog"] .navbar h1 {
+body[data-skin="md"] .navbar h1 {
   font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
-  font-weight: 700; letter-spacing: 0; text-shadow: none;
+  font-weight: 400; letter-spacing: 0; text-shadow: none;
+  font-size: var(--md-type-title-large);
 }
-body[data-skin="dog"] .navbar h1::before { content: '🐶 '; font-size: 1.1em; }
-body[data-skin="dog"] .navbar .refresh-btn,
-body[data-skin="dog"] .navbar .skin-btn {
+body[data-skin="md"] .navbar .refresh-btn,
+body[data-skin="md"] .navbar .skin-btn {
   font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
-  background: #e8def8; color: #21005d; border: none;
-  border-radius: 999px; box-shadow: none; font-weight: 600;
+  background: transparent; color: var(--md-primary); border: none;
+  border-radius: 20px; box-shadow: none; font-weight: 500;
+  padding: 8px 16px;
 }
-body[data-skin="dog"] .navbar .refresh-btn:active,
-body[data-skin="dog"] .navbar .skin-btn:active { transform: translateY(1px); box-shadow: none; }
-/* 小狗皮肤：区块卡片 → Material elevated card */
-body[data-skin="dog"] .search-section,
-body[data-skin="dog"] .favorites-section,
-body[data-skin="dog"] .info-section,
-body[data-skin="dog"] .results-section {
-  background: #fef7ff;
-  border: none;
-  border-radius: 24px;
-  box-shadow: 0 1px 2px rgba(29,27,32,0.08), 0 8px 24px rgba(29,27,32,0.08);
+body[data-skin="md"] .navbar .refresh-btn:hover,
+body[data-skin="md"] .navbar .skin-btn:hover { background: rgba(103,80,164,0.08); }
+body[data-skin="md"] .navbar .refresh-btn:active,
+body[data-skin="md"] .navbar .skin-btn:active { background: rgba(103,80,164,0.12); }
+
+/* M3 区块卡片：outlined/elevated card（M3 Card = corner-large 16dp, elevation 1） */
+body[data-skin="md"] .search-section,
+body[data-skin="md"] .favorites-section,
+body[data-skin="md"] .info-section,
+body[data-skin="md"] .results-section {
+  background: var(--md-surface-lowest);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-corner-l);
+  box-shadow: var(--md-elev-1);
 }
-body[data-skin="dog"] .transport-card,
-body[data-skin="dog"] .sushiro-card {
-  background: #ffffff;
-  border: 1px solid #e7e0ec;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(29,27,32,0.08), 0 4px 12px rgba(29,27,32,0.06);
+
+/* M3 卡片（transport / sushiro）：elevated card，corner-large，hover elevation 2 + 动效 */
+body[data-skin="md"] .transport-card,
+body[data-skin="md"] .sushiro-card {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-corner-l);
+  box-shadow: var(--md-elev-1);
+  transition: box-shadow 200ms var(--md-motion-ease), background 200ms var(--md-motion-ease);
 }
-body[data-skin="dog"] .transport-card:hover { box-shadow: 0 4px 8px rgba(29,27,32,0.10), 0 8px 20px rgba(29,27,32,0.08); transform: translateY(-2px); }
-body[data-skin="dog"] .k75p-stop {
-  background: #ffffff; border: 1px solid #e7e0ec; border-radius: 14px;
+body[data-skin="md"] .transport-card:hover {
+  box-shadow: var(--md-elev-2);
+  transform: none;
 }
-/* 小狗皮肤：区块标题 → Material 文字标题 */
-body[data-skin="dog"] .section-title {
+body[data-skin="md"] .k75p-stop {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-corner-s);
+}
+
+/* M3 区块标题：Roboto title + primary 指示条 */
+body[data-skin="md"] .section-title {
   background: transparent; border: none; box-shadow: none;
   font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
-  color: #21005d; text-shadow: none; font-weight: 700; padding: 0 4px;
+  color: var(--md-on-surface); text-shadow: none; font-weight: 500;
+  font-size: var(--md-type-title-medium); letter-spacing: 0.15px; padding: 2px 10px;
+  border-left: 4px solid var(--md-primary);
+  border-radius: 0; margin-bottom: 16px;
 }
-body[data-skin="dog"] .section-title .badge {
-  background: #eaddff; color: #4f378b; box-shadow: none; border-radius: 999px;
+body[data-skin="md"] .section-title .badge {
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+  box-shadow: none; border-radius: var(--md-corner-s);
 }
-/* 小狗皮肤：输入框 → Material filled 风格 */
-body[data-skin="dog"] .search-input {
-  background: #f3edf9; border: 1px solid transparent; border-radius: 12px;
-  color: #1d1b20; font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+
+/* M3 输入框：filled text field（顶部圆角 + 底部 active indicator 指示线） */
+body[data-skin="md"] .search-input {
+  background: var(--md-surface-highest);
+  border: none; border-bottom: 1px solid var(--md-on-surface-variant);
+  border-radius: var(--md-corner-xs) var(--md-corner-xs) 0 0;
+  color: var(--md-on-surface); font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  padding: 16px 16px 12px;
 }
-body[data-skin="dog"] .search-input:focus {
-  border-color: #6750a4; box-shadow: 0 0 0 3px rgba(103,80,164,0.28); background: #ffffff;
+body[data-skin="md"] .search-input:focus {
+  background: var(--md-surface-highest);
+  border-bottom: 2px solid var(--md-primary);
+  box-shadow: none;
 }
-body[data-skin="dog"] .search-input::placeholder { color: #79747e; }
-/* 小狗皮肤：交通切换 → Material chip 组 */
-body[data-skin="dog"] .transport-toggle {
-  background: #e7e0ec; border-radius: 999px; box-shadow: none; padding: 4px;
+body[data-skin="md"] .search-input::placeholder { color: var(--md-on-surface-variant); }
+
+/* M3 交通切换：filter chip 组 */
+body[data-skin="md"] .transport-toggle {
+  background: transparent; border-radius: 0; box-shadow: none; padding: 0; gap: 8px;
 }
-body[data-skin="dog"] .transport-toggle button {
-  color: #49454f; font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 600;
-  border-radius: 999px;
+body[data-skin="md"] .transport-toggle button {
+  color: var(--md-on-surface-variant); font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  font-weight: 500; font-size: 0.875rem;
+  background: transparent; border: 1px solid var(--md-outline);
+  border-radius: var(--md-corner-s); padding: 7px 16px; height: 32px;
 }
-body[data-skin="dog"] .transport-toggle button.active {
-  background: #6750a4; color: #ffffff; box-shadow: 0 2px 4px rgba(103,80,164,0.4); text-shadow: none;
+body[data-skin="md"] .transport-toggle button:hover { background: rgba(103,80,164,0.08); }
+body[data-skin="md"] .transport-toggle button.active {
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+  border-color: transparent; box-shadow: none; text-shadow: none;
 }
-/* 小狗皮肤：搜索按钮 → Material FAB 胶囊 */
-body[data-skin="dog"] .search-btn {
-  background: #6750a4; color: #ffffff; border: none; border-radius: 999px;
-  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
-  box-shadow: 0 3px 8px rgba(103,80,164,0.45);
+
+/* M3 搜索按钮：filled button（corner 20dp，状态层 hover/active） */
+body[data-skin="md"] .search-btn {
+  background: var(--md-primary); color: var(--md-on-primary);
+  border: none; border-radius: 20px; height: 40px;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 500;
+  box-shadow: none; letter-spacing: 0.2px;
 }
-body[data-skin="dog"] .search-btn:hover { filter: brightness(1.06); }
-body[data-skin="dog"] .search-btn:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(103,80,164,0.45); }
-/* 小狗皮肤：收藏 / 移除按钮 Material 化 */
-body[data-skin="dog"] .fav-btn {
-  background: #ffffff; border: 1px solid #e7e0ec; border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(29,27,32,0.12);
+body[data-skin="md"] .search-btn:hover { background: #7a66b6; box-shadow: none; filter: none; }
+body[data-skin="md"] .search-btn:active { background: #8269c9; transform: none; box-shadow: none; }
+
+/* M3 收藏按钮：icon button（状态层代替位移） */
+body[data-skin="md"] .fav-btn {
+  background: transparent; border: none; border-radius: 50%; box-shadow: none;
 }
-body[data-skin="dog"] .fav-btn.favorited { background: #fce8e6; border-color: #f2b8b5; color: #b3261e; }
-body[data-skin="dog"] .fav-remove-btn {
-  background: #ffffff; border: 1px solid #e7e0ec; border-radius: 999px; color: #b3261e;
-  box-shadow: none; font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+body[data-skin="md"] .fav-btn:hover { background: rgba(103,80,164,0.08); transform: none; }
+body[data-skin="md"] .fav-btn:active { background: rgba(103,80,164,0.12); transform: none; box-shadow: none; }
+body[data-skin="md"] .fav-btn.favorited { background: var(--md-error-container); color: var(--md-error); }
+body[data-skin="md"] .fav-remove-btn {
+  background: transparent; border: 1px solid var(--md-outline);
+  border-radius: 20px; color: var(--md-error); box-shadow: none;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 500;
 }
-/* 小狗皮肤：K75P 折叠按钮 → Material tonal */
-body[data-skin="dog"] .k75p-fold-btn {
-  background: #f3edf9; border: 1px dashed #cac4d0; border-radius: 999px; color: #6750a4;
-  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+body[data-skin="md"] .fav-remove-btn:hover { background: rgba(179,38,30,0.08); }
+
+/* M3 K75P 折叠按钮：text button */
+body[data-skin="md"] .k75p-fold-btn {
+  background: transparent; border: 1px solid var(--md-outline);
+  border-radius: 20px; color: var(--md-primary);
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 500;
 }
-body[data-skin="dog"] .k75p-fold-btn:hover { background: #eaddff; }
-/* 小狗皮肤：K75P 巴士时间 → Material chip */
-body[data-skin="dog"] .k75p-bus {
-  background: #f3edf9; border: 1px solid #e0d9ee; color: #4f378b;
-  border-radius: 999px; font-family: 'Roboto', 'Nunito', sans-serif;
+body[data-skin="md"] .k75p-fold-btn:hover { background: rgba(103,80,164,0.08); }
+
+/* M3 K75P 巴士时间：assist chip */
+body[data-skin="md"] .k75p-bus {
+  background: var(--md-surface-container); border: 1px solid var(--md-outline-variant);
+  color: var(--md-on-surface-variant);
+  border-radius: var(--md-corner-s); font-family: 'Roboto', 'Nunito', sans-serif; font-weight: 500;
 }
-body[data-skin="dog"] .k75p-bus.soon { background: #fce8e6; border-color: #f2b8b5; color: #b3261e; }
-body[data-skin="dog"] .k75p-bus.delayed { background: #fff4e5; border-color: #ffd8a8; color: #9a6700; }
-body[data-skin="dog"] .k75p-bus.scheduled { background: #e8f0fe; border-color: #c2d4f7; color: #1a56a0; }
-body[data-skin="dog"] .k75p-bus.k75p-none { background: #f4f1f7; border-color: #e0d9ee; color: #79747e; }
-/* 小狗皮肤：天气卡片 */
-body[data-skin="dog"] .weather-item { background: #f3edf9; border: 1px solid #e0d9ee; border-radius: 16px; }
-/* 小狗皮肤：文本与杂项 */
-body[data-skin="dog"] .empty-hint { color: #79747e; }
-body[data-skin="dog"] .card-dest,
-body[data-skin="dog"] .card-stop,
-body[data-skin="dog"] .eta-detail,
-body[data-skin="dog"] .sushiro-card .s-status { color: #5f5b66; }
-body[data-skin="dog"] .spinner { border-color: #e7e0ec; border-top-color: #6750a4; }
-body[data-skin="dog"] .error-msg { background: #fce8e6; border-color: #f2b8b5; color: #b3261e; }
-/* 小狗皮肤：导出按钮 */
-body[data-skin="dog"] #exportQuote0Btn,
-body[data-skin="dog"] #exportQuote0Btn2 {
-  background: #eaddff !important; color: #21005d !important;
-  border-radius: 999px !important; box-shadow: none !important;
-  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif !important;
+body[data-skin="md"] .k75p-bus.soon { background: var(--md-error-container); border-color: transparent; color: var(--md-on-error-container); }
+body[data-skin="md"] .k75p-bus.delayed { background: #fff4e5; border-color: #ffd8a8; color: #9a6700; }
+body[data-skin="md"] .k75p-bus.scheduled { background: var(--md-primary-container); border-color: transparent; color: var(--md-on-primary-container); }
+body[data-skin="md"] .k75p-bus.k75p-none { background: transparent; border-color: var(--md-outline-variant); color: var(--md-on-surface-variant); }
+
+/* M3 天气卡片 */
+body[data-skin="md"] .weather-item { background: var(--md-surface-container); border: 1px solid var(--md-outline-variant); border-radius: var(--md-corner-m); }
+
+/* M3 文本与杂项 */
+body[data-skin="md"] .empty-hint { color: var(--md-on-surface-variant); }
+body[data-skin="md"] .card-dest,
+body[data-skin="md"] .card-stop,
+body[data-skin="md"] .eta-detail,
+body[data-skin="md"] .sushiro-card .s-status { color: var(--md-on-surface-variant); }
+body[data-skin="md"] .spinner { border-color: var(--md-outline-variant); border-top-color: var(--md-primary); }
+body[data-skin="md"] .error-msg { background: var(--md-error-container); border: 1px solid transparent; color: var(--md-on-error-container); }
+
+/* M3 导出按钮 */
+body[data-skin="md"] #exportQuote0Btn,
+body[data-skin="md"] #exportQuote0Btn2 {
+  background: var(--md-primary-container) !important; color: var(--md-on-primary-container) !important;
+  border-radius: 20px !important; box-shadow: none !important;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif !important; font-weight: 500 !important;
 }
 
 /* ===== 折叠屏 / 宽屏优化 (Foldable & Large Screens) ===== */
@@ -1028,7 +1115,9 @@ async function searchBusRoute(query, container) {
           type: 'bus', company: 'ctb',
           route: String(route.route),
           direction: dir,
-          origDest: route.orig_tc && route.dest_tc ? `${route.orig_tc} → ${route.dest_tc}` : '',
+          origDest: route.orig_tc && route.dest_tc
+            ? (dir === 'inbound' ? `${route.dest_tc} → ${route.orig_tc}` : `${route.orig_tc} → ${route.dest_tc}`)
+            : '',
           stop_id: firstStop.stop || firstStop.stop_id,
           stop_name: firstStop.stop || firstStop.stop_id,
         });
@@ -1052,6 +1141,9 @@ async function searchBusRoute(query, container) {
         etas = etas.filter(e => e.route === item.route);
       } else {
         etas = await getCTBETA(item.stop_id, item.route);
+        /* Filter to this direction: O=outbound(去铜锣湾), I=inbound(回天水围) */
+        const wantDir = item.direction === 'inbound' ? 'I' : 'O';
+        etas = etas.filter(e => (e.dir || '').toUpperCase() === wantDir);
       }
       return { ...item, etas: etas.slice(0, 3) };
     })
@@ -1857,20 +1949,21 @@ function startAutoRefresh() {
    Event Listeners & Init
    ========================================================================== */
 
-/* ===== Skin switching (AC vs Line Puppy) ===== */
+/* ===== Skin switching (AC vs Material Design 3) ===== */
 const SKIN_KEY = 'marvis_skin';
 function applySkin(skin) {
-  if (skin === 'dog') {
-    document.body.dataset.skin = 'dog';
+  const s = skin === 'dog' ? 'md' : skin; /* 兼容旧版保存的 dog 值 */
+  if (s === 'md') {
+    document.body.dataset.skin = 'md';
   } else {
     delete document.body.dataset.skin;
   }
   const btn = document.getElementById('skinBtn');
-  if (btn) btn.textContent = skin === 'dog' ? '🍃' : '🎨';
+  if (btn) btn.textContent = s === 'md' ? '🎨' : '🍃';
 }
 function toggleSkin() {
-  const current = document.body.dataset.skin === 'dog' ? 'dog' : 'ac';
-  const next = current === 'dog' ? 'ac' : 'dog';
+  const current = document.body.dataset.skin === 'md' ? 'md' : 'ac';
+  const next = current === 'md' ? 'ac' : 'md';
   applySkin(next);
   try { localStorage.setItem(SKIN_KEY, next); } catch (e) {}
 }
