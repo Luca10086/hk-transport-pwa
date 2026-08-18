@@ -177,6 +177,7 @@ body {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
 }
+.card-grid > * { min-width: 0; }
 
 /* ===== Search Results ===== */
 .results-section {
@@ -788,7 +789,7 @@ body[data-skin="md"] .fab-main:hover {
 /* =====================================================================
    概念图风格结果卡（route-card）—— AC 皮肤基础样式
    ===================================================================== */
-.route-card { padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 6px; }
+.route-card { min-width: 0; padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 6px; }
 .route-card.clickable { cursor: pointer; }
 .route-card .rc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; }
 .route-card .rc-no { font-size: 1.45rem; font-weight: 800; color: var(--primary-dark); line-height: 1.1; font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; }
@@ -801,8 +802,8 @@ body[data-skin="md"] .fab-main:hover {
 .route-card .rc-m.medium { color: #ef6c00; }
 .route-card .rc-u { font-size: 0.72rem; color: #a08d6f; }
 .route-card .rc-sub { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.route-card .rc-stop { font-size: 0.8rem; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.route-card .rc-more { font-size: 0.7rem; color: #a08d6f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-card .rc-stop { min-width: 0; font-size: 0.8rem; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-card .rc-more { min-width: 0; font-size: 0.7rem; color: #a08d6f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .route-card .fav-btn { position: static; flex: none; align-self: center; }
 .route-card .fav-remove-btn { position: absolute; top: 12px; right: 14px; }
 .route-card .rc-progress { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
@@ -1305,25 +1306,6 @@ async function getKMBETA(stopId) {
     const data = await fetchWithProxy(`${KMB_BASE}/stop-eta/${stopId}`);
     return data && data.data ? data.data : [];
   } catch { return []; }
-}
-
-/* 全港巴士站表缓存：stop_id -> 中文站名（KMB/CTB 共用全港统一站码） */
-let _stopNameMapCache = null;
-async function getStopNameMap() {
-  if (_stopNameMapCache) return _stopNameMapCache;
-  try {
-    const data = await fetchWithProxy(`${KMB_BASE}/stop`);
-    const map = {};
-    if (data && Array.isArray(data.data)) {
-      for (const s of data.data) {
-        if (s && s.stop) map[String(s.stop)] = s.name_tc || s.name_en || String(s.stop);
-      }
-    }
-    _stopNameMapCache = map;
-  } catch {
-    _stopNameMapCache = {};
-  }
-  return _stopNameMapCache;
 }
 
 /* ==========================================================================
@@ -2255,6 +2237,20 @@ async function getCTBRouteStops(route, dir) {
   } catch { return []; }
 }
 
+/* CTB 站名查询（6 位数字站码 → 中文名），带缓存 */
+const _ctbNameCache = {};
+async function getCTBStopName(stopId) {
+  if (_ctbNameCache[stopId]) return _ctbNameCache[stopId];
+  try {
+    const data = await fetchWithProxy(`${CTB_BASE}/stop/${stopId}`);
+    const d = data && data.data;
+    _ctbNameCache[stopId] = (d && (d.name_tc || d.name_en)) || ('站 ' + stopId);
+  } catch {
+    _ctbNameCache[stopId] = '站 ' + stopId;
+  }
+  return _ctbNameCache[stopId];
+}
+
 function openRouteDetail(item) {
   const mask = document.getElementById('detailMask');
   const sheet = document.getElementById('detailSheet');
@@ -2366,16 +2362,18 @@ async function renderDetailContent(item, inner) {
           return `<div class="ds-stop"><span class="ds-sn">${escapeHtml(r.name)}</span><span class="ds-e">${cells}</span></div>`;
         }).join('');
       } else {
-        /* CTB：按方向取站，逐站取 ETA */
+        /* CTB：按方向取站，逐站取站名 + ETA（分批并行，避免并发过多被限流） */
         const dir = item.direction || 'outbound';
         const stops = await getCTBRouteStops(item.route, dir);
-        const nameMap = await getStopNameMap();
         const rows = [];
-        for (const s of stops) {
-          const sid = s.stop || s.stop_id;
-          const etas = await getCTBETA(sid, item.route);
-          const times = etas.slice(0, 2).map(e => e.eta ? new Date(e.eta).getTime() / 1000 : null).filter(Boolean);
-          rows.push({ name: nameMap[sid] || ('站 ' + sid), times });
+        for (let i = 0; i < stops.length; i += 5) {
+          const batch = await Promise.all(stops.slice(i, i + 5).map(async (s) => {
+            const sid = s.stop || s.stop_id;
+            const [name, etas] = await Promise.all([getCTBStopName(sid), getCTBETA(sid, item.route)]);
+            const times = etas.slice(0, 2).map(e => e.eta ? new Date(e.eta).getTime() / 1000 : null).filter(Boolean);
+            return { name, times };
+          }));
+          rows.push(...batch);
         }
         listHtml = rows.map(r => {
           const cells = r.times.length ? r.times.map(em).join('') : '<span class="ds-none">—</span>';
