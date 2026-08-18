@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Roboto:wght@400;500;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg-top: #e6f4e8;
@@ -381,48 +381,170 @@ body {
 }
 
 /* ==========================================================================
-   Line Puppy (线条小狗) Skin
+   Line Puppy (线条小狗) Skin — Material Design 3 版
    ========================================================================== */
 body[data-skin="dog"] {
-  --bg-top: #fdf2e4;
-  --bg-mid: #f9ecd7;
-  --bg-bottom: #f1ddc2;
-  --text: #4a3f35;
-  --text-dark: #4f3a24;
-  --primary: #c89a6b;
-  --primary-light: #e8c9a5;
-  --primary-dark: #a67a4d;
-  --card-bg: #fffdf6;
-  --card-bg2: #faf0e0;
-  --card-border: #e6cba2;
-  --card-shadow: #d9b98a;
-  --card-bg-soft: #fffdf6;
+  --bg-top: #f7f4fb;
+  --bg-mid: #f2edf8;
+  --bg-bottom: #eae3f3;
+  --text: #1d1b20;
+  --text-dark: #49454f;
+  --primary: #6750a4;
+  --primary-light: #eaddff;
+  --primary-dark: #4f378b;
+  --card-bg: #fef7ff;
+  --card-bg2: #f8f3fb;
+  --card-border: #cac4d0;
+  --card-shadow: #e4ddec;
+  --card-bg-soft: #ffffff;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
 }
-/* 小狗皮肤：隐藏动森装饰，改为爪印平铺背景 */
+/* 小狗皮肤：隐藏动森装饰，改为低透明爪印（Material 点缀） */
 body[data-skin="dog"] .bg-decor .deco { opacity: 0; }
 body[data-skin="dog"] .bg-decor::before {
   content: '';
   position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='66' rx='22' ry='26' fill='%238a6a4a'/%3E%3Ccircle cx='30' cy='40' r='10' fill='%238a6a4a'/%3E%3Ccircle cx='48' cy='31' r='10' fill='%238a6a4a'/%3E%3Ccircle cx='66' cy='40' r='10' fill='%238a6a4a'/%3E%3C/svg%3E");
-  background-size: 110px;
-  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='66' rx='22' ry='26' fill='%236750a4'/%3E%3Ccircle cx='30' cy='40' r='10' fill='%236750a4'/%3E%3Ccircle cx='48' cy='31' r='10' fill='%236750a4'/%3E%3Ccircle cx='66' cy='40' r='10' fill='%236750a4'/%3E%3C/svg%3E");
+  background-size: 140px;
+  opacity: 0.05;
 }
-/* 小狗皮肤：标题与小装饰 */
-body[data-skin="dog"] .navbar h1::before { content: '🐶 '; }
-body[data-skin="dog"] .navbar { border-bottom: 5px solid var(--primary-dark); }
-/* 小狗皮肤：卡片更圆润 + 底部小爪印点缀 */
+/* 小狗皮肤：AppBar → Material 表面 + 柔和阴影 */
+body[data-skin="dog"] .navbar {
+  background: #fef7ff;
+  color: #1d1b20;
+  border-bottom: none;
+  box-shadow: 0 2px 4px rgba(29,27,32,0.08), 0 1px 2px rgba(29,27,32,0.06);
+}
+body[data-skin="dog"] .navbar h1 {
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  font-weight: 700; letter-spacing: 0; text-shadow: none;
+}
+body[data-skin="dog"] .navbar h1::before { content: '🐶 '; font-size: 1.1em; }
+body[data-skin="dog"] .navbar .refresh-btn,
+body[data-skin="dog"] .navbar .skin-btn {
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  background: #e8def8; color: #21005d; border: none;
+  border-radius: 999px; box-shadow: none; font-weight: 600;
+}
+body[data-skin="dog"] .navbar .refresh-btn:active,
+body[data-skin="dog"] .navbar .skin-btn:active { transform: translateY(1px); box-shadow: none; }
+/* 小狗皮肤：区块卡片 → Material elevated card */
 body[data-skin="dog"] .search-section,
 body[data-skin="dog"] .favorites-section,
 body[data-skin="dog"] .info-section,
 body[data-skin="dog"] .results-section {
-  border-radius: 26px;
+  background: #fef7ff;
+  border: none;
+  border-radius: 24px;
+  box-shadow: 0 1px 2px rgba(29,27,32,0.08), 0 8px 24px rgba(29,27,32,0.08);
 }
-body[data-skin="dog"] .k75p-stop,
-body[data-skin="dog"] .sushiro-card,
-body[data-skin="dog"] .card {
-  border-radius: 18px;
+body[data-skin="dog"] .transport-card,
+body[data-skin="dog"] .sushiro-card {
+  background: #ffffff;
+  border: 1px solid #e7e0ec;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(29,27,32,0.08), 0 4px 12px rgba(29,27,32,0.06);
 }
-body[data-skin="dog"] .skin-btn { background: linear-gradient(180deg, #fffdf6, #f1e0c8); }
+body[data-skin="dog"] .transport-card:hover { box-shadow: 0 4px 8px rgba(29,27,32,0.10), 0 8px 20px rgba(29,27,32,0.08); transform: translateY(-2px); }
+body[data-skin="dog"] .k75p-stop {
+  background: #ffffff; border: 1px solid #e7e0ec; border-radius: 14px;
+}
+/* 小狗皮肤：区块标题 → Material 文字标题 */
+body[data-skin="dog"] .section-title {
+  background: transparent; border: none; box-shadow: none;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  color: #21005d; text-shadow: none; font-weight: 700; padding: 0 4px;
+}
+body[data-skin="dog"] .section-title .badge {
+  background: #eaddff; color: #4f378b; box-shadow: none; border-radius: 999px;
+}
+/* 小狗皮肤：输入框 → Material filled 风格 */
+body[data-skin="dog"] .search-input {
+  background: #f3edf9; border: 1px solid transparent; border-radius: 12px;
+  color: #1d1b20; font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+}
+body[data-skin="dog"] .search-input:focus {
+  border-color: #6750a4; box-shadow: 0 0 0 3px rgba(103,80,164,0.28); background: #ffffff;
+}
+body[data-skin="dog"] .search-input::placeholder { color: #79747e; }
+/* 小狗皮肤：交通切换 → Material chip 组 */
+body[data-skin="dog"] .transport-toggle {
+  background: #e7e0ec; border-radius: 999px; box-shadow: none; padding: 4px;
+}
+body[data-skin="dog"] .transport-toggle button {
+  color: #49454f; font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 600;
+  border-radius: 999px;
+}
+body[data-skin="dog"] .transport-toggle button.active {
+  background: #6750a4; color: #ffffff; box-shadow: 0 2px 4px rgba(103,80,164,0.4); text-shadow: none;
+}
+/* 小狗皮肤：搜索按钮 → Material FAB 胶囊 */
+body[data-skin="dog"] .search-btn {
+  background: #6750a4; color: #ffffff; border: none; border-radius: 999px;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  box-shadow: 0 3px 8px rgba(103,80,164,0.45);
+}
+body[data-skin="dog"] .search-btn:hover { filter: brightness(1.06); }
+body[data-skin="dog"] .search-btn:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(103,80,164,0.45); }
+/* 小狗皮肤：收藏 / 移除按钮 Material 化 */
+body[data-skin="dog"] .fav-btn {
+  background: #ffffff; border: 1px solid #e7e0ec; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(29,27,32,0.12);
+}
+body[data-skin="dog"] .fav-btn.favorited { background: #fce8e6; border-color: #f2b8b5; color: #b3261e; }
+body[data-skin="dog"] .fav-remove-btn {
+  background: #ffffff; border: 1px solid #e7e0ec; border-radius: 999px; color: #b3261e;
+  box-shadow: none; font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+}
+/* 小狗皮肤：K75P 折叠按钮 → Material tonal */
+body[data-skin="dog"] .k75p-fold-btn {
+  background: #f3edf9; border: 1px dashed #cac4d0; border-radius: 999px; color: #6750a4;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+}
+body[data-skin="dog"] .k75p-fold-btn:hover { background: #eaddff; }
+/* 小狗皮肤：K75P 巴士时间 → Material chip */
+body[data-skin="dog"] .k75p-bus {
+  background: #f3edf9; border: 1px solid #e0d9ee; color: #4f378b;
+  border-radius: 999px; font-family: 'Roboto', 'Nunito', sans-serif;
+}
+body[data-skin="dog"] .k75p-bus.soon { background: #fce8e6; border-color: #f2b8b5; color: #b3261e; }
+body[data-skin="dog"] .k75p-bus.delayed { background: #fff4e5; border-color: #ffd8a8; color: #9a6700; }
+body[data-skin="dog"] .k75p-bus.scheduled { background: #e8f0fe; border-color: #c2d4f7; color: #1a56a0; }
+body[data-skin="dog"] .k75p-bus.k75p-none { background: #f4f1f7; border-color: #e0d9ee; color: #79747e; }
+/* 小狗皮肤：天气卡片 */
+body[data-skin="dog"] .weather-item { background: #f3edf9; border: 1px solid #e0d9ee; border-radius: 16px; }
+/* 小狗皮肤：文本与杂项 */
+body[data-skin="dog"] .empty-hint { color: #79747e; }
+body[data-skin="dog"] .card-dest,
+body[data-skin="dog"] .card-stop,
+body[data-skin="dog"] .eta-detail,
+body[data-skin="dog"] .sushiro-card .s-status { color: #5f5b66; }
+body[data-skin="dog"] .spinner { border-color: #e7e0ec; border-top-color: #6750a4; }
+body[data-skin="dog"] .error-msg { background: #fce8e6; border-color: #f2b8b5; color: #b3261e; }
+/* 小狗皮肤：导出按钮 */
+body[data-skin="dog"] #exportQuote0Btn,
+body[data-skin="dog"] #exportQuote0Btn2 {
+  background: #eaddff !important; color: #21005d !important;
+  border-radius: 999px !important; box-shadow: none !important;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif !important;
+}
+
+/* ===== 折叠屏 / 宽屏优化 (Foldable & Large Screens) ===== */
+@media (min-width: 700px) {
+  .container { padding: 28px 24px 44px; }
+  .search-section, .favorites-section, .results-section, .info-section { padding: 26px; }
+  .card-grid { grid-template-columns: repeat(2, 1fr); }
+  .k75p-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+  .k75p-fold-btn { grid-column: 1 / -1; }
+  .k75p-fold.open { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+  .sushiro-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+}
+@media (min-width: 1000px) {
+  .container { padding: 32px 28px 48px; }
+  .card-grid { grid-template-columns: repeat(3, 1fr); }
+  .k75p-wrap { grid-template-columns: repeat(3, 1fr); }
+  .k75p-fold.open { grid-template-columns: repeat(3, 1fr); }
+}
 </style>
 </head>
 <body>
@@ -467,14 +589,11 @@ body[data-skin="dog"] .skin-btn { background: linear-gradient(180deg, #fffdf6, #
     </div>
   </section>
 
-  <!-- ===== Favorites ===== -->
-  <section class="favorites-section">
-    <div class="section-title">
-      <span>⭐</span> 我的收藏
-      <span class="badge" id="favCount"></span>
-    </div>
-    <div id="favoritesContainer">
-      <div class="empty-hint"><span class="icon">📌</span>搜寻路线后按 ☆ 收藏到首页</div>
+  <!-- ===== Search Results ===== -->
+  <section class="results-section">
+    <div class="section-title">🍀 搜寻结果</div>
+    <div id="resultsContainer">
+      <div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>
     </div>
   </section>
 
@@ -489,11 +608,14 @@ body[data-skin="dog"] .skin-btn { background: linear-gradient(180deg, #fffdf6, #
     </div>
   </section>
 
-  <!-- ===== Search Results ===== -->
-  <section class="results-section">
-    <div class="section-title">🍀 搜寻结果</div>
-    <div id="resultsContainer">
-      <div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>
+  <!-- ===== Favorites ===== -->
+  <section class="favorites-section">
+    <div class="section-title">
+      <span>⭐</span> 我的收藏
+      <span class="badge" id="favCount"></span>
+    </div>
+    <div id="favoritesContainer">
+      <div class="empty-hint"><span class="icon">📌</span>搜寻路线后按 ☆ 收藏到首页</div>
     </div>
   </section>
 
