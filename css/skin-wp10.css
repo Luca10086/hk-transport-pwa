@@ -1,0 +1,294 @@
+/* ==========================================================================
+   森友出行手册 - Windows Phone 10（Windows 10 Mobile / UWP）皮肤
+   设计规范：浅色扁平（默认）· Hamburger NavigationView 导航 · CommandBar 底栏 ·
+            Segoe UI · accent #0078D4 · 页面 Frame 切换 · Live Tiles
+   ========================================================================== */
+
+/* ===== 令牌：浅色主题（默认）+ 重映射应用变量 ===== */
+body[data-skin="wp10"] {
+  --wp10-bg: #F7F7F7;
+  --wp10-surface: #FFFFFF;
+  --wp10-surface2: #EEEEEE;
+  --wp10-text: #1A1A1A;
+  --wp10-secondary: #6E6E6E;
+  --wp10-border: #E5E5E5;
+  --wp10-accent: #0078D4;
+  --wp10-accent-dark: #005A9E;
+
+  --bg-top: #F7F7F7; --bg-mid: #F7F7F7; --bg-bottom: #F7F7F7;
+  --text: #1A1A1A; --text-dark: #333333;
+  --primary: #0078D4; --primary-light: #0078D4; --primary-dark: #0078D4;
+  --card-bg: #FFFFFF; --card-bg2: #FFFFFF; --card-border: #E5E5E5;
+  --card-shadow: transparent; --card-bg-soft: #FFFFFF;
+
+  font-family: 'Segoe UI', 'Segoe WP', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  background: #F7F7F7;
+  color: #1A1A1A;
+}
+
+/* 深色主题变体 */
+body[data-skin="wp10"][data-theme="dark"] {
+  --wp10-bg: #1F1F1F; --wp10-surface: #2D2D2D; --wp10-surface2: #383838;
+  --wp10-text: #FFFFFF; --wp10-secondary: #B0B0B0; --wp10-border: #444444;
+  --bg-top: #1F1F1F; --bg-mid: #1F1F1F; --bg-bottom: #1F1F1F;
+  --text: #FFFFFF; --text-dark: #E0E0E0;
+  --card-bg: #2D2D2D; --card-bg2: #2D2D2D; --card-border: #444444;
+  --card-bg-soft: #2D2D2D;
+  background: #1F1F1F; color: #FFFFFF;
+}
+@media (prefers-color-scheme: dark) {
+  body[data-skin="wp10"]:not([data-theme="light"]) {
+    --wp10-bg: #1F1F1F; --wp10-surface: #2D2D2D; --wp10-surface2: #383838;
+    --wp10-text: #FFFFFF; --wp10-secondary: #B0B0B0; --wp10-border: #444444;
+    --bg-top: #1F1F1F; --bg-mid: #1F1F1F; --bg-bottom: #1F1F1F;
+    --text: #FFFFFF; --text-dark: #E0E0E0;
+    --card-bg: #2D2D2D; --card-bg2: #2D2D2D; --card-border: #444444;
+    --card-bg-soft: #2D2D2D;
+    background: #1F1F1F; color: #FFFFFF;
+  }
+}
+
+/* ===== 全局 ===== */
+body[data-skin="wp10"] .bg-decor { display: none; }
+body[data-skin="wp10"] .ac-emoji { display: none; }
+body[data-skin="wp10"] .section-title > span:first-child:not(.badge) { display: none; }
+
+/* ===== 顶栏（App Bar）：hamburger + 页标题 + 动作 ===== */
+body[data-skin="wp10"] .navbar {
+  background: var(--wp10-surface);
+  color: var(--wp10-text);
+  border-bottom: 1px solid var(--wp10-border);
+  box-shadow: none;
+  justify-content: flex-start; gap: 4px;
+  padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+}
+body[data-skin="wp10"] .navbar h1 { display: none; }
+body[data-skin="wp10"] .wp8-pivot-title {
+  display: block;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  font-size: 1.35rem; font-weight: 600;
+  text-transform: none; letter-spacing: 0;
+  color: var(--wp10-text); line-height: 1.2;
+}
+body[data-skin="wp10"] .navbar-actions { margin-left: auto; }
+body[data-skin="wp10"] .navbar .refresh-btn {
+  background: var(--wp10-surface2); color: var(--wp10-accent);
+  border: none; border-radius: 50%; box-shadow: none;
+  width: 40px; height: 40px; font-size: 1.25rem;
+}
+body[data-skin="wp10"] .navbar .refresh-btn:hover { background: #DDDDDD; }
+
+/* ===== Hamburger 按钮 ===== */
+.wp10-hamburger { display: none; }
+body[data-skin="wp10"] .wp10-hamburger {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; flex: 0 0 auto;
+  border: none; background: transparent; color: var(--wp10-text);
+  font-size: 1.3rem; cursor: pointer; padding: 0;
+}
+body[data-skin="wp10"] .wp10-hamburger:hover { background: var(--wp10-surface2); }
+
+/* ===== NavigationView 导航面板（汉堡滑出） ===== */
+.wp10-nav-mask { display: none; }
+body[data-skin="wp10"] .wp10-nav-mask {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 300;
+}
+.wp10-nav-mask[hidden] { display: none; }
+.wp10-nav { display: none; }
+body[data-skin="wp10"] .wp10-nav {
+  display: flex; flex-direction: column;
+  position: fixed; left: 0; top: 0; bottom: 0; width: 264px;
+  background: var(--wp10-surface); z-index: 310;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.25);
+  padding: 12px 0 16px;
+  animation: wp10NavIn .18s ease;
+}
+.wp10-nav[hidden] { display: none; }
+@keyframes wp10NavIn { from { transform: translateX(-100%); } to { transform: none; } }
+.wp10-nav-item {
+  display: block; width: 100%; text-align: left;
+  padding: 14px 24px; border: none; background: none; cursor: pointer;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  font-size: 1rem; color: var(--wp10-text);
+}
+.wp10-nav-item:hover { background: var(--wp10-surface2); }
+.wp10-nav-item.active { color: var(--wp10-accent); background: rgba(0,120,212,0.08); }
+
+/* ===== 页面（Frame 切换） ===== */
+body[data-skin="wp10"] .container { max-width: none; padding: 0; }
+body[data-skin="wp10"] .container > section[data-page].pane-off { display: none; }
+body[data-skin="wp10"] .container > section[data-page].pane-on {
+  display: block;
+  padding: 18px 16px 120px;
+  box-sizing: border-box;
+  min-height: calc(100vh - 130px);
+  animation: wp10PageIn .2s ease;
+}
+@keyframes wp10PageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+body[data-skin="wp10"] .ios-home { display: none !important; }
+
+/* ===== 页脚状态栏 ===== */
+body[data-skin="wp10"] .footer {
+  position: fixed; left: 0; right: 0; bottom: 56px;
+  background: var(--wp10-surface); border-top: 1px solid var(--wp10-border);
+  padding: 6px 16px; z-index: 190; margin: 0; font-size: 0.72rem;
+}
+
+/* ===== 区块标题 / 区块容器 ===== */
+body[data-skin="wp10"] .section-title {
+  background: none; border: none; box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  font-size: 1.1rem; font-weight: 600;
+  text-transform: none; letter-spacing: 0;
+  color: var(--wp10-text); text-shadow: none; padding: 0; margin: 0 0 12px;
+}
+body[data-skin="wp10"] .section-title .badge {
+  background: var(--wp10-accent); color: #fff;
+  font-size: 0.75rem; font-weight: 500; padding: 2px 10px;
+  border-radius: 0; box-shadow: none;
+}
+body[data-skin="wp10"] .search-section,
+body[data-skin="wp10"] .favorites-section,
+body[data-skin="wp10"] .results-section,
+body[data-skin="wp10"] .info-section {
+  background: transparent; border: none; box-shadow: none; border-radius: 0;
+  padding: 0; margin-bottom: 24px;
+}
+
+/* ===== 输入 / 按钮 / 分段 ===== */
+body[data-skin="wp10"] .search-input {
+  background: var(--wp10-surface); border: 1px solid var(--wp10-border);
+  border-radius: 0; color: var(--wp10-text); box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+}
+body[data-skin="wp10"] .search-input:focus { border-color: var(--wp10-accent); box-shadow: none; }
+body[data-skin="wp10"] .search-input::placeholder { color: var(--wp10-secondary); }
+body[data-skin="wp10"] .search-btn {
+  background: var(--wp10-accent); color: #fff;
+  border: none; border-radius: 0; box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 500;
+}
+body[data-skin="wp10"] .search-btn:hover { background: var(--wp10-accent-dark); }
+body[data-skin="wp10"] .transport-toggle { background: var(--wp10-surface); border: 1px solid var(--wp10-border); border-radius: 0; box-shadow: none; padding: 0; gap: 0; }
+body[data-skin="wp10"] .transport-toggle button { color: var(--wp10-secondary); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400; border-radius: 0; }
+body[data-skin="wp10"] .transport-toggle button.active { background: var(--wp10-accent); color: #fff; box-shadow: none; text-shadow: none; }
+
+/* ===== 卡片：浅色扁平，1px 描边 ===== */
+body[data-skin="wp10"] .transport-card,
+body[data-skin="wp10"] .sushiro-card,
+body[data-skin="wp10"] .k75p-stop {
+  background: var(--wp10-surface);
+  border: 1px solid var(--wp10-border); border-radius: 0;
+  box-shadow: none;
+}
+body[data-skin="wp10"] .transport-card:hover { transform: none; box-shadow: none; }
+body[data-skin="wp10"] .route-card .rc-no { color: var(--wp10-accent); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 600; }
+body[data-skin="wp10"] .route-card .rc-name { color: var(--wp10-text); }
+body[data-skin="wp10"] .route-card .rc-tag { background: transparent; color: var(--wp10-secondary); border: 1px solid var(--wp10-border); border-radius: 0; }
+body[data-skin="wp10"] .route-card .rc-m { color: var(--wp10-text); }
+body[data-skin="wp10"] .route-card .rc-m.soon { color: #E81123; }
+body[data-skin="wp10"] .route-card .rc-m.medium { color: #F7630C; }
+body[data-skin="wp10"] .route-card .rc-u, body[data-skin="wp10"] .route-card .rc-more,
+body[data-skin="wp10"] .route-card .rc-pcnt, body[data-skin="wp10"] .rc-line-tag,
+body[data-skin="wp10"] .rc-dir, body[data-skin="wp10"] .rc-line-dir { color: var(--wp10-secondary); }
+body[data-skin="wp10"] .route-card .rc-bar { background: var(--wp10-border); }
+body[data-skin="wp10"] .route-card .rc-bar i { background: var(--wp10-accent); }
+body[data-skin="wp10"] .route-card .fav-btn { background: transparent; border: 1px solid var(--wp10-border); border-radius: 50%; color: var(--wp10-secondary); box-shadow: none; }
+body[data-skin="wp10"] .route-card .fav-btn.favorited { background: var(--wp10-accent); border-color: var(--wp10-accent); color: #fff; }
+body[data-skin="wp10"] .fav-remove-btn { background: transparent; border: 1px solid var(--wp10-border); border-radius: 0; color: var(--wp10-secondary); box-shadow: none; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400; }
+
+/* ===== 寿司郎 / 天气 / 警告 ===== */
+body[data-skin="wp10"] .sushiro-card .s-name { color: var(--wp10-text); }
+body[data-skin="wp10"] .sushiro-card .s-wait { color: var(--wp10-accent); }
+body[data-skin="wp10"] .sushiro-card .s-wait.soon { color: #E81123; }
+body[data-skin="wp10"] .sushiro-card .s-status { color: var(--wp10-secondary); }
+body[data-skin="wp10"] .weather-mini-bar { background: var(--wp10-surface); border: 1px solid var(--wp10-border); border-radius: 0; box-shadow: none; color: var(--wp10-text); }
+body[data-skin="wp10"] .weather-mini-bar .wm-item, body[data-skin="wp10"] .weather-mini-bar .wm-upd { color: var(--wp10-secondary); }
+body[data-skin="wp10"] .weather-mini-bar .wm-desc, body[data-skin="wp10"] .weather-mini-bar .wm-item b { color: var(--wp10-text); }
+body[data-skin="wp10"] .warning-bar { border: none; border-radius: 0; box-shadow: none; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400; }
+body[data-skin="wp10"] .warning-bar.warn-mild { background: #FFF4CE; color: #8A6100; }
+body[data-skin="wp10"] .warning-bar.warn-severe { background: #FDE7E9; color: #A80000; }
+
+/* ===== CommandBar 底栏 ===== */
+body[data-skin="wp10"] .bottom-nav {
+  background: var(--wp10-surface);
+  border-top: 1px solid var(--wp10-border);
+  box-shadow: none;
+  padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
+}
+body[data-skin="wp10"] .bn-item { color: var(--wp10-secondary); opacity: 1; font-weight: 400; font-size: 0.7rem; letter-spacing: 0; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; border-radius: 0; }
+body[data-skin="wp10"] .bn-item svg { width: 22px; height: 22px; fill: currentColor; }
+body[data-skin="wp10"] .bn-item.active { color: var(--wp10-accent); }
+body[data-skin="wp10"] .bn-item.active::before { display: none; }
+body[data-skin="wp10"] .bn-tx-default { display: inline; }
+body[data-skin="wp10"] .bn-tx-ios { display: none; }
+body[data-skin="wp10"] .bn-ios-only { display: none; }
+
+/* ===== 磁贴 ===== */
+body[data-skin="wp10"] .wp8-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 20px; }
+body[data-skin="wp10"] .wp8-tile {
+  border: none; border-radius: 0; cursor: pointer;
+  background: var(--wp10-accent); color: #fff;
+  min-height: 88px; padding: 10px;
+  display: flex; align-items: flex-end;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  font-size: 0.95rem; font-weight: 400; text-align: left;
+}
+body[data-skin="wp10"] .wp8-tile:hover { background: var(--wp10-accent-dark); }
+
+/* ===== 详情弹层 ===== */
+body[data-skin="wp10"] .detail-mask { background: rgba(0,0,0,0.4); }
+body[data-skin="wp10"] .detail-sheet { background: var(--wp10-surface); color: var(--wp10-text); border-radius: 0; box-shadow: none; }
+body[data-skin="wp10"] .detail-sheet .ds-head { background: var(--wp10-surface); border-bottom-color: var(--wp10-border); }
+body[data-skin="wp10"] .detail-sheet .ds-no { color: var(--wp10-accent); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 600; }
+body[data-skin="wp10"] .detail-sheet .ds-stop { background: var(--wp10-surface2); border-radius: 0; }
+body[data-skin="wp10"] .detail-sheet .ds-stop .ds-sn { color: var(--wp10-text); }
+body[data-skin="wp10"] .detail-sheet .ds-em { color: var(--wp10-text); font-family: 'Segoe UI', sans-serif; }
+body[data-skin="wp10"] .detail-sheet .ds-em.soon { color: #E81123; }
+body[data-skin="wp10"] .detail-sheet .ds-em.medium { color: #F7630C; }
+body[data-skin="wp10"] .detail-sheet .ds-colhead, body[data-skin="wp10"] .detail-sheet .ds-none,
+body[data-skin="wp10"] .detail-sheet .ds-eu, body[data-skin="wp10"] .detail-sheet .ds-extra,
+body[data-skin="wp10"] .detail-sheet .ds-name, body[data-skin="wp10"] .detail-sheet .ds-meta,
+body[data-skin="wp10"] .detail-sheet .ds-refresh { color: var(--wp10-secondary); }
+body[data-skin="wp10"] .detail-sheet .ds-grab { background: var(--wp10-border); }
+
+/* ===== 设定 / 控件 ===== */
+body[data-skin="wp10"] .settings-block { background: var(--wp10-surface); border: 1px solid var(--wp10-border); border-radius: 0; }
+body[data-skin="wp10"] .settings-label { color: var(--wp10-text); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 600; }
+body[data-skin="wp10"] .settings-hint { color: var(--wp10-secondary); }
+body[data-skin="wp10"] .skin-opt, body[data-skin="wp10"] .seg-opt {
+  background: transparent; border: 1px solid var(--wp10-border); border-radius: 0;
+  color: var(--wp10-text); box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400;
+}
+body[data-skin="wp10"] .skin-opt.active, body[data-skin="wp10"] .seg-opt.active {
+  background: var(--wp10-accent); color: #fff; border-color: var(--wp10-accent);
+}
+body[data-skin="wp10"] .settings-select {
+  background: var(--wp10-surface2); border: 1px solid var(--wp10-border); border-radius: 0;
+  color: var(--wp10-text); box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400;
+}
+
+/* ===== K75P / 接驳 / 杂项 ===== */
+body[data-skin="wp10"] .k75p-name { color: var(--wp10-text); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; }
+body[data-skin="wp10"] .k75p-bus { background: var(--wp10-surface2); border: 1px solid var(--wp10-border); border-radius: 0; color: var(--wp10-text); font-family: 'Segoe UI', sans-serif; font-weight: 400; }
+body[data-skin="wp10"] .k75p-bus.soon { background: #FDE7E9; border-color: #E81123; color: #A80000; }
+body[data-skin="wp10"] .k75p-bus.delayed { background: #FFF4CE; border-color: #F7630C; color: #8A6100; }
+body[data-skin="wp10"] .k75p-fold-btn { background: var(--wp10-surface); border: 1px solid var(--wp10-border); border-radius: 0; color: var(--wp10-text); box-shadow: none; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400; }
+body[data-skin="wp10"] .conn-block { background: var(--wp10-surface); border: 1px solid var(--wp10-border); border-radius: 0; box-shadow: none; }
+body[data-skin="wp10"] .conn-title, body[data-skin="wp10"] .conn-dest { color: var(--wp10-text); }
+body[data-skin="wp10"] .conn-row + .conn-row { border-top-color: var(--wp10-border); }
+body[data-skin="wp10"] .conn-eta { color: var(--wp10-accent); }
+body[data-skin="wp10"] .empty-hint, body[data-skin="wp10"] .loading,
+body[data-skin="wp10"] .sushiro-note, body[data-skin="wp10"] .favshow-hint,
+body[data-skin="wp10"] .favshow-loading { color: var(--wp10-secondary); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; }
+body[data-skin="wp10"] .favshow-head { color: var(--wp10-text); }
+body[data-skin="wp10"] .error-msg { background: #FDE7E9; border: 1px solid #E81123; color: #A80000; }
+body[data-skin="wp10"] .spinner { border-color: var(--wp10-border); border-top-color: var(--wp10-accent); }
+body[data-skin="wp10"] .ds-pick { background: transparent; border: 1px solid var(--wp10-accent); border-radius: 0; color: var(--wp10-accent); box-shadow: none; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400; }
+body[data-skin="wp10"] .ds-pick.used { background: var(--wp10-accent); color: #fff; }
+body[data-skin="wp10"] :focus-visible { outline: 2px solid var(--wp10-accent); outline-offset: 1px; }

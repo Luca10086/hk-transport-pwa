@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="css/skin-md.css">
 <link rel="stylesheet" href="css/skin-ios.css">
 <link rel="stylesheet" href="css/skin-wp8.css">
+<link rel="stylesheet" href="css/skin-wp10.css">
 </head>
 <body>
 
@@ -41,6 +42,7 @@
 
 <!-- ===== Navbar ===== -->
 <nav class="navbar">
+  <button class="wp10-hamburger" id="wp10Hamburger" onclick="wp10ToggleNav()" aria-label="開啟選單">☰</button>
   <h1><span class="ac-emoji">🍃</span> 森友出行手冊</h1>
   <div class="wp8-pivot-title">搜尋</div>
   <div class="navbar-actions">
@@ -188,6 +190,7 @@
           <button class="skin-opt" data-skin="md" onclick="setSkin('md')">Material 3</button>
           <button class="skin-opt" data-skin="ios" onclick="setSkin('ios')">iOS</button>
           <button class="skin-opt" data-skin="wp8" onclick="setSkin('wp8')">Windows Phone</button>
+          <button class="skin-opt" data-skin="wp10" onclick="setSkin('wp10')">Windows 10</button>
         </div>
         <div class="settings-hint">選擇網頁主題外觀。iOS 模式依 Apple Human Interface Guidelines 設計。</div>
       </div>
@@ -239,6 +242,15 @@
     </div>
   </div>
 </div>
+
+<!-- ===== WP10 导航面板（汉堡菜单，仅 wp10 皮肤显示） ===== -->
+<div class="wp10-nav-mask" id="wp10NavMask" onclick="wp10ToggleNav(false)" hidden></div>
+<nav class="wp10-nav" id="wp10Nav" aria-label="導航選單" hidden>
+  <button class="wp10-nav-item active" data-page="home" onclick="wp10Go('home')">搜尋</button>
+  <button class="wp10-nav-item" data-page="favs" onclick="wp10Go('favs')">收藏</button>
+  <button class="wp10-nav-item" data-page="sushi" onclick="wp10Go('sushi')">壽司郎</button>
+  <button class="wp10-nav-item" data-page="settings" onclick="wp10Go('settings')">設定</button>
+</nav>
 
 <!-- ===== Bottom Navigation（搜尋 / 收藏 / 壽司郎 / 設定；iOS 皮膚下為 首頁/收藏/壽司郎/更多） ===== -->
 <nav class="bottom-nav" id="bottomNav" aria-label="主要導航">
