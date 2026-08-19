@@ -79,7 +79,7 @@ display: none;
 }
 
 body[data-skin="ios"] .navbar .refresh-btn {
-background: var(--ios-tint); color: #fff; border: none; border-radius: 13px; font-family: inherit; font-weight: 600; font-size: .85rem; box-shadow: none; padding: 8px 14px;
+background: var(--ios-fill); color: var(--ios-tint); border: none; border-radius: 50%; font-family: inherit; font-weight: 600; font-size: 1.2rem; box-shadow: none; width: 40px; height: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
 }
 
 body[data-skin="ios"] .navbar .skin-btn {
@@ -197,10 +197,6 @@ display: none;
 
 body[data-skin="ios"] .bn-tx-ios {
 display: inline;
-}
-
-body[data-skin="ios"] .fab-main {
-display: none !important;
 }
 
 body[data-skin="ios"] .detail-mask {

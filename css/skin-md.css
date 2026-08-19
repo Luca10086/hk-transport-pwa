@@ -90,8 +90,9 @@ font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
 body[data-skin="md"] .navbar .refresh-btn {
 font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
   background: transparent; color: var(--md-primary); border: none;
-  border-radius: 20px; box-shadow: none; font-weight: 500;
-  padding: 8px 16px;
+  border-radius: 50%; box-shadow: none; font-weight: 500;
+  width: 40px; height: 40px; padding: 0; font-size: 1.25rem;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 
 body[data-skin="md"] .navbar .skin-btn {
@@ -423,19 +424,6 @@ body[data-skin="md"] .bn-item.active::before {
 top: 8px; width: 64px; height: 32px; border-radius: var(--md-corner-full);
   background: var(--md-secondary-container); opacity: 1;
   box-shadow: var(--md-elev-1);
-}
-
-body[data-skin="md"] .fab-main {
-background: var(--md-primary-container);
-  color: var(--md-on-primary-container);
-  border-radius: var(--md-corner-l);
-  box-shadow: var(--md-elev-3);
-}
-
-body[data-skin="md"] .fab-main:hover {
-transform: translateY(-2px);
-  background: var(--md-primary-container);
-  box-shadow: var(--md-elev-3);
 }
 
 body[data-skin="md"] .route-card {

@@ -857,9 +857,9 @@ async function refreshWeather() {
     const emoji = HKO_ICON_EMOJI[icon] || '🌤️';
 
     const parts = [];
-    if (hkoTemp) parts.push('<span class="wm-item">' + hkoTemp.value + '°C</span>');
-    if (hum) parts.push('<span class="wm-item">' + hum.value + '%</span>');
-    if (rain) parts.push('<span class="wm-item">' + rain.max + 'mm</span>');
+    if (hkoTemp) parts.push('<span class="wm-item">🌡️ <b>' + hkoTemp.value + '°C</b></span>');
+    if (hum) parts.push('<span class="wm-item">💧 <b>' + hum.value + '%</b></span>');
+    if (rain) parts.push('<span class="wm-item">☔ <b>' + rain.max + 'mm</b></span>');
     const update = data.updateTime ? '更新 ' + data.updateTime.slice(11, 16) : '';
     container.innerHTML = '<div class="weather-mini-bar"><span class="wm-desc">' + desc + '</span>' + parts.join('') + '<span class="wm-upd">' + update + '</span></div>';
   } catch (err) {
@@ -880,7 +880,7 @@ async function refreshSushiro() {
     const resp = await fetch(SUSHIRO_PROXY(SUSHIRO_STORE_API), { signal: AbortSignal.timeout(20000) });
     if (!resp.ok) {
       if (resp.status === 403) {
-        container.innerHTML = '<div class="error-msg">寿司郎資料需從 http://localhost 打開網頁才能載入（corsproxy.io 限制）。請用「啟動網頁.bat」或 python -m http.server 開啟本地服务。</div>';
+        container.innerHTML = '<div class="error-msg">壽司郎暫時無法連線，請稍後再試。</div>';
         badge.textContent = '';
         return;
       }

@@ -42,7 +42,7 @@
 <nav class="navbar">
   <h1><span class="ac-emoji">🍃</span> 森友出行手册</h1>
   <div class="navbar-actions">
-    <button class="refresh-btn" onclick="refreshAll(true)" id="refreshBtn" data-t="btn.refresh">手動重新整理</button>
+    <button class="refresh-btn" onclick="refreshAll(true)" id="refreshBtn" aria-label="重新整理">↻</button>
   </div>
 </nav>
 
@@ -57,7 +57,8 @@
     <div class="ios-search-wrap">
       <div class="ios-search-field">
         <svg class="ios-search-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-        <input type="text" class="ios-search-input" id="iosSearchInput" placeholder="搜尋車站、路線或目的地" aria-label="搜尋車站、路線或目的地" onkeydown="if(event.key==='Enter') iosDoSearch()">
+        <input type="text" class="ios-search-input" id="iosSearchInput" placeholder="搜尋車站、路線或目的地" aria-label="搜尋車站、路線或目的地" oninput="iosSearchToggleClear()" onkeydown="if(event.key==='Enter') iosDoSearch()">
+        <button class="ios-search-clear" id="iosSearchClear" aria-label="清除搜尋" onclick="clearIosSearch()" hidden>✕</button>
       </div>
     </div>
     <!-- 分类标签：全部 / 港鐵 / 巴士 / 輕鐵 -->
@@ -81,9 +82,9 @@
         <span class="ios-quick-ic ios-ic-lrt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8 2 4 3.5 4 7v9.5c0 1.9 1.6 3.5 3.5 3.5L6 21.5v.5h2l1.5-1.5h5L16 22h2v-.5L16.5 20c1.9 0 3.5-1.6 3.5-3.5V7c0-3.5-4-5-8-5zm-5 8h4v4H7v-4zm6 0h4v4h-4v-4zm-6 6a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm10 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM18 10h-5V7h5v3z"/></svg></span>
         <span class="ios-quick-tx">輕鐵</span>
       </button>
-      <button class="ios-quick-card" data-type="loc" onclick="iosQuick('loc')">
-        <span class="ios-quick-ic ios-ic-loc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg></span>
-        <span class="ios-quick-tx">位置</span>
+      <button class="ios-quick-card" data-type="weather" onclick="iosQuick('weather')">
+        <span class="ios-quick-ic ios-ic-weather"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15a4 4 0 0 1 0-8 5 5 0 0 1 9.58-1.5A4.5 4.5 0 0 1 18.5 15H6zM6.5 17h11v2h-11z"/></svg></span>
+        <span class="ios-quick-tx">天氣</span>
       </button>
     </div>
     <!-- 最近搜尋 -->
@@ -228,11 +229,6 @@
     </div>
   </div>
 </div>
-
-<!-- ===== FAB（收藏当前路线，仅首页显示） ===== -->
-<button class="fab-main" id="fabMain" onclick="fabAction()" aria-label="收藏當前路線" title="收藏當前路線">
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-</button>
 
 <!-- ===== Bottom Navigation（搜尋 / 收藏 / 壽司郎 / 設定；iOS 皮膚下為 首頁/收藏/壽司郎/更多） ===== -->
 <nav class="bottom-nav" id="bottomNav" aria-label="主要導航">

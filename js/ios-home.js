@@ -29,15 +29,30 @@ function iosSetCat(cat, btn) {
   if (q) iosDoSearch();
 }
 
-/** iOS 快捷入口：分类直搜；位置→全部 */
+/** iOS 搜索输入变化：显示/隐藏清除按钮 */
+function iosSearchToggleClear() {
+  const clear = document.getElementById('iosSearchClear');
+  const input = document.getElementById('iosSearchInput');
+  if (clear) clear.hidden = !(input && input.value.length > 0);
+}
+/** iOS 搜索清除：清空并聚焦 */
+function clearIosSearch() {
+  const input = document.getElementById('iosSearchInput');
+  const clear = document.getElementById('iosSearchClear');
+  if (input) { input.value = ''; input.focus(); }
+  if (clear) clear.hidden = true;
+  renderIOSRecent();
+}
+
+/** iOS 快捷入口：分类直搜；天氣→滾動到天氣 */
 function iosQuick(type) {
-  const catBtn = document.querySelector('.ios-cat[data-type="' + (type === 'loc' ? 'all' : type) + '"]');
-  if (catBtn) iosSetCat(catBtn.dataset.type, catBtn);
-  if (type === 'loc') {
-    document.getElementById('iosSearchInput').value = '';
-    document.getElementById('iosSearchInput').focus();
+  if (type === 'weather') {
+    const w = document.querySelector('.weather-mini-section');
+    if (w) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
   }
+  const catBtn = document.querySelector('.ios-cat[data-type="' + type + '"]');
+  if (catBtn) iosSetCat(catBtn.dataset.type, catBtn);
   const q = document.getElementById('iosSearchInput').value.trim();
   if (q) iosDoSearch(); else document.getElementById('iosSearchInput').focus();
 }

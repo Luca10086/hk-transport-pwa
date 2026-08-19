@@ -40,7 +40,7 @@ async function refreshAll(manual) {
   refreshing = true;
   const btn = document.getElementById('refreshBtn');
   btn.disabled = true;
-  btn.textContent = t('loading.update');
+  btn.classList.add('spinning');
   setStatus('loading', t('loading.update'));
   try {
     const favs = getFavorites();
@@ -61,7 +61,7 @@ async function refreshAll(manual) {
   } finally {
     refreshing = false;
     btn.disabled = false;
-    btn.textContent = t('btn.refresh');
+    btn.classList.remove('spinning');
     setStatus('ok', t('status.ready'));
   }
 }
@@ -175,24 +175,10 @@ function switchPage(page) {
     if (on) b.setAttribute('aria-current', 'page');
     else if (b.hasAttribute('aria-current')) b.removeAttribute('aria-current');
   });
-  const fab = document.getElementById('fabMain');
-  if (fab) fab.style.display = (page === 'home') ? 'flex' : 'none';
   document.body.dataset.page = page;
   try { localStorage.setItem(PAGE_KEY, page); } catch (e) {}
   if (page === 'favs') renderFavorites();   /* 进入收藏页时同步最新收藏 */
   window.scrollTo({ top: 0 });
-}
-
-/** FAB：收藏当前第一条搜索结果路线；无结果时跳转收藏页 */
-function fabAction() {
-  const card = document.querySelector('.results-section .transport-card');
-  const btn = card ? card.querySelector('.fav-btn[data-fav-item]') : null;
-  if (!btn) { switchPage('favs'); return; }
-  try {
-    const item = JSON.parse(btn.getAttribute('data-fav-item'));
-    toggleFavByItem(item, btn);
-    renderFavorites();
-  } catch (err) { switchPage('favs'); }
 }
 
 /** iOS 底部导航「最近」：回到首页并滚动到最近搜尋区块 */
