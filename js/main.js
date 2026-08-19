@@ -90,6 +90,8 @@ function applySkin(skin) {
     document.body.dataset.skin = 'md';
   } else if (s === 'ios') {
     document.body.dataset.skin = 'ios';
+  } else if (s === 'wp8') {
+    document.body.dataset.skin = 'wp8';
   } else {
     delete document.body.dataset.skin;
   }
@@ -97,10 +99,10 @@ function applySkin(skin) {
   document.querySelectorAll('.skin-opt').forEach(b => {
     b.classList.toggle('active', b.dataset.skin === (s || 'ac'));
   });
-  /* 同步浏览器地址栏 / PWA 标题栏主题色（iOS 皮肤跟随系统深色模式） */
+  /* 同步浏览器地址栏 / PWA 标题栏主题色 */
   const meta = document.querySelector('meta[name="theme-color"]');
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const color = s === 'md' ? '#6750a4' : s === 'ios' ? (dark ? '#000000' : '#007AFF') : '#5fae82';
+  const color = s === 'md' ? '#6750a4' : s === 'ios' ? (dark ? '#000000' : '#007AFF') : s === 'wp8' ? '#1F1F1F' : '#5fae82';
   if (meta) meta.setAttribute('content', color);
   /* iOS 皮肤：初始化 iOS 首页（最近搜尋 + 熱門車站） */
   if (s === 'ios') initIOSHome();
@@ -114,7 +116,7 @@ function setSkin(skin) {
 }
 function toggleSkin() {
   const current = document.body.dataset.skin || 'ac';
-  const order = ['ac', 'md', 'ios'];
+  const order = ['ac', 'md', 'ios', 'wp8'];
   const next = order[(order.indexOf(current) + 1) % order.length];
   setSkin(next);
 }
@@ -138,6 +140,7 @@ function applyTheme(theme) {
   const dark = theme === 'dark' || (theme !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const color = skin === 'md' ? (dark ? '#141218' : '#6750a4')
     : skin === 'ios' ? (dark ? '#000000' : '#007AFF')
+    : skin === 'wp8' ? (dark ? '#1F1F1F' : '#F2F2F2')
     : (dark ? '#16251c' : '#5fae82');
   if (meta) meta.setAttribute('content', color);
 }

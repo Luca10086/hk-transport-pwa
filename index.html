@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/skin-md.css">
 <link rel="stylesheet" href="css/skin-ios.css">
+<link rel="stylesheet" href="css/skin-wp8.css">
 </head>
 <body>
 
@@ -110,6 +111,12 @@
 
   <!-- ===== Search Section ===== -->
   <section class="search-section" data-page="home">
+    <!-- Windows Phone 磁贴（仅 wp8 皮肤显示） -->
+    <div class="wp8-tiles" aria-hidden="false">
+      <button class="wp8-tile" onclick="switchPage('favs')">我的收藏</button>
+      <button class="wp8-tile" onclick="switchPage('sushi')">壽司郎</button>
+      <button class="wp8-tile" onclick="switchPage('settings')">設定</button>
+    </div>
     <div class="search-row">
       <input type="text" class="search-input" id="searchInput"
              placeholder="輸入巴士路線編號（如 1A）或車站名稱（如 中環）..."
@@ -178,6 +185,7 @@
           <button class="skin-opt" data-skin="ac" onclick="setSkin('ac')">動森 AC</button>
           <button class="skin-opt" data-skin="md" onclick="setSkin('md')">Material 3</button>
           <button class="skin-opt" data-skin="ios" onclick="setSkin('ios')">iOS</button>
+          <button class="skin-opt" data-skin="wp8" onclick="setSkin('wp8')">Windows Phone</button>
         </div>
         <div class="settings-hint">選擇網頁主題外觀。iOS 模式依 Apple Human Interface Guidelines 設計。</div>
       </div>

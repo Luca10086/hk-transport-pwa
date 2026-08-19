@@ -1,0 +1,325 @@
+/* ==========================================================================
+   森友出行手册 - Windows Phone 8 皮肤（Metro / Modern UI）
+   设计规范：扁平无阴影 · 单一强调色 accent · Segoe UI · App Bar 底栏 ·
+            Pivot 大写大标题 · Live Tiles 磁贴 · 深色主题（默认）
+   ========================================================================== */
+
+/* ===== 令牌：深色主题（默认）+ 重映射应用变量 ===== */
+body[data-skin="wp8"] {
+  --wp8-bg: #1F1F1F;
+  --wp8-surface: #2D2D2D;
+  --wp8-surface2: #333333;
+  --wp8-text: #FFFFFF;
+  --wp8-secondary: #B0B0B0;
+  --wp8-border: #3A3A3A;
+  --wp8-accent: #D24726;
+  --wp8-accent-dark: #A93A1F;
+
+  --bg-top: #1F1F1F; --bg-mid: #1F1F1F; --bg-bottom: #1F1F1F;
+  --text: #FFFFFF; --text-dark: #E0E0E0;
+  --primary: #D24726; --primary-light: #D24726; --primary-dark: #D24726;
+  --card-bg: #2D2D2D; --card-bg2: #2D2D2D; --card-border: #3A3A3A;
+  --card-shadow: transparent; --card-bg-soft: #2D2D2D;
+
+  font-family: 'Segoe UI', 'Segoe WP', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  background: #1F1F1F;
+  color: #FFFFFF;
+}
+
+/* 浅色主题变体 */
+body[data-skin="wp8"][data-theme="light"] {
+  --wp8-bg: #F2F2F2;
+  --wp8-surface: #FFFFFF;
+  --wp8-surface2: #E8E8E8;
+  --wp8-text: #000000;
+  --wp8-secondary: #666666;
+  --wp8-border: #CCCCCC;
+  --bg-top: #F2F2F2; --bg-mid: #F2F2F2; --bg-bottom: #F2F2F2;
+  --text: #000000; --text-dark: #1A1A1A;
+  --card-bg: #FFFFFF; --card-bg2: #FFFFFF; --card-border: #CCCCCC;
+  --card-bg-soft: #FFFFFF;
+  background: #F2F2F2;
+  color: #000000;
+}
+@media (prefers-color-scheme: light) {
+  body[data-skin="wp8"]:not([data-theme="dark"]) {
+    --wp8-bg: #F2F2F2; --wp8-surface: #FFFFFF; --wp8-surface2: #E8E8E8;
+    --wp8-text: #000000; --wp8-secondary: #666666; --wp8-border: #CCCCCC;
+    --bg-top: #F2F2F2; --bg-mid: #F2F2F2; --bg-bottom: #F2F2F2;
+    --text: #000000; --text-dark: #1A1A1A;
+    --card-bg: #FFFFFF; --card-bg2: #FFFFFF; --card-border: #CCCCCC;
+    --card-bg-soft: #FFFFFF;
+    background: #F2F2F2; color: #000000;
+  }
+}
+
+/* ===== 全局：扁平，去掉装饰/emoji/动效 ===== */
+body[data-skin="wp8"] .bg-decor { display: none; }
+body[data-skin="wp8"] .ac-emoji { display: none; }
+body[data-skin="wp8"] .section-title > span:first-child:not(.badge) { display: none; }
+body[data-skin="wp8"] .weather-mini-bar .wm-desc::before,
+body[data-skin="wp8"] .weather-mini-bar .wm-item { letter-spacing: 0; }
+
+/* ===== 顶栏：扁平 surface，无渐变/阴影，左对齐大标题（Pivot） ===== */
+body[data-skin="wp8"] .navbar {
+  background: var(--wp8-surface);
+  color: var(--wp8-text);
+  border-bottom: 1px solid var(--wp8-border);
+  box-shadow: none;
+  padding: calc(16px + env(safe-area-inset-top)) 20px 12px;
+}
+body[data-skin="wp8"] .navbar h1 {
+  font-family: 'Segoe UI Light', 'Segoe UI', sans-serif;
+  font-size: 1.7rem; font-weight: 300; letter-spacing: 0;
+  text-shadow: none;
+  text-transform: lowercase;
+}
+body[data-skin="wp8"] .navbar .refresh-btn {
+  background: transparent; color: var(--wp8-text);
+  border: 2px solid var(--wp8-text);
+  border-radius: 50%; box-shadow: none;
+  width: 40px; height: 40px; font-size: 1.25rem;
+}
+body[data-skin="wp8"] .navbar .refresh-btn:hover { background: var(--wp8-surface2); }
+
+/* ===== 区块标题：Segoe UI Light 全大写（Pivot 风格） ===== */
+body[data-skin="wp8"] .section-title {
+  background: none; border: none; box-shadow: none;
+  font-family: 'Segoe UI Light', 'Segoe UI', sans-serif;
+  font-size: 1.5rem; font-weight: 300;
+  text-transform: lowercase; letter-spacing: 0.5px;
+  color: var(--wp8-text); text-shadow: none;
+  padding: 0; margin: 0 0 16px;
+}
+body[data-skin="wp8"] .section-title .badge {
+  background: transparent; color: var(--wp8-accent);
+  font-size: 0.8rem; font-weight: 600; padding: 0;
+  box-shadow: none; border-radius: 0;
+}
+
+/* ===== 区块容器：扁平透明 ===== */
+body[data-skin="wp8"] .search-section,
+body[data-skin="wp8"] .favorites-section,
+body[data-skin="wp8"] .results-section,
+body[data-skin="wp8"] .info-section {
+  background: transparent; border: none; box-shadow: none; border-radius: 0;
+  padding: 0; margin-bottom: 28px;
+}
+
+/* ===== 输入框 / 按钮：扁平 ===== */
+body[data-skin="wp8"] .search-input {
+  background: var(--wp8-surface); border: 2px solid var(--wp8-border);
+  border-radius: 0; color: var(--wp8-text); box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+}
+body[data-skin="wp8"] .search-input:focus { border-color: var(--wp8-accent); box-shadow: none; }
+body[data-skin="wp8"] .search-input::placeholder { color: var(--wp8-secondary); }
+body[data-skin="wp8"] .search-btn {
+  background: var(--wp8-accent); color: #fff;
+  border: none; border-radius: 0; box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 600;
+  text-transform: lowercase; letter-spacing: 0.5px;
+}
+body[data-skin="wp8"] .search-btn:hover { background: var(--wp8-accent-dark); }
+
+/* ===== 分类切换：扁平 segmented ===== */
+body[data-skin="wp8"] .transport-toggle {
+  background: var(--wp8-surface); border-radius: 0; padding: 0; gap: 0;
+  box-shadow: none; border: 1px solid var(--wp8-border);
+}
+body[data-skin="wp8"] .transport-toggle button {
+  color: var(--wp8-secondary); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  font-weight: 400; font-size: 0.85rem;
+  border: none; border-radius: 0; padding: 10px 14px;
+}
+body[data-skin="wp8"] .transport-toggle button.active {
+  background: var(--wp8-accent); color: #fff; box-shadow: none; text-shadow: none;
+}
+
+/* ===== 卡片：扁平，无圆角无阴影，悬停左侧 accent 边 ===== */
+body[data-skin="wp8"] .transport-card,
+body[data-skin="wp8"] .sushiro-card,
+body[data-skin="wp8"] .k75p-stop {
+  background: var(--wp8-surface); border: none; border-radius: 0;
+  box-shadow: none; border-left: 4px solid transparent;
+}
+body[data-skin="wp8"] .transport-card:hover { transform: none; box-shadow: none; }
+body[data-skin="wp8"] .route-card:hover { border-left-color: var(--wp8-accent); }
+body[data-skin="wp8"] .route-card .rc-no { color: var(--wp8-accent); font-family: 'Segoe UI Light', 'Segoe UI', sans-serif; }
+body[data-skin="wp8"] .route-card .rc-name { color: var(--wp8-text); }
+body[data-skin="wp8"] .route-card .rc-tag {
+  background: transparent; color: var(--wp8-secondary);
+  border: 1px solid var(--wp8-border); border-radius: 0;
+}
+body[data-skin="wp8"] .route-card .rc-m { color: var(--wp8-text); }
+body[data-skin="wp8"] .route-card .rc-m.soon { color: #E51400; }
+body[data-skin="wp8"] .route-card .rc-m.medium { color: #F0A30A; }
+body[data-skin="wp8"] .route-card .rc-stop { color: var(--wp8-text); }
+body[data-skin="wp8"] .route-card .rc-u,
+body[data-skin="wp8"] .route-card .rc-more,
+body[data-skin="wp8"] .route-card .rc-pcnt,
+body[data-skin="wp8"] .rc-line-tag,
+body[data-skin="wp8"] .rc-line-dir,
+body[data-skin="wp8"] .rc-dir { color: var(--wp8-secondary); }
+body[data-skin="wp8"] .route-card .rc-bar { background: var(--wp8-border); }
+body[data-skin="wp8"] .route-card .rc-bar i { background: var(--wp8-accent); }
+body[data-skin="wp8"] .route-card .fav-btn {
+  background: transparent; border: 2px solid var(--wp8-border); border-radius: 50%;
+  color: var(--wp8-secondary); box-shadow: none;
+}
+body[data-skin="wp8"] .route-card .fav-btn.favorited { color: #fff; background: var(--wp8-accent); border-color: var(--wp8-accent); }
+body[data-skin="wp8"] .fav-remove-btn {
+  background: transparent; border: 1px solid var(--wp8-border); border-radius: 0;
+  color: var(--wp8-secondary); box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400;
+}
+
+/* ===== 寿司郎卡 ===== */
+body[data-skin="wp8"] .sushiro-card .s-name { color: var(--wp8-text); }
+body[data-skin="wp8"] .sushiro-card .s-wait { color: var(--wp8-accent); }
+body[data-skin="wp8"] .sushiro-card .s-wait.soon { color: #E51400; }
+body[data-skin="wp8"] .sushiro-card .s-status { color: var(--wp8-secondary); }
+
+/* ===== 天气迷你条 ===== */
+body[data-skin="wp8"] .weather-mini-bar {
+  background: var(--wp8-surface); border: none; border-radius: 0;
+  box-shadow: none; color: var(--wp8-text);
+}
+body[data-skin="wp8"] .weather-mini-bar .wm-desc,
+body[data-skin="wp8"] .weather-mini-bar .wm-item b { color: var(--wp8-text); }
+body[data-skin="wp8"] .weather-mini-bar .wm-item,
+body[data-skin="wp8"] .weather-mini-bar .wm-upd { color: var(--wp8-secondary); }
+
+/* ===== 警告条 ===== */
+body[data-skin="wp8"] .warning-bar { border: none; border-radius: 0; box-shadow: none; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400; }
+body[data-skin="wp8"] .warning-bar.warn-mild { background: #4A4000; color: #FFE082; }
+body[data-skin="wp8"] .warning-bar.warn-severe { background: #4A1F1F; color: #FFA8A8; }
+
+/* ===== 底部导航 → WP8 App Bar（圆形图标） ===== */
+body[data-skin="wp8"] .bottom-nav {
+  background: var(--wp8-surface);
+  border-top: 1px solid var(--wp8-border);
+  box-shadow: none;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+}
+body[data-skin="wp8"] .bn-item {
+  color: var(--wp8-secondary); opacity: 1;
+  font-weight: 400; font-size: 0.68rem; letter-spacing: 0;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  border-radius: 0;
+}
+body[data-skin="wp8"] .bn-item svg {
+  width: 16px; height: 16px; padding: 8px;
+  border: 2px solid currentColor; border-radius: 50%;
+  box-sizing: content-box;
+}
+body[data-skin="wp8"] .bn-item.active { color: var(--wp8-accent); }
+body[data-skin="wp8"] .bn-item.active::before { display: none; }
+body[data-skin="wp8"] .bn-tx-default { display: inline; }
+body[data-skin="wp8"] .bn-tx-ios { display: none; }
+body[data-skin="wp8"] .bn-ios-only { display: none; }
+
+/* ===== 磁贴（Live Tiles） ===== */
+.wp8-tiles { display: none; }
+body[data-skin="wp8"] .wp8-tiles {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin: 0 0 22px;
+}
+body[data-skin="wp8"] .wp8-tile {
+  border: none; border-radius: 0; cursor: pointer;
+  background: var(--wp8-accent); color: #fff;
+  min-height: 92px; padding: 10px;
+  display: flex; align-items: flex-end;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  font-size: 0.95rem; font-weight: 400; text-align: left;
+  text-transform: lowercase;
+}
+body[data-skin="wp8"] .wp8-tile:hover { background: var(--wp8-accent-dark); }
+
+/* ===== 详情弹层 ===== */
+body[data-skin="wp8"] .detail-mask { background: rgba(0,0,0,0.6); }
+body[data-skin="wp8"] .detail-sheet {
+  background: var(--wp8-surface); color: var(--wp8-text);
+  border-radius: 0; box-shadow: none;
+}
+body[data-skin="wp8"] .detail-sheet .ds-head {
+  background: var(--wp8-surface); border-bottom-color: var(--wp8-border);
+}
+body[data-skin="wp8"] .detail-sheet .ds-no { color: var(--wp8-accent); font-family: 'Segoe UI Light', 'Segoe UI', sans-serif; }
+body[data-skin="wp8"] .detail-sheet .ds-name,
+body[data-skin="wp8"] .detail-sheet .ds-meta,
+body[data-skin="wp8"] .detail-sheet .ds-refresh,
+body[data-skin="wp8"] .detail-sheet .ds-close { color: var(--wp8-text); }
+body[data-skin="wp8"] .detail-sheet .ds-stop { background: var(--wp8-surface2); border-radius: 0; }
+body[data-skin="wp8"] .detail-sheet .ds-stop .ds-sn { color: var(--wp8-text); }
+body[data-skin="wp8"] .detail-sheet .ds-em { color: var(--wp8-text); font-family: 'Segoe UI', sans-serif; }
+body[data-skin="wp8"] .detail-sheet .ds-em.soon { color: #E51400; }
+body[data-skin="wp8"] .detail-sheet .ds-em.medium { color: #F0A30A; }
+body[data-skin="wp8"] .detail-sheet .ds-colhead,
+body[data-skin="wp8"] .detail-sheet .ds-stop .ds-none,
+body[data-skin="wp8"] .detail-sheet .ds-stop .ds-eu,
+body[data-skin="wp8"] .detail-sheet .ds-stop .ds-extra { color: var(--wp8-secondary); }
+body[data-skin="wp8"] .detail-sheet .ds-grab { background: var(--wp8-border); }
+
+/* ===== 设定页控件 ===== */
+body[data-skin="wp8"] .settings-block {
+  background: var(--wp8-surface); border: none; border-radius: 0;
+}
+body[data-skin="wp8"] .settings-label { color: var(--wp8-text); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400; }
+body[data-skin="wp8"] .settings-hint { color: var(--wp8-secondary); }
+body[data-skin="wp8"] .skin-opt,
+body[data-skin="wp8"] .seg-opt {
+  background: transparent; border: 2px solid var(--wp8-border); border-radius: 0;
+  color: var(--wp8-text); box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400;
+}
+body[data-skin="wp8"] .skin-opt.active,
+body[data-skin="wp8"] .seg-opt.active {
+  background: var(--wp8-accent); color: #fff; border-color: var(--wp8-accent);
+}
+body[data-skin="wp8"] .settings-select {
+  background: var(--wp8-surface2); border: 2px solid var(--wp8-border); border-radius: 0;
+  color: var(--wp8-text); box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400;
+}
+
+/* ===== K75P ===== */
+body[data-skin="wp8"] .k75p-name { color: var(--wp8-text); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; }
+body[data-skin="wp8"] .k75p-bus {
+  background: var(--wp8-surface2); border: 1px solid var(--wp8-border); border-radius: 0;
+  color: var(--wp8-text); font-family: 'Segoe UI', sans-serif; font-weight: 400;
+}
+body[data-skin="wp8"] .k75p-bus.soon { background: #4A1F1F; border-color: #E51400; color: #FFA8A8; }
+body[data-skin="wp8"] .k75p-bus.delayed { background: #4A4000; border-color: #F0A30A; color: #FFE082; }
+body[data-skin="wp8"] .k75p-bus.scheduled { background: #1F3A4A; border-color: #2672EC; color: #9CC6FF; }
+body[data-skin="wp8"] .k75p-fold-btn {
+  background: var(--wp8-surface); border: 1px solid var(--wp8-border); border-radius: 0;
+  color: var(--wp8-text); box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400;
+}
+
+/* ===== MTR 接驳 / 固定显示站 / 空状态 ===== */
+body[data-skin="wp8"] .conn-block { background: var(--wp8-surface); border: none; border-radius: 0; box-shadow: none; }
+body[data-skin="wp8"] .conn-title,
+body[data-skin="wp8"] .conn-dest { color: var(--wp8-text); }
+body[data-skin="wp8"] .conn-row { color: var(--wp8-secondary); }
+body[data-skin="wp8"] .conn-row + .conn-row { border-top-color: var(--wp8-border); }
+body[data-skin="wp8"] .conn-eta { color: var(--wp8-accent); }
+body[data-skin="wp8"] .conn-badge { color: #fff; border-radius: 0; }
+body[data-skin="wp8"] .empty-hint,
+body[data-skin="wp8"] .loading,
+body[data-skin="wp8"] .sushiro-note,
+body[data-skin="wp8"] .favshow-hint,
+body[data-skin="wp8"] .favshow-loading { color: var(--wp8-secondary); font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; }
+body[data-skin="wp8"] .favshow-head { color: var(--wp8-text); }
+body[data-skin="wp8"] .error-msg { background: #4A1F1F; border: 1px solid #E51400; color: #FFA8A8; }
+body[data-skin="wp8"] .spinner { border-color: var(--wp8-border); border-top-color: var(--wp8-accent); }
+body[data-skin="wp8"] .ds-pick {
+  background: transparent; border: 2px solid var(--wp8-accent); border-radius: 0;
+  color: var(--wp8-accent); box-shadow: none;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400;
+}
+body[data-skin="wp8"] .ds-pick.used { background: var(--wp8-accent); color: #fff; }
+
+/* ===== 焦点可见性 ===== */
+body[data-skin="wp8"] :focus-visible { outline: 2px solid var(--wp8-accent); outline-offset: 1px; }
