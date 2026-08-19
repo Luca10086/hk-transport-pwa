@@ -373,8 +373,18 @@ body[data-skin="ios"] section.ios-home {
 display: block;
 }
 
-body[data-skin="ios"] section[data-page="home"]:not(.ios-home) {
+/* iOS 首頁：隱藏 AC/MD 的搜索區與結果區，但保留天氣與 K75P（擁有 MD 全部功能） */
+body[data-skin="ios"] .search-section,
+body[data-skin="ios"] .results-section {
 display: none !important;
+}
+
+/* iOS：天氣與 K75P 區塊對齊首頁 16px 邊距 */
+body[data-skin="ios"] .info-section[data-page="home"] {
+padding: 0 16px; margin: 16px 0 0;
+}
+body[data-skin="ios"] .info-section[data-page="home"] .section-title {
+padding-left: 6px; padding-right: 6px;
 }
 
 body[data-skin="ios"] .ios-results .section-title {

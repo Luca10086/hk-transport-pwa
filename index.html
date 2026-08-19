@@ -223,21 +223,17 @@
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
 </button>
 
-<!-- ===== Bottom Navigation（搜尋 / 收藏 / 壽司郎；iOS 皮膚下為 首頁/最近/收藏/更多） ===== -->
+<!-- ===== Bottom Navigation（搜尋 / 收藏 / 壽司郎 / 設定；iOS 皮膚下為 首頁/收藏/壽司郎/更多） ===== -->
 <nav class="bottom-nav" id="bottomNav" aria-label="主要導航">
   <button class="bn-item active" data-page="home" onclick="switchPage('home')" aria-label="搜尋">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
     <span class="bn-tx-default" data-t="nav.search">搜尋</span><span class="bn-tx-ios" data-t="nav.home">首頁</span>
   </button>
-  <button class="bn-item bn-ios-only" data-page="recent" onclick="iosGoRecent()" aria-label="最近">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-    <span data-t="nav.recent">最近</span>
-  </button>
   <button class="bn-item" data-page="favs" onclick="switchPage('favs')" aria-label="收藏">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
     <span data-t="nav.favs">收藏</span>
   </button>
-  <button class="bn-item bn-ios-hide" data-page="sushi" onclick="switchPage('sushi')" aria-label="壽司郎">
+  <button class="bn-item" data-page="sushi" onclick="switchPage('sushi')" aria-label="壽司郎">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.05 17.56l-17.97.94L3 17l17.98-.94.07 1.5zM21 19.49H3v1.5h18v-1.5zM22 5v7c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-2 1c-1.68 0-3.04.98-3.21 2.23-.64-.73-2.73-2.73-6.54-2.73-4.67 0-6.75 3-6.75 3s2.08 3 6.75 3c3.81 0 5.9-2 6.54-2.73C16.96 10.02 18.32 11 20 11V6z"/></svg>
     <span data-t="nav.sushi">壽司郎</span>
   </button>
