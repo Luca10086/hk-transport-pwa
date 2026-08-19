@@ -208,6 +208,18 @@ function iosGoRecent() {
   }, 60);
 }
 
+/** iOS 大标题滚动收起（HIG Large Title 行為：向下滾動→收起，回頂→展開） */
+function initIosNavbarScroll() {
+  const nav = document.querySelector('.navbar');
+  if (!nav) return;
+  const update = () => {
+    const y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    nav.classList.toggle('compact', y > 28);
+  };
+  update();
+  window.addEventListener('scroll', update, { passive: true });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   /* Apply saved skin */
   let savedSkin = 'ac';
@@ -218,6 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyFontSize(getFontSize());
   applyRefreshUI();
   applySkinLanguage();
+  initIosNavbarScroll();
 
   /* Apply saved page (bottom nav) */
   let savedPage = 'home';

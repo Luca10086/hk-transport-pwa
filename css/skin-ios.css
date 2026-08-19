@@ -442,3 +442,39 @@ transform: none;
 body[data-skin="ios"] .seg-opt.active {
 background: var(--ios-tint); color: #fff; border-color: var(--ios-tint);
 }
+
+/* ===== iOS 大标题滚动收起（HIG Large Title） ===== */
+body[data-skin="ios"] .navbar {
+transition: padding .18s ease;
+}
+body[data-skin="ios"] .navbar h1 {
+transition: font-size .18s ease, line-height .18s ease;
+}
+body[data-skin="ios"] .navbar.compact {
+padding: calc(10px + env(safe-area-inset-top)) 20px 6px;
+}
+body[data-skin="ios"] .navbar.compact h1 {
+font-size: 22px;
+}
+
+/* ===== iOS 寿司郎：InsetGrouped 列表化 ===== */
+body[data-skin="ios"] section[data-page="sushi"] {
+padding: 0 16px;
+}
+body[data-skin="ios"] .sushiro-grid {
+display: block;
+  background: var(--ios-card);
+  border: 0.5px solid var(--ios-separator);
+  border-radius: 12px;
+  overflow: hidden;
+}
+body[data-skin="ios"] .sushiro-card {
+background: transparent; border: none; border-radius: 0; box-shadow: none;
+  padding: 12px 16px;
+}
+body[data-skin="ios"] .sushiro-card + .sushiro-card {
+border-top: 0.5px solid var(--ios-separator);
+}
+body[data-skin="ios"] .sushiro-card.closed {
+opacity: 1;
+}

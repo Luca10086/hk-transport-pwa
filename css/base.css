@@ -1413,3 +1413,36 @@ transform: translateY(1px); box-shadow: 0 1px 0 var(--card-shadow); filter: brig
 .seg-opt.active {
 background: linear-gradient(180deg, var(--primary-light), var(--primary)); color: #fff; border-color: var(--primary-dark); box-shadow: 0 2px 0 var(--primary-dark);
 }
+
+/* ===== 动森：结果/收藏/寿司郎卡 → 气泡对话框样式（仅 AC 皮肤） ===== */
+body:not([data-skin]) .transport-card,
+body:not([data-skin]) .sushiro-card {
+box-shadow: 0 5px 14px rgba(0,0,0,0.09);
+  position: relative;
+}
+body:not([data-skin]) .transport-card::after,
+body:not([data-skin]) .sushiro-card::after {
+content: '';
+  position: absolute;
+  left: 26px; bottom: -11px;
+  width: 18px; height: 18px;
+  background: var(--card-bg-soft);
+  border-right: 3px solid var(--card-border);
+  border-bottom: 3px solid var(--card-border);
+  transform: rotate(45deg);
+  border-radius: 0 0 4px 0;
+}
+
+/* ===== 动森：叶片元素强化（背景装饰） ===== */
+.deco-11 {
+top: 12%; left: 38%; transform: rotate(10deg);
+}
+.deco-12 {
+top: 62%; left: 44%; transform: rotate(-14deg);
+}
+.deco-13 {
+top: 26%; right: 20%; transform: rotate(18deg);
+}
+.deco-14 {
+bottom: 44%; right: 15%; transform: rotate(-8deg);
+}
