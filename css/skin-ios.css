@@ -376,10 +376,10 @@ display: none !important;
 }
 
 /* iOS：天氣與 K75P 區塊對齊首頁 16px 邊距 */
-body[data-skin="ios"] .info-section[data-page="home"] {
+body[data-skin="ios"] .home-pane .info-section {
 padding: 0 16px; margin: 16px 0 0;
 }
-body[data-skin="ios"] .info-section[data-page="home"] .section-title {
+body[data-skin="ios"] .home-pane .info-section .section-title {
 padding-left: 6px; padding-right: 6px;
 }
 

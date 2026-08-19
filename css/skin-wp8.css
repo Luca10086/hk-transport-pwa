@@ -323,3 +323,60 @@ body[data-skin="wp8"] .ds-pick.used { background: var(--wp8-accent); color: #fff
 
 /* ===== 焦点可见性 ===== */
 body[data-skin="wp8"] :focus-visible { outline: 2px solid var(--wp8-accent); outline-offset: 1px; }
+
+/* =====================================================================
+   WP8 Pivot 布局（真正脱离原框架：大标题 + 窗格滑动切换 + 扁平列表）
+   ===================================================================== */
+/* Pivot 大标题（取代普通标题） */
+.wp8-pivot-title { display: none; }
+body[data-skin="wp8"] .wp8-pivot-title {
+  display: block;
+  font-family: 'Segoe UI Light', 'Segoe UI', sans-serif;
+  font-size: 1.9rem; font-weight: 300;
+  text-transform: lowercase; letter-spacing: 0;
+  color: var(--wp8-text); line-height: 1.1;
+}
+body[data-skin="wp8"] .navbar h1 { display: none; }
+body[data-skin="wp8"] .ios-home { display: none !important; }
+
+/* 窗格容器：全宽、无内边距 */
+body[data-skin="wp8"] .container {
+  max-width: none; padding: 0;
+}
+
+/* 各页 = 窗格（Pivot 页），切换带滑动动画 */
+body[data-skin="wp8"] .container > section[data-page].pane-off { display: none; }
+body[data-skin="wp8"] .container > section[data-page].pane-on {
+  display: block;
+  padding: 18px 16px 140px;
+  box-sizing: border-box;
+  min-height: calc(100vh - 130px);
+  animation: wp8SlideIn .22s ease;
+}
+@keyframes wp8SlideIn {
+  from { transform: translateX(32px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* 页脚固定于 App Bar 上方（状态栏） */
+body[data-skin="wp8"] .footer {
+  position: fixed; left: 0; right: 0; bottom: 60px;
+  background: var(--wp8-surface);
+  border-top: 1px solid var(--wp8-border);
+  padding: 6px 16px; z-index: 190;
+  font-size: 0.72rem;
+  margin: 0;
+}
+
+/* 结果：扁平列表行（非卡片），行间细分隔线 */
+body[data-skin="wp8"] .card-grid { grid-template-columns: 1fr; gap: 0; }
+body[data-skin="wp8"] .route-card {
+  background: transparent; border: none; border-left: none;
+  border-bottom: 1px solid var(--wp8-border);
+  border-radius: 0; box-shadow: none;
+  padding: 12px 4px;
+}
+body[data-skin="wp8"] .route-card:hover { border-left: none; }
+body[data-skin="wp8"] .route-card .rc-no { font-size: 1.35rem; font-weight: 400; }
+body[data-skin="wp8"] .route-card .rc-name { font-weight: 400; }
+

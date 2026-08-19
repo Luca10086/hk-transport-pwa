@@ -41,16 +41,14 @@
 
 <!-- ===== Navbar ===== -->
 <nav class="navbar">
-  <h1><span class="ac-emoji">🍃</span> 森友出行手册</h1>
+  <h1><span class="ac-emoji">🍃</span> 森友出行手冊</h1>
+  <div class="wp8-pivot-title">搜尋</div>
   <div class="navbar-actions">
     <button class="refresh-btn" onclick="refreshAll(true)" id="refreshBtn" aria-label="重新整理">↻</button>
   </div>
 </nav>
 
 <div class="container">
-
-  <!-- ===== 天气警告条（HKO warningMessage，无警告时隐藏） ===== -->
-  <div id="warningBar" class="warning-bar" hidden></div>
 
   <!-- ===== iOS 首页（依概念图：搜索栏+分类标签+快捷入口+最近搜尋+熱門車站） ===== -->
   <section class="ios-home" data-page="home" id="iosHome">
@@ -102,15 +100,18 @@
     <div class="ios-results" id="iosResults"></div>
   </section>
 
-  <!-- ===== Weather（迷你，置于搜索栏上方，仅占搜索栏大小） ===== -->
-  <section class="info-section weather-mini-section" data-page="home">
+  <!-- ===== 首页窗格（首页：警告条+天气+搜索+结果+K75P） ===== -->
+  <section class="home-pane" data-page="home">
+    <div id="warningBar" class="warning-bar" hidden></div>
+    <!-- ===== Weather（迷你，置于搜索栏上方，仅占搜索栏大小） ===== -->
+    <section class="info-section weather-mini-section">
     <div id="weatherContainer" class="weather-mini">
       <div class="weather-mini-bar">🌤️ 載入天氣中…</div>
     </div>
   </section>
 
   <!-- ===== Search Section ===== -->
-  <section class="search-section" data-page="home">
+  <section class="search-section">
     <!-- Windows Phone 磁贴（仅 wp8 皮肤显示） -->
     <div class="wp8-tiles" aria-hidden="false">
       <button class="wp8-tile" onclick="switchPage('favs')">我的收藏</button>
@@ -133,7 +134,7 @@
   </section>
 
   <!-- ===== Search Results ===== -->
-  <section class="results-section" data-page="home">
+  <section class="results-section">
     <div class="section-title" role="heading" aria-level="2"><span class="ac-emoji">🍀</span> <span data-t="title.results">搜尋結果</span></div>
     <div id="resultsContainer" aria-live="polite">
       <div class="empty-hint" data-t="empty.search">請在上方搜尋巴士路線或港鐵車站</div>
@@ -141,7 +142,7 @@
   </section>
 
   <!-- ===== K75P Full-Route Live Board ===== -->
-  <section class="info-section" data-page="home">
+  <section class="info-section">
     <div class="section-title" role="heading" aria-level="2">
       <span class="ac-emoji">🚌</span> <span data-t="title.k75p">K75P 全線實時</span>
       <span class="badge" id="k75pUpdate"></span>
@@ -149,6 +150,7 @@
     <div id="k75pContainer" aria-live="polite">
       <div class="empty-hint"><span class="icon">🚌</span>載入 K75P 全線資料中…</div>
     </div>
+  </section>
   </section>
 
   <!-- ===== Favorites ===== -->

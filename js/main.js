@@ -106,6 +106,11 @@ function applySkin(skin) {
   if (meta) meta.setAttribute('content', color);
   /* iOS 皮肤：初始化 iOS 首页（最近搜尋 + 熱門車站） */
   if (s === 'ios') initIOSHome();
+  /* WP8：进入时清理旧 display 样式并套用窗格类 */
+  if (s === 'wp8') {
+    document.querySelectorAll('section[data-page]').forEach(el => { el.style.display = ''; });
+    switchPage(document.body.dataset.page || 'home');
+  }
   /* 按皮肤套用文案语气（繁體） */
   applySkinLanguage();
 }
@@ -168,9 +173,19 @@ function setRefreshInterval(sec) {
    Bottom Navigation（搜寻 / 收藏 / 寿司郎）& FAB
    ========================================================================== */
 const PAGE_KEY = 'marvis_page';
+const WP8_PAGE_TITLES = { home: '搜尋', favs: '收藏', sushi: '壽司郎', settings: '設定' };
 function switchPage(page) {
+  const isWp8 = document.body.dataset.skin === 'wp8';
   document.querySelectorAll('section[data-page]').forEach(el => {
-    el.style.display = (el.getAttribute('data-page') === page) ? '' : 'none';
+    const on = el.getAttribute('data-page') === page;
+    if (isWp8) {
+      /* WP8：窗格切换（slide 动画），全部保留、仅加 pane 类 */
+      el.style.display = '';
+      el.classList.toggle('pane-on', on);
+      el.classList.toggle('pane-off', !on);
+    } else {
+      el.style.display = on ? '' : 'none';
+    }
   });
   document.querySelectorAll('.bn-item').forEach(b => {
     const on = b.getAttribute('data-page') === page;
@@ -178,11 +193,34 @@ function switchPage(page) {
     if (on) b.setAttribute('aria-current', 'page');
     else if (b.hasAttribute('aria-current')) b.removeAttribute('aria-current');
   });
+  /* WP8 Pivot 标题 */
+  if (isWp8) {
+    const pt = document.querySelector('.wp8-pivot-title');
+    if (pt) pt.textContent = WP8_PAGE_TITLES[page] || '搜尋';
+  }
   document.body.dataset.page = page;
   try { localStorage.setItem(PAGE_KEY, page); } catch (e) {}
   if (page === 'favs') renderFavorites();   /* 进入收藏页时同步最新收藏 */
   window.scrollTo({ top: 0 });
 }
+
+/* WP8 Pivot 左右滑动切换 */
+let _wp8TouchX = null;
+document.addEventListener('touchstart', (e) => {
+  if (document.body.dataset.skin !== 'wp8') return;
+  _wp8TouchX = e.touches[0].clientX;
+}, { passive: true });
+document.addEventListener('touchend', (e) => {
+  if (document.body.dataset.skin !== 'wp8' || _wp8TouchX == null) return;
+  const dx = e.changedTouches[0].clientX - _wp8TouchX;
+  _wp8TouchX = null;
+  if (Math.abs(dx) < 60) return;
+  const order = ['home', 'favs', 'sushi', 'settings'];
+  const cur = document.body.dataset.page || 'home';
+  const idx = order.indexOf(cur);
+  if (dx < 0 && idx < order.length - 1) switchPage(order[idx + 1]);
+  else if (dx > 0 && idx > 0) switchPage(order[idx - 1]);
+});
 
 /** iOS 底部导航「最近」：回到首页并滚动到最近搜尋区块 */
 function iosGoRecent() {
