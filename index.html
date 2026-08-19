@@ -1041,6 +1041,15 @@ body[data-skin="ios"] .bottom-nav {
 body[data-skin="ios"] .bn-item { color: var(--ios-secondary); font-weight: 400; font-size: 10px; opacity: 1; font-family: inherit; }
 body[data-skin="ios"] .bn-item.active { color: var(--ios-tint); }
 body[data-skin="ios"] .bn-item.active::before { background: rgba(0,122,255,.12); opacity: 1; width: 64px; }
+/* iOS 底部导航：首頁/最近/收藏/更多（隐藏寿司郎 tab 及默认文案） */
+.bn-ios-only { display: none; }
+.bn-tx-ios { display: none; }
+body[data-skin="ios"] .bn-ios-only { display: flex; }
+body[data-skin="ios"] .bn-ios-hide { display: none; }
+body[data-skin="ios"] .bn-tx-default { display: none; }
+body[data-skin="ios"] .bn-tx-ios { display: inline; }
+/* iOS 皮肤无 FAB */
+body[data-skin="ios"] .fab-main { display: none !important; }
 /* 详情 sheet */
 body[data-skin="ios"] .detail-mask { background: rgba(0,0,0,.4); }
 body[data-skin="ios"] .detail-sheet { background: var(--ios-card); border-radius: 16px 16px 0 0; }
@@ -1120,6 +1129,81 @@ body[data-skin="md"] .conn-dest{ color:var(--on-surface); }
 .conn-eta{ flex:0 0 auto; font-size:13px; font-weight:700; color:#007AFF; font-variant-numeric:tabular-nums; }
 body[data-skin="ios"] .conn-eta{ color:var(--ios-tint); }
 body[data-skin="md"] .conn-eta{ color:var(--primary); }
+
+/* ==========================================================================
+   iOS 专属首页（依概念图 1000021189：搜索栏+分类标签+快捷入口+最近搜尋+熱門車站）
+   仅 body[data-skin="ios"] 显示；其余皮肤隐藏
+   ========================================================================== */
+section.ios-home { display: none !important; }
+body[data-skin="ios"] section.ios-home { display: block; }
+/* iOS 皮肤下：原 home 区块（天气/搜索/结果/K75P）隐藏，首页完全走 iOS 结构 */
+body[data-skin="ios"] section[data-page="home"]:not(.ios-home) { display: none !important; }
+
+.ios-home { padding: 6px 16px 0; }
+.ios-search-wrap { padding: 2px 0 10px; }
+.ios-search-field {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(118,118,128,.12); border-radius: 11px;
+  padding: 0 12px; height: 38px;
+}
+.ios-search-ic { width: 17px; height: 17px; fill: var(--ios-secondary, #8E8E93); flex: 0 0 auto; }
+.ios-search-input { flex: 1; border: none; background: transparent; outline: none; font-family: inherit; font-size: 17px; color: var(--ios-label, #000); }
+.ios-search-input::placeholder { color: var(--ios-secondary, #8E8E93); }
+
+/* 分类标签：横向排列，选中为白底高亮 */
+.ios-cats { display: flex; gap: 6px; padding: 2px 0 12px; overflow-x: auto; }
+.ios-cat {
+  border: none; background: transparent; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  color: var(--ios-secondary, #6E6E73);
+  padding: 6px 12px; border-radius: 8px; white-space: nowrap;
+  transition: background .15s ease, color .15s ease;
+}
+.ios-cat.active { background: var(--ios-card, #fff); color: var(--ios-label, #000); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+/* 快捷入口 4 卡片 */
+.ios-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 0 14px; }
+.ios-quick-card {
+  border: none; cursor: pointer; background: transparent;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 8px 2px; font-family: inherit;
+}
+.ios-quick-ic { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+.ios-quick-ic svg { width: 22px; height: 22px; fill: #fff; }
+.ios-ic-mtr { background: #FF3B30; }
+.ios-ic-bus { background: #007AFF; }
+.ios-ic-lrt { background: #FF9500; }
+.ios-ic-loc { background: #34C759; }
+.ios-quick-tx { font-size: 12px; font-weight: 500; color: var(--ios-label, #000); }
+
+/* 分组：最近搜尋 / 熱門車站 */
+.ios-group { padding: 2px 0 14px; }
+.ios-group-title { font-size: 13px; font-weight: 600; color: var(--ios-secondary, #6E6E73); padding: 8px 6px 6px; }
+.ios-list { background: var(--ios-card, #fff); border-radius: 12px; overflow: hidden; border: 0.5px solid var(--ios-separator, rgba(60,60,67,.18)); }
+.ios-list-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; cursor: pointer; text-align: left;
+  width: 100%; border: none; background: none; font-family: inherit;
+}
+.ios-list-item + .ios-list-item { border-top: 0.5px solid var(--ios-separator, rgba(60,60,67,.18)); }
+.ios-li-ic { width: 28px; height: 28px; border-radius: 6px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
+.ios-li-main { flex: 1; min-width: 0; }
+.ios-li-name { font-size: 16px; font-weight: 600; color: var(--ios-label, #000); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ios-li-sub { font-size: 13px; color: var(--ios-secondary, #6E6E73); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ios-li-eta { font-size: 14px; font-weight: 600; color: var(--ios-tint, #007AFF); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.ios-li-chev { flex: 0 0 auto; color: var(--ios-secondary, #8E8E93); font-size: 14px; }
+.ios-list-empty { padding: 14px; text-align: center; font-size: 13px; color: var(--ios-secondary, #6E6E73); }
+
+/* iOS 搜索结果容器 */
+.ios-results { padding: 4px 0 12px; }
+.ios-results .empty-hint { text-align: left; color: var(--ios-secondary, #6E6E73); }
+.ios-results .transport-card { margin-bottom: 8px; }
+body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
+
+/* 深色模式微调 */
+@media (prefers-color-scheme: dark) {
+  body[data-skin="ios"] .ios-cat.active { background: #636366; color: #fff; box-shadow: none; }
+}
 </style>
 </head>
 <body>
@@ -1147,6 +1231,55 @@ body[data-skin="md"] .conn-eta{ color:var(--primary); }
 </nav>
 
 <div class="container">
+
+  <!-- ===== iOS 首页（依概念图：搜索栏+分类标签+快捷入口+最近搜尋+熱門車站） ===== -->
+  <section class="ios-home" data-page="home" id="iosHome">
+    <!-- 搜索栏：胶囊字段 + 放大镜 -->
+    <div class="ios-search-wrap">
+      <div class="ios-search-field">
+        <svg class="ios-search-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" class="ios-search-input" id="iosSearchInput" placeholder="搜尋車站、路線或目的地" onkeydown="if(event.key==='Enter') iosDoSearch()">
+      </div>
+    </div>
+    <!-- 分类标签：全部 / 港鐵 / 巴士 / 輕鐵 -->
+    <div class="ios-cats" id="iosCats">
+      <button class="ios-cat active" data-type="all" onclick="iosSetCat('all', this)">全部</button>
+      <button class="ios-cat" data-type="mtr" onclick="iosSetCat('mtr', this)">港鐵</button>
+      <button class="ios-cat" data-type="bus" onclick="iosSetCat('bus', this)">巴士</button>
+      <button class="ios-cat" data-type="lrt" onclick="iosSetCat('lrt', this)">輕鐵</button>
+    </div>
+    <!-- 快捷入口 4 卡片 -->
+    <div class="ios-quick">
+      <button class="ios-quick-card" data-type="mtr" onclick="iosQuick('mtr')">
+        <span class="ios-quick-ic ios-ic-mtr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7.6 2 4 4.2 4 8v9.6c0 1.5 1.2 2.7 2.7 2.7l-1.2 1.2v.5h2l1.5-1.7h5l1.5 1.7h2v-.5l-1.2-1.2c1.5 0 2.7-1.2 2.7-2.7V8c0-3.8-3.6-6-8-6zM6.8 14.5A1.5 1.5 0 1 1 8.3 13a1.5 1.5 0 0 1-1.5 1.5zm10.4 0a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5zM19 10H5V8c0-2.2 2.6-4 7-4s7 1.8 7 4z"/></svg></span>
+        <span class="ios-quick-tx">港鐵</span>
+      </button>
+      <button class="ios-quick-card" data-type="bus" onclick="iosQuick('bus')">
+        <span class="ios-quick-ic ios-ic-bus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM5 12V6h14v6H5z"/></svg></span>
+        <span class="ios-quick-tx">巴士</span>
+      </button>
+      <button class="ios-quick-card" data-type="lrt" onclick="iosQuick('lrt')">
+        <span class="ios-quick-ic ios-ic-lrt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8 2 4 3.5 4 7v9.5c0 1.9 1.6 3.5 3.5 3.5L6 21.5v.5h2l1.5-1.5h5L16 22h2v-.5L16.5 20c1.9 0 3.5-1.6 3.5-3.5V7c0-3.5-4-5-8-5zm-5 8h4v4H7v-4zm6 0h4v4h-4v-4zm-6 6a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm10 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM18 10h-5V7h5v3z"/></svg></span>
+        <span class="ios-quick-tx">輕鐵</span>
+      </button>
+      <button class="ios-quick-card" data-type="loc" onclick="iosQuick('loc')">
+        <span class="ios-quick-ic ios-ic-loc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg></span>
+        <span class="ios-quick-tx">位置</span>
+      </button>
+    </div>
+    <!-- 最近搜尋 -->
+    <div class="ios-group">
+      <div class="ios-group-title">最近搜尋</div>
+      <div class="ios-list" id="iosRecentList"></div>
+    </div>
+    <!-- 熱門車站 -->
+    <div class="ios-group">
+      <div class="ios-group-title">熱門車站</div>
+      <div class="ios-list" id="iosHotList"></div>
+    </div>
+    <!-- iOS 搜索结果（渲染于此） -->
+    <div class="ios-results" id="iosResults"></div>
+  </section>
 
   <!-- ===== Weather（迷你，置于搜索栏上方，仅占搜索栏大小） ===== -->
   <section class="info-section weather-mini-section" data-page="home">
@@ -1246,23 +1379,27 @@ body[data-skin="md"] .conn-eta{ color:var(--primary); }
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
 </button>
 
-<!-- ===== Bottom Navigation（搜寻 / 收藏 / 寿司郎） ===== -->
+<!-- ===== Bottom Navigation（搜寻 / 收藏 / 寿司郎；iOS 皮肤下为 首頁/最近/收藏/更多） ===== -->
 <nav class="bottom-nav" id="bottomNav" aria-label="主要导航">
   <button class="bn-item active" data-page="home" onclick="switchPage('home')" aria-label="搜寻">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-    <span>搜寻</span>
+    <span class="bn-tx-default">搜寻</span><span class="bn-tx-ios">首頁</span>
+  </button>
+  <button class="bn-item bn-ios-only" data-page="home" onclick="iosGoRecent()" aria-label="最近">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+    <span>最近</span>
   </button>
   <button class="bn-item" data-page="favs" onclick="switchPage('favs')" aria-label="收藏">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
     <span>收藏</span>
   </button>
-  <button class="bn-item" data-page="sushi" onclick="switchPage('sushi')" aria-label="寿司郎">
+  <button class="bn-item bn-ios-hide" data-page="sushi" onclick="switchPage('sushi')" aria-label="寿司郎">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.05 17.56l-17.97.94L3 17l17.98-.94.07 1.5zM21 19.49H3v1.5h18v-1.5zM22 5v7c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-2 1c-1.68 0-3.04.98-3.21 2.23-.64-.73-2.73-2.73-6.54-2.73-4.67 0-6.75 3-6.75 3s2.08 3 6.75 3c3.81 0 5.9-2 6.54-2.73C16.96 10.02 18.32 11 20 11V6z"/></svg>
     <span>寿司郎</span>
   </button>
   <button class="bn-item" data-page="settings" onclick="switchPage('settings')" aria-label="设定">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
-    <span>设定</span>
+    <span class="bn-tx-default">设定</span><span class="bn-tx-ios">更多</span>
   </button>
 </nav>
 
@@ -1799,6 +1936,194 @@ function parseMTRBusETAData(etaData) {
     }
   }
   return etas;
+}
+
+/* ==========================================================================
+   iOS 首页逻辑（搜索栏+分类标签+快捷入口+最近搜尋+熱門車站）
+   ========================================================================== */
+const IOS_RECENT_KEY = 'marvis_ios_recent';
+const IOS_HOT_STOPS = [
+  { type: 'mtr', line: 'TML', code: 'TST', name: '尖東站', sub: '屯馬線 · 月台 1', badge: 'TML', color: '#34C759' },
+  { type: 'mtr', line: 'TWL', code: 'CEN', name: '中環站', sub: '荃灣線 / 港島線', badge: 'TWL', color: '#34C759' },
+  { type: 'mtr', line: 'TWL', code: 'MOK', name: '旺角站', sub: '觀塘線 / 荃灣線', badge: 'TWL', color: '#34C759' },
+  { type: 'mtr', line: 'ISL', code: 'CAB', name: '銅鑼灣站', sub: '港島線', badge: 'ISL', color: '#34C759' },
+  { type: 'mtr', line: 'EAL', code: 'SHT', name: '沙田站', sub: '東鐵線', badge: 'EAL', color: '#34C759' },
+  { type: 'mtr', line: 'KTL', code: 'KOT', name: '九龍塘站', sub: '觀塘線 / 東鐵線', badge: 'KTL', color: '#34C759' }
+];
+const IOS_LRT_STOP = { name: '天水圍', sub: '輕鐵 705 / 706 循環線', badge: 'LR', color: '#F7941D' };
+let iosRecent = [];
+try { iosRecent = JSON.parse(localStorage.getItem(IOS_RECENT_KEY) || '[]'); } catch (e) { iosRecent = []; }
+
+/** 切换 iOS 分类标签：更新高亮 + currentTransport */
+function iosSetCat(cat, btn) {
+  document.querySelectorAll('.ios-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (cat === 'all') {
+    currentTransport = 'bus';
+  } else {
+    currentTransport = cat;
+  }
+  const q = document.getElementById('iosSearchInput').value.trim();
+  if (q) iosDoSearch();
+}
+
+/** iOS 快捷入口：分类直搜；位置→全部 */
+function iosQuick(type) {
+  const catBtn = document.querySelector('.ios-cat[data-type="' + (type === 'loc' ? 'all' : type) + '"]');
+  if (catBtn) iosSetCat(catBtn.dataset.type, catBtn);
+  if (type === 'loc') {
+    document.getElementById('iosSearchInput').value = '';
+    document.getElementById('iosSearchInput').focus();
+    return;
+  }
+  const q = document.getElementById('iosSearchInput').value.trim();
+  if (q) iosDoSearch(); else document.getElementById('iosSearchInput').focus();
+}
+
+/** iOS 智能搜索：全部模式按关键词自动路由 */
+async function iosSearchAll(q, container) {
+  container.innerHTML = '<div class="loading"><div class="spinner"></div>搜寻中...</div>';
+  setStatus('loading', '搜寻中');
+  const hasCJK = /[\u4e00-\u9fff]/.test(q);
+  const pureRoute = /^[A-Za-z0-9\s\-]{1,6}$/.test(q);
+  if (hasCJK) {
+    await searchMTRStation(q, container);
+    if (container.querySelector('.empty-hint')) { container.innerHTML = ''; await searchLRT(q, container); }
+    if (container.querySelector('.empty-hint')) { container.innerHTML = ''; await searchBusRoute(q, container); }
+  } else if (pureRoute) {
+    await searchBusRoute(q, container);
+    if (container.querySelector('.empty-hint')) { container.innerHTML = ''; await searchMTRStation(q, container); }
+  } else {
+    await searchMTRStation(q, container);
+  }
+}
+
+/** iOS 搜索入口 */
+function iosDoSearch() {
+  const q = document.getElementById('iosSearchInput').value.trim();
+  if (!q) return;
+  const container = document.getElementById('iosResults');
+  const cat = document.querySelector('.ios-cat.active');
+  const type = cat ? cat.dataset.type : 'all';
+  // 记录最近搜尋
+  iosRecent = iosRecent.filter(r => r.q !== q);
+  iosRecent.unshift({ q, type, t: Date.now() });
+  iosRecent = iosRecent.slice(0, 8);
+  try { localStorage.setItem(IOS_RECENT_KEY, JSON.stringify(iosRecent)); } catch (e) {}
+  renderIOSRecent();
+  if (type === 'all') { iosSearchAll(q, container); }
+  else if (type === 'mtr') { searchMTRStation(q, container); }
+  else if (type === 'lrt') { searchLRT(q, container); }
+  else { searchBusRoute(q, container); }
+}
+
+/** 渲染最近搜尋 */
+function renderIOSRecent() {
+  const el = document.getElementById('iosRecentList');
+  if (!el) return;
+  if (!iosRecent.length) {
+    el.innerHTML = '<div class="ios-list-empty">暫無搜尋記錄</div>';
+    return;
+  }
+  const typeName = { all: '全部', mtr: '港鐵', bus: '巴士', lrt: '輕鐵' };
+  el.innerHTML = iosRecent.map(r =>
+    '<button class="ios-list-item" onclick="iosSearchHistory(\'' + r.q.replace(/'/g, "\\'") + '\',\'' + r.type + '\')">' +
+      '<span class="ios-li-ic" style="background:' + (r.type === 'lrt' ? '#F7941D' : r.type === 'mtr' ? '#34C759' : r.type === 'bus' ? '#007AFF' : '#6E6E73') + '">' + (r.type === 'lrt' ? '輕' : r.type === 'mtr' ? '鐵' : r.type === 'bus' ? '巴' : '尋') + '</span>' +
+      '<span class="ios-li-main"><span class="ios-li-name">' + escapeHtml(r.q) + '</span><span class="ios-li-sub">' + (typeName[r.type] || '全部') + '</span></span>' +
+      '<span class="ios-li-eta">' + iosRecentTime(r.t) + '</span><span class="ios-li-chev">›</span>' +
+    '</button>'
+  ).join('');
+}
+
+/** 点击最近搜尋项：回填并搜索 */
+function iosSearchHistory(q, type) {
+  document.getElementById('iosSearchInput').value = q;
+  const catBtn = document.querySelector('.ios-cat[data-type="' + type + '"]');
+  if (catBtn) iosSetCat(type, catBtn);
+  iosDoSearch();
+}
+
+/** 最近搜尋相对时间 */
+function iosRecentTime(t) {
+  if (!t) return '';
+  const diff = Math.floor((Date.now() - t) / 1000);
+  if (diff < 60) return '剛剛';
+  if (diff < 3600) return Math.floor(diff / 60) + ' 分鐘';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' 小時';
+  return Math.floor(diff / 86400) + ' 天';
+}
+
+/** 渲染熱門車站：MTR 站拉实时 ETA + 轻铁卡 */
+async function renderIOSHot() {
+  const el = document.getElementById('iosHotList');
+  if (!el) return;
+  el.innerHTML = '<div class="ios-list-empty">載入中...</div>';
+  // 轻铁卡
+  const lrtRow = document.createElement('button');
+  lrtRow.className = 'ios-list-item';
+  lrtRow.onclick = () => { document.getElementById('iosSearchInput').value = '天水圍'; iosSetCat('lrt', document.querySelector('.ios-cat[data-type="lrt"]')); iosDoSearch(); };
+  lrtRow.innerHTML = '<span class="ios-li-ic" style="background:#F7941D">輕</span>' +
+    '<span class="ios-li-main"><span class="ios-li-name">' + IOS_LRT_STOP.name + '</span><span class="ios-li-sub">' + IOS_LRT_STOP.sub + '</span></span>' +
+    '<span class="ios-li-eta">--</span><span class="ios-li-chev">›</span>';
+  el.appendChild(lrtRow);
+  // MTR 热门站：先渲染骨架，再并行拉取 ETA
+  const rows = [];
+  for (const s of IOS_HOT_STOPS) {
+    const row = document.createElement('button');
+    row.className = 'ios-list-item';
+    row.onclick = () => { document.getElementById('iosSearchInput').value = s.name; iosSetCat('mtr', document.querySelector('.ios-cat[data-type="mtr"]')); iosDoSearch(); };
+    row.innerHTML = '<span class="ios-li-ic" style="background:' + s.color + '">' + s.badge + '</span>' +
+      '<span class="ios-li-main"><span class="ios-li-name">' + s.name + '</span><span class="ios-li-sub">' + s.sub + '</span></span>' +
+      '<span class="ios-li-eta">--</span><span class="ios-li-chev">›</span>';
+    rows.push({ row, s });
+    el.appendChild(row);
+  }
+  const lrtEtas = await iosLRTEta();
+  if (lrtEtas) lrtRow.querySelector('.ios-li-eta').textContent = lrtEtas;
+  await Promise.all(rows.map(async ({ row, s }) => {
+    const eta = await iosMTRNext(s.line, s.code);
+    if (eta) row.querySelector('.ios-li-eta').textContent = eta;
+  }));
+}
+
+/** MTR 最近一班（分钟） */
+async function iosMTRNext(line, code) {
+  try {
+    const sched = await getMTRSchedule(line, code);
+    if (!sched) return null;
+    const key = line + '-' + code;
+    const d = sched[key] || {};
+    let nextTs = Infinity;
+    for (const dir of ['UP', 'DOWN']) {
+      for (const t of (d[dir] || [])) {
+        if (t && t.time) {
+          const ts = new Date(t.time).getTime() / 1000;
+          if (ts < nextTs) nextTs = ts;
+        }
+      }
+    }
+    if (nextTs === Infinity) return null;
+    const mins = Math.max(1, Math.round((nextTs * 1000 - Date.now()) / 60000));
+    return mins + ' 分鐘';
+  } catch (e) { return null; }
+}
+
+/** 轻铁最近一班（分钟） */
+async function iosLRTEta() {
+  try {
+    const st = Object.keys(LRT_STATIONS).find(k => LRT_STATIONS[k] === '天水圍');
+    if (!st) return null;
+    const etas = await getLRTEta(st);
+    if (!etas || !etas.length) return null;
+    const mins = Math.max(1, Math.round(etas[0].mins));
+    return mins + ' 分鐘';
+  } catch (e) { return null; }
+}
+
+/** 初始化 iOS 首页（皮肤切换 / 载入时调用） */
+function initIOSHome() {
+  renderIOSRecent();
+  renderIOSHot();
 }
 
 /* ==========================================================================
@@ -2395,7 +2720,7 @@ async function loadFavoritesETA(favs, container) {
         if (entries.length) {
           fav.platformData = entries;
           const now = Math.floor(Date.now() / 1000);
-          etas = entries.slice(0, 3).map(e => ({ etaTs: now + e.mins * 60 }));
+          etas = entries.slice(0, 3).map(e => ({ etaTs: now + e.mins * 60, dirLabel: (e.routeNo || '') + ' · ' + e.dest }));
         }
       }
     } else if (fav.type === 'mtrbus') {
@@ -3222,6 +3547,8 @@ function applySkin(skin) {
   const meta = document.querySelector('meta[name="theme-color"]');
   const color = s === 'md' ? '#6750a4' : s === 'ios' ? '#007AFF' : '#5fae82';
   if (meta) meta.setAttribute('content', color);
+  /* iOS 皮肤：初始化 iOS 首页（最近搜尋 + 熱門車站） */
+  if (s === 'ios') initIOSHome();
 }
 function setSkin(skin) {
   applySkin(skin);
@@ -3263,6 +3590,15 @@ function fabAction() {
     toggleFavByItem(item, btn);
     renderFavorites();
   } catch (err) { switchPage('favs'); }
+}
+
+/** iOS 底部导航「最近」：回到首页并滚动到最近搜尋区块 */
+function iosGoRecent() {
+  switchPage('home');
+  setTimeout(() => {
+    const g = document.querySelector('.ios-home .ios-group');
+    if (g) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 60);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
