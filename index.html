@@ -984,8 +984,19 @@ body[data-skin="ios"] {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "PingFang HK", "Helvetica Neue", "Segoe UI", "Microsoft JhengHei", sans-serif;
   background: #F2F2F7;
 }
+/* 深色模式：手动 data-theme="dark" 或系统深色（手动 data-theme="light" 时排除） */
+body[data-skin="ios"][data-theme="dark"] {
+  --ios-bg: #000000; --ios-card: #1C1C1E; --ios-label: #FFFFFF;
+  --ios-secondary: #98989E; --ios-separator: rgba(84,84,88,.6);
+  --ios-tint: #0A84FF; --ios-search: rgba(118,118,128,.24); --ios-fill: rgba(118,118,128,.24);
+  --bg-top: #000000; --bg-mid: #000000; --bg-bottom: #000000;
+  --text: #FFFFFF; --text-dark: #98989E;
+  --primary: #0A84FF; --primary-light: #1C1C1E; --primary-dark: #0A84FF;
+  --card-bg: #1C1C1E; --card-bg2: #1C1C1E; --card-border: rgba(84,84,88,.6); --card-shadow: transparent; --card-bg-soft: #1C1C1E;
+  background: #000000;
+}
 @media (prefers-color-scheme: dark) {
-  body[data-skin="ios"] {
+  body[data-skin="ios"]:not([data-theme="light"]) {
     --ios-bg: #000000; --ios-card: #1C1C1E; --ios-label: #FFFFFF;
     --ios-secondary: #98989E; --ios-separator: rgba(84,84,88,.6);
     --ios-tint: #0A84FF; --ios-search: rgba(118,118,128,.24); --ios-fill: rgba(118,118,128,.24);
@@ -1078,15 +1089,22 @@ body[data-skin="ios"] .weather-mini-bar { background: var(--ios-card); border: 0
 body[data-skin="ios"] .weather-mini-bar .wm-desc, body[data-skin="ios"] .weather-mini-bar .wm-item b { color: var(--ios-tint); }
 body[data-skin="ios"] .weather-mini-bar .wm-item { color: var(--ios-secondary); }
 body[data-skin="ios"] .weather-mini-bar .wm-upd { color: var(--ios-secondary); }
-/* 深色微调 */
+/* 深色微调（iOS：手动深色 or 系统深色，手动浅色排除） */
+body[data-skin="ios"][data-theme="dark"] .navbar, body[data-skin="ios"][data-theme="dark"] .bottom-nav { background: rgba(18,18,18,.92); border-top-color: rgba(255,255,255,.12); }
+body[data-skin="ios"][data-theme="dark"] .navbar h1 { color: #fff; }
+body[data-skin="ios"][data-theme="dark"] .navbar .refresh-btn { color: #fff; }
+body[data-skin="ios"][data-theme="dark"] .transport-toggle button.active { background: #636366; color: #fff; }
+body[data-skin="ios"][data-theme="dark"] .search-input:focus { box-shadow: 0 0 0 3px rgba(10,132,255,.35); }
+body[data-skin="ios"][data-theme="dark"] .conn-title { color: var(--ios-label); }
+body[data-skin="ios"][data-theme="dark"] .rc-line-tag { color: var(--ios-secondary); }
 @media (prefers-color-scheme: dark) {
-  body[data-skin="ios"] .navbar, body[data-skin="ios"] .bottom-nav { background: rgba(18,18,18,.92); border-top-color: rgba(255,255,255,.12); }
-  body[data-skin="ios"] .navbar h1 { color: #fff; }
-  body[data-skin="ios"] .navbar .refresh-btn { color: #fff; }
-  body[data-skin="ios"] .transport-toggle button.active { background: #636366; color: #fff; }
-  body[data-skin="ios"] .search-input:focus { box-shadow: 0 0 0 3px rgba(10,132,255,.35); }
-  body[data-skin="ios"] .conn-title { color: var(--ios-label); }
-  body[data-skin="ios"] .rc-line-tag { color: var(--ios-secondary); }
+  body[data-skin="ios"]:not([data-theme="light"]) .navbar, body[data-skin="ios"]:not([data-theme="light"]) .bottom-nav { background: rgba(18,18,18,.92); border-top-color: rgba(255,255,255,.12); }
+  body[data-skin="ios"]:not([data-theme="light"]) .navbar h1 { color: #fff; }
+  body[data-skin="ios"]:not([data-theme="light"]) .navbar .refresh-btn { color: #fff; }
+  body[data-skin="ios"]:not([data-theme="light"]) .transport-toggle button.active { background: #636366; color: #fff; }
+  body[data-skin="ios"]:not([data-theme="light"]) .search-input:focus { box-shadow: 0 0 0 3px rgba(10,132,255,.35); }
+  body[data-skin="ios"]:not([data-theme="light"]) .conn-title { color: var(--ios-label); }
+  body[data-skin="ios"]:not([data-theme="light"]) .rc-line-tag { color: var(--ios-secondary); }
 }
 /* ---- v12 追加：轻铁方向 / 第1班第2班 / 收藏固定显示站 / MTR接驳 ---- */
 .rc-head{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
@@ -1201,9 +1219,10 @@ body[data-skin="ios"] section[data-page="home"]:not(.ios-home) { display: none !
 .ios-results .transport-card { margin-bottom: 8px; }
 body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
 
-/* 深色模式微调 */
+/* 深色模式微调（iOS 首页） */
+body[data-skin="ios"][data-theme="dark"] .ios-cat.active { background: #636366; color: #fff; box-shadow: none; }
 @media (prefers-color-scheme: dark) {
-  body[data-skin="ios"] .ios-cat.active { background: #636366; color: #fff; box-shadow: none; }
+  body[data-skin="ios"]:not([data-theme="light"]) .ios-cat.active { background: #636366; color: #fff; box-shadow: none; }
 }
 
 /* ===== 可访问性：尊重系统减弱动效设置 ===== */
@@ -1221,6 +1240,148 @@ body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
 .navbar h1 { color: #1f4d33; text-shadow: 0 1px 0 rgba(255,255,255,.3); }
 .transport-toggle button.active { color: #14532d; text-shadow: none; }
 body[data-skin="ios"] .route-card .rc-tag { background: rgba(10,132,255,.12); color: #0A84FF; }
+
+/* ===== 键盘焦点可见性（M3：primary 描边） ===== */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+body[data-skin="md"] :focus-visible { outline-color: var(--md-primary); }
+body[data-skin="ios"] :focus-visible { outline-color: var(--ios-tint); }
+
+/* ===== 底部弹层拖拽指示条 ===== */
+.ds-grab { width: 36px; height: 4px; border-radius: 2px; background: var(--card-border); margin: 8px auto 4px; }
+body[data-skin="md"] .ds-grab { background: var(--md-outline-variant); }
+body[data-skin="ios"] .ds-grab { background: var(--ios-separator); }
+
+/* ===== Material 3 深色方案（手动深色 or 系统深色；手动浅色排除） ===== */
+body[data-skin="md"][data-theme="dark"] {
+  --md-primary: #D0BCFF; --md-on-primary: #381E72;
+  --md-primary-container: #4F378B; --md-on-primary-container: #EADDFF;
+  --md-secondary-container: #4A4458; --md-on-secondary-container: #E8DEF8;
+  --md-tertiary-container: #633B48; --md-on-tertiary-container: #FFD8E4;
+  --md-error: #F2B8B5; --md-error-container: #8C1D18; --md-on-error-container: #F9DEDC;
+  --md-surface: #141218; --md-on-surface: #E6E0E9; --md-on-surface-variant: #CAC4D0;
+  --md-surface-variant: #49454F; --md-outline: #938F99; --md-outline-variant: #49454F;
+  --md-surface-lowest: #0F0D13; --md-surface-container: #211F26;
+  --md-surface-container-high: #2B2930; --md-surface-highest: #36343B;
+  --md-elev-1: 0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.35);
+  --md-elev-2: 0 1px 2px rgba(0,0,0,.5), 0 2px 6px 2px rgba(0,0,0,.35);
+  --md-elev-3: 0 4px 8px 3px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.5);
+  --bg-top: #141218; --bg-mid: #1D1B20; --bg-bottom: #141218;
+  --text: #E6E0E9; --text-dark: #CAC4D0;
+  --primary: #D0BCFF; --primary-light: #4F378B; --primary-dark: #EADDFF;
+  --card-bg: #1D1B20; --card-bg2: #211F26; --card-border: #49454F;
+  --card-shadow: rgba(0,0,0,.35); --card-bg-soft: #141218;
+  background: #141218;
+}
+@media (prefers-color-scheme: dark) {
+  body[data-skin="md"]:not([data-theme="light"]) {
+    --md-primary: #D0BCFF; --md-on-primary: #381E72;
+    --md-primary-container: #4F378B; --md-on-primary-container: #EADDFF;
+    --md-secondary-container: #4A4458; --md-on-secondary-container: #E8DEF8;
+    --md-tertiary-container: #633B48; --md-on-tertiary-container: #FFD8E4;
+    --md-error: #F2B8B5; --md-error-container: #8C1D18; --md-on-error-container: #F9DEDC;
+    --md-surface: #141218; --md-on-surface: #E6E0E9; --md-on-surface-variant: #CAC4D0;
+    --md-surface-variant: #49454F; --md-outline: #938F99; --md-outline-variant: #49454F;
+    --md-surface-lowest: #0F0D13; --md-surface-container: #211F26;
+    --md-surface-container-high: #2B2930; --md-surface-highest: #36343B;
+    --md-elev-1: 0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.35);
+    --md-elev-2: 0 1px 2px rgba(0,0,0,.5), 0 2px 6px 2px rgba(0,0,0,.35);
+    --md-elev-3: 0 4px 8px 3px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.5);
+    --bg-top: #141218; --bg-mid: #1D1B20; --bg-bottom: #141218;
+    --text: #E6E0E9; --text-dark: #CAC4D0;
+    --primary: #D0BCFF; --primary-light: #4F378B; --primary-dark: #EADDFF;
+    --card-bg: #1D1B20; --card-bg2: #211F26; --card-border: #49454F;
+    --card-shadow: rgba(0,0,0,.35); --card-bg-soft: #141218;
+    background: #141218;
+  }
+}
+/* M3 深色：补充组件的深色微调 */
+body[data-skin="md"][data-theme="dark"] .detail-sheet .ds-head { background: var(--md-surface-container); }
+body[data-skin="md"][data-theme="dark"] .weather-mini-bar { background: var(--md-surface-container); }
+body[data-skin="md"][data-theme="dark"] .navbar h1::before { color: var(--md-on-surface-variant); }
+@media (prefers-color-scheme: dark) {
+  body[data-skin="md"]:not([data-theme="light"]) .detail-sheet .ds-head { background: var(--md-surface-container); }
+  body[data-skin="md"]:not([data-theme="light"]) .weather-mini-bar { background: var(--md-surface-container); }
+  body[data-skin="md"]:not([data-theme="light"]) .navbar h1::before { color: var(--md-on-surface-variant); }
+}
+
+/* ===== 动森 AC 深色方案（默认皮肤，无 data-skin 时生效） ===== */
+body[data-theme="dark"]:not([data-skin]) {
+  --bg-top: #16251c; --bg-mid: #1e2a1e; --bg-bottom: #241a12;
+  --text: #e6ddcc; --text-dark: #cfc4ae;
+  --primary: #6fbf92; --primary-light: #3f8a63; --primary-dark: #a8d8bd;
+  --card-bg: #232d22; --card-bg2: #2a3528; --card-border: #46543f;
+  --card-shadow: #141a11; --card-bg-soft: #1f291e;
+  background: linear-gradient(180deg, #16251c 0%, #1e2a1e 45%, #241a12 100%);
+}
+@media (prefers-color-scheme: dark) {
+  body:not([data-skin]):not([data-theme="light"]) {
+    --bg-top: #16251c; --bg-mid: #1e2a1e; --bg-bottom: #241a12;
+    --text: #e6ddcc; --text-dark: #cfc4ae;
+    --primary: #6fbf92; --primary-light: #3f8a63; --primary-dark: #a8d8bd;
+    --card-bg: #232d22; --card-bg2: #2a3528; --card-border: #46543f;
+    --card-shadow: #141a11; --card-bg-soft: #1f291e;
+    background: linear-gradient(180deg, #16251c 0%, #1e2a1e 45%, #241a12 100%);
+  }
+}
+/* AC 深色：次要文字/区块调亮保证可读 */
+body[data-theme="dark"]:not([data-skin]) .card-stop, body[data-theme="dark"]:not([data-skin]) .eta-detail,
+body[data-theme="dark"]:not([data-skin]) .rc-u, body[data-theme="dark"]:not([data-skin]) .rc-more,
+body[data-theme="dark"]:not([data-skin]) .rc-pcnt, body[data-theme="dark"]:not([data-skin]) .empty-hint,
+body[data-theme="dark"]:not([data-skin]) .footer, body[data-theme="dark"]:not([data-skin]) .wm-upd,
+body[data-theme="dark"]:not([data-skin]) .sushiro-note, body[data-theme="dark"]:not([data-skin]) .ds-meta,
+body[data-theme="dark"]:not([data-skin]) .ds-refresh, body[data-theme="dark"]:not([data-skin]) .favshow-hint,
+body[data-theme="dark"]:not([data-skin]) .search-input::placeholder { color: #b3a68c; }
+@media (prefers-color-scheme: dark) {
+  body:not([data-skin]):not([data-theme="light"]) .card-stop, body:not([data-skin]):not([data-theme="light"]) .eta-detail,
+  body:not([data-skin]):not([data-theme="light"]) .rc-u, body:not([data-skin]):not([data-theme="light"]) .rc-more,
+  body:not([data-skin]):not([data-theme="light"]) .rc-pcnt, body:not([data-skin]):not([data-theme="light"]) .empty-hint,
+  body:not([data-skin]):not([data-theme="light"]) .footer, body:not([data-skin]):not([data-theme="light"]) .wm-upd,
+  body:not([data-skin]):not([data-theme="light"]) .sushiro-note, body:not([data-skin]):not([data-theme="light"]) .ds-meta,
+  body:not([data-skin]):not([data-theme="light"]) .ds-refresh, body:not([data-skin]):not([data-theme="light"]) .favshow-hint,
+  body:not([data-skin]):not([data-theme="light"]) .search-input::placeholder { color: #b3a68c; }
+}
+
+/* ===== 字号设置（作用于 rem 基准，16px 为标准） ===== */
+html[data-fontsize="sm"] { font-size: 14px; }
+html[data-fontsize="lg"] { font-size: 18px; }
+
+/* ===== 天气警告条（HKO warningMessage） ===== */
+.warning-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 12px; padding: 10px 14px;
+  border-radius: 14px; font-size: .85rem; font-weight: 700;
+  border: 2px solid; box-shadow: 0 3px 0 rgba(0,0,0,.08);
+  line-height: 1.4;
+}
+.warning-bar[hidden] { display: none; }
+.warning-bar.warn-mild { background: #fff8e1; border-color: #e8c56a; color: #6d5200; }
+.warning-bar.warn-severe { background: #ffebee; border-color: #ef9a9a; color: #b71c1c; }
+.warning-bar .wb-icon { font-size: 1.05rem; flex: 0 0 auto; }
+.warning-bar .wb-text { flex: 1; min-width: 0; }
+.warning-bar .wb-close { background: none; border: none; font-size: 1rem; cursor: pointer; color: inherit; opacity: .65; padding: 4px 6px; flex: 0 0 auto; }
+body[data-skin="md"] .warning-bar { border: none; border-radius: var(--md-corner-m); box-shadow: var(--md-elev-1); font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 500; }
+body[data-skin="md"] .warning-bar.warn-mild { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+body[data-skin="md"] .warning-bar.warn-severe { background: var(--md-error-container); color: var(--md-on-error-container); }
+body[data-skin="ios"] .warning-bar { border: .5px solid var(--ios-separator); border-radius: 12px; box-shadow: none; font-family: inherit; font-weight: 600; }
+body[data-skin="ios"] .warning-bar.warn-mild { background: var(--ios-card); color: var(--ios-label); }
+body[data-skin="ios"] .warning-bar.warn-severe { background: #ffebee; color: #d70015; }
+
+/* ===== 设定页分段选择器 ===== */
+.settings-seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg-opt {
+  padding: 9px 14px; border: 2px solid var(--card-border); background: var(--card-bg);
+  color: var(--text-dark); border-radius: 12px; font-size: .85rem; font-weight: 700;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; cursor: pointer;
+  box-shadow: 0 2px 0 var(--card-shadow); transition: transform .12s ease, filter .15s ease, box-shadow .2s ease;
+}
+.seg-opt:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--card-shadow); filter: brightness(.95); }
+.seg-opt.active { background: linear-gradient(180deg, var(--primary-light), var(--primary)); color: #fff; border-color: var(--primary-dark); box-shadow: 0 2px 0 var(--primary-dark); }
+body[data-skin="md"] .seg-opt { border: 1px solid var(--md-outline); border-radius: 20px; background: transparent; color: var(--md-on-surface-variant); box-shadow: none; font-family: 'Roboto', 'Noto Sans SC', sans-serif; font-weight: 500; }
+body[data-skin="md"] .seg-opt:active { transform: none; }
+body[data-skin="md"] .seg-opt.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; }
+body[data-skin="ios"] .seg-opt { border: .5px solid var(--ios-separator); border-radius: 9px; background: var(--ios-card); color: var(--ios-tint); box-shadow: none; font-weight: 600; font-family: inherit; }
+body[data-skin="ios"] .seg-opt:active { transform: none; }
+body[data-skin="ios"] .seg-opt.active { background: var(--ios-tint); color: #fff; border-color: var(--ios-tint); }
 </style>
 </head>
 <body>
@@ -1248,6 +1409,9 @@ body[data-skin="ios"] .route-card .rc-tag { background: rgba(10,132,255,.12); co
 </nav>
 
 <div class="container">
+
+  <!-- ===== 天气警告条（HKO warningMessage，无警告时隐藏） ===== -->
+  <div id="warningBar" class="warning-bar" hidden></div>
 
   <!-- ===== iOS 首页（依概念图：搜索栏+分类标签+快捷入口+最近搜尋+熱門車站） ===== -->
   <section class="ios-home" data-page="home" id="iosHome">
@@ -1376,6 +1540,34 @@ body[data-skin="ios"] .route-card .rc-tag { background: rgba(10,132,255,.12); co
           <button class="skin-opt" data-skin="ios" onclick="setSkin('ios')">iOS</button>
         </div>
         <div class="settings-hint">选择网页主题外观。iOS 模式依 Apple Human Interface Guidelines 设计。</div>
+      </div>
+      <div class="settings-block">
+        <div class="settings-label">深色模式</div>
+        <div class="settings-seg" id="themeSeg">
+          <button class="seg-opt" data-theme-val="system" onclick="setTheme('system', this)">跟隨系統</button>
+          <button class="seg-opt" data-theme-val="light" onclick="setTheme('light', this)">淺色</button>
+          <button class="seg-opt" data-theme-val="dark" onclick="setTheme('dark', this)">深色</button>
+        </div>
+        <div class="settings-hint">手动覆盖深色模式（适用于 iOS / Material 3 皮肤）。</div>
+      </div>
+      <div class="settings-block">
+        <div class="settings-label">字體大小</div>
+        <div class="settings-seg" id="fontSeg">
+          <button class="seg-opt" data-size-val="sm" onclick="setFontSize('sm', this)">小</button>
+          <button class="seg-opt" data-size-val="md" onclick="setFontSize('md', this)">標準</button>
+          <button class="seg-opt" data-size-val="lg" onclick="setFontSize('lg', this)">大</button>
+        </div>
+        <div class="settings-hint">调整页面文字大小（标准为 16px）。</div>
+      </div>
+      <div class="settings-block">
+        <div class="settings-label">自動刷新</div>
+        <div class="settings-seg" id="refreshSeg">
+          <button class="seg-opt" data-refresh-val="15" onclick="setRefreshInterval(15, this)">15 秒</button>
+          <button class="seg-opt" data-refresh-val="30" onclick="setRefreshInterval(30, this)">30 秒</button>
+          <button class="seg-opt" data-refresh-val="60" onclick="setRefreshInterval(60, this)">60 秒</button>
+          <button class="seg-opt" data-refresh-val="0" onclick="setRefreshInterval(0, this)">關閉</button>
+        </div>
+        <div class="settings-hint">收藏/天气/寿司郎/K75P 的自动更新频率。</div>
       </div>
     </div>
   </section>
@@ -2971,7 +3163,25 @@ function exportFavoritesForQuote0() {
    Weather (HKO)
    ========================================================================== */
 
-/** Fetch & render HKO real-time weather（迷你条：温度/湿度/雨量） */
+/* 天气警告已手动收起（本次会话内不再弹出） */
+let warningDismissed = false;
+/** 渲染天气警告条（HKO rhrread.warningMessage；无警告或已收起时隐藏） */
+function renderWarningBar(msgs) {
+  const bar = document.getElementById('warningBar');
+  if (!bar) return;
+  if (!Array.isArray(msgs) || msgs.length === 0 || warningDismissed) { bar.hidden = true; return; }
+  const text = msgs.join(' ');
+  const severe = /颱風|暴雨|雷暴|山泥|酷熱|寒冷|霜凍|海嘯|水浸|紅色|黑色/.test(text);
+  bar.className = 'warning-bar ' + (severe ? 'warn-severe' : 'warn-mild');
+  bar.innerHTML = '<span class="wb-icon">' + (severe ? '⚠️' : 'ℹ️') + '</span>'
+    + '<span class="wb-text">' + escapeHtml(text) + '</span>'
+    + '<button class="wb-close" aria-label="收起警告">✕</button>';
+  const close = bar.querySelector('.wb-close');
+  if (close) close.addEventListener('click', () => { warningDismissed = true; bar.hidden = true; });
+  bar.hidden = false;
+}
+
+/** Fetch & render HKO real-time weather（迷你条：温度/湿度/雨量 + 警告条） */
 async function refreshWeather() {
   const container = document.getElementById('weatherContainer');
   if (!container) return;
@@ -2979,6 +3189,9 @@ async function refreshWeather() {
     const resp = await fetch(WEATHER_API, { signal: AbortSignal.timeout(15000) });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
+
+    /* 天气警告条（与天气同一次请求，无额外开销） */
+    renderWarningBar(data.warningMessage);
 
     /* Temperature: prefer 元朗公園 station */
     const temps = (data.temperature && data.temperature.data) || [];
@@ -3296,11 +3509,11 @@ async function openStopPicker(favIndex) {
   } catch (e) { stops = []; }
 
   if (stops.length === 0) {
-    inner.innerHTML = '<div class="ds-head"><span class="ds-no">' + escapeHtml(String(fav.route)) + '</span><button class="ds-close" onclick="closeRouteDetail()">×</button></div><div class="empty-hint">无法载入此路线的车站列表</div>';
+    inner.innerHTML = '<div class="ds-grab"></div><div class="ds-head"><span class="ds-no">' + escapeHtml(String(fav.route)) + '</span><button class="ds-close" onclick="closeRouteDetail()">×</button></div><div class="empty-hint">无法载入此路线的车站列表</div>';
     return;
   }
 
-  let h = '<div class="ds-head"><span class="ds-no">' + escapeHtml(String(fav.route)) + ' · 选择车站</span>';
+  let h = '<div class="ds-grab"></div><div class="ds-head"><span class="ds-no">' + escapeHtml(String(fav.route)) + ' · 选择车站</span>';
   h += '<button class="ds-close" onclick="closeRouteDetail()">×</button></div>';
   h += '<div class="ds-list">';
   stops.forEach((s, i) => {
@@ -3560,6 +3773,7 @@ async function renderDetailContent(item, inner) {
       ? '<div class="ds-colhead"><span class="ds-sn">车站</span><span class="ds-col">上行</span><span class="ds-col">下行</span></div>'
       : '<div class="ds-colhead"><span class="ds-sn">车站</span><span class="ds-col">候车时间</span></div>';
     inner.innerHTML = `
+      <div class="ds-grab"></div>
       <div class="ds-head">
         <button class="ds-close" onclick="closeRouteDetail()">✕</button>
         <div class="ds-no">${escapeHtml(title)}</div>
@@ -3612,8 +3826,10 @@ async function refreshAll(manual) {
 
 function startAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  const sec = getRefreshInterval();
+  if (sec <= 0) return;                     /* 设定为「关闭」时不启动定时器 */
   /* 标签页隐藏时暂停轮询，回到前台立即补一次刷新 */
-  autoRefreshTimer = setInterval(() => { if (!document.hidden) refreshAll(); }, 15000);
+  autoRefreshTimer = setInterval(() => { if (!document.hidden) refreshAll(); }, sec * 1000);
 }
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) refreshAll();
@@ -3649,12 +3865,55 @@ function applySkin(skin) {
 function setSkin(skin) {
   applySkin(skin);
   try { localStorage.setItem(SKIN_KEY, skin); } catch (e) {}
+  applyTheme(getTheme());   /* 皮肤变化后重新计算地址栏主题色 */
 }
 function toggleSkin() {
   const current = document.body.dataset.skin || 'ac';
   const order = ['ac', 'md', 'ios'];
   const next = order[(order.indexOf(current) + 1) % order.length];
   setSkin(next);
+}
+
+/* ==========================================================================
+   设定页：深色模式 / 字号 / 自动刷新频率
+   ========================================================================== */
+const THEME_KEY = 'marvis_theme';
+const FONTSIZE_KEY = 'marvis_fontsize';
+const REFRESH_KEY = 'marvis_refresh';
+
+function getTheme() { try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (e) { return 'system'; } }
+function applyTheme(theme) {
+  if (theme === 'light') document.body.dataset.theme = 'light';
+  else if (theme === 'dark') document.body.dataset.theme = 'dark';
+  else delete document.body.dataset.theme;    /* 跟隨系統 */
+  document.querySelectorAll('#themeSeg .seg-opt').forEach(b => b.classList.toggle('active', b.dataset.themeVal === theme));
+  /* 地址栏 / PWA 主题色跟随皮肤与明暗 */
+  const meta = document.querySelector('meta[name="theme-color"]');
+  const skin = document.body.dataset.skin || 'ac';
+  const dark = theme === 'dark' || (theme !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const color = skin === 'md' ? (dark ? '#141218' : '#6750a4')
+    : skin === 'ios' ? (dark ? '#000000' : '#007AFF')
+    : (dark ? '#16251c' : '#5fae82');
+  if (meta) meta.setAttribute('content', color);
+}
+function setTheme(theme) { try { localStorage.setItem(THEME_KEY, theme); } catch (e) {} applyTheme(theme); }
+
+function getFontSize() { try { return localStorage.getItem(FONTSIZE_KEY) || 'md'; } catch (e) { return 'md'; } }
+function applyFontSize(size) {
+  document.documentElement.dataset.fontsize = (size === 'sm' || size === 'lg') ? size : 'md';
+  document.querySelectorAll('#fontSeg .seg-opt').forEach(b => b.classList.toggle('active', b.dataset.sizeVal === size));
+}
+function setFontSize(size) { try { localStorage.setItem(FONTSIZE_KEY, size); } catch (e) {} applyFontSize(size); }
+
+function getRefreshInterval() { try { return parseInt(localStorage.getItem(REFRESH_KEY) || '15', 10) || 0; } catch (e) { return 15; } }
+function applyRefreshUI() {
+  const v = String(getRefreshInterval());
+  document.querySelectorAll('#refreshSeg .seg-opt').forEach(b => b.classList.toggle('active', b.dataset.refreshVal === v));
+}
+function setRefreshInterval(sec) {
+  try { localStorage.setItem(REFRESH_KEY, String(sec)); } catch (e) {}
+  applyRefreshUI();
+  startAutoRefresh();   /* 立即按新频率重启定时器 */
 }
 
 /* ==========================================================================
@@ -3706,6 +3965,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let savedSkin = 'ac';
   try { savedSkin = localStorage.getItem(SKIN_KEY) || 'ac'; } catch (e) {}
   applySkin(savedSkin);
+  /* 设定页：深色模式 / 字号 / 刷新频率 */
+  applyTheme(getTheme());
+  applyFontSize(getFontSize());
+  applyRefreshUI();
 
   /* Apply saved page (bottom nav) */
   let savedPage = 'home';
