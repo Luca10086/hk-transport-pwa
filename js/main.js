@@ -106,11 +106,13 @@ function applySkin(skin) {
   if (meta) meta.setAttribute('content', color);
   /* iOS 皮肤：初始化 iOS 首页（最近搜尋 + 熱門車站） */
   if (s === 'ios') initIOSHome();
-  /* WP8：进入时清理旧 display 样式并套用窗格类 */
-  if (s === 'wp8') {
+  /* 非 wp8：清除窗格类，避免切回时多页同时显示；统一按当前页重设显隐/窗格 */
+  if (s !== 'wp8') {
+    document.querySelectorAll('section[data-page]').forEach(el => el.classList.remove('pane-on', 'pane-off'));
+  } else {
     document.querySelectorAll('section[data-page]').forEach(el => { el.style.display = ''; });
-    switchPage(document.body.dataset.page || 'home');
   }
+  switchPage(document.body.dataset.page || 'home');
   /* 按皮肤套用文案语气（繁體） */
   applySkinLanguage();
 }

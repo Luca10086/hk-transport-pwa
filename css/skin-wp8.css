@@ -24,6 +24,7 @@ body[data-skin="wp8"] {
   font-family: 'Segoe UI', 'Segoe WP', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
   background: #1F1F1F;
   color: #FFFFFF;
+  padding-bottom: 0;
 }
 
 /* 浅色主题变体 */
@@ -348,9 +349,9 @@ body[data-skin="wp8"] .container {
 body[data-skin="wp8"] .container > section[data-page].pane-off { display: none; }
 body[data-skin="wp8"] .container > section[data-page].pane-on {
   display: block;
-  padding: 18px 16px 140px;
+  padding: 18px 16px 88px;
   box-sizing: border-box;
-  min-height: calc(100vh - 130px);
+  min-height: calc(100vh - 150px);
   animation: wp8SlideIn .22s ease;
 }
 @keyframes wp8SlideIn {
@@ -358,14 +359,14 @@ body[data-skin="wp8"] .container > section[data-page].pane-on {
   to { transform: none; opacity: 1; }
 }
 
-/* 页脚固定于 App Bar 上方（状态栏） */
+/* 页脚：跟随内容流，位于 App Bar 上方（状态栏） */
 body[data-skin="wp8"] .footer {
-  position: fixed; left: 0; right: 0; bottom: 60px;
   background: var(--wp8-surface);
   border-top: 1px solid var(--wp8-border);
-  padding: 6px 16px; z-index: 190;
+  padding: 8px 16px;
   font-size: 0.72rem;
   margin: 0;
+  position: static;
 }
 
 /* 结果：扁平列表行（非卡片），行间细分隔线 */
