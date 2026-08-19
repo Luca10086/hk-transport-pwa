@@ -92,8 +92,6 @@ function applySkin(skin) {
     document.body.dataset.skin = 'ios';
   } else if (s === 'wp8') {
     document.body.dataset.skin = 'wp8';
-  } else if (s === 'wp10') {
-    document.body.dataset.skin = 'wp10';
   } else {
     delete document.body.dataset.skin;
   }
@@ -104,12 +102,12 @@ function applySkin(skin) {
   /* 同步浏览器地址栏 / PWA 标题栏主题色 */
   const meta = document.querySelector('meta[name="theme-color"]');
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const color = s === 'md' ? '#6750a4' : s === 'ios' ? (dark ? '#000000' : '#007AFF') : s === 'wp8' ? '#1F1F1F' : s === 'wp10' ? (dark ? '#1F1F1F' : '#F7F7F7') : '#5fae82';
+  const color = s === 'md' ? '#6750a4' : s === 'ios' ? (dark ? '#000000' : '#007AFF') : s === 'wp8' ? '#1F1F1F' : '#5fae82';
   if (meta) meta.setAttribute('content', color);
   /* iOS 皮肤：初始化 iOS 首页（最近搜尋 + 熱門車站） */
   if (s === 'ios') initIOSHome();
-  /* WP8/WP10：进入时清理旧 display 样式并套用窗格类 */
-  if (s === 'wp8' || s === 'wp10') {
+  /* WP8：进入时清理旧 display 样式并套用窗格类 */
+  if (s === 'wp8') {
     document.querySelectorAll('section[data-page]').forEach(el => { el.style.display = ''; });
     switchPage(document.body.dataset.page || 'home');
   }
@@ -123,7 +121,7 @@ function setSkin(skin) {
 }
 function toggleSkin() {
   const current = document.body.dataset.skin || 'ac';
-  const order = ['ac', 'md', 'ios', 'wp8', 'wp10'];
+  const order = ['ac', 'md', 'ios', 'wp8'];
   const next = order[(order.indexOf(current) + 1) % order.length];
   setSkin(next);
 }
@@ -148,7 +146,6 @@ function applyTheme(theme) {
   const color = skin === 'md' ? (dark ? '#141218' : '#6750a4')
     : skin === 'ios' ? (dark ? '#000000' : '#007AFF')
     : skin === 'wp8' ? (dark ? '#1F1F1F' : '#F2F2F2')
-    : skin === 'wp10' ? (dark ? '#1F1F1F' : '#F7F7F7')
     : (dark ? '#16251c' : '#5fae82');
   if (meta) meta.setAttribute('content', color);
 }
@@ -178,12 +175,11 @@ function setRefreshInterval(sec) {
 const PAGE_KEY = 'marvis_page';
 const WP8_PAGE_TITLES = { home: '搜尋', favs: '收藏', sushi: '壽司郎', settings: '設定' };
 function switchPage(page) {
-  const skin = document.body.dataset.skin;
-  const isPivot = skin === 'wp8' || skin === 'wp10';
+  const isWp8 = document.body.dataset.skin === 'wp8';
   document.querySelectorAll('section[data-page]').forEach(el => {
     const on = el.getAttribute('data-page') === page;
-    if (isPivot) {
-      /* WP8/WP10：窗格切换，全部保留、仅加 pane 类 */
+    if (isWp8) {
+      /* WP8：窗格切换（slide 动画），全部保留、仅加 pane 类 */
       el.style.display = '';
       el.classList.toggle('pane-on', on);
       el.classList.toggle('pane-off', !on);
@@ -197,12 +193,8 @@ function switchPage(page) {
     if (on) b.setAttribute('aria-current', 'page');
     else if (b.hasAttribute('aria-current')) b.removeAttribute('aria-current');
   });
-  /* WP10 汉堡导航项高亮 */
-  document.querySelectorAll('.wp10-nav-item').forEach(b => {
-    b.classList.toggle('active', b.getAttribute('data-page') === page);
-  });
-  /* WP8/WP10 Pivot 标题 */
-  if (isPivot) {
+  /* WP8 Pivot 标题 */
+  if (isWp8) {
     const pt = document.querySelector('.wp8-pivot-title');
     if (pt) pt.textContent = WP8_PAGE_TITLES[page] || '搜尋';
   }
@@ -219,7 +211,7 @@ document.addEventListener('touchstart', (e) => {
   _wp8TouchX = e.touches[0].clientX;
 }, { passive: true });
 document.addEventListener('touchend', (e) => {
-  if ((document.body.dataset.skin !== 'wp8' && document.body.dataset.skin !== 'wp10') || _wp8TouchX == null) return;
+  if (document.body.dataset.skin !== 'wp8' || _wp8TouchX == null) return;
   const dx = e.changedTouches[0].clientX - _wp8TouchX;
   _wp8TouchX = null;
   if (Math.abs(dx) < 60) return;
@@ -229,22 +221,6 @@ document.addEventListener('touchend', (e) => {
   if (dx < 0 && idx < order.length - 1) switchPage(order[idx + 1]);
   else if (dx > 0 && idx > 0) switchPage(order[idx - 1]);
 });
-
-/* ===== WP10 汉堡导航（NavigationView） ===== */
-function wp10ToggleNav(force) {
-  const nav = document.getElementById('wp10Nav');
-  const mask = document.getElementById('wp10NavMask');
-  if (!nav) return;
-  const open = force !== undefined ? force : nav.hidden;
-  nav.hidden = !open;
-  if (mask) mask.hidden = !open;
-  if (open) document.body.classList.add('wp10-nav-open');
-  else document.body.classList.remove('wp10-nav-open');
-}
-function wp10Go(page) {
-  wp10ToggleNav(false);
-  switchPage(page);
-}
 
 /** iOS 底部导航「最近」：回到首页并滚动到最近搜尋区块 */
 function iosGoRecent() {
@@ -375,8 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
   /* 点遮罩关闭详情 */
   document.getElementById('detailMask').addEventListener('click', closeRouteDetail);
 
-  /* Esc 关闭详情弹层 / WP10 汉堡菜单 */
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeRouteDetail(); wp10ToggleNav(false); } });
+  /* Esc 关闭详情弹层 */
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeRouteDetail(); });
 });
 
 /* Cleanup on page unload */
