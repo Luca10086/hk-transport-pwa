@@ -1446,3 +1446,50 @@ top: 26%; right: 20%; transform: rotate(18deg);
 .deco-14 {
 bottom: 44%; right: 15%; transform: rotate(-8deg);
 }
+
+/* ===== 设定页下拉选择器 ===== */
+.settings-select-wrap {
+margin-top: 2px;
+}
+.settings-select {
+width: 100%; padding: 10px 14px;
+  border: 2px solid var(--card-border); border-radius: 12px;
+  background: var(--card-bg); color: var(--text-dark);
+  font-size: .9rem; font-weight: 700;
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif;
+  cursor: pointer; box-shadow: 0 2px 0 var(--card-shadow);
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235a4632' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+  padding-right: 36px;
+}
+
+/* ===== 巴士站牌卡（站名搜索结果） ===== */
+.stop-card {
+cursor: default;
+}
+.stop-card .rc-name {
+margin-bottom: 6px;
+}
+.stop-routes {
+display: flex; flex-direction: column; gap: 4px;
+}
+.stop-route {
+display: flex; align-items: center; gap: 8px; font-size: .85rem; padding: 5px 0;
+}
+.stop-route + .stop-route {
+border-top: 1px dashed var(--card-border);
+}
+.stop-route .sr-no {
+flex: 0 0 auto; font-weight: 800; color: var(--primary-dark); min-width: 46px;
+  font-family: 'Baloo 2', 'Nunito', sans-serif;
+}
+.stop-route .sr-dest {
+flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dark);
+}
+.stop-route .sr-eta {
+flex: 0 0 auto; font-weight: 800; color: var(--primary-dark); font-variant-numeric: tabular-nums;
+}
+.stop-route .sr-eta.soon { color: #e53935; }
+.stop-route .sr-eta.medium { color: #ef6c00; }
+.stop-route.stop-empty { color: #a08d6f; border: none; }

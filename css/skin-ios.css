@@ -443,6 +443,11 @@ body[data-skin="ios"] .seg-opt.active {
 background: var(--ios-tint); color: #fff; border-color: var(--ios-tint);
 }
 
+body[data-skin="ios"] .settings-select {
+border: .5px solid var(--ios-separator); background: var(--ios-card); color: var(--ios-label);
+  box-shadow: none; border-radius: 9px; font-family: inherit; font-weight: 400;
+}
+
 /* ===== iOS 大标题滚动收起（HIG Large Title） ===== */
 body[data-skin="ios"] .navbar {
 transition: padding .18s ease;

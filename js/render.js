@@ -24,9 +24,59 @@ async function doSearch() {
   }
 }
 
-/** Search bus routes across KMB and CTB */
+/** 按站名搜索巴士站（KMB 全量表），显示各站牌的所有路线到站 */
+async function searchBusStopName(query, container, gen) {
+  const stops = await searchKMBStopsByName(query);
+  if (gen !== container._gen) return;
+  if (!stops.length) {
+    container.innerHTML = '<div class="empty-hint">找不到巴士站「' + escapeHtml(query) + '」，請輸入站名（如 中環、旺角）</div>';
+    setStatus('ok');
+    return;
+  }
+  const results = await Promise.all(stops.slice(0, 8).map(async (st) => {
+    const etas = await getKMBETA(st.stop);
+    return { stop: st, etas: etas.filter(e => e.eta) };
+  }));
+  if (gen !== container._gen) return;
+  container.innerHTML = '<div class="card-grid">' + results.map(r => stopCardHTML(r)).join('') + '</div>';
+  setStatus('ok');
+}
+
+/** 生成一张巴士站牌卡（站名 + 各路线下两班） */
+function stopCardHTML({ stop, etas }) {
+  const name = stop.name_tc || stop.name_en || String(stop.stop || '');
+  /* 按路线聚合，取每条路线下一班 */
+  const byRoute = {};
+  for (const e of etas) {
+    const key = String(e.route) + '|' + (e.dir || '');
+    if (!byRoute[key]) byRoute[key] = e;
+  }
+  const routes = Object.values(byRoute)
+    .map(e => ({ route: e.route, dest: e.dest_tc || e.dest_en || '', ts: parseHKTime(e.eta) / 1000 }))
+    .sort((a, b) => (a.ts || Infinity) - (b.ts || Infinity))
+    .slice(0, 6);
+  const rows = routes.map(r => {
+    const mins = r.ts ? minsFromNow(r.ts) : '';
+    const cls = r.ts ? etaColorClass(r.ts) : '';
+    return '<div class="stop-route"><span class="sr-no">' + escapeHtml(String(r.route)) + '</span>'
+      + '<span class="sr-dest">' + escapeHtml(r.dest) + '</span>'
+      + '<span class="sr-eta ' + cls + '">' + (r.ts ? mins : '—') + '</span></div>';
+  }).join('');
+  return '<div class="transport-card route-card stop-card">'
+    + '<div class="rc-head"><span class="rc-no">🚏</span><span class="rc-tag">巴士站</span></div>'
+    + '<div class="rc-name">' + escapeHtml(name) + '</div>'
+    + '<div class="stop-routes">' + (rows || '<div class="stop-route stop-empty">暫無班次</div>') + '</div>'
+    + '</div>';
+}
+
+/** Search bus routes across KMB and CTB（中文查询走站名搜索） */
 async function searchBusRoute(query, container) {
   container._gen = (container._gen || 0) + 1; const gen = container._gen;
+  /* 中文/非路线号 → 按站名搜索巴士站 */
+  if (/[\u4e00-\u9fff]/.test(query)) {
+    await searchBusStopName(query, container, gen);
+    return;
+  }
   const routeNum = query.toUpperCase().replace(/\s/g, '');
   let allResults = [];
 
@@ -150,23 +200,6 @@ async function searchBusRoute(query, container) {
   renderSearchResults(etaResults, container);
   setStatus('ok');
 }
-
-/** 简繁转换（覆盖港鐵/巴士站名与常见用字），用於搜索兼容 */
-const SIMP2TRAD = {
-  '环':'環','铜':'銅','锣':'鑼','湾':'灣','钟':'鐘','观':'觀','龙':'龍','围':'圍','东':'東',
-  '将':'將','军':'軍','宝':'寶','黄':'黃','钻':'鑽','乐':'樂','启':'啟','红':'紅','长':'長',
-  '蓝':'藍','调':'調','岭':'嶺','窝':'窩','荫':'蔭','显':'顯','车':'車','门':'門','恒':'恆',
-  '乌':'烏','湿':'濕','头':'頭','铁':'鐵','线':'線','码':'碼','学':'學','罗':'羅','马':'馬',
-  '庙':'廟','径':'徑','园':'園','鲗':'鰂','鱼':'魚','营':'營','盘':'盤','坚':'堅','台':'臺',
-  '灵':'靈','场':'場','际':'際','馆':'館','图':'圖','华':'華','凤':'鳳','丽':'麗','凯':'凱',
-  '伟':'偉','侨':'僑','汇':'匯','宁':'寧','卫':'衛','发':'發','达':'達','运':'運','逊':'遜',
-  '尔':'爾','时':'時','间':'間','问':'問','广':'廣','边':'邊','让':'讓','议':'議','认':'認',
-  '证':'證','记':'記','计':'計','说':'說','语':'語','邮':'郵','银':'銀','农':'農','湾':'灣'
-};
-const TRAD2SIMP = {};
-for (const k in SIMP2TRAD) { TRAD2SIMP[SIMP2TRAD[k]] = k; }
-function toTrad(s) { let out = ''; for (const c of s) out += SIMP2TRAD[c] || c; return out; }
-function toSimp(s) { let out = ''; for (const c of s) out += TRAD2SIMP[c] || c; return out; }
 
 /** Search MTR by station name / line name / station code */
 async function searchMTRStation(query, container) {
@@ -791,6 +824,12 @@ function renderWarningBar(msgs) {
   bar.hidden = false;
 }
 
+/* 天气地区设置（用户可在设定页选择） */
+const WEATHER_STATION_KEY = 'marvis_weather_station';
+const WEATHER_STATIONS = ['元朗公園','香港天文台','京士柏','黃竹坑','打鼓嶺','流浮山','大埔','沙田','屯門','將軍澳','西貢','長洲','赤鱲角','青衣','石崗','荃灣可觀','荃灣城門谷','香港公園','筲箕灣','九龍城','跑馬地','黃大仙','赤柱','觀塘','深水埗','啟德跑道公園','大美督'];
+function getWeatherStation() { try { return localStorage.getItem(WEATHER_STATION_KEY) || '元朗公園'; } catch (e) { return '元朗公園'; } }
+function setWeatherStation(v) { try { localStorage.setItem(WEATHER_STATION_KEY, v); } catch (e) {} refreshWeather(); }
+
 /** Fetch & render HKO real-time weather（迷你条：温度/湿度/雨量 + 警告条） */
 async function refreshWeather() {
   const container = document.getElementById('weatherContainer');
@@ -803,14 +842,15 @@ async function refreshWeather() {
     /* 天氣警告条（与天氣同一次請求，无额外开销） */
     renderWarningBar(data.warningMessage);
 
-    /* Temperature: prefer 元朗公園 station */
+    /* Temperature: 优先用户选择地区，回退元朗公園/天文台 */
     const temps = (data.temperature && data.temperature.data) || [];
-    const hkoTemp = temps.find(t => t.place === '元朗公園') || temps.find(t => t.place === '香港天文台') || temps[0];
+    const station = getWeatherStation();
+    const hkoTemp = temps.find(t => t.place === station) || temps.find(t => t.place === '元朗公園') || temps.find(t => t.place === '香港天文台') || temps[0];
     /* Humidity */
     const hum = (data.humidity && data.humidity.data && data.humidity.data[0]) || null;
-    /* Rainfall: prefer 元朗 district */
+    /* Rainfall: 优先同地区雨量，回退主要站 */
     const rains = (data.rainfall && data.rainfall.data) || [];
-    const rain = rains.find(r => r.place === '元朗') || rains.find(r => r.main === 'TRUE') || rains[0] || null;
+    const rain = rains.find(r => r.place === station) || rains.find(r => r.place === '元朗') || rains.find(r => r.main === 'TRUE') || rains[0] || null;
     /* Icon */
     const icon = Array.isArray(data.icon) ? data.icon[0] : data.icon;
     const desc = HKO_ICONS[icon] || '未知';
@@ -896,7 +936,7 @@ async function refreshSushiro() {
       </div>`;
     }
     html += '</div>';
-    html += '<div class="sushiro-note">數據来源：寿司郎官方 sushipass API（经 corsproxy.io 代理）· 每 15 秒自动更新</div>';
+    html += '<div class="sushiro-note">數據來源：壽司郎官方 sushipass API（經 corsproxy.io 代理）· 自動更新</div>';
     container.innerHTML = html;
     badge.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
   } catch (err) {

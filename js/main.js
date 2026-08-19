@@ -17,7 +17,7 @@ function setTransport(type) {
     if (b.setAttribute) b.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
   const placeholders = {
-    bus: '輸入巴士路線編號（如 1A、10）…',
+    bus: '輸入巴士路線編號（如 1A）或站名（如 中環）…',
     mtrbus: '輸入港鐵巴士路線編號（如 K51、K65）…',
     lrt: '輸入輕鐵車站名稱（如 屯門碼頭、元朗）…',
     mtr: '輸入港鐵車站名稱（如 中環、旺角）…'
@@ -231,6 +231,13 @@ document.addEventListener('DOMContentLoaded', () => {
   applyRefreshUI();
   applySkinLanguage();
   initIosNavbarScroll();
+
+  /* 天气地区下拉填充 */
+  const wsel = document.getElementById('weatherStationSel');
+  if (wsel) {
+    wsel.innerHTML = WEATHER_STATIONS.map(s => '<option value="' + s + '">' + s + '</option>').join('');
+    wsel.value = getWeatherStation();
+  }
 
   /* Apply saved page (bottom nav) */
   let savedPage = 'home';

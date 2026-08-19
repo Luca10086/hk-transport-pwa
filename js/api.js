@@ -50,6 +50,32 @@ async function getKMBStopName(stopId) {
   return _kmbNameCache[key];
 }
 
+/* KMB 全量站牌缓存（站名搜索用，首次加载 ~6759 站，内存缓存） */
+let _kmbStopsPromise = null;
+function getKMBAllStops() {
+  if (!_kmbStopsPromise) {
+    _kmbStopsPromise = fetchWithProxy(`${KMB_BASE}/stop/`).then(d => (d && d.data) || []).catch(() => []);
+  }
+  return _kmbStopsPromise;
+}
+
+/** 按站名搜索 KMB 站牌（简繁兼容） */
+async function searchKMBStopsByName(q) {
+  const stops = await getKMBAllStops();
+  if (!stops.length) return [];
+  const upper = q.toUpperCase();
+  const qList = [...new Set([q, toTrad(q), toSimp(q)].filter(x => x))];
+  const matches = [];
+  for (const s of stops) {
+    const hay = (s.name_tc || '') + '|' + (s.name_en || '') + '|' + (s.name_sc || '');
+    if (qList.some(x => x && (hay.includes(x) || hay.toUpperCase().includes(x.toUpperCase())))) {
+      matches.push(s);
+      if (matches.length >= 50) break;
+    }
+  }
+  return matches;
+}
+
 /* ==========================================================================
    CTB API Calls
    ========================================================================== */

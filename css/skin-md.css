@@ -710,3 +710,8 @@ transform: none;
 body[data-skin="md"] .seg-opt.active {
 background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent;
 }
+
+body[data-skin="md"] .settings-select {
+border: 1px solid var(--md-outline); background: transparent; color: var(--md-on-surface);
+  box-shadow: none; border-radius: 8px; font-family: 'Roboto', 'Noto Sans SC', sans-serif; font-weight: 500;
+}
