@@ -1,0 +1,712 @@
+/* 森友出行手册 - Material 3 皮肤（含深色方案） */
+
+body[data-skin="md"] {
+/* M3 color tokens (light scheme) */
+  --md-primary: #6750a4;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #eaddff;
+  --md-on-primary-container: #21005d;
+  --md-secondary-container: #e8def8;
+  --md-on-secondary-container: #1d192b;
+  --md-tertiary-container: #ffd8e4;
+  --md-error: #b3261e;
+  --md-error-container: #f9dedc;
+  --md-on-error-container: #410e0b;
+  --md-surface: #fef7ff;
+  --md-on-surface: #1d1b20;
+  --md-on-surface-variant: #49454f;
+  --md-surface-variant: #e7e0ec;
+  --md-outline: #79747e;
+  --md-outline-variant: #cac4d0;
+  --md-surface-lowest: #ffffff;
+  --md-surface-container: #f3edf7;
+  --md-surface-high: #ece6f0;
+  --md-surface-highest: #e6e0e9;
+  --md-surface-container-high: #ece6f0;
+  --md-on-tertiary-container: #31111d;
+  /* M3 shape tokens */
+  --md-corner-xs: 4px;
+  --md-corner-s: 8px;
+  --md-corner-m: 12px;
+  --md-corner-l: 16px;
+  --md-corner-xl: 28px;
+  --md-corner-full: 999px;
+  /* M3 elevation tokens（shadow + 表面色调分层） */
+  --md-elev-0: none;
+  --md-elev-1: 0 1px 2px rgba(29,27,32,0.3), 0 1px 3px 1px rgba(29,27,32,0.15);
+  --md-elev-2: 0 1px 2px rgba(29,27,32,0.3), 0 2px 6px 2px rgba(29,27,32,0.15);
+  --md-elev-3: 0 4px 8px 3px rgba(29,27,32,0.15), 0 1px 3px rgba(29,27,32,0.3);
+  /* M3 type scale tokens（Roboto, 参考 title-large / title-medium / body-medium / label-large） */
+  --md-type-title-large: 1.375rem;   /* 22px */
+  --md-type-title-medium: 1rem;      /* 16px */
+  --md-type-body-medium: 0.875rem;   /* 14px */
+  --md-type-label-large: 0.875rem;   /* 14px */
+  /* M3 motion：emphasized easing */
+  --md-motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  /* 映射到既有变量（页面其它样式仍可用） */
+  --bg-top: #f7f2fa;
+  --bg-mid: #f3edf7;
+  --bg-bottom: #ece6f0;
+  --text: #1d1b20;
+  --text-dark: #49454f;
+  --primary: #6750a4;
+  --primary-light: #eaddff;
+  --primary-dark: #4f378b;
+  --card-bg: #ffffff;
+  --card-bg2: #f7f2fa;
+  --card-border: #cac4d0;
+  --card-shadow: #e6e0e9;
+  --card-bg-soft: #ffffff;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+}
+
+body[data-skin="md"] .bg-decor .deco {
+opacity: 0;
+}
+
+body[data-skin="md"] .bg-decor::before {
+content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 86% 6%, var(--md-primary-container) 0, rgba(234,221,255,0) 36%),
+    radial-gradient(circle at 6% 28%, var(--md-tertiary-container) 0, rgba(255,216,228,0) 40%),
+    radial-gradient(circle at 93% 66%, var(--md-secondary-container) 0, rgba(232,222,248,0) 38%),
+    radial-gradient(circle at 10% 90%, var(--md-primary-container) 0, rgba(234,221,255,0) 44%);
+}
+
+body[data-skin="md"] .navbar {
+background: var(--md-surface);
+  color: var(--md-on-surface);
+  border-bottom: 1px solid var(--md-outline-variant);
+  box-shadow: none;
+}
+
+body[data-skin="md"] .navbar h1 {
+font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  font-weight: 400; letter-spacing: 0; text-shadow: none;
+  font-size: var(--md-type-title-large);
+}
+
+body[data-skin="md"] .navbar .refresh-btn {
+font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  background: transparent; color: var(--md-primary); border: none;
+  border-radius: 20px; box-shadow: none; font-weight: 500;
+  padding: 8px 16px;
+}
+
+body[data-skin="md"] .navbar .skin-btn {
+font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  background: transparent; color: var(--md-primary); border: none;
+  border-radius: 50%; box-shadow: none; font-weight: 500;
+  width: 40px; height: 40px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+body[data-skin="md"] .navbar .refresh-btn:hover,
+body[data-skin="md"] .navbar .skin-btn:hover {
+background: rgba(103,80,164,0.08);
+}
+
+body[data-skin="md"] .navbar .refresh-btn:active,
+body[data-skin="md"] .navbar .skin-btn:active {
+background: rgba(103,80,164,0.12);
+}
+
+body[data-skin="md"] .navbar .skin-btn svg {
+fill: var(--md-primary);
+}
+
+body[data-skin="md"] .search-section,
+body[data-skin="md"] .favorites-section,
+body[data-skin="md"] .info-section,
+body[data-skin="md"] .results-section {
+background: var(--md-surface-lowest);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-corner-l);
+  box-shadow: var(--md-elev-1);
+}
+
+body[data-skin="md"] .transport-card,
+body[data-skin="md"] .sushiro-card {
+background: var(--md-surface);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-corner-l);
+  box-shadow: var(--md-elev-1);
+  transition: box-shadow 200ms var(--md-motion-ease), background 200ms var(--md-motion-ease);
+}
+
+body[data-skin="md"] .transport-card:hover {
+box-shadow: var(--md-elev-2);
+  transform: none;
+}
+
+body[data-skin="md"] .k75p-stop {
+background: var(--md-surface);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-corner-s);
+}
+
+body[data-skin="md"] .section-title {
+background: transparent; border: none; box-shadow: none;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  color: var(--md-on-surface); text-shadow: none; font-weight: 500;
+  font-size: var(--md-type-title-medium); letter-spacing: 0.15px; padding: 2px 10px;
+  border-left: 4px solid var(--md-primary);
+  border-radius: 0; margin-bottom: 16px;
+}
+
+body[data-skin="md"] .section-title .badge {
+background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+  box-shadow: none; border-radius: var(--md-corner-s);
+}
+
+body[data-skin="md"] .search-input {
+background: var(--md-surface-highest);
+  border: none; border-bottom: 1px solid var(--md-on-surface-variant);
+  border-radius: var(--md-corner-xs) var(--md-corner-xs) 0 0;
+  color: var(--md-on-surface); font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  padding: 16px 16px 12px;
+}
+
+body[data-skin="md"] .search-input:focus {
+background: var(--md-surface-highest);
+  border-bottom: 2px solid var(--md-primary);
+  box-shadow: none;
+}
+
+body[data-skin="md"] .search-input::placeholder {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .transport-toggle {
+background: transparent; border-radius: 0; box-shadow: none; padding: 0; gap: 8px;
+}
+
+body[data-skin="md"] .transport-toggle button {
+color: var(--md-on-surface-variant); font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
+  font-weight: 500; font-size: 0.875rem;
+  background: transparent; border: 1px solid var(--md-outline);
+  border-radius: var(--md-corner-s); padding: 7px 16px; height: 32px;
+}
+
+body[data-skin="md"] .transport-toggle button:hover {
+background: rgba(103,80,164,0.08);
+}
+
+body[data-skin="md"] .transport-toggle button.active {
+background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+  border-color: transparent; box-shadow: none; text-shadow: none;
+}
+
+body[data-skin="md"] .search-btn {
+background: var(--md-primary); color: var(--md-on-primary);
+  border: none; border-radius: 20px; height: 40px;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 500;
+  box-shadow: none; letter-spacing: 0.2px;
+}
+
+body[data-skin="md"] .search-btn:hover {
+background: #7a66b6; box-shadow: none; filter: none;
+}
+
+body[data-skin="md"] .search-btn:active {
+background: #8269c9; transform: none; box-shadow: none;
+}
+
+body[data-skin="md"] .fav-btn {
+background: transparent; border: none; border-radius: 50%; box-shadow: none;
+}
+
+body[data-skin="md"] .fav-btn:hover {
+background: rgba(103,80,164,0.08); transform: none;
+}
+
+body[data-skin="md"] .fav-btn:active {
+background: rgba(103,80,164,0.12); transform: none; box-shadow: none;
+}
+
+body[data-skin="md"] .fav-btn.favorited {
+background: var(--md-error-container); color: var(--md-error);
+}
+
+body[data-skin="md"] .fav-remove-btn {
+background: transparent; border: 1px solid var(--md-outline);
+  border-radius: 20px; color: var(--md-error); box-shadow: none;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 500;
+}
+
+body[data-skin="md"] .fav-remove-btn:hover {
+background: rgba(179,38,30,0.08);
+}
+
+body[data-skin="md"] .k75p-fold-btn {
+background: transparent; border: 1px solid var(--md-outline);
+  border-radius: 20px; color: var(--md-primary);
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 500;
+}
+
+body[data-skin="md"] .k75p-fold-btn:hover {
+background: rgba(103,80,164,0.08);
+}
+
+body[data-skin="md"] .k75p-bus {
+background: var(--md-surface-container); border: 1px solid var(--md-outline-variant);
+  color: var(--md-on-surface-variant);
+  border-radius: var(--md-corner-s); font-family: 'Roboto', 'Nunito', sans-serif; font-weight: 500;
+}
+
+body[data-skin="md"] .k75p-bus.soon {
+background: var(--md-error-container); border-color: transparent; color: var(--md-on-error-container);
+}
+
+body[data-skin="md"] .k75p-bus.delayed {
+background: #fff4e5; border-color: #ffd8a8; color: #9a6700;
+}
+
+body[data-skin="md"] .k75p-bus.scheduled {
+background: var(--md-primary-container); border-color: transparent; color: var(--md-on-primary-container);
+}
+
+body[data-skin="md"] .k75p-bus.k75p-none {
+background: transparent; border-color: var(--md-outline-variant); color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .weather-item {
+background: var(--md-surface-container); border: 1px solid var(--md-outline-variant); border-radius: var(--md-corner-m);
+}
+
+body[data-skin="md"] .empty-hint {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .card-dest,
+body[data-skin="md"] .card-stop,
+body[data-skin="md"] .eta-detail,
+body[data-skin="md"] .sushiro-card .s-status {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .spinner {
+border-color: var(--md-outline-variant); border-top-color: var(--md-primary);
+}
+
+body[data-skin="md"] .error-msg {
+background: var(--md-error-container); border: 1px solid transparent; color: var(--md-on-error-container);
+}
+
+body[data-skin="md"] #exportQuote0Btn,
+body[data-skin="md"] #exportQuote0Btn2 {
+background: var(--md-primary-container) !important; color: var(--md-on-primary-container) !important;
+  border-radius: 20px !important; box-shadow: none !important;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif !important; font-weight: 500 !important;
+}
+
+body[data-skin="md"] .navbar {
+padding: calc(16px + env(safe-area-inset-top)) 24px 14px;
+}
+
+body[data-skin="md"] .navbar h1 {
+display: flex; flex-direction: column;
+  font-size: 1.625rem; font-weight: 700; line-height: 1.12; letter-spacing: 0;
+}
+
+body[data-skin="md"] .navbar h1::before {
+content: 'HONG KONG TRANSPORT';
+  font-size: 0.625rem; font-weight: 500; letter-spacing: 2.4px;
+  color: var(--md-on-surface-variant); margin-bottom: 3px;
+}
+
+body[data-skin="md"] .navbar h1 .ac-emoji {
+display: none;
+}
+
+body[data-skin="md"] .ac-emoji {
+display: none;
+}
+
+body[data-skin="md"] .section-title > span:first-child:not(.badge) {
+display: none;
+}
+
+body[data-skin="md"] .search-input {
+background-color: var(--md-surface-container-high);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2379747E' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.2-3.2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 16px center; background-size: 20px;
+  border: 1px solid var(--md-outline-variant);
+  border-bottom: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-corner-xl);
+  padding: 14px 20px 14px 46px;
+}
+
+body[data-skin="md"] .search-input:focus {
+background-color: var(--md-surface-container-high);
+  border: 1px solid var(--md-primary);
+  border-bottom: 1px solid var(--md-primary);
+  box-shadow: none;
+}
+
+body[data-skin="md"] .transport-toggle button {
+display: inline-flex; align-items: center; gap: 6px;
+}
+
+body[data-skin="md"] .transport-toggle button.active::before {
+content: '✓';
+}
+
+body[data-skin="md"] .route-badge {
+background: var(--md-secondary-container) !important;
+  color: var(--md-on-secondary-container) !important;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif !important;
+  font-weight: 500 !important; font-size: 1rem;
+  border-radius: var(--md-corner-s);
+  box-shadow: none !important;
+}
+
+body[data-skin="md"] .company-label {
+background: var(--md-tertiary-container);
+  color: var(--md-on-tertiary-container);
+  border-radius: 6px; padding: 2px 7px; font-weight: 500;
+}
+
+body[data-skin="md"] .eta-time {
+font-family: 'Roboto Mono', 'Roboto', ui-monospace, monospace;
+  font-size: 1.35rem; font-weight: 700; text-shadow: none; letter-spacing: 0;
+}
+
+body[data-skin="md"] .eta-time.soon {
+color: var(--md-error);
+}
+
+body[data-skin="md"] .eta-time.medium {
+color: #9a6700;
+}
+
+body[data-skin="md"] .eta-item {
+font-size: 0.875rem;
+}
+
+body[data-skin="md"] .navbar .skin-btn, body[data-skin="md"] .navbar .refresh-btn {
+letter-spacing: 0.4px;
+}
+
+body[data-skin="md"] {
+padding-bottom: 96px;
+}
+
+body[data-skin="md"] .bottom-nav {
+background: var(--md-surface);
+  border-top: 1px solid var(--md-outline-variant);
+  box-shadow: var(--md-elev-2);
+  height: 80px; align-items: center;
+  padding: 0 12px calc(8px + env(safe-area-inset-bottom));
+}
+
+body[data-skin="md"] .bn-item {
+height: 64px; justify-content: center;
+  gap: 2px; padding: 6px 4px 4px;
+  font-size: 0.72rem; font-weight: 500; letter-spacing: 0.3px;
+  font-family: 'Roboto', 'Nunito', 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  color: var(--md-on-surface-variant); opacity: 1;
+  border-radius: var(--md-corner-m);
+  transition: color .2s var(--md-motion-ease);
+}
+
+body[data-skin="md"] .bn-item svg {
+width: 22px; height: 22px;
+}
+
+body[data-skin="md"] .bn-item.active {
+color: var(--md-on-surface);
+}
+
+body[data-skin="md"] .bn-item.active::before {
+top: 8px; width: 64px; height: 32px; border-radius: var(--md-corner-full);
+  background: var(--md-secondary-container); opacity: 1;
+  box-shadow: var(--md-elev-1);
+}
+
+body[data-skin="md"] .fab-main {
+background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  border-radius: var(--md-corner-l);
+  box-shadow: var(--md-elev-3);
+}
+
+body[data-skin="md"] .fab-main:hover {
+transform: translateY(-2px);
+  background: var(--md-primary-container);
+  box-shadow: var(--md-elev-3);
+}
+
+body[data-skin="md"] .route-card {
+background: transparent; border: none; box-shadow: none; padding: 14px 16px;
+}
+
+body[data-skin="md"] .route-card:hover {
+box-shadow: var(--md-elev-2);
+}
+
+body[data-skin="md"] .route-card .rc-no {
+color: var(--md-primary); font-family: 'Roboto', 'Nunito', sans-serif;
+}
+
+body[data-skin="md"] .route-card .rc-tag {
+background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); font-family: 'Roboto', 'Nunito', sans-serif;
+}
+
+body[data-skin="md"] .route-card .rc-name {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .route-card .rc-m {
+color: var(--md-on-surface); font-family: 'Roboto Mono', ui-monospace, monospace;
+}
+
+body[data-skin="md"] .route-card .rc-m.soon {
+color: var(--md-error);
+}
+
+body[data-skin="md"] .route-card .rc-m.medium {
+color: #9a6700;
+}
+
+body[data-skin="md"] .route-card .rc-u, body[data-skin="md"] .route-card .rc-more {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .route-card .rc-bar {
+background: var(--md-surface-variant);
+}
+
+body[data-skin="md"] .route-card .rc-bar i {
+background: var(--md-primary);
+}
+
+body[data-skin="md"] .route-card .rc-pcnt {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .detail-sheet {
+background: var(--md-surface); color: var(--md-on-surface); border-radius: 28px 28px 0 0; box-shadow: var(--md-elev-3);
+}
+
+body[data-skin="md"] .detail-sheet .ds-head {
+background: var(--md-surface); border-bottom-color: var(--md-outline-variant);
+}
+
+body[data-skin="md"] .detail-sheet .ds-no {
+color: var(--md-primary); font-family: 'Roboto', 'Nunito', sans-serif;
+}
+
+body[data-skin="md"] .detail-sheet .ds-name, body[data-skin="md"] .detail-sheet .ds-meta,
+body[data-skin="md"] .detail-sheet .ds-refresh, body[data-skin="md"] .detail-sheet .ds-close,
+body[data-skin="md"] .detail-sheet .ds-eu, body[data-skin="md"] .detail-sheet .ds-extra {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .detail-sheet .ds-stop {
+background: var(--md-surface-container);
+}
+
+body[data-skin="md"] .detail-sheet .ds-stop .ds-sn {
+color: var(--md-on-surface);
+}
+
+body[data-skin="md"] .detail-sheet .ds-em {
+font-family: 'Roboto Mono', ui-monospace, monospace; color: var(--md-on-surface);
+}
+
+body[data-skin="md"] .detail-sheet .ds-em.soon {
+color: var(--md-error);
+}
+
+body[data-skin="md"] .detail-sheet .ds-em.medium {
+color: #9a6700;
+}
+
+body[data-skin="md"] .detail-mask {
+background: rgba(29,27,32,0.4);
+}
+
+body[data-skin="md"] .detail-sheet .ds-colhead,
+body[data-skin="md"] .detail-sheet .ds-stop .ds-none {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .detail-sheet .ds-stop .ds-em.scheduled {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .settings-block {
+background: var(--md-surface-container-high); border: none; border-radius: 16px; box-shadow: var(--md-elev-1);
+}
+
+body[data-skin="md"] .settings-label {
+color: var(--md-on-surface); font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+}
+
+body[data-skin="md"] .skin-opt {
+border: none; background: var(--md-surface-container); color: var(--md-on-surface); box-shadow: none; border-radius: 999px; font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+}
+
+body[data-skin="md"] .skin-opt.active {
+background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+
+body[data-skin="md"] .settings-hint {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .ds-pick {
+background: var(--md-primary); box-shadow: none; border-radius: 8px; font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+}
+
+body[data-skin="md"] .ds-pick.used {
+background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+
+body[data-skin="md"] .mtr-conn .conn-block {
+background: var(--md-surface-container-high); border: none; border-radius: 16px; box-shadow: var(--md-elev-1); font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+}
+
+body[data-skin="md"] .mtr-conn .conn-title {
+color: var(--md-on-surface); font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+}
+
+body[data-skin="md"] .mtr-conn .conn-row {
+color: var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .mtr-conn .conn-row + .conn-row {
+border-top-color: var(--md-outline-variant);
+}
+
+body[data-skin="md"] .rc-dir, body[data-skin="ios"] .rc-dir {
+background:var(--md-secondary-container); color:var(--md-on-secondary-container);
+}
+
+body[data-skin="md"] .rc-line-tag, body[data-skin="ios"] .rc-line-tag {
+color:var(--md-on-surface-variant);
+}
+
+body[data-skin="md"] .rc-line-time {
+color:var(--md-on-surface);
+}
+
+body[data-skin="md"] .ds-pick, body[data-skin="ios"] .ds-pick {
+background:#fff; color:var(--primary); border:1px solid var(--primary);
+}
+
+body[data-skin="md"] .ds-pick.used, body[data-skin="ios"] .ds-pick.used {
+background:var(--primary); color:#fff;
+}
+
+body[data-skin="md"] .conn-block {
+background:var(--md-surface-container); border-radius:12px;
+}
+
+body[data-skin="md"] .conn-title {
+color:var(--md-on-surface);
+}
+
+body[data-skin="md"] .conn-dest {
+color:var(--md-on-surface);
+}
+
+body[data-skin="md"] .conn-eta {
+color:var(--primary);
+}
+
+body[data-skin="md"] :focus-visible {
+outline-color: var(--md-primary);
+}
+
+body[data-skin="md"] .ds-grab {
+background: var(--md-outline-variant);
+}
+
+body[data-skin="md"][data-theme="dark"] {
+--md-primary: #D0BCFF; --md-on-primary: #381E72;
+  --md-primary-container: #4F378B; --md-on-primary-container: #EADDFF;
+  --md-secondary-container: #4A4458; --md-on-secondary-container: #E8DEF8;
+  --md-tertiary-container: #633B48; --md-on-tertiary-container: #FFD8E4;
+  --md-error: #F2B8B5; --md-error-container: #8C1D18; --md-on-error-container: #F9DEDC;
+  --md-surface: #141218; --md-on-surface: #E6E0E9; --md-on-surface-variant: #CAC4D0;
+  --md-surface-variant: #49454F; --md-outline: #938F99; --md-outline-variant: #49454F;
+  --md-surface-lowest: #0F0D13; --md-surface-container: #211F26;
+  --md-surface-container-high: #2B2930; --md-surface-highest: #36343B;
+  --md-elev-1: 0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.35);
+  --md-elev-2: 0 1px 2px rgba(0,0,0,.5), 0 2px 6px 2px rgba(0,0,0,.35);
+  --md-elev-3: 0 4px 8px 3px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.5);
+  --bg-top: #141218; --bg-mid: #1D1B20; --bg-bottom: #141218;
+  --text: #E6E0E9; --text-dark: #CAC4D0;
+  --primary: #D0BCFF; --primary-light: #4F378B; --primary-dark: #EADDFF;
+  --card-bg: #1D1B20; --card-bg2: #211F26; --card-border: #49454F;
+  --card-shadow: rgba(0,0,0,.35); --card-bg-soft: #141218;
+  background: #141218;
+}
+
+@media (prefers-color-scheme: dark) {
+body[data-skin="md"]:not([data-theme="light"]) {
+    --md-primary: #D0BCFF; --md-on-primary: #381E72;
+    --md-primary-container: #4F378B; --md-on-primary-container: #EADDFF;
+    --md-secondary-container: #4A4458; --md-on-secondary-container: #E8DEF8;
+    --md-tertiary-container: #633B48; --md-on-tertiary-container: #FFD8E4;
+    --md-error: #F2B8B5; --md-error-container: #8C1D18; --md-on-error-container: #F9DEDC;
+    --md-surface: #141218; --md-on-surface: #E6E0E9; --md-on-surface-variant: #CAC4D0;
+    --md-surface-variant: #49454F; --md-outline: #938F99; --md-outline-variant: #49454F;
+    --md-surface-lowest: #0F0D13; --md-surface-container: #211F26;
+    --md-surface-container-high: #2B2930; --md-surface-highest: #36343B;
+    --md-elev-1: 0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.35);
+    --md-elev-2: 0 1px 2px rgba(0,0,0,.5), 0 2px 6px 2px rgba(0,0,0,.35);
+    --md-elev-3: 0 4px 8px 3px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.5);
+    --bg-top: #141218; --bg-mid: #1D1B20; --bg-bottom: #141218;
+    --text: #E6E0E9; --text-dark: #CAC4D0;
+    --primary: #D0BCFF; --primary-light: #4F378B; --primary-dark: #EADDFF;
+    --card-bg: #1D1B20; --card-bg2: #211F26; --card-border: #49454F;
+    --card-shadow: rgba(0,0,0,.35); --card-bg-soft: #141218;
+    background: #141218;
+  }
+}
+
+body[data-skin="md"][data-theme="dark"] .detail-sheet .ds-head {
+background: var(--md-surface-container);
+}
+
+body[data-skin="md"][data-theme="dark"] .weather-mini-bar {
+background: var(--md-surface-container);
+}
+
+body[data-skin="md"][data-theme="dark"] .navbar h1::before {
+color: var(--md-on-surface-variant);
+}
+
+@media (prefers-color-scheme: dark) {
+body[data-skin="md"]:not([data-theme="light"]) .detail-sheet .ds-head { background: var(--md-surface-container); }
+  body[data-skin="md"]:not([data-theme="light"]) .weather-mini-bar { background: var(--md-surface-container); }
+  body[data-skin="md"]:not([data-theme="light"]) .navbar h1::before { color: var(--md-on-surface-variant); }
+}
+
+body[data-skin="md"] .warning-bar {
+border: none; border-radius: var(--md-corner-m); box-shadow: var(--md-elev-1); font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif; font-weight: 500;
+}
+
+body[data-skin="md"] .warning-bar.warn-mild {
+background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+
+body[data-skin="md"] .warning-bar.warn-severe {
+background: var(--md-error-container); color: var(--md-on-error-container);
+}
+
+body[data-skin="md"] .seg-opt {
+border: 1px solid var(--md-outline); border-radius: 20px; background: transparent; color: var(--md-on-surface-variant); box-shadow: none; font-family: 'Roboto', 'Noto Sans SC', sans-serif; font-weight: 500;
+}
+
+body[data-skin="md"] .seg-opt:active {
+transform: none;
+}
+
+body[data-skin="md"] .seg-opt.active {
+background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent;
+}

@@ -1,11 +1,20 @@
 /* 森友出行手册 - Service Worker */
-const CACHE_NAME = 'senyou-transport-v17';
+const CACHE_NAME = 'senyou-transport-v20';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './css/base.css',
+  './css/skin-md.css',
+  './css/skin-ios.css',
+  './js/data.js',
+  './js/util.js',
+  './js/api.js',
+  './js/render.js',
+  './js/ios-home.js',
+  './js/main.js'
 ];
 
 self.addEventListener('install', (e) => {
