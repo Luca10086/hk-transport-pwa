@@ -246,6 +246,22 @@ function wp10Go(page) {
   switchPage(page);
 }
 
+/* ===== WP CommandBar「⋯」更多菜单 ===== */
+function wpToggleMoreMenu() {
+  const menu = document.getElementById('wpMoreMenu');
+  if (menu) menu.hidden = !menu.hidden;
+}
+function wpMoreAction(action) {
+  wpToggleMoreMenu();
+  if (action === 'refresh') refreshAll(true);
+  else if (action === 'about') alert('森友出行手冊\n資料來源：data.gov.hk / 資料一線通');
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('wpMoreMenu');
+  if (!menu || menu.hidden) return;
+  if (!e.target.closest('.wp-more-btn') && !e.target.closest('.wp-more-menu')) menu.hidden = true;
+});
+
 /** iOS 底部导航「最近」：回到首页并滚动到最近搜尋区块 */
 function iosGoRecent() {
   switchPage('home');

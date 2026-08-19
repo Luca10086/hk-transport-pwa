@@ -292,3 +292,27 @@ body[data-skin="wp10"] .spinner { border-color: var(--wp10-border); border-top-c
 body[data-skin="wp10"] .ds-pick { background: transparent; border: 1px solid var(--wp10-accent); border-radius: 0; color: var(--wp10-accent); box-shadow: none; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-weight: 400; }
 body[data-skin="wp10"] .ds-pick.used { background: var(--wp10-accent); color: #fff; }
 body[data-skin="wp10"] :focus-visible { outline: 2px solid var(--wp10-accent); outline-offset: 1px; }
+
+/* ===== CommandBar「⋯」更多菜单 ===== */
+body[data-skin="wp10"] .bottom-nav { position: relative; }
+body[data-skin="wp10"] .wp-more-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 40px; width: 40px;
+  border: none; background: none; cursor: pointer;
+  color: var(--wp10-secondary); font-size: 1.4rem; line-height: 1;
+}
+body[data-skin="wp10"] .wp-more-btn.active { color: var(--wp10-accent); }
+body[data-skin="wp10"] .wp-more-menu {
+  display: flex; flex-direction: column;
+  position: absolute; right: 8px; bottom: calc(100% - 4px);
+  background: var(--wp10-surface); border: 1px solid var(--wp10-border);
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+  z-index: 230; min-width: 160px;
+}
+body[data-skin="wp10"] .wp-more-item {
+  display: block; width: 100%; text-align: left;
+  padding: 13px 16px; border: none; background: none; cursor: pointer;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  font-size: 0.9rem; color: var(--wp10-text);
+}
+body[data-skin="wp10"] .wp-more-item:hover { background: var(--wp10-surface2); }
