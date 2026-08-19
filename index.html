@@ -974,7 +974,7 @@ body[data-skin="ios"] .mtr-conn .conn-row + .conn-row { border-top-color: rgba(6
 /* --- 6. iOS 皮肤（依 Apple HIG 概念图重新设计，含浅色/深色） --- */
 body[data-skin="ios"] {
   --ios-bg: #F2F2F7; --ios-card: #FFFFFF; --ios-label: #000000;
-  --ios-secondary: #8E8E93; --ios-separator: rgba(60,60,67,.18);
+  --ios-secondary: #6E6E73; --ios-separator: rgba(60,60,67,.18);
   --ios-tint: #007AFF; --ios-search: rgba(118,118,128,.12); --ios-fill: rgba(118,118,128,.12);
   --bg-top: #F2F2F7; --bg-mid: #F2F2F7; --bg-bottom: #F2F2F7;
   --text: #000000; --text-dark: #3C3C43;
@@ -995,7 +995,7 @@ body[data-skin="ios"] {
     background: #000000;
   }
 }
-body[data-skin="ios"] .bg-decor .deco { opacity: 0; }
+body[data-skin="ios"] .bg-decor { display: none; }
 /* 导航：Large Title 34pt，半透明模糊材质，无底部边框 */
 body[data-skin="ios"] .navbar {
   background: rgba(249,249,249,.85); color: #000;
@@ -1005,6 +1005,7 @@ body[data-skin="ios"] .navbar {
 body[data-skin="ios"] .navbar h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; font-family: inherit; text-shadow: none; color: #000; }
 body[data-skin="ios"] .navbar h1 .ac-emoji, body[data-skin="ios"] .ac-emoji { display: none; }
 body[data-skin="ios"] .navbar .refresh-btn { background: var(--ios-tint); color: #fff; border: none; border-radius: 13px; font-family: inherit; font-weight: 600; font-size: .85rem; box-shadow: none; padding: 8px 14px; }
+body[data-skin="ios"] .navbar .skin-btn { background: var(--ios-fill); border: none; color: var(--ios-tint); padding: 8px 12px; border-radius: 13px; font-family: inherit; font-weight: 600; font-size: .85rem; box-shadow: none; }
 /* 分区：透明分组背景 */
 body[data-skin="ios"] .search-section, body[data-skin="ios"] .favorites-section, body[data-skin="ios"] .results-section, body[data-skin="ios"] .info-section { background: transparent; border: none; box-shadow: none; border-radius: 0; }
 body[data-skin="ios"] .search-section { background: transparent; border: none; border-radius: 0; padding: 6px 16px 0; margin: 0; box-shadow: none; }
@@ -1023,7 +1024,7 @@ body[data-skin="ios"] .section-title { background: transparent; border: none; bo
 body[data-skin="ios"] .section-title .badge { background: var(--ios-fill); color: var(--ios-secondary); box-shadow: none; font-family: inherit; }
 /* 卡片：InsetGrouped 12pt，0.5px 分隔线，无阴影 */
 body[data-skin="ios"] .transport-card, body[data-skin="ios"] .sushiro-card, body[data-skin="ios"] .k75p-stop {
-  background: var(--ios-card); border: 0.5px solid var(--ios-separator); border-radius: 12px; box-shadow: none; font-family: inherit;
+  background: var(--ios-card); border: 0.5px solid var(--ios-separator); border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.06); font-family: inherit;
 }
 body[data-skin="ios"] .transport-card:hover { transform: none; box-shadow: none; }
 body[data-skin="ios"] .rc-m, body[data-skin="ios"] .eta-time, body[data-skin="ios"] .ds-em, body[data-skin="ios"] .rc-name, body[data-skin="ios"] .rc-line-time, body[data-skin="ios"] .k75p-bus { font-variant-numeric: tabular-nums; }
@@ -1059,6 +1060,9 @@ body[data-skin="ios"] .skin-opt { border: 0.5px solid var(--ios-separator); bord
 body[data-skin="ios"] .skin-opt.active { background: var(--ios-tint); color: #fff; }
 body[data-skin="ios"] .settings-hint { color: var(--ios-secondary); }
 body[data-skin="ios"] .fav-btn { box-shadow: none; }
+body[data-skin="ios"] .favshow-head { color: var(--ios-label); }
+body[data-skin="ios"] .favshow-hint, body[data-skin="ios"] .favshow-clear, body[data-skin="ios"] .favshow-loading { color: var(--ios-secondary); }
+body[data-skin="ios"] .ds-none, body[data-skin="ios"] .empty-hint { color: var(--ios-secondary); opacity: 1; }
 /* 迷你天气条 */
 body[data-skin="ios"] .weather-mini-bar { background: var(--ios-card); border: 0.5px solid var(--ios-separator); border-radius: 12px; box-shadow: none; }
 body[data-skin="ios"] .weather-mini-bar .wm-desc, body[data-skin="ios"] .weather-mini-bar .wm-item b { color: var(--ios-tint); }
@@ -1077,24 +1081,28 @@ body[data-skin="ios"] .weather-mini-bar .wm-upd { color: var(--ios-secondary); }
 /* ---- v12 追加：轻铁方向 / 第1班第2班 / 收藏固定显示站 / MTR接驳 ---- */
 .rc-head{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .rc-dir{ display:inline-block; background:rgba(0,0,0,.06); color:#555; font-size:11px; font-weight:700; border-radius:6px; padding:2px 7px; }
+.rc-dir{ background:#5fae82; color:#fff; }
 body[data-skin="md"] .rc-dir, body[data-skin="ios"] .rc-dir{ background:var(--secondary-container); color:var(--on-secondary-container); }
 body[data-skin="ios"] .rc-dir{ background:#0A84FF1A; color:#0A84FF; }
 .rc-line{ display:flex; align-items:baseline; gap:8px; font-size:12px; line-height:1.7; }
-.rc-line-tag{ flex:0 0 auto; font-weight:600; color:#888; }
+.rc-line-tag{ flex:0 0 auto; font-weight:600; color:#a08d6f; }
 body[data-skin="md"] .rc-line-tag, body[data-skin="ios"] .rc-line-tag{ color:var(--on-surface-variant); }
 body[data-skin="ios"] .rc-line-tag{ color:var(--ios-secondary); }
 .rc-line-time{ font-variant-numeric:tabular-nums; font-weight:600; color:#222; }
 body[data-skin="ios"] .rc-line-time{ color:var(--ios-label); }
 body[data-skin="md"] .rc-line-time{ color:var(--on-surface); }
-.ds-pick{ background:#fff; color:#007AFF; border:1px solid #007AFF; border-radius:8px; padding:3px 10px; font-size:11px; font-weight:600; cursor:pointer; margin-left:auto; }
-.ds-pick.used{ background:#007AFF; color:#fff; }
+.ds-pick{ background:#5fae82; color:#fff; border:1px solid #5fae82; border-radius:8px; padding:3px 10px; font-size:11px; font-weight:600; cursor:pointer; margin-left:auto; }
+.ds-pick.used{ background:#3e8a62; color:#fff; }
+body[data-skin="md"] .ds-pick, body[data-skin="ios"] .ds-pick{ background:#fff; color:var(--primary); border:1px solid var(--primary); }
+body[data-skin="md"] .ds-pick.used, body[data-skin="ios"] .ds-pick.used{ background:var(--primary); color:#fff; }
 .favshow{ margin-bottom:12px; }
-.favshow-hint{ font-size:12px; color:#999; text-align:center; padding:6px 0; }
-.favshow-head{ display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700; color:#444; margin-bottom:6px; padding:0 4px; }
-.favshow-clear{ background:none; border:none; color:#888; font-size:12px; cursor:pointer; text-decoration:underline; }
-.favshow-loading{ font-size:12px; color:#999; text-align:center; padding:12px 0; }
+.favshow-hint{ font-size:12px; color:#a08d6f; text-align:center; padding:6px 0; }
+.favshow-head{ display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700; color:#7a6a4f; margin-bottom:6px; padding:0 4px; }
+.favshow-clear{ background:none; border:none; color:#a08d6f; font-size:12px; cursor:pointer; text-decoration:underline; }
+.favshow-loading{ font-size:12px; color:#a08d6f; text-align:center; padding:12px 0; }
 .mtr-conn{ margin:10px 16px; }
 .conn-block{ background:#fff; border-radius:14px; padding:12px 14px; margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.conn-block{ background:rgba(255,255,255,.72); border:2px solid #e8dfcf; box-shadow:0 4px 0 rgba(139,121,88,.12); }
 body[data-skin="ios"] .conn-block{ background:var(--ios-card); border-radius:12px; box-shadow:none; }
 body[data-skin="md"] .conn-block{ background:var(--surface-container-low); border-radius:12px; }
 .conn-title{ font-size:13px; font-weight:700; color:#333; margin-bottom:8px; }
@@ -1566,6 +1574,19 @@ async function getKMBETA(stopId) {
   } catch { return []; }
 }
 
+const _kmbNameCache = {};
+/** 补全 KMB 站名：route-stop 接口可能只返回站码，需调 stop 接口取中文名 */
+async function getKMBStopName(stopId) {
+  const key = String(stopId);
+  if (_kmbNameCache[key]) return _kmbNameCache[key];
+  try {
+    const data = await fetchWithProxy(`${KMB_BASE}/stop/${key}`);
+    const d = data && data.data;
+    _kmbNameCache[key] = (d && (d.name_tc || d.name_en)) || ('站 ' + key);
+  } catch { _kmbNameCache[key] = '站 ' + key; }
+  return _kmbNameCache[key];
+}
+
 /* ==========================================================================
    CTB API Calls
    ========================================================================== */
@@ -1709,7 +1730,7 @@ async function searchLRT(query, container) {
   const results = await Promise.all(matches.slice(0, 8).map(async (st) => {
     const entries = await getLRTEta(st.id);
     const now = Math.floor(Date.now() / 1000);
-    const etas = entries.slice(0, 3).map(e => ({ etaTs: now + e.mins * 60 }));
+    const etas = entries.slice(0, 3).map(e => ({ etaTs: now + e.mins * 60, dirLabel: (e.routeNo || '') + ' · ' + e.dest }));
     return {
       type: 'lrt', route: st.name, station_id: st.id, stop_name: st.name,
       origDest: st.name + ' · 轻铁', direction: '', totalStops: 1, etas, platformData: entries
@@ -1816,8 +1837,14 @@ async function searchBusRoute(query, container) {
     searchNLBRoute(routeNum)
   ]);
 
-  /* For each KMB route, get stops and first stop ETA */
-  for (const route of kmbRoutes) {
+  /* For each KMB route, get stops and first stop ETA.
+     同一路线 O/I 两个方向只保留一张卡，优先出发方向（O） */
+  const kmbSeen = new Set();
+  const kmbRoutesSorted = kmbRoutes.slice().sort((a, b) => (a.bound === 'O' ? 0 : 1) - (b.bound === 'O' ? 0 : 1));
+  for (const route of kmbRoutesSorted) {
+    const rKey = String(route.route).toUpperCase();
+    if (kmbSeen.has(rKey)) continue;
+    kmbSeen.add(rKey);
     const direction = route.bound === 'O' ? 'outbound' : 'inbound';
     const stops = await getKMBStops(route.route, direction, '1');
     if (stops.length > 0) {
@@ -1826,7 +1853,7 @@ async function searchBusRoute(query, container) {
         type: 'bus', company: 'kmb',
         route: route.route,
         direction: direction,
-        origDest: route.orig_en ? `${route.orig_tc || route.orig_en} → ${route.dest_tc || route.dest_en}` : '',
+        origDest: route.orig_tc || route.orig_en ? `${route.orig_tc || route.orig_en} → ${route.dest_tc || route.dest_en}` : '',
         stop_id: firstStop.stop_id || firstStop.stop,
         stop_name: firstStop.name_tc || firstStop.name_en || firstStop.stop_id,
         serviceType: '1',
@@ -2149,7 +2176,7 @@ function routeCardHTML(item, opts) {
   const tagText = item.type === 'mtr' ? '港铁'
     : item.type === 'mtrbus' ? '港铁巴士'
     : item.type === 'lrt' ? '轻铁'
-    : (item.company === 'kmb' ? '九巴' : item.company === 'nlb' ? '新大屿山' : '城巴');
+    : '公交';
   const no = (item.type === 'bus' || item.type === 'mtrbus' || item.type === 'lrt')
     ? String(item.route)
     : item.lineName;
@@ -2566,11 +2593,11 @@ async function refreshWeather() {
     const emoji = HKO_ICON_EMOJI[icon] || '🌤️';
 
     const parts = [];
-    if (hkoTemp) parts.push('<span class="wm-item">🌡️ <b>' + hkoTemp.value + '°C</b></span>');
-    if (hum) parts.push('<span class="wm-item">💧 <b>' + hum.value + '%</b></span>');
-    if (rain) parts.push('<span class="wm-item">☔ <b>' + rain.max + 'mm</b></span>');
-    const update = data.updateTime ? data.updateTime.slice(11, 16) : '';
-    container.innerHTML = '<div class="weather-mini-bar"><span class="wm-desc">' + emoji + ' ' + desc + '</span>' + parts.join('') + '<span class="wm-upd">' + update + '</span></div>';
+    if (hkoTemp) parts.push('<span class="wm-item">' + hkoTemp.value + '°C</span>');
+    if (hum) parts.push('<span class="wm-item">' + hum.value + '%</span>');
+    if (rain) parts.push('<span class="wm-item">' + rain.max + 'mm</span>');
+    const update = data.updateTime ? '更新 ' + data.updateTime.slice(11, 16) : '';
+    container.innerHTML = '<div class="weather-mini-bar"><span class="wm-desc">' + desc + '</span>' + parts.join('') + '<span class="wm-upd">' + update + '</span></div>';
   } catch (err) {
     container.innerHTML = '<div class="weather-mini-bar wm-error">天气载入失败</div>';
   }
@@ -2834,6 +2861,14 @@ async function openStopPicker(favIndex) {
   try {
     if (fav.company === 'kmb') {
       stops = await getKMBStops(fav.route, fav.direction === 'inbound' ? 'inbound' : 'outbound', '1');
+      /* route-stop 可能只返回站码，批量补中文站名 */
+      if (stops.length) {
+        const missing = stops.filter(s => !(s.name_tc || s.name_en)).map(s => s.stop);
+        const names = await Promise.all(missing.map(sid => getKMBStopName(sid)));
+        const nm = {};
+        missing.forEach((sid, i) => { nm[String(sid)] = names[i]; });
+        stops = stops.map(s => ({ ...s, name_tc: s.name_tc || s.name_en || nm[String(s.stop)] || (s.name_tc || s.name_en || '') }));
+      }
     } else if (fav.company === 'ctb') {
       stops = await getCTBStops(fav.route, fav.direction === 'inbound' ? 'inbound' : 'outbound');
       /* route-stop 只返回 6 位站码，批量补中文站名 */
@@ -3061,11 +3096,16 @@ async function renderDetailContent(item, inner) {
         const stops = await getKMBStops(item.route, item.direction, item.serviceType || '1');
         const allEta = await getKMBETA(item.stop_id);
         const byRoute = allEta.filter(e => e.route === String(item.route));
+        /* route-stop 缺站名时批量调 stop 接口补全（避免显示纯数字站码） */
+        const missing = stops.filter(s => !(s.name_tc || s.name_en)).map(s => s.stop);
+        const names = await Promise.all(missing.map(sid => getKMBStopName(sid)));
+        const nameMap = {};
+        missing.forEach((sid, i) => { nameMap[String(sid)] = names[i]; });
         const rows = [];
         for (const s of stops) {
           const stopEtas = byRoute.filter(e => String(e.stop) === String(s.stop));
           const times = stopEtas.slice(0, 2).map(e => e.eta ? new Date(e.eta).getTime() / 1000 : null).filter(Boolean);
-          rows.push({ name: s.name_tc || s.name_en || s.stop, times });
+          rows.push({ name: s.name_tc || s.name_en || nameMap[String(s.stop)] || ('站 ' + s.stop), times });
         }
         listHtml = rows.map(r => {
           const cells = r.times.length ? r.times.map(em).join('') : '<span class="ds-none">—</span>';
