@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
@@ -60,7 +60,7 @@ body {
 /* ===== Top Navbar (wooden sign style) ===== */
 .navbar {
   background: linear-gradient(180deg, var(--primary-light) 0%, var(--primary) 100%);
-  color: #fff; padding: 14px 24px;
+  color: #fff; padding: calc(14px + env(safe-area-inset-top)) 24px 14px;
   display: flex; align-items: center; justify-content: space-between;
   position: sticky; top: 0; z-index: 100;
   border-bottom: 5px solid var(--primary-dark);
@@ -233,7 +233,6 @@ body {
 
 /* Favorite button (candy star) */
 .fav-btn {
-  position: absolute; top: 12px; right: 12px;
   background: linear-gradient(180deg, #fff, #f0e6d6);
   border: 2px solid #e0d3b8; font-size: 1.2rem; cursor: pointer;
   color: #c9b896; transition: all 0.2s; padding: 4px 9px; border-radius: 12px;
@@ -475,6 +474,8 @@ body[data-skin="md"] {
   --md-surface-container: #f3edf7;
   --md-surface-high: #ece6f0;
   --md-surface-highest: #e6e0e9;
+  --md-surface-container-high: #ece6f0;
+  --md-on-tertiary-container: #31111d;
   /* M3 shape tokens */
   --md-corner-xs: 4px;
   --md-corner-s: 8px;
@@ -696,7 +697,7 @@ body[data-skin="md"] #exportQuote0Btn2 {
    仅作用于 md 皮肤；AC 皮肤完全不受影响 */
 
 /* Large Top App Bar：kicker + 大标题，去除 emoji */
-body[data-skin="md"] .navbar { padding: 16px 24px 14px; }
+body[data-skin="md"] .navbar { padding: calc(16px + env(safe-area-inset-top)) 24px 14px; }
 body[data-skin="md"] .navbar h1 {
   display: flex; flex-direction: column;
   font-size: 1.625rem; font-weight: 700; line-height: 1.12; letter-spacing: 0;
@@ -842,10 +843,10 @@ body[data-skin="md"] .fab-main:hover {
 .route-card .rc-pcnt { font-size: 0.66rem; color: #a08d6f; white-space: nowrap; }
 
 /* ===== 路线详情底部弹层（全线候车） ===== */
-.detail-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: 90; }
+.detail-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: 300; }
 .detail-mask.show { opacity: 1; pointer-events: auto; }
 .detail-sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 91;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 301;
   max-height: 86vh; overflow-y: auto; overscroll-behavior: contain;
   background: var(--card-bg); color: var(--text);
   border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.18);
@@ -941,7 +942,7 @@ button:active, .bn-item:active, .skin-opt:active, .fav-btn:active { filter: brig
 .skin-opt { flex: 1; min-width: 90px; padding: 12px 8px; border: 2px solid var(--card-border); background: var(--card-bg); color: var(--text-dark); border-radius: 14px; font-size: .95rem; font-weight: 800; font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; cursor: pointer; box-shadow: 0 3px 0 var(--card-shadow); }
 .skin-opt.active { background: linear-gradient(180deg, var(--primary-light), var(--primary)); color: #fff; border-color: var(--primary-dark); box-shadow: 0 3px 0 var(--primary-dark); }
 .settings-hint { margin-top: 10px; font-size: .78rem; color: #a08d6f; }
-body[data-skin="md"] .settings-block { background: var(--md-surface-container-high); border: none; border-radius: 16px; box-shadow: var(--md-elevation1); }
+body[data-skin="md"] .settings-block { background: var(--md-surface-container-high); border: none; border-radius: 16px; box-shadow: var(--md-elev-1); }
 body[data-skin="md"] .settings-label { color: var(--md-on-surface); font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
 body[data-skin="md"] .skin-opt { border: none; background: var(--md-surface-container); color: var(--md-on-surface); box-shadow: none; border-radius: 999px; font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
 body[data-skin="md"] .skin-opt.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
@@ -962,7 +963,7 @@ body[data-skin="ios"] .ds-pick.used { background: #C7C7CC; color: #fff; }
 .mtr-conn .conn-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: .85rem; color: var(--text-dark); }
 .mtr-conn .conn-row + .conn-row { border-top: 1.5px dashed var(--card-border); }
 .mtr-conn .conn-badge { flex: 0 0 auto; border-radius: 6px; padding: 1px 7px; font-size: .75rem; font-weight: 800; color: #fff; }
-body[data-skin="md"] .mtr-conn .conn-block { background: var(--md-surface-container-high); border: none; border-radius: 16px; box-shadow: var(--md-elevation1); font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
+body[data-skin="md"] .mtr-conn .conn-block { background: var(--md-surface-container-high); border: none; border-radius: 16px; box-shadow: var(--md-elev-1); font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
 body[data-skin="md"] .mtr-conn .conn-title { color: var(--md-on-surface); font-family: 'Roboto', 'Noto Sans SC', sans-serif; }
 body[data-skin="md"] .mtr-conn .conn-row { color: var(--md-on-surface-variant); }
 body[data-skin="md"] .mtr-conn .conn-row + .conn-row { border-top-color: var(--md-outline-variant); }
@@ -1000,7 +1001,7 @@ body[data-skin="ios"] .bg-decor { display: none; }
 body[data-skin="ios"] .navbar {
   background: rgba(249,249,249,.85); color: #000;
   -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
-  border-bottom: none; box-shadow: none; padding: 24px 20px 6px;
+  border-bottom: none; box-shadow: none; padding: calc(24px + env(safe-area-inset-top)) 20px 6px;
 }
 body[data-skin="ios"] .navbar h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; font-family: inherit; text-shadow: none; color: #000; }
 body[data-skin="ios"] .navbar h1 .ac-emoji, body[data-skin="ios"] .ac-emoji { display: none; }
@@ -1091,15 +1092,15 @@ body[data-skin="ios"] .weather-mini-bar .wm-upd { color: var(--ios-secondary); }
 .rc-head{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .rc-dir{ display:inline-block; background:rgba(0,0,0,.06); color:#555; font-size:11px; font-weight:700; border-radius:6px; padding:2px 7px; }
 .rc-dir{ background:#5fae82; color:#fff; }
-body[data-skin="md"] .rc-dir, body[data-skin="ios"] .rc-dir{ background:var(--secondary-container); color:var(--on-secondary-container); }
+body[data-skin="md"] .rc-dir, body[data-skin="ios"] .rc-dir{ background:var(--md-secondary-container); color:var(--md-on-secondary-container); }
 body[data-skin="ios"] .rc-dir{ background:#0A84FF1A; color:#0A84FF; }
 .rc-line{ display:flex; align-items:baseline; gap:8px; font-size:12px; line-height:1.7; }
 .rc-line-tag{ flex:0 0 auto; font-weight:600; color:#a08d6f; }
-body[data-skin="md"] .rc-line-tag, body[data-skin="ios"] .rc-line-tag{ color:var(--on-surface-variant); }
+body[data-skin="md"] .rc-line-tag, body[data-skin="ios"] .rc-line-tag{ color:var(--md-on-surface-variant); }
 body[data-skin="ios"] .rc-line-tag{ color:var(--ios-secondary); }
 .rc-line-time{ font-variant-numeric:tabular-nums; font-weight:600; color:#222; }
 body[data-skin="ios"] .rc-line-time{ color:var(--ios-label); }
-body[data-skin="md"] .rc-line-time{ color:var(--on-surface); }
+body[data-skin="md"] .rc-line-time{ color:var(--md-on-surface); }
 .ds-pick{ background:#5fae82; color:#fff; border:1px solid #5fae82; border-radius:8px; padding:3px 10px; font-size:11px; font-weight:600; cursor:pointer; margin-left:auto; }
 .ds-pick.used{ background:#3e8a62; color:#fff; }
 body[data-skin="md"] .ds-pick, body[data-skin="ios"] .ds-pick{ background:#fff; color:var(--primary); border:1px solid var(--primary); }
@@ -1113,10 +1114,10 @@ body[data-skin="md"] .ds-pick.used, body[data-skin="ios"] .ds-pick.used{ backgro
 .conn-block{ background:#fff; border-radius:14px; padding:12px 14px; margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
 .conn-block{ background:rgba(255,255,255,.72); border:2px solid #e8dfcf; box-shadow:0 4px 0 rgba(139,121,88,.12); }
 body[data-skin="ios"] .conn-block{ background:var(--ios-card); border-radius:12px; box-shadow:none; }
-body[data-skin="md"] .conn-block{ background:var(--surface-container-low); border-radius:12px; }
+body[data-skin="md"] .conn-block{ background:var(--md-surface-container); border-radius:12px; }
 .conn-title{ font-size:13px; font-weight:700; color:#333; margin-bottom:8px; }
 body[data-skin="ios"] .conn-title{ color:var(--ios-label, #1D1B20); }
-body[data-skin="md"] .conn-title{ color:var(--on-surface); }
+body[data-skin="md"] .conn-title{ color:var(--md-on-surface); }
 .conn-row{ display:flex; align-items:center; gap:10px; padding:7px 0; }
 .conn-row + .conn-row{ border-top:0.5px solid rgba(60,60,67,.15); }
 body[data-skin="ios"] .conn-row + .conn-row{ border-top:0.5px solid var(--ios-separator); }
@@ -1125,7 +1126,7 @@ body[data-skin="ios"] .conn-row + .conn-row{ border-top:0.5px solid var(--ios-se
 .conn-badge.mtrbus{ background:#1E6BB8; }
 .conn-dest{ flex:1; min-width:0; font-size:13px; color:#222; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 body[data-skin="ios"] .conn-dest{ color:var(--ios-label, #1D1B20); }
-body[data-skin="md"] .conn-dest{ color:var(--on-surface); }
+body[data-skin="md"] .conn-dest{ color:var(--md-on-surface); }
 .conn-eta{ flex:0 0 auto; font-size:13px; font-weight:700; color:#007AFF; font-variant-numeric:tabular-nums; }
 body[data-skin="ios"] .conn-eta{ color:var(--ios-tint); }
 body[data-skin="md"] .conn-eta{ color:var(--primary); }
@@ -1143,7 +1144,7 @@ body[data-skin="ios"] section[data-page="home"]:not(.ios-home) { display: none !
 .ios-search-wrap { padding: 2px 0 10px; }
 .ios-search-field {
   display: flex; align-items: center; gap: 8px;
-  background: rgba(118,118,128,.12); border-radius: 11px;
+  background: var(--ios-search); border-radius: 11px;
   padding: 0 12px; height: 38px;
 }
 .ios-search-ic { width: 17px; height: 17px; fill: var(--ios-secondary, #8E8E93); flex: 0 0 auto; }
@@ -1204,6 +1205,22 @@ body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
 @media (prefers-color-scheme: dark) {
   body[data-skin="ios"] .ios-cat.active { background: #636366; color: #fff; box-shadow: none; }
 }
+
+/* ===== 可访问性：尊重系统减弱动效设置 ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ===== 对比度优化（WCAG AA，AC 皮肤为主；md/ios 皮肤规则优先级更高不受影响） ===== */
+.card-stop, .eta-detail, .rc-u, .rc-more, .rc-pcnt, .empty-hint, .footer, .wm-upd,
+.sushiro-note, .ds-meta, .ds-refresh, .ds-eu, .ds-extra, .favshow-hint,
+.favshow-loading, .favshow-clear, .card-meta, .rc-line-tag { color: #6f5f4a; }
+.eta-time, .sushiro-card .s-wait { color: #2e7d32; }
+.route-card .rc-tag { background: var(--primary-dark); color: #fff; }
+.navbar { color: #1f4d33; }
+.navbar h1 { color: #1f4d33; text-shadow: 0 1px 0 rgba(255,255,255,.3); }
+.transport-toggle button.active { color: #14532d; text-shadow: none; }
+body[data-skin="ios"] .route-card .rc-tag { background: rgba(10,132,255,.12); color: #0A84FF; }
 </style>
 </head>
 <body>
@@ -1226,7 +1243,7 @@ body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
 <nav class="navbar">
   <h1><span class="ac-emoji">🍃</span> 森友出行手册</h1>
   <div class="navbar-actions">
-    <button class="refresh-btn" onclick="refreshAll()" id="refreshBtn">手动刷新</button>
+    <button class="refresh-btn" onclick="refreshAll(true)" id="refreshBtn">手动刷新</button>
   </div>
 </nav>
 
@@ -1307,7 +1324,7 @@ body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
   <!-- ===== Search Results ===== -->
   <section class="results-section" data-page="home">
     <div class="section-title"><span class="ac-emoji">🍀</span> 搜寻结果</div>
-    <div id="resultsContainer">
+    <div id="resultsContainer" aria-live="polite">
       <div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>
     </div>
   </section>
@@ -1318,7 +1335,7 @@ body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
       <span class="ac-emoji">🚌</span> K75P 全线实时
       <span class="badge" id="k75pUpdate"></span>
     </div>
-    <div id="k75pContainer">
+    <div id="k75pContainer" aria-live="polite">
       <div class="empty-hint"><span class="icon">🚌</span>载入 K75P 全线资料中...</div>
     </div>
   </section>
@@ -1329,7 +1346,7 @@ body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
       <span class="ac-emoji">⭐</span> 我的收藏
       <span class="badge" id="favCount"></span>
     </div>
-    <div id="favoritesContainer">
+    <div id="favoritesContainer" aria-live="polite">
       <div class="empty-hint"><span class="icon">📌</span>搜寻路线后按 ☆ 收藏到首页</div>
     </div>
   </section>
@@ -1340,7 +1357,7 @@ body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
       <span class="ac-emoji">🍣</span> 寿司郎排队
       <span class="badge" id="sushiroUpdate"></span>
     </div>
-    <div id="sushiroContainer">
+    <div id="sushiroContainer" aria-live="polite">
       <div class="empty-hint"><span class="icon">🍣</span>载入排队资料中...</div>
     </div>
   </section>
@@ -1385,7 +1402,7 @@ body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
     <span class="bn-tx-default">搜寻</span><span class="bn-tx-ios">首頁</span>
   </button>
-  <button class="bn-item bn-ios-only" data-page="home" onclick="iosGoRecent()" aria-label="最近">
+  <button class="bn-item bn-ios-only" data-page="recent" onclick="iosGoRecent()" aria-label="最近">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
     <span>最近</span>
   </button>
@@ -1404,7 +1421,7 @@ body[data-skin="ios"] .ios-results .section-title { padding-left: 6px; }
 </nav>
 
 <!-- ===== 路线详情弹层（点击结果/收藏卡 → 全线候车） ===== -->
-<div class="detail-mask" id="detailMask" onclick="closeRouteDetail()"></div>
+<div class="detail-mask" id="detailMask"></div>
 <div class="detail-sheet" id="detailSheet" role="dialog" aria-modal="true" aria-label="路线全线候车">
   <div id="detailSheetInner"></div>
 </div>
@@ -1558,6 +1575,21 @@ const CORS_PROXIES = [
 /* Currently selected transport type */
 let currentTransport = 'bus';
 
+/** 统一切换交通类型：同步全局状态 + 主搜索 toggle 高亮 + 占位符 + iOS 分类标签 */
+function setTransport(type) {
+  currentTransport = type;
+  document.querySelectorAll('#transportToggle button').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  document.querySelectorAll('.ios-cat').forEach(b => b.classList.toggle('active', b.dataset.type === (type === 'bus' ? 'all' : type)));
+  const placeholders = {
+    bus: '输入巴士路线编号（如 1A、10）...',
+    mtrbus: '输入港铁巴士路线编号（如 K51、K65）...',
+    lrt: '输入轻铁车站名称（如 屯門碼頭、元朗）...',
+    mtr: '输入港铁车站名称（如 中环、旺角）...'
+  };
+  const input = document.getElementById('searchInput');
+  if (input && placeholders[type]) input.placeholder = placeholders[type];
+}
+
 /* Timer for auto-refresh */
 let autoRefreshTimer = null;
 
@@ -1565,8 +1597,10 @@ let autoRefreshTimer = null;
    Utility Functions
    ========================================================================== */
 
-/** Fetch with CORS proxy fallback */
-async function fetchWithProxy(url, proxyIndex = 0) {
+/** Fetch with CORS proxy fallback（任何失败都尝试下一代理，且始终基于原始 URL，避免双重代理） */
+async function fetchWithProxy(originalUrl, proxyIndex = 0) {
+  /* proxyIndex 0 = 直连；1..N = 依次套用 CORS_PROXIES[proxyIndex-1]，URL 始终是原始地址 */
+  const url = proxyIndex === 0 ? originalUrl : CORS_PROXIES[proxyIndex - 1](originalUrl);
   try {
     const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -1575,10 +1609,9 @@ async function fetchWithProxy(url, proxyIndex = 0) {
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       throw new Error('请求超时，服务可能暂时不可用');
     }
-    /* If it looks like a CORS / network error and we have proxies left, retry */
-    if ((err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('CORS')) && proxyIndex < CORS_PROXIES.length) {
-      const proxyUrl = CORS_PROXIES[proxyIndex](url);
-      return fetchWithProxy(proxyUrl, proxyIndex + 1);
+    /* 直连被 CORS 拦截或代理失败（HTTP 错误/网络错误）时，换下一个代理重试 */
+    if (proxyIndex < CORS_PROXIES.length) {
+      return fetchWithProxy(originalUrl, proxyIndex + 1);
     }
     throw err;
   }
@@ -1588,6 +1621,20 @@ async function fetchWithProxy(url, proxyIndex = 0) {
 function formatTime(ts) {
   const d = new Date(ts * 1000);
   return d.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
+}
+
+/** 解析香港时间串 → Unix 毫秒时间戳。
+    data.gov.hk 的 MTR/NLB 接口返回 "YYYY-MM-DD HH:MM:SS"（空格分隔、无时区）：
+    iOS Safari 不识别该格式（Invalid Date），需转 ISO 并显式补 +08:00。
+    已带时区/ISO 格式（如 KMB/CTB 的 "…T21:55:00+08:00"）直接解析。 */
+function parseHKTime(str) {
+  if (str == null) return null;
+  let s = String(str).trim();
+  if (!s) return null;
+  s = s.replace(' ', 'T');                                       /* Safari 兼容：空格 → T */
+  if (!/[zZ]$/.test(s) && !/[+-]\d{2}:?\d{2}$/.test(s)) s += '+08:00'; /* 无时区 → 按香港时间 */
+  const t = new Date(s);
+  return isNaN(t.getTime()) ? null : t.getTime();
 }
 
 /** Calculate minutes remaining from now */
@@ -1619,22 +1666,45 @@ function setStatus(state, text) {
   document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-/** Debounce utility */
-function debounce(fn, ms) {
-  let timer;
-  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
-}
-
 /* ==========================================================================
    Favorites Management
    ========================================================================== */
 
-const FAV_SHOW_KEY = 'marvis_fav_show';   /* 收藏页固定显示到站时间的收藏下标 */
+const FAV_SHOW_KEY = 'marvis_fav_show';   /* 收藏页固定显示站（存身份键，兼容旧版下标） */
+
+/** 收藏唯一身份键（type|company|route|stop），避免删除收藏后数组下标漂移 */
+function favKey(f) {
+  if (!f) return '';
+  const id = f.type === 'mtr' ? (f.station_id || '') : (f.stop_id != null ? String(f.stop_id) : '');
+  return [f.type, f.company || '', f.route || '', id].join('|');
+}
+
+/** 读取固定显示站身份键；旧版数字下标自动迁移为身份键 */
+function getFavShowKey() {
+  try {
+    const v = localStorage.getItem(FAV_SHOW_KEY);
+    if (v == null || v === '') return '';
+    if (/^\d+$/.test(v)) {
+      const idx = parseInt(v, 10);
+      const favs = getFavorites();
+      const key = (favs[idx] && favKey(favs[idx])) || '';
+      try { localStorage.setItem(FAV_SHOW_KEY, key); } catch (e) {}
+      return key;
+    }
+    return v;
+  } catch { return ''; }
+}
 
 function getFavorites() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    /* 校验必须是数组，否则清掉损坏数据，避免整页崩溃 */
+    if (!Array.isArray(parsed)) {
+      localStorage.removeItem(STORAGE_KEY);
+      return [];
+    }
+    return parsed;
   } catch { return []; }
 }
 
@@ -1795,9 +1865,9 @@ async function getNLBETA(routeId, stopId) {
     );
     const list = (data && data.estimatedArrivals) || [];
     return list.map(e => {
-      const eta = e && e.estimatedArrivalTime ? new Date(e.estimatedArrivalTime.replace(' ', 'T')) : null;
+      const ms = e && e.estimatedArrivalTime ? parseHKTime(e.estimatedArrivalTime) : null;
       return {
-        etaTs: eta && !isNaN(eta.getTime()) ? eta.getTime() / 1000 : null,
+        etaTs: ms ? ms / 1000 : null,
         eta: e && e.estimatedArrivalTime ? e.estimatedArrivalTime : null,
         departed: e ? !!e.departed : false
       };
@@ -1855,11 +1925,13 @@ async function getLRTEta(stationId) {
 
 /** 搜索轻铁：按站名匹配，显示该站实时到站 */
 async function searchLRT(query, container) {
+  container._gen = (container._gen || 0) + 1; const gen = container._gen;
   const q = String(query).trim();
   const matches = Object.keys(LRT_STATIONS)
     .filter(id => LRT_STATIONS[id].includes(q))
     .map(id => ({ id: Number(id), name: LRT_STATIONS[id] }));
   if (matches.length === 0) {
+    if (gen !== container._gen) return;
     container.innerHTML = '<div class="empty-hint">找不到轻铁车站「' + escapeHtml(query) + '」，请尝试输入站名（如 屯門碼頭、元朗、天水圍）</div>';
     setStatus('ok');
     return;
@@ -1873,7 +1945,11 @@ async function searchLRT(query, container) {
       origDest: st.name + ' · 轻铁', direction: '', totalStops: 1, etas, platformData: entries
     };
   }));
+  if (gen !== container._gen) return;
   renderSearchResults(results, container);
+  if (matches.length > 8) {
+    container.insertAdjacentHTML('beforeend', '<div class="sushiro-note">还有 ' + (matches.length - 8) + ' 个匹配站，请输入更精确的站名</div>');
+  }
   setStatus('ok');
 }
 
@@ -1931,19 +2007,22 @@ function parseMTRBusETAData(etaData) {
         stop_name: stopName,
         arrivalText: bus.arrivalTimeText || '',
         departureText: bus.departureTimeText || '',
-        isScheduled: bus.isScheduled === '1'
+        isScheduled: isFlag(bus.isScheduled)
       });
     }
   }
   return etas;
 }
 
+/** 兼容港铁巴士 API 返回字符串/布尔两种形态的标志位 */
+function isFlag(v) { return v === true || v === 1 || v === '1' || v === 'true'; }
+
 /* ==========================================================================
    iOS 首页逻辑（搜索栏+分类标签+快捷入口+最近搜尋+熱門車站）
    ========================================================================== */
 const IOS_RECENT_KEY = 'marvis_ios_recent';
 const IOS_HOT_STOPS = [
-  { type: 'mtr', line: 'TML', code: 'TST', name: '尖東站', sub: '屯馬線 · 月台 1', badge: 'TML', color: '#34C759' },
+  { type: 'mtr', line: 'TML', code: 'ETS', name: '尖東站', sub: '屯馬線 · 月台 1', badge: 'TML', color: '#34C759' },
   { type: 'mtr', line: 'TWL', code: 'CEN', name: '中環站', sub: '荃灣線 / 港島線', badge: 'TWL', color: '#34C759' },
   { type: 'mtr', line: 'TWL', code: 'MOK', name: '旺角站', sub: '觀塘線 / 荃灣線', badge: 'TWL', color: '#34C759' },
   { type: 'mtr', line: 'ISL', code: 'CAB', name: '銅鑼灣站', sub: '港島線', badge: 'ISL', color: '#34C759' },
@@ -1958,11 +2037,7 @@ try { iosRecent = JSON.parse(localStorage.getItem(IOS_RECENT_KEY) || '[]'); } ca
 function iosSetCat(cat, btn) {
   document.querySelectorAll('.ios-cat').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (cat === 'all') {
-    currentTransport = 'bus';
-  } else {
-    currentTransport = cat;
-  }
+  setTransport(cat === 'all' ? 'bus' : cat);
   const q = document.getElementById('iosSearchInput').value.trim();
   if (q) iosDoSearch();
 }
@@ -2027,7 +2102,7 @@ function renderIOSRecent() {
   }
   const typeName = { all: '全部', mtr: '港鐵', bus: '巴士', lrt: '輕鐵' };
   el.innerHTML = iosRecent.map(r =>
-    '<button class="ios-list-item" onclick="iosSearchHistory(\'' + r.q.replace(/'/g, "\\'") + '\',\'' + r.type + '\')">' +
+    '<button class="ios-list-item" data-q="' + escapeHtml(r.q) + '" data-type="' + escapeHtml(r.type) + '">' +
       '<span class="ios-li-ic" style="background:' + (r.type === 'lrt' ? '#F7941D' : r.type === 'mtr' ? '#34C759' : r.type === 'bus' ? '#007AFF' : '#6E6E73') + '">' + (r.type === 'lrt' ? '輕' : r.type === 'mtr' ? '鐵' : r.type === 'bus' ? '巴' : '尋') + '</span>' +
       '<span class="ios-li-main"><span class="ios-li-name">' + escapeHtml(r.q) + '</span><span class="ios-li-sub">' + (typeName[r.type] || '全部') + '</span></span>' +
       '<span class="ios-li-eta">' + iosRecentTime(r.t) + '</span><span class="ios-li-chev">›</span>' +
@@ -2097,13 +2172,14 @@ async function iosMTRNext(line, code) {
     for (const dir of ['UP', 'DOWN']) {
       for (const t of (d[dir] || [])) {
         if (t && t.time) {
-          const ts = new Date(t.time).getTime() / 1000;
+          const ts = parseHKTime(t.time) / 1000;
           if (ts < nextTs) nextTs = ts;
         }
       }
     }
     if (nextTs === Infinity) return null;
-    const mins = Math.max(1, Math.round((nextTs * 1000 - Date.now()) / 60000));
+    const mins = Math.ceil((nextTs * 1000 - Date.now()) / 60000);
+    if (mins <= 0) return '即將到達';
     return mins + ' 分鐘';
   } catch (e) { return null; }
 }
@@ -2115,7 +2191,8 @@ async function iosLRTEta() {
     if (!st) return null;
     const etas = await getLRTEta(st);
     if (!etas || !etas.length) return null;
-    const mins = Math.max(1, Math.round(etas[0].mins));
+    const mins = Math.ceil(etas[0].mins);
+    if (mins <= 0) return '即將到達';
     return mins + ' 分鐘';
   } catch (e) { return null; }
 }
@@ -2152,6 +2229,7 @@ async function doSearch() {
 
 /** Search bus routes across KMB and CTB */
 async function searchBusRoute(query, container) {
+  container._gen = (container._gen || 0) + 1; const gen = container._gen;
   const routeNum = query.toUpperCase().replace(/\s/g, '');
   let allResults = [];
 
@@ -2243,6 +2321,7 @@ async function searchBusRoute(query, container) {
   }
 
   if (allResults.length === 0) {
+    if (gen !== container._gen) return;
     container.innerHTML = '<div class="empty-hint">找不到路线「' + escapeHtml(query) + '」，请确认路线编号是否正确</div>';
     setStatus('ok');
     return;
@@ -2254,8 +2333,10 @@ async function searchBusRoute(query, container) {
       let etas = [];
       if (item.company === 'kmb') {
         etas = await getKMBETA(item.stop_id);
-        /* Filter to only this route */
-        etas = etas.filter(e => e.route === item.route);
+        /* Filter to only this route + direction（避免中间站混入反方向班次） */
+        const wantDir = item.direction === 'inbound' ? 'I' : 'O';
+        etas = etas.filter(e => e.route === item.route && (e.dir || '').toUpperCase() === wantDir)
+          .map(e => ({ etaTs: new Date(e.eta).getTime() / 1000, dirLabel: (e.dir === 'I' ? '回' : '去') + (e.dest_tc || '') }));
       } else if (item.company === 'ctb') {
         etas = await getCTBETA(item.stop_id, item.route);
         /* Filter to this direction: O=outbound(去铜锣湾), I=inbound(回天水围) */
@@ -2268,6 +2349,7 @@ async function searchBusRoute(query, container) {
     })
   );
 
+  if (gen !== container._gen) return;
   renderSearchResults(etaResults, container);
   setStatus('ok');
 }
@@ -2291,6 +2373,7 @@ function toSimp(s) { let out = ''; for (const c of s) out += TRAD2SIMP[c] || c; 
 
 /** Search MTR by station name / line name / station code */
 async function searchMTRStation(query, container) {
+  container._gen = (container._gen || 0) + 1; const gen = container._gen;
   const q = query.trim();
   const upperQ = q.toUpperCase();
   /* 简繁兼容：同时用原词、繁体、简体做匹配 */
@@ -2322,6 +2405,7 @@ async function searchMTRStation(query, container) {
   }
 
   if (matchedLines.length === 0 && matchedStations.length === 0) {
+    if (gen !== container._gen) return;
     container.innerHTML = '<div class="empty-hint">找不到「' + escapeHtml(query) + '」，请输入车站名（如 中环、旺角）或线路名（如 荃湾线）</div>';
     setStatus('ok');
     return;
@@ -2347,7 +2431,7 @@ async function searchMTRStation(query, container) {
         for (const dir of ['UP', 'DOWN']) {
           for (const t of (d[dir] || [])) {
             if (t && t.time) {
-              const ts = new Date(t.time).getTime() / 1000;
+              const ts = parseHKTime(t.time) / 1000;
               if (ts < minTs) minTs = ts;
             }
           }
@@ -2377,7 +2461,7 @@ async function searchMTRStation(query, container) {
           const arr = data[dir] || [];
           for (const t of arr.slice(0, 3)) {
             if (t && t.time) {
-              etas.push({ etaTs: new Date(t.time).getTime() / 1000, dirLabel });
+              etas.push({ etaTs: parseHKTime(t.time) / 1000, dirLabel });
             }
           }
         }
@@ -2394,17 +2478,20 @@ async function searchMTRStation(query, container) {
   }
 
   if (allResults.length === 0) {
+    if (gen !== container._gen) return;
     container.innerHTML = '<div class="empty-hint">「' + escapeHtml(query) + '」目前没有即时到站数据</div>';
     setStatus('ok');
     return;
   }
 
+  if (gen !== container._gen) return;
   renderMTRSearchResults(allResults, container);
   setStatus('ok');
 }
 
 /** Search MTR Bus route by number */
 async function searchMTRBus(query, container) {
+  container._gen = (container._gen || 0) + 1; const gen = container._gen;
   const routeNum = query.toUpperCase().replace(/\s/g, '');
   const routeInfo = MTR_BUS_ROUTES[routeNum];
 
@@ -2412,6 +2499,7 @@ async function searchMTRBus(query, container) {
   const etaData = await getMTRBusETA(routeNum);
 
   if (!routeInfo && (!etaData || !etaData.busStop || !Array.isArray(etaData.busStop) || etaData.busStop.length === 0)) {
+    if (gen !== container._gen) return;
     container.innerHTML = '<div class="empty-hint">找不到港铁巴士路线「' + escapeHtml(query) + '」，请确认路线编号（如 K51、K65、K75P）</div>';
     setStatus('ok');
     return;
@@ -2441,6 +2529,7 @@ async function searchMTRBus(query, container) {
     }
   }
 
+  if (gen !== container._gen) return;
   renderMTRBusResults([item], container);
   setStatus('ok');
 }
@@ -2532,9 +2621,8 @@ function routeCardHTML(item, opts) {
     }
     html += `<button class="fav-remove-btn" onclick="event.stopPropagation();removeFavorite(${opts.removeIndex})" title="移除收藏">移除</button>`;
     if (opts.showPick) {
-      let showIdx = -1;
-      try { showIdx = parseInt(localStorage.getItem(FAV_SHOW_KEY) || '-1', 10); } catch (e) {}
-      const used = (showIdx === opts.removeIndex);
+      const showKey = getFavShowKey();
+      const used = !!showKey && favKey(item) === showKey;
       html += `<button class="ds-pick ${used ? 'used' : ''}" onclick="event.stopPropagation();setFavShow(${opts.removeIndex})" title="固定显示该站到站时间">${used ? '✓ 显示中' : '设为显示'}</button>`;
     }
     html += '</div>';
@@ -2643,30 +2731,16 @@ function renderFavorites() {
 function renderFavShowHint() {
   const box = document.getElementById('favShowBox');
   if (!box) return;
-  let showIdx = -1;
-  try { showIdx = parseInt(localStorage.getItem(FAV_SHOW_KEY) || '-1', 10); } catch (e) {}
-  if (showIdx >= 0) box.innerHTML = '<div class="favshow-head">固定显示站</div><div class="favshow-loading">载入中...</div>';
+  const showKey = getFavShowKey();
+  if (showKey) box.innerHTML = '<div class="favshow-head">固定显示站</div><div class="favshow-loading">载入中...</div>';
   else box.innerHTML = '<div class="favshow-hint">在下方收藏卡点「设为显示」可固定该站到站时间</div>';
 }
 
-/** 收藏页固定显示站：把选中的收藏渲染为最上方的大号到站卡 */
-function updateFavShowBox(results) {
-  const box = document.getElementById('favShowBox');
-  if (!box) return;
-  let showIdx = -1;
-  try { showIdx = parseInt(localStorage.getItem(FAV_SHOW_KEY) || '-1', 10); } catch (e) {}
-  const item = (results || []).find(r => r.index === showIdx);
-  if (showIdx < 0 || !item) {
-    box.innerHTML = '<div class="favshow-hint">在下方收藏卡点「设为显示」可固定该站到站时间</div>';
-    return;
-  }
-  const card = routeCardHTML(item, { removeIndex: item.index, showPick: true });
-  box.innerHTML = '<div class="favshow-head">固定显示站 <button class="favshow-clear" onclick="clearFavShow()">取消固定</button></div>' + card;
-}
-
-/** 设为固定显示站 */
+/** 设为固定显示站（按身份键存储，删除其它收藏不影响） */
 function setFavShow(index) {
-  try { localStorage.setItem(FAV_SHOW_KEY, String(index)); } catch (e) {}
+  const favs = getFavorites();
+  const f = favs[index];
+  if (f) { try { localStorage.setItem(FAV_SHOW_KEY, favKey(f)); } catch (e) {} }
   renderFavorites();
 }
 
@@ -2683,7 +2757,11 @@ async function loadFavoritesETA(favs, container) {
     if (fav.type === 'bus') {
       if (fav.company === 'kmb') {
         const allEta = await getKMBETA(fav.stop_id);
-        etas = allEta.filter(e => e.route === fav.route).slice(0, 3);
+        /* 按收藏方向过滤（O=去程, I=回程），并标注方向目的地 */
+        const wantDir = fav.direction === 'inbound' ? 'I' : 'O';
+        etas = allEta.filter(e => e.route === fav.route && (e.dir || '').toUpperCase() === wantDir)
+          .map(e => ({ etaTs: new Date(e.eta).getTime() / 1000, dirLabel: (e.dir === 'I' ? '回' : '去') + (e.dest_tc || '') }))
+          .slice(0, 3);
       } else if (fav.company === 'ctb') {
         /* 旧收藏可能存的是数字站码，转中文并回写 */
         if (/^\d{4,6}$/.test(fav.stop_name || '')) {
@@ -2693,7 +2771,11 @@ async function loadFavoritesETA(favs, container) {
           saveFavorites(fs);
         }
         etas = await getCTBETA(fav.stop_id, fav.route);
-        etas = etas.slice(0, 3);
+        /* 按收藏方向过滤，避免混入反方向班次 */
+        const wantDir = fav.direction === 'inbound' ? 'I' : 'O';
+        etas = etas.filter(e => (e.dir || '').toUpperCase() === wantDir)
+          .map(e => ({ etaTs: new Date(e.eta).getTime() / 1000, dirLabel: (e.dir === 'I' ? '回' : '去') + (e.dest_tc || '') }))
+          .slice(0, 3);
       } else if (fav.company === 'nlb') {
         let rid = fav.routeId;
         if (!rid && fav.route) {
@@ -2743,7 +2825,7 @@ async function loadFavoritesETA(favs, container) {
           for (const dir of ['UP', 'DOWN']) {
             for (const t of (d[dir] || [])) {
               if (t && t.time) {
-                const ts = new Date(t.time).getTime() / 1000;
+                const ts = parseHKTime(t.time) / 1000;
                 if (ts < minTs) minTs = ts;
               }
             }
@@ -2759,7 +2841,7 @@ async function loadFavoritesETA(favs, container) {
             const dirLabel = dir === 'UP' ? '上行' : '下行';
             for (const t of (data[dir] || []).slice(0, 3)) {
               if (t && t.time) {
-                const etaTs = new Date(t.time).getTime() / 1000;
+                const etaTs = parseHKTime(t.time) / 1000;
                 etas.push({ time: t.time, etaTs, dirLabel });
               }
             }
@@ -2792,10 +2874,9 @@ function renderFavoritesCards(items, container) {
 
 /** 构建收藏页固定显示站提示框 HTML（renderFavoritesCards 内联使用，避免被整体覆盖） */
 function buildFavShowBox(results) {
-  let showIdx = -1;
-  try { showIdx = parseInt(localStorage.getItem(FAV_SHOW_KEY) || '-1', 10); } catch (e) {}
-  const item = (results || []).find(r => r.index === showIdx);
-  if (showIdx < 0 || !item) {
+  const showKey = getFavShowKey();
+  const item = (results || []).find(r => favKey(r) === showKey);
+  if (!showKey || !item) {
     return '<div id="favShowBox" class="favshow"><div class="favshow-hint">在下方收藏卡点「设为显示」可固定该站到站时间</div></div>';
   }
   const card = routeCardHTML(item, { removeIndex: item.index, showPick: true });
@@ -2805,11 +2886,6 @@ function buildFavShowBox(results) {
 /* ==========================================================================
    Favorite Toggle (from search results)
    ========================================================================== */
-
-function toggleFav(btn, itemJson) {
-  const item = JSON.parse(itemJson);
-  toggleFavByItem(item, btn);
-}
 
 function toggleFavByItem(item, btn) {
   if (isFavorited(item)) {
@@ -3009,6 +3085,9 @@ async function refreshSushiro() {
    K75P Full-Route Live Board
    ========================================================================== */
 
+/* K75P 折叠区展开状态（自动刷新整体重建后保持用户选择） */
+let k75pFoldOpen = false;
+
 /* K75P 循环线 23 站（按真实经过顺序：去程 D010-D080，回程 U011→U010→U020→...→U140） */
 const K75P_STOPS = [
   { id: 'D010', name: '天瑞' },
@@ -3060,8 +3139,8 @@ async function loadK75PAllStops() {
         return {
           sec,
           depText: parseDepartureText(b.departureTimeText),
-          isDelayed: b.isDelayed === '1',
-          isScheduled: b.isScheduled === '1'
+          isDelayed: isFlag(b.isDelayed),
+          isScheduled: isFlag(b.isScheduled)
         };
       }).filter(b => (b.sec > 0 && b.sec < 108000) || b.depText)
         .sort((a, b) => (a.sec > 0 && a.sec < 108000 ? a.sec : 999999) - (b.sec > 0 && b.sec < 108000 ? b.sec : 999999))
@@ -3074,8 +3153,8 @@ async function loadK75PAllStops() {
     for (const stop of K75P_STOPS) {
       if (stop.fold && !foldOpen) {
         foldOpen = true;
-        html += '<button type="button" class="k75p-fold-btn" id="k75pFoldBtn" onclick="toggleK75PFold()">天水围市 ▾</button>';
-        html += '<div class="k75p-fold" id="k75pFold">';
+        html += '<button type="button" class="k75p-fold-btn" id="k75pFoldBtn" onclick="toggleK75PFold()" aria-expanded="' + (k75pFoldOpen ? 'true' : 'false') + '">天水围市 ' + (k75pFoldOpen ? '▴' : '▾') + '</button>';
+        html += '<div class="k75p-fold' + (k75pFoldOpen ? ' open' : '') + '" id="k75pFold">';
       } else if (!stop.fold && foldOpen) {
         foldOpen = false;
         html += '</div>';
@@ -3120,7 +3199,9 @@ function toggleK75PFold() {
   const btn = document.getElementById('k75pFoldBtn');
   if (!fold || !btn) return;
   const open = fold.classList.toggle('open');
+  k75pFoldOpen = open;                 /* 记录展开状态，自动刷新重建后保持 */
   btn.textContent = open ? '天水围市 ▴' : '天水围市 ▾';
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
 /* ==========================================================================
@@ -3288,12 +3369,14 @@ async function buildMTRConnections(item) {
     } catch (e) {}
   }
 
-  /* --- 港铁巴士接驳：路线 orig/dest 与站名匹配 --- */
-  const base = station.replace(/站$/, '');
+  /* --- 港铁巴士接驳：路线 orig/dest 与站名匹配（统一转繁体，避免简繁不匹配） --- */
+  const base = toTrad(station).replace(/站$/, '');
   const matchedRoutes = Object.keys(MTR_BUS_ROUTES).filter(r => {
     const o = MTR_BUS_ROUTES[r];
-    return (o.orig && (o.orig.replace(/站$/, '') === base || o.orig.includes(station)))
-        || (o.dest && (o.dest.replace(/站$/, '') === base || o.dest.includes(station)));
+    const origT = toTrad(o.orig || '').replace(/站$/, '');
+    const destT = toTrad(o.dest || '').replace(/站$/, '');
+    return (o.orig && (origT === base || origT.includes(base) || base.includes(origT)))
+        || (o.dest && (destT === base || destT.includes(base) || base.includes(destT)));
   });
   for (const r of matchedRoutes.slice(0, 4)) {
     try {
@@ -3336,8 +3419,8 @@ async function renderDetailContent(item, inner) {
       const rows = [];
       for (const e of entries) {
         const d = e.sched ? (e.sched[`${item.line}-${e.code}`] || {}) : {};
-        const ups = (d.UP || []).map(t => t && t.time ? new Date(t.time).getTime() / 1000 : null).filter(Boolean).slice(0, 2);
-        const downs = (d.DOWN || []).map(t => t && t.time ? new Date(t.time).getTime() / 1000 : null).filter(Boolean).slice(0, 2);
+        const ups = (d.UP || []).map(t => t && t.time ? parseHKTime(t.time) / 1000 : null).filter(Boolean).slice(0, 2);
+        const downs = (d.DOWN || []).map(t => t && t.time ? parseHKTime(t.time) / 1000 : null).filter(Boolean).slice(0, 2);
         rows.push({ name: e.name, ups, downs });
       }
       const em = (ts) => {
@@ -3365,7 +3448,7 @@ async function renderDetailContent(item, inner) {
           const buses = (stop.bus || []).map(b => {
             const sec = parseInt(b.arrivalTimeInSecond) || 0;
             const depText = parseDepartureText(b.departureTimeText);
-            return { sec, depText, isDelayed: b.isDelayed === '1' };
+            return { sec, depText, isDelayed: isFlag(b.isDelayed) };
           }).filter(b => (b.sec > 0 && b.sec < 108000) || b.depText)
             .sort((a, b) => (a.sec > 0 && a.sec < 108000 ? a.sec : 999999) - (b.sec > 0 && b.sec < 108000 ? b.sec : 999999))
             .slice(0, 2);
@@ -3420,7 +3503,8 @@ async function renderDetailContent(item, inner) {
       if (item.company === 'kmb') {
         const stops = await getKMBStops(item.route, item.direction, item.serviceType || '1');
         const allEta = await getKMBETA(item.stop_id);
-        const byRoute = allEta.filter(e => e.route === String(item.route));
+        const wantDir = item.direction === 'inbound' ? 'I' : 'O';
+        const byRoute = allEta.filter(e => e.route === String(item.route) && (e.dir || '').toUpperCase() === wantDir);
         /* route-stop 缺站名时批量调 stop 接口补全（避免显示纯数字站码） */
         const missing = stops.filter(s => !(s.name_tc || s.name_en)).map(s => s.stop);
         const names = await Promise.all(missing.map(sid => getKMBStopName(sid)));
@@ -3493,36 +3577,47 @@ async function renderDetailContent(item, inner) {
    Refresh & Auto-Refresh
    ========================================================================== */
 
-/** Refresh all favorites ETA */
-async function refreshAll() {
+let refreshing = false;
+/** Refresh all favorites ETA（manual=true 时显示整块 loading；自动刷新保留旧卡片原位更新） */
+async function refreshAll(manual) {
+  if (refreshing) return;             /* 互斥：上一轮未完成则跳过，避免并发覆盖/按钮错乱 */
+  refreshing = true;
   const btn = document.getElementById('refreshBtn');
   btn.disabled = true;
   btn.textContent = '更新中...';
   setStatus('loading', '更新中');
+  try {
+    const favs = getFavorites();
+    if (favs.length > 0) {
+      const container = document.getElementById('favoritesContainer');
+      if (manual) container.innerHTML = '<div class="loading"><div class="spinner"></div>更新中...</div>';
+      await loadFavoritesETA(favs, container);
+    } else {
+      renderFavorites();
+    }
 
-  const favs = getFavorites();
-  if (favs.length > 0) {
-    const container = document.getElementById('favoritesContainer');
-    container.innerHTML = '<div class="loading"><div class="spinner"></div>更新中...</div>';
-    await loadFavoritesETA(favs, container);
-  } else {
-    renderFavorites();
+    /* Weather & Sushiro & K75P refresh in parallel (non-blocking) */
+    refreshWeather();
+    refreshSushiro();
+    loadK75PAllStops();
+    /* iOS 皮肤：热门车站 ETA 随自动刷新保持实时 */
+    if (document.body.dataset.skin === 'ios') renderIOSHot();
+  } finally {
+    refreshing = false;
+    btn.disabled = false;
+    btn.textContent = '手动刷新';
+    setStatus('ok');
   }
-
-  /* Weather & Sushiro & K75P refresh in parallel (non-blocking) */
-  refreshWeather();
-  refreshSushiro();
-  loadK75PAllStops();
-
-  btn.disabled = false;
-  btn.textContent = '手动刷新';
-  setStatus('ok');
 }
 
 function startAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  autoRefreshTimer = setInterval(refreshAll, 15000);
+  /* 标签页隐藏时暂停轮询，回到前台立即补一次刷新 */
+  autoRefreshTimer = setInterval(() => { if (!document.hidden) refreshAll(); }, 15000);
 }
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshAll();
+});
 
 /* ==========================================================================
    Event Listeners & Init
@@ -3543,9 +3638,10 @@ function applySkin(skin) {
   document.querySelectorAll('.skin-opt').forEach(b => {
     b.classList.toggle('active', b.dataset.skin === (s || 'ac'));
   });
-  /* 同步浏览器地址栏 / PWA 标题栏主题色 */
+  /* 同步浏览器地址栏 / PWA 标题栏主题色（iOS 皮肤跟随系统深色模式） */
   const meta = document.querySelector('meta[name="theme-color"]');
-  const color = s === 'md' ? '#6750a4' : s === 'ios' ? '#007AFF' : '#5fae82';
+  const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const color = s === 'md' ? '#6750a4' : s === 'ios' ? (dark ? '#000000' : '#007AFF') : '#5fae82';
   if (meta) meta.setAttribute('content', color);
   /* iOS 皮肤：初始化 iOS 首页（最近搜尋 + 熱門車站） */
   if (s === 'ios') initIOSHome();
@@ -3595,6 +3691,10 @@ function fabAction() {
 /** iOS 底部导航「最近」：回到首页并滚动到最近搜尋区块 */
 function iosGoRecent() {
   switchPage('home');
+  /* 「最近」tab 单独高亮（data-page=recent 不会与 switchPage 的 home 匹配冲突） */
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  const recentBtn = document.querySelector('.bn-ios-only');
+  if (recentBtn) recentBtn.classList.add('active');
   setTimeout(() => {
     const g = document.querySelector('.ios-home .ios-group');
     if (g) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3615,24 +3715,23 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Transport type toggle */
   document.getElementById('transportToggle').addEventListener('click', (e) => {
     if (e.target.tagName === 'BUTTON') {
-      document.querySelectorAll('#transportToggle button').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
-      currentTransport = e.target.dataset.type;
-      /* Update placeholder */
-      const input = document.getElementById('searchInput');
-      if (currentTransport === 'bus') {
-        input.placeholder = '输入巴士路线编号（如 1A、10）...';
-      } else if (currentTransport === 'mtrbus') {
-        input.placeholder = '输入港铁巴士路线编号（如 K51、K65）...';
-      } else if (currentTransport === 'lrt') {
-        input.placeholder = '输入轻铁车站名称（如 屯門碼頭、元朗）...';
-      } else {
-        input.placeholder = '输入港铁车站名称（如 中环、旺角）...';
-      }
+      setTransport(e.target.dataset.type);
       /* Clear results */
       document.getElementById('resultsContainer').innerHTML = '<div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>';
     }
   });
+
+  /* iOS 最近搜尋列表点击委托（data 属性，避免内联 onclick 转义问题） */
+  const iosRecentListEl = document.getElementById('iosRecentList');
+  if (iosRecentListEl) {
+    iosRecentListEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.ios-list-item');
+      if (!btn) return;
+      const q = btn.getAttribute('data-q');
+      const type = btn.getAttribute('data-type') || 'all';
+      if (q != null && q !== '') iosSearchHistory(q, type);
+    });
+  }
 
   /* Initial render */
   renderFavorites();
@@ -3677,6 +3776,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* 点遮罩关闭详情 */
   document.getElementById('detailMask').addEventListener('click', closeRouteDetail);
+
+  /* Esc 关闭详情弹层 */
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeRouteDetail(); });
 });
 
 /* Cleanup on page unload */
