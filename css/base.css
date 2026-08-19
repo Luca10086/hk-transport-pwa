@@ -1,19 +1,19 @@
 /* 森友出行手册 - 基础样式 + 动森 AC 皮肤 + 共享组件（自动拆分自 index.html） */
 
 :root {
---bg-top: #e6f4e8;
-  --bg-mid: #fdf6e3;
-  --bg-bottom: #f9ead6;
+--bg-top: #e0f2e1;
+  --bg-mid: #fbf4dc;
+  --bg-bottom: #f7e9c9;
   --text: #4a3f35;
   --text-dark: #5a4632;
   --primary: #5fae82;
   --primary-light: #8fd3a8;
   --primary-dark: #3f8a63;
-  --card-bg: #fffdf5;
-  --card-bg2: #fdf3e0;
-  --card-border: #e8d5b5;
-  --card-shadow: #d9c4a0;
-  --card-bg-soft: #fffef9;
+  --card-bg: #fffdf2;
+  --card-bg2: #fdf3dd;
+  --card-border: #e8d2a6;
+  --card-shadow: #d6bd8f;
+  --card-bg-soft: #fffef8;
 }
 
 *, *::before, *::after {
@@ -145,7 +145,7 @@ max-width: 900px; margin: 0 auto; padding: 24px 16px 40px; position: relative; z
 .search-section {
 background: linear-gradient(180deg, var(--card-bg), var(--card-bg2));
   border: 3px solid var(--card-border);
-  border-radius: 24px; padding: 22px; margin-bottom: 22px;
+  border-radius: 28px; padding: 22px; margin-bottom: 22px;
   box-shadow: 0 5px 0 var(--card-shadow), 0 10px 20px rgba(0,0,0,0.08);
 }
 
@@ -155,7 +155,7 @@ display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
 
 .search-input {
 flex: 1; min-width: 200px; padding: 13px 18px;
-  border: 3px solid #e0d3b8; border-radius: 16px; font-size: 1rem;
+  border: 3px solid #e0d3b8; border-radius: 20px; font-size: 1rem;
   font-family: 'Nunito', 'ZCOOL KuaiLe', sans-serif;
   background: var(--card-bg-soft); color: var(--text);
   outline: none; transition: border 0.2s, box-shadow 0.2s;
@@ -189,7 +189,7 @@ background: linear-gradient(180deg, var(--primary-light), var(--primary)); color
 
 .search-btn {
 padding: 13px 26px; background: linear-gradient(180deg, #ffd166, #f4a261); color: var(--text-dark);
-  border: none; border-radius: 16px; cursor: pointer; font-size: 1rem;
+  border: none; border-radius: 20px; cursor: pointer; font-size: 1rem;
   font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif; font-weight: 800;
   box-shadow: 0 5px 0 #d98a3d, 0 6px 12px rgba(0,0,0,0.12);
   transition: transform 0.1s, box-shadow 0.1s, filter 0.2s; white-space: nowrap;
@@ -212,7 +212,7 @@ font-family: 'Baloo 2', 'ZCOOL KuaiLe', sans-serif;
   font-size: 1.2rem; font-weight: 800; color: var(--text-dark);
   background: linear-gradient(180deg, #eccfa4, #d9b380);
   border: 3px solid #b98a5a;
-  border-radius: 18px;
+  border-radius: 22px;
   padding: 8px 20px;
   display: inline-flex; align-items: center; gap: 8px;
   box-shadow: 0 4px 0 #a97a4a, 0 6px 12px rgba(0,0,0,0.1);
@@ -229,7 +229,7 @@ font-size: 0.8rem; background: #fff8e7; color: #8a6a3a;
 .favorites-section {
 background: linear-gradient(180deg, var(--card-bg), var(--card-bg2));
   border: 3px solid var(--card-border);
-  border-radius: 24px; padding: 22px; margin-bottom: 22px;
+  border-radius: 28px; padding: 22px; margin-bottom: 22px;
   box-shadow: 0 5px 0 var(--card-shadow), 0 10px 20px rgba(0,0,0,0.08); min-height: 80px;
 }
 
@@ -254,12 +254,12 @@ min-width: 0;
 .results-section {
 background: linear-gradient(180deg, var(--card-bg), var(--card-bg2));
   border: 3px solid var(--card-border);
-  border-radius: 24px; padding: 22px; margin-bottom: 22px;
+  border-radius: 28px; padding: 22px; margin-bottom: 22px;
   box-shadow: 0 5px 0 var(--card-shadow), 0 10px 20px rgba(0,0,0,0.08); min-height: 60px;
 }
 
 .transport-card {
-border: 3px solid var(--card-border); border-radius: 20px; padding: 16px 18px;
+border: 3px solid var(--card-border); border-radius: 28px; padding: 16px 18px;
   background: linear-gradient(180deg, var(--card-bg-soft), var(--bg-mid));
   box-shadow: 0 4px 0 var(--card-shadow), 0 8px 16px rgba(0,0,0,0.08);
   transition: box-shadow 0.2s, transform 0.2s;
@@ -399,7 +399,7 @@ transform: translateY(2px) !important;
 .info-section {
 background: linear-gradient(180deg, var(--card-bg), var(--card-bg2));
   border: 3px solid var(--card-border);
-  border-radius: 24px; padding: 22px; margin-bottom: 22px;
+  border-radius: 28px; padding: 22px; margin-bottom: 22px;
   box-shadow: 0 5px 0 var(--card-shadow), 0 10px 20px rgba(0,0,0,0.08);
 }
 
