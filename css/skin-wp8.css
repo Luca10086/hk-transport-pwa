@@ -380,30 +380,3 @@ body[data-skin="wp8"] .route-card:hover { border-left: none; }
 body[data-skin="wp8"] .route-card .rc-no { font-size: 1.35rem; font-weight: 400; }
 body[data-skin="wp8"] .route-card .rc-name { font-weight: 400; }
 
-/* ===== CommandBar「⋯」更多菜单 ===== */
-body[data-skin="wp8"] .bottom-nav { position: relative; }
-.wp-more-btn { display: none; }
-body[data-skin="wp8"] .wp-more-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  flex: 0 0 40px; width: 40px;
-  border: none; background: none; cursor: pointer;
-  color: var(--wp8-secondary); font-size: 1.4rem; line-height: 1;
-}
-body[data-skin="wp8"] .wp-more-btn.active { color: var(--wp8-accent); }
-.wp-more-menu { display: none; }
-body[data-skin="wp8"] .wp-more-menu {
-  display: flex; flex-direction: column;
-  position: absolute; right: 8px; bottom: calc(100% - 4px);
-  background: var(--wp8-surface); border: 1px solid var(--wp8-border);
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
-  z-index: 230; min-width: 160px;
-}
-.wp-more-menu[hidden] { display: none !important; }
-body[data-skin="wp8"] .wp-more-item {
-  display: block; width: 100%; text-align: left;
-  padding: 13px 16px; border: none; background: none; cursor: pointer;
-  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
-  font-size: 0.9rem; color: var(--wp8-text);
-}
-body[data-skin="wp8"] .wp-more-item:hover { background: var(--wp8-surface2); }
-
