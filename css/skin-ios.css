@@ -387,6 +387,14 @@ body[data-skin="ios"] .info-section[data-page="home"] .section-title {
 padding-left: 6px; padding-right: 6px;
 }
 
+/* iOS：天氣區塊加 HIG 小標題 */
+body[data-skin="ios"] .weather-mini-section::before {
+content: '天氣';
+  display: block;
+  font-size: 13px; font-weight: 600; color: var(--ios-secondary);
+  padding: 4px 6px 8px; font-family: inherit;
+}
+
 body[data-skin="ios"] .ios-results .section-title {
 padding-left: 6px;
 }

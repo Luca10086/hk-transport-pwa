@@ -37,6 +37,17 @@ font-family: 'Nunito', 'ZCOOL KuaiLe', 'Baloo 2', -apple-system, BlinkMacSystemF
 position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
 }
 
+/* 动森游戏质感：柔和草地/果实双色圆点纹理 */
+.bg-decor::before {
+content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(rgba(95,174,130,0.07) 2px, transparent 3px),
+    radial-gradient(rgba(244,162,97,0.07) 2px, transparent 3px);
+  background-size: 44px 44px, 44px 44px;
+  background-position: 0 0, 22px 22px;
+}
+
 .bg-decor .deco {
 position: absolute; opacity: 0.28; font-size: 2.2rem; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.08));
 }
