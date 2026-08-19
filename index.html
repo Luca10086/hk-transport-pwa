@@ -1134,7 +1134,7 @@ body[data-skin="md"] .conn-eta{ color:var(--primary); }
    iOS 专属首页（依概念图 1000021189：搜索栏+分类标签+快捷入口+最近搜尋+熱門車站）
    仅 body[data-skin="ios"] 显示；其余皮肤隐藏
    ========================================================================== */
-section.ios-home { display: none !important; }
+section.ios-home { display: none; }
 body[data-skin="ios"] section.ios-home { display: block; }
 /* iOS 皮肤下：原 home 区块（天气/搜索/结果/K75P）隐藏，首页完全走 iOS 结构 */
 body[data-skin="ios"] section[data-page="home"]:not(.ios-home) { display: none !important; }
