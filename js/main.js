@@ -6,8 +6,16 @@ let currentTransport = 'bus';
 /** 统一切换交通类型：同步全局状态 + 主搜索 toggle 高亮 + 占位符 + iOS 分类标签 */
 function setTransport(type) {
   currentTransport = type;
-  document.querySelectorAll('#transportToggle button').forEach(b => b.classList.toggle('active', b.dataset.type === type));
-  document.querySelectorAll('.ios-cat').forEach(b => b.classList.toggle('active', b.dataset.type === (type === 'bus' ? 'all' : type)));
+  document.querySelectorAll('#transportToggle button').forEach(b => {
+    const on = b.dataset.type === type;
+    b.classList.toggle('active', on);
+    if (b.setAttribute) b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  document.querySelectorAll('.ios-cat').forEach(b => {
+    const on = b.dataset.type === (type === 'bus' ? 'all' : type);
+    b.classList.toggle('active', on);
+    if (b.setAttribute) b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
   const placeholders = {
     bus: '输入巴士路线编号（如 1A、10）...',
     mtrbus: '输入港铁巴士路线编号（如 K51、K65）...',
@@ -160,7 +168,10 @@ function switchPage(page) {
     el.style.display = (el.getAttribute('data-page') === page) ? '' : 'none';
   });
   document.querySelectorAll('.bn-item').forEach(b => {
-    b.classList.toggle('active', b.getAttribute('data-page') === page);
+    const on = b.getAttribute('data-page') === page;
+    b.classList.toggle('active', on);
+    if (on) b.setAttribute('aria-current', 'page');
+    else if (b.hasAttribute('aria-current')) b.removeAttribute('aria-current');
   });
   const fab = document.getElementById('fabMain');
   if (fab) fab.style.display = (page === 'home') ? 'flex' : 'none';
@@ -263,6 +274,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const card = e.target.closest('.route-card[data-route-item]');
     if (!card) return;
     if (e.target.closest('.fav-btn') || e.target.closest('.fav-remove-btn')) return;
+    e.preventDefault();
+    try {
+      const item = JSON.parse(card.getAttribute('data-route-item'));
+      openRouteDetail(item);
+    } catch (err) {
+      console.error('Route detail parse error:', err);
+    }
+  });
+
+  /* Route card 键盘操作（Enter/Space 打开详情） */
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const card = e.target.closest ? e.target.closest('.route-card[data-route-item]') : null;
+    if (!card) return;
+    if (e.target.closest('.fav-btn') || e.target.closest('.fav-remove-btn') || e.target.closest('.ds-pick')) return;
     e.preventDefault();
     try {
       const item = JSON.parse(card.getAttribute('data-route-item'));

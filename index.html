@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
@@ -53,7 +53,7 @@
     <div class="ios-search-wrap">
       <div class="ios-search-field">
         <svg class="ios-search-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-        <input type="text" class="ios-search-input" id="iosSearchInput" placeholder="搜尋車站、路線或目的地" onkeydown="if(event.key==='Enter') iosDoSearch()">
+        <input type="text" class="ios-search-input" id="iosSearchInput" placeholder="搜尋車站、路線或目的地" aria-label="搜尋車站、路線或目的地" onkeydown="if(event.key==='Enter') iosDoSearch()">
       </div>
     </div>
     <!-- 分类标签：全部 / 港鐵 / 巴士 / 輕鐵 -->
@@ -108,6 +108,7 @@
     <div class="search-row">
       <input type="text" class="search-input" id="searchInput"
              placeholder="输入巴士路线编号（如 1A）或车站名称（如 中環/中环）..."
+             aria-label="搜索巴士路线或港铁车站"
              onkeydown="if(event.key==='Enter') doSearch()">
       <div class="transport-toggle" id="transportToggle">
         <button class="active" data-type="bus">公交</button>
@@ -121,7 +122,7 @@
 
   <!-- ===== Search Results ===== -->
   <section class="results-section" data-page="home">
-    <div class="section-title"><span class="ac-emoji">🍀</span> 搜寻结果</div>
+    <div class="section-title" role="heading" aria-level="2"><span class="ac-emoji">🍀</span> 搜寻结果</div>
     <div id="resultsContainer" aria-live="polite">
       <div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>
     </div>
@@ -129,7 +130,7 @@
 
   <!-- ===== K75P Full-Route Live Board ===== -->
   <section class="info-section" data-page="home">
-    <div class="section-title">
+    <div class="section-title" role="heading" aria-level="2">
       <span class="ac-emoji">🚌</span> K75P 全线实时
       <span class="badge" id="k75pUpdate"></span>
     </div>
@@ -140,7 +141,7 @@
 
   <!-- ===== Favorites ===== -->
   <section class="favorites-section" data-page="favs">
-    <div class="section-title">
+    <div class="section-title" role="heading" aria-level="2">
       <span class="ac-emoji">⭐</span> 我的收藏
       <span class="badge" id="favCount"></span>
     </div>
@@ -151,7 +152,7 @@
 
   <!-- ===== Sushiro Queue ===== -->
   <section class="info-section" data-page="sushi">
-    <div class="section-title">
+    <div class="section-title" role="heading" aria-level="2">
       <span class="ac-emoji">🍣</span> 寿司郎排队
       <span class="badge" id="sushiroUpdate"></span>
     </div>
@@ -162,7 +163,7 @@
 
   <!-- ===== Settings ===== -->
   <section class="info-section" data-page="settings">
-    <div class="section-title">
+    <div class="section-title" role="heading" aria-level="2">
       <span class="ac-emoji">⚙️</span> 设定
     </div>
     <div id="settingsContainer">

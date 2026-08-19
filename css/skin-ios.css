@@ -99,7 +99,7 @@ gap: 8px;
 }
 
 body[data-skin="ios"] .search-input {
-background: var(--ios-search); border: none; border-radius: 11px; padding: 0 14px; height: 37px; font-size: 17px; color: var(--ios-label); font-family: inherit;
+background: var(--ios-search); border: none; border-radius: 11px; padding: 0 14px; height: 40px; font-size: 17px; color: var(--ios-label); font-family: inherit;
 }
 
 body[data-skin="ios"] .search-input:focus {

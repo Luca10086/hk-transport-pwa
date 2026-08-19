@@ -408,7 +408,7 @@ function routeCardHTML(item, opts) {
 
   const json = JSON.stringify(item).replace(/'/g, "&#39;");
 
-  let html = '<div class="transport-card route-card clickable" data-type="' + (item.type || '') + '" data-cmp="' + (item.type === 'bus' ? (item.company || '') : (item.type || '')) + '" data-route-item=\'' + json + '\'>';
+  let html = '<div class="transport-card route-card clickable" tabindex="0" role="button" data-type="' + (item.type || '') + '" data-cmp="' + (item.type === 'bus' ? (item.company || '') : (item.type || '')) + '" data-route-item=\'' + json + '\'>';
   html += '<div class="rc-head"><span class="rc-no">' + escapeHtml(no) + '</span>';
   if (lrtDir) html += '<span class="rc-dir">' + lrtDir + '</span>';
   html += '<span class="rc-tag">' + tagText + '</span>';
@@ -448,7 +448,7 @@ function routeCardHTML(item, opts) {
   html += '<div class="rc-more">点按查看全线候车</div>';
   html += '</div>';
   if (opts.removeIndex == null) {
-    html += `<button class="fav-btn ${favClass}" data-fav-item='${json}' title="收藏 / 取消收藏">${favStar}</button>`;
+    html += `<button class="fav-btn ${favClass}" data-fav-item='${json}' title="收藏 / 取消收藏" aria-label="${faved ? '取消收藏' : '收藏'}" aria-pressed="${faved}">${favStar}</button>`;
   }
   html += '</div>';
 
@@ -706,6 +706,7 @@ function toggleFavByItem(item, btn) {
     }
     btn.classList.remove('favorited');
     btn.textContent = '☆';
+    if (btn.setAttribute) { btn.setAttribute('aria-pressed', 'false'); btn.setAttribute('aria-label', '收藏'); }
   } else {
     /* Build a clean favorite item */
     const fav = { type: item.type };
@@ -737,6 +738,7 @@ function toggleFavByItem(item, btn) {
     addFavorite(fav);
     btn.classList.add('favorited');
     btn.textContent = '★';
+    if (btn.setAttribute) { btn.setAttribute('aria-pressed', 'true'); btn.setAttribute('aria-label', '取消收藏'); }
   }
   renderFavorites();
 }
@@ -1064,6 +1066,11 @@ function openRouteDetail(item) {
   const inner = document.getElementById('detailSheetInner');
   inner.innerHTML = '<div class="loading"><div class="spinner"></div>载入全线候车时间...</div>';
   renderDetailContent(item, inner);
+  /* 弹层打开后把焦点移入，便于键盘操作与读屏 */
+  requestAnimationFrame(() => {
+    const close = inner.querySelector('.ds-close');
+    if (close) close.focus();
+  });
 }
 
 function closeRouteDetail() {
@@ -1141,7 +1148,7 @@ async function openStopPicker(favIndex) {
     }
     if (name == null || name === '') name = '站 ' + id;
     const cur = String(fav.stop_id) === String(id);
-    h += `<div class="ds-stop ${cur ? 'ds-cur' : ''}" data-i="${favIndex}" data-sid="${escapeHtml(String(id))}" data-sn="${escapeHtml(String(name))}" onclick="pickStop(this)">`;
+    h += `<div class="ds-stop ${cur ? 'ds-cur' : ''}" tabindex="0" role="button" data-i="${favIndex}" data-sid="${escapeHtml(String(id))}" data-sn="${escapeHtml(String(name))}" onclick="pickStop(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickStop(this)}">`;
     h += '<span class="ds-sn">' + (i + 1) + '. ' + escapeHtml(name) + (cur ? '（当前）' : '') + '</span></div>';
   });
   h += '</div>';

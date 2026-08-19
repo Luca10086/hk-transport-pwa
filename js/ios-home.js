@@ -18,8 +18,12 @@ try { iosRecent = JSON.parse(localStorage.getItem(IOS_RECENT_KEY) || '[]'); } ca
 
 /** 切换 iOS 分类标签：更新高亮 + currentTransport */
 function iosSetCat(cat, btn) {
-  document.querySelectorAll('.ios-cat').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.ios-cat').forEach(b => {
+    b.classList.remove('active');
+    if (b.setAttribute) b.setAttribute('aria-pressed', 'false');
+  });
   btn.classList.add('active');
+  if (btn.setAttribute) btn.setAttribute('aria-pressed', 'true');
   setTransport(cat === 'all' ? 'bus' : cat);
   const q = document.getElementById('iosSearchInput').value.trim();
   if (q) iosDoSearch();

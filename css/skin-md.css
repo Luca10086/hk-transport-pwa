@@ -186,7 +186,7 @@ body[data-skin="md"] .transport-toggle button {
 color: var(--md-on-surface-variant); font-family: 'Roboto', 'Nunito', 'Segoe UI', sans-serif;
   font-weight: 500; font-size: 0.875rem;
   background: transparent; border: 1px solid var(--md-outline);
-  border-radius: var(--md-corner-s); padding: 7px 16px; height: 32px;
+  border-radius: var(--md-corner-s); padding: 7px 16px; height: 36px;
 }
 
 body[data-skin="md"] .transport-toggle button:hover {
