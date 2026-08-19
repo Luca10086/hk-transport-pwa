@@ -12,12 +12,12 @@ body[data-skin="wp8"] {
   --wp8-text: #FFFFFF;
   --wp8-secondary: #B0B0B0;
   --wp8-border: #3A3A3A;
-  --wp8-accent: #D24726;
-  --wp8-accent-dark: #A93A1F;
+  --wp8-accent: #00A2E8;
+  --wp8-accent-dark: #0078B4;
 
   --bg-top: #1F1F1F; --bg-mid: #1F1F1F; --bg-bottom: #1F1F1F;
   --text: #FFFFFF; --text-dark: #E0E0E0;
-  --primary: #D24726; --primary-light: #D24726; --primary-dark: #D24726;
+  --primary: #00A2E8; --primary-light: #00A2E8; --primary-dark: #00A2E8;
   --card-bg: #2D2D2D; --card-bg2: #2D2D2D; --card-border: #3A3A3A;
   --card-shadow: transparent; --card-bg-soft: #2D2D2D;
 
