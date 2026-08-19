@@ -188,7 +188,7 @@ async function searchLRT(query, container) {
     .map(id => ({ id: Number(id), name: LRT_STATIONS[id] }));
   if (matches.length === 0) {
     if (gen !== container._gen) return;
-    container.innerHTML = '<div class="empty-hint">找不到轻铁车站「' + escapeHtml(query) + '」，请尝试输入站名（如 屯門碼頭、元朗、天水圍）</div>';
+    container.innerHTML = '<div class="empty-hint">找不到輕鐵車站「' + escapeHtml(query) + '」，請嘗試輸入站名（如 屯門碼頭、元朗、天水圍）</div>';
     setStatus('ok');
     return;
   }
@@ -198,13 +198,13 @@ async function searchLRT(query, container) {
     const etas = entries.slice(0, 3).map(e => ({ etaTs: now + e.mins * 60, dirLabel: (e.routeNo || '') + ' · ' + e.dest }));
     return {
       type: 'lrt', route: st.name, station_id: st.id, stop_name: st.name,
-      origDest: st.name + ' · 轻铁', direction: '', totalStops: 1, etas, platformData: entries
+      origDest: st.name + ' · 輕鐵', direction: '', totalStops: 1, etas, platformData: entries
     };
   }));
   if (gen !== container._gen) return;
   renderSearchResults(results, container);
   if (matches.length > 8) {
-    container.insertAdjacentHTML('beforeend', '<div class="sushiro-note">还有 ' + (matches.length - 8) + ' 个匹配站，请输入更精确的站名</div>');
+    container.insertAdjacentHTML('beforeend', '<div class="sushiro-note">還有 ' + (matches.length - 8) + ' 個匹配站，請輸入更精確的站名</div>');
   }
   setStatus('ok');
 }

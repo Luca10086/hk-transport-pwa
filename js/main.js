@@ -17,10 +17,10 @@ function setTransport(type) {
     if (b.setAttribute) b.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
   const placeholders = {
-    bus: '输入巴士路线编号（如 1A、10）...',
-    mtrbus: '输入港铁巴士路线编号（如 K51、K65）...',
-    lrt: '输入轻铁车站名称（如 屯門碼頭、元朗）...',
-    mtr: '输入港铁车站名称（如 中环、旺角）...'
+    bus: '輸入巴士路線編號（如 1A、10）…',
+    mtrbus: '輸入港鐵巴士路線編號（如 K51、K65）…',
+    lrt: '輸入輕鐵車站名稱（如 屯門碼頭、元朗）…',
+    mtr: '輸入港鐵車站名稱（如 中環、旺角）…'
   };
   const input = document.getElementById('searchInput');
   if (input && placeholders[type]) input.placeholder = placeholders[type];
@@ -40,13 +40,13 @@ async function refreshAll(manual) {
   refreshing = true;
   const btn = document.getElementById('refreshBtn');
   btn.disabled = true;
-  btn.textContent = '更新中...';
-  setStatus('loading', '更新中');
+  btn.textContent = t('loading.update');
+  setStatus('loading', t('loading.update'));
   try {
     const favs = getFavorites();
     if (favs.length > 0) {
       const container = document.getElementById('favoritesContainer');
-      if (manual) container.innerHTML = '<div class="loading"><div class="spinner"></div>更新中...</div>';
+      if (manual) container.innerHTML = '<div class="loading"><div class="spinner"></div>' + t('loading.update') + '</div>';
       await loadFavoritesETA(favs, container);
     } else {
       renderFavorites();
@@ -61,8 +61,8 @@ async function refreshAll(manual) {
   } finally {
     refreshing = false;
     btn.disabled = false;
-    btn.textContent = '手动刷新';
-    setStatus('ok');
+    btn.textContent = t('btn.refresh');
+    setStatus('ok', t('status.ready'));
   }
 }
 
@@ -104,6 +104,8 @@ function applySkin(skin) {
   if (meta) meta.setAttribute('content', color);
   /* iOS 皮肤：初始化 iOS 首页（最近搜尋 + 熱門車站） */
   if (s === 'ios') initIOSHome();
+  /* 按皮肤套用文案语气（繁體） */
+  applySkinLanguage();
 }
 function setSkin(skin) {
   applySkin(skin);
@@ -215,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme(getTheme());
   applyFontSize(getFontSize());
   applyRefreshUI();
+  applySkinLanguage();
 
   /* Apply saved page (bottom nav) */
   let savedPage = 'home';
@@ -226,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.tagName === 'BUTTON') {
       setTransport(e.target.dataset.type);
       /* Clear results */
-      document.getElementById('resultsContainer').innerHTML = '<div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>';
+      document.getElementById('resultsContainer').innerHTML = '<div class="empty-hint">' + t('empty.search') + '</div>';
     }
   });
 

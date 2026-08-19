@@ -44,8 +44,8 @@ function iosQuick(type) {
 
 /** iOS 智能搜索：全部模式按关键词自动路由 */
 async function iosSearchAll(q, container) {
-  container.innerHTML = '<div class="loading"><div class="spinner"></div>搜寻中...</div>';
-  setStatus('loading', '搜寻中');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div>' + t('loading.search') + '</div>';
+  setStatus('loading', t('loading.search'));
   const hasCJK = /[\u4e00-\u9fff]/.test(q);
   const pureRoute = /^[A-Za-z0-9\s\-]{1,6}$/.test(q);
   if (hasCJK) {
@@ -120,7 +120,7 @@ async function renderIOSHot() {
   const el = document.getElementById('iosHotList');
   if (!el) return;
   el.innerHTML = '<div class="ios-list-empty">載入中...</div>';
-  // 轻铁卡
+  // 輕鐵卡
   const lrtRow = document.createElement('button');
   lrtRow.className = 'ios-list-item';
   lrtRow.onclick = () => { document.getElementById('iosSearchInput').value = '天水圍'; iosSetCat('lrt', document.querySelector('.ios-cat[data-type="lrt"]')); iosDoSearch(); };
@@ -171,7 +171,7 @@ async function iosMTRNext(line, code) {
   } catch (e) { return null; }
 }
 
-/** 轻铁最近一班（分钟） */
+/** 輕鐵最近一班（分鐘） */
 async function iosLRTEta() {
   try {
     const st = Object.keys(LRT_STATIONS).find(k => LRT_STATIONS[k] === '天水圍');
@@ -184,7 +184,7 @@ async function iosLRTEta() {
   } catch (e) { return null; }
 }
 
-/** 初始化 iOS 首页（皮肤切换 / 载入时调用） */
+/** 初始化 iOS 首頁（皮膚切換 / 載入時調用） */
 function initIOSHome() {
   renderIOSRecent();
   renderIOSHot();

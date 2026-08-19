@@ -38,7 +38,7 @@
 <nav class="navbar">
   <h1><span class="ac-emoji">🍃</span> 森友出行手册</h1>
   <div class="navbar-actions">
-    <button class="refresh-btn" onclick="refreshAll(true)" id="refreshBtn">手动刷新</button>
+    <button class="refresh-btn" onclick="refreshAll(true)" id="refreshBtn" data-t="btn.refresh">手動重新整理</button>
   </div>
 </nav>
 
@@ -99,7 +99,7 @@
   <!-- ===== Weather（迷你，置于搜索栏上方，仅占搜索栏大小） ===== -->
   <section class="info-section weather-mini-section" data-page="home">
     <div id="weatherContainer" class="weather-mini">
-      <div class="weather-mini-bar">🌤️ 载入天气中...</div>
+      <div class="weather-mini-bar">🌤️ 載入天氣中…</div>
     </div>
   </section>
 
@@ -107,74 +107,74 @@
   <section class="search-section" data-page="home">
     <div class="search-row">
       <input type="text" class="search-input" id="searchInput"
-             placeholder="输入巴士路线编号（如 1A）或车站名称（如 中環/中环）..."
-             aria-label="搜索巴士路线或港铁车站"
+             placeholder="輸入巴士路線編號（如 1A）或車站名稱（如 中環）..."
+             aria-label="搜尋巴士路線或港鐵車站"
              onkeydown="if(event.key==='Enter') doSearch()">
       <div class="transport-toggle" id="transportToggle">
         <button class="active" data-type="bus">公交</button>
-        <button data-type="mtrbus">港铁巴士</button>
-        <button data-type="mtr">港铁</button>
-        <button data-type="lrt">轻铁</button>
+        <button data-type="mtrbus">港鐵巴士</button>
+        <button data-type="mtr">港鐵</button>
+        <button data-type="lrt">輕鐵</button>
       </div>
-      <button class="search-btn" onclick="doSearch()" id="searchBtn">搜寻</button>
+      <button class="search-btn" onclick="doSearch()" id="searchBtn" data-t="btn.search">搜尋</button>
     </div>
   </section>
 
   <!-- ===== Search Results ===== -->
   <section class="results-section" data-page="home">
-    <div class="section-title" role="heading" aria-level="2"><span class="ac-emoji">🍀</span> 搜寻结果</div>
+    <div class="section-title" role="heading" aria-level="2"><span class="ac-emoji">🍀</span> <span data-t="title.results">搜尋結果</span></div>
     <div id="resultsContainer" aria-live="polite">
-      <div class="empty-hint">请在上方搜寻巴士路线或港铁车站</div>
+      <div class="empty-hint" data-t="empty.search">請在上方搜尋巴士路線或港鐵車站</div>
     </div>
   </section>
 
   <!-- ===== K75P Full-Route Live Board ===== -->
   <section class="info-section" data-page="home">
     <div class="section-title" role="heading" aria-level="2">
-      <span class="ac-emoji">🚌</span> K75P 全线实时
+      <span class="ac-emoji">🚌</span> <span data-t="title.k75p">K75P 全線實時</span>
       <span class="badge" id="k75pUpdate"></span>
     </div>
     <div id="k75pContainer" aria-live="polite">
-      <div class="empty-hint"><span class="icon">🚌</span>载入 K75P 全线资料中...</div>
+      <div class="empty-hint"><span class="icon">🚌</span>載入 K75P 全線資料中…</div>
     </div>
   </section>
 
   <!-- ===== Favorites ===== -->
   <section class="favorites-section" data-page="favs">
     <div class="section-title" role="heading" aria-level="2">
-      <span class="ac-emoji">⭐</span> 我的收藏
+      <span class="ac-emoji">⭐</span> <span data-t="title.favs">我的收藏</span>
       <span class="badge" id="favCount"></span>
     </div>
     <div id="favoritesContainer" aria-live="polite">
-      <div class="empty-hint"><span class="icon">📌</span>搜寻路线后按 ☆ 收藏到首页</div>
+      <div class="empty-hint"><span class="icon">📌</span><span data-t="empty.favs">搜尋路線後按 ☆ 收藏到首頁</span></div>
     </div>
   </section>
 
   <!-- ===== Sushiro Queue ===== -->
   <section class="info-section" data-page="sushi">
     <div class="section-title" role="heading" aria-level="2">
-      <span class="ac-emoji">🍣</span> 寿司郎排队
+      <span class="ac-emoji">🍣</span> <span data-t="title.sushi">壽司郎排隊</span>
       <span class="badge" id="sushiroUpdate"></span>
     </div>
     <div id="sushiroContainer" aria-live="polite">
-      <div class="empty-hint"><span class="icon">🍣</span>载入排队资料中...</div>
+      <div class="empty-hint"><span class="icon">🍣</span>載入排隊資料中…</div>
     </div>
   </section>
 
   <!-- ===== Settings ===== -->
   <section class="info-section" data-page="settings">
     <div class="section-title" role="heading" aria-level="2">
-      <span class="ac-emoji">⚙️</span> 设定
+      <span class="ac-emoji">⚙️</span> <span data-t="title.settings">設定</span>
     </div>
     <div id="settingsContainer">
       <div class="settings-block">
-        <div class="settings-label">界面主题</div>
+        <div class="settings-label">介面主題</div>
         <div class="settings-skins" id="skinSelector">
-          <button class="skin-opt" data-skin="ac" onclick="setSkin('ac')">动森 AC</button>
+          <button class="skin-opt" data-skin="ac" onclick="setSkin('ac')">動森 AC</button>
           <button class="skin-opt" data-skin="md" onclick="setSkin('md')">Material 3</button>
           <button class="skin-opt" data-skin="ios" onclick="setSkin('ios')">iOS</button>
         </div>
-        <div class="settings-hint">选择网页主题外观。iOS 模式依 Apple Human Interface Guidelines 设计。</div>
+        <div class="settings-hint">選擇網頁主題外觀。iOS 模式依 Apple Human Interface Guidelines 設計。</div>
       </div>
       <div class="settings-block">
         <div class="settings-label">深色模式</div>
@@ -183,7 +183,7 @@
           <button class="seg-opt" data-theme-val="light" onclick="setTheme('light', this)">淺色</button>
           <button class="seg-opt" data-theme-val="dark" onclick="setTheme('dark', this)">深色</button>
         </div>
-        <div class="settings-hint">手动覆盖深色模式（适用于 iOS / Material 3 皮肤）。</div>
+        <div class="settings-hint">手動覆蓋深色模式（適用於 iOS / Material 3 皮膚）。</div>
       </div>
       <div class="settings-block">
         <div class="settings-label">字體大小</div>
@@ -192,7 +192,7 @@
           <button class="seg-opt" data-size-val="md" onclick="setFontSize('md', this)">標準</button>
           <button class="seg-opt" data-size-val="lg" onclick="setFontSize('lg', this)">大</button>
         </div>
-        <div class="settings-hint">调整页面文字大小（标准为 16px）。</div>
+        <div class="settings-hint">調整頁面文字大小（標準為 16px）。</div>
       </div>
       <div class="settings-block">
         <div class="settings-label">自動刷新</div>
@@ -202,57 +202,58 @@
           <button class="seg-opt" data-refresh-val="60" onclick="setRefreshInterval(60, this)">60 秒</button>
           <button class="seg-opt" data-refresh-val="0" onclick="setRefreshInterval(0, this)">關閉</button>
         </div>
-        <div class="settings-hint">收藏/天气/寿司郎/K75P 的自动更新频率。</div>
+        <div class="settings-hint">收藏／天氣／壽司郎／K75P 的自動更新頻率。</div>
       </div>
     </div>
   </section>
 
   <!-- ===== Footer ===== -->
   <div class="footer">
-    <span>🌿 数据来源：data.gov.hk / 资料一线通</span>
+    <span>🌿 資料來源：data.gov.hk / 資料一線通</span>
     <div class="status">
       <span id="statusDot" class="dot dot-green"></span>
-      <span id="statusText">就绪</span>
-      <span>· 更新于 <span id="lastUpdate">--:--:--</span></span>
+      <span id="statusText">就緒</span>
+      <span>· 更新於 <span id="lastUpdate">--:--:--</span></span>
     </div>
   </div>
 </div>
 
 <!-- ===== FAB（收藏当前路线，仅首页显示） ===== -->
-<button class="fab-main" id="fabMain" onclick="fabAction()" aria-label="收藏当前路线" title="收藏当前路线">
+<button class="fab-main" id="fabMain" onclick="fabAction()" aria-label="收藏當前路線" title="收藏當前路線">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
 </button>
 
-<!-- ===== Bottom Navigation（搜寻 / 收藏 / 寿司郎；iOS 皮肤下为 首頁/最近/收藏/更多） ===== -->
-<nav class="bottom-nav" id="bottomNav" aria-label="主要导航">
-  <button class="bn-item active" data-page="home" onclick="switchPage('home')" aria-label="搜寻">
+<!-- ===== Bottom Navigation（搜尋 / 收藏 / 壽司郎；iOS 皮膚下為 首頁/最近/收藏/更多） ===== -->
+<nav class="bottom-nav" id="bottomNav" aria-label="主要導航">
+  <button class="bn-item active" data-page="home" onclick="switchPage('home')" aria-label="搜尋">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-    <span class="bn-tx-default">搜寻</span><span class="bn-tx-ios">首頁</span>
+    <span class="bn-tx-default" data-t="nav.search">搜尋</span><span class="bn-tx-ios" data-t="nav.home">首頁</span>
   </button>
   <button class="bn-item bn-ios-only" data-page="recent" onclick="iosGoRecent()" aria-label="最近">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-    <span>最近</span>
+    <span data-t="nav.recent">最近</span>
   </button>
   <button class="bn-item" data-page="favs" onclick="switchPage('favs')" aria-label="收藏">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-    <span>收藏</span>
+    <span data-t="nav.favs">收藏</span>
   </button>
-  <button class="bn-item bn-ios-hide" data-page="sushi" onclick="switchPage('sushi')" aria-label="寿司郎">
+  <button class="bn-item bn-ios-hide" data-page="sushi" onclick="switchPage('sushi')" aria-label="壽司郎">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.05 17.56l-17.97.94L3 17l17.98-.94.07 1.5zM21 19.49H3v1.5h18v-1.5zM22 5v7c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-2 1c-1.68 0-3.04.98-3.21 2.23-.64-.73-2.73-2.73-6.54-2.73-4.67 0-6.75 3-6.75 3s2.08 3 6.75 3c3.81 0 5.9-2 6.54-2.73C16.96 10.02 18.32 11 20 11V6z"/></svg>
-    <span>寿司郎</span>
+    <span data-t="nav.sushi">壽司郎</span>
   </button>
-  <button class="bn-item" data-page="settings" onclick="switchPage('settings')" aria-label="设定">
+  <button class="bn-item" data-page="settings" onclick="switchPage('settings')" aria-label="設定">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
-    <span class="bn-tx-default">设定</span><span class="bn-tx-ios">更多</span>
+    <span class="bn-tx-default" data-t="nav.settings">設定</span><span class="bn-tx-ios" data-t="nav.settings">更多</span>
   </button>
 </nav>
 
-<!-- ===== 路线详情弹层（点击结果/收藏卡 → 全线候车） ===== -->
+<!-- ===== 路線詳情彈層（點擊結果/收藏卡 → 全線候車） ===== -->
 <div class="detail-mask" id="detailMask"></div>
-<div class="detail-sheet" id="detailSheet" role="dialog" aria-modal="true" aria-label="路线全线候车">
+<div class="detail-sheet" id="detailSheet" role="dialog" aria-modal="true" aria-label="路線全線候車">
   <div id="detailSheetInner"></div>
 </div>
 
+<script src="js/i18n.js"></script>
 <script src="js/data.js"></script>
 <script src="js/util.js"></script>
 <script src="js/api.js"></script>

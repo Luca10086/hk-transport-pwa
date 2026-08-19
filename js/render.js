@@ -1,4 +1,4 @@
-/* 森友出行手册 - 渲染与业务（搜索/结果卡/收藏/天气/寿司郎/K75P/路线详情） */
+/* 森友出行手册 - 渲染与业务（搜索/结果卡/收藏/天氣/寿司郎/K75P/路線详情） */
 
 /* ==========================================================================
    Search Logic
@@ -10,8 +10,8 @@ async function doSearch() {
   if (!input) return;
 
   const resultsContainer = document.getElementById('resultsContainer');
-  resultsContainer.innerHTML = '<div class="loading"><div class="spinner"></div>搜寻中...</div>';
-  setStatus('loading', '搜寻中');
+  resultsContainer.innerHTML = '<div class="loading"><div class="spinner"></div>' + t('loading.search') + '</div>';
+  setStatus('loading', t('loading.search'));
 
   if (currentTransport === 'bus') {
     await searchBusRoute(input, resultsContainer);
@@ -38,7 +38,7 @@ async function searchBusRoute(query, container) {
   ]);
 
   /* For each KMB route, get stops and first stop ETA.
-     同一路线 O/I 两个方向只保留一张卡，优先出发方向（O） */
+     同一路線 O/I 两個方向只保留一张卡，优先出发方向（O） */
   const kmbSeen = new Set();
   const kmbRoutesSorted = kmbRoutes.slice().sort((a, b) => (a.bound === 'O' ? 0 : 1) - (b.bound === 'O' ? 0 : 1));
   for (const route of kmbRoutesSorted) {
@@ -69,8 +69,8 @@ async function searchBusRoute(query, container) {
     for (const dir of ['outbound', 'inbound']) {
       const stops = await getCTBStops(route.route, dir);
       if (stops.length > 0) {
-        /* 城巴 ETA API 对部分站点(尤其总站/前几站)返回空数据，
-           并行探测前几个站，取第一个有本方向班次的站作为展示站 */
+        /* 城巴 ETA API 对部分站點(尤其总站/前几站)返回空數據，
+           并行探测前几個站，取第一個有本方向班次的站作為展示站 */
         const wantDir = dir === 'inbound' ? 'I' : 'O';
         const probes = await Promise.all(
           stops.slice(0, 6).map(async (s) => {
@@ -108,7 +108,7 @@ async function searchBusRoute(query, container) {
         route: String(route.routeNo || route.routeId),
         routeId: routeId,
         direction: 'outbound',
-        origDest: route.routeName_c || route.routeName_s || `${route.routeNo || route.routeId} 新大屿山巴士`,
+        origDest: route.routeName_c || route.routeName_s || `${route.routeNo || route.routeId} 新大嶼山巴士`,
         stop_id: firstStop.stopId,
         stop_name: firstStop.stopName_c || firstStop.stopName_s || String(firstStop.stopId || ''),
         totalStops: stops.length,
@@ -119,7 +119,7 @@ async function searchBusRoute(query, container) {
 
   if (allResults.length === 0) {
     if (gen !== container._gen) return;
-    container.innerHTML = '<div class="empty-hint">找不到路线「' + escapeHtml(query) + '」，请确认路线编号是否正确</div>';
+    container.innerHTML = '<div class="empty-hint">找不到路線「' + escapeHtml(query) + '」，請確認路線编号是否正确</div>';
     setStatus('ok');
     return;
   }
@@ -136,7 +136,7 @@ async function searchBusRoute(query, container) {
           .map(e => ({ etaTs: new Date(e.eta).getTime() / 1000, dirLabel: (e.dir === 'I' ? '回' : '去') + (e.dest_tc || '') }));
       } else if (item.company === 'ctb') {
         etas = await getCTBETA(item.stop_id, item.route);
-        /* Filter to this direction: O=outbound(去铜锣湾), I=inbound(回天水围) */
+        /* Filter to this direction: O=outbound(去铜锣湾), I=inbound(回天水圍) */
         const wantDir = item.direction === 'inbound' ? 'I' : 'O';
         etas = etas.filter(e => (e.dir || '').toUpperCase() === wantDir);
       } else { /* nlb */
@@ -151,7 +151,7 @@ async function searchBusRoute(query, container) {
   setStatus('ok');
 }
 
-/** 简繁转换（覆盖港铁/巴士站名与常见用字），用于搜索兼容 */
+/** 简繁转换（覆盖港鐵/巴士站名与常见用字），用於搜索兼容 */
 const SIMP2TRAD = {
   '环':'環','铜':'銅','锣':'鑼','湾':'灣','钟':'鐘','观':'觀','龙':'龍','围':'圍','东':'東',
   '将':'將','军':'軍','宝':'寶','黄':'黃','钻':'鑽','乐':'樂','启':'啟','红':'紅','长':'長',
@@ -173,10 +173,10 @@ async function searchMTRStation(query, container) {
   container._gen = (container._gen || 0) + 1; const gen = container._gen;
   const q = query.trim();
   const upperQ = q.toUpperCase();
-  /* 简繁兼容：同时用原词、繁体、简体做匹配 */
+  /* 简繁兼容：同时用原词、繁體、簡體做匹配 */
   const qList = [...new Set([q, toTrad(q), toSimp(q)].filter(x => x))];
 
-  /* 1) 线路名匹配（如「荃湾线」「观塘」「TWL」） */
+  /* 1) 線路名匹配（如「荃灣线」「觀塘」「TWL」） */
   const matchedLines = [];
   for (const [code, name] of Object.entries(MTR_LINES)) {
     if (qList.some(x => name.includes(x) || x.includes(name)) || code === upperQ) {
@@ -184,7 +184,7 @@ async function searchMTRStation(query, container) {
     }
   }
 
-  /* 2) 车站名/站码匹配（基于 MTR_LINE_STOPS 全站表） */
+  /* 2) 車站名/站码匹配（基於 MTR_LINE_STOPS 全站表） */
   const matchedStations = [];
   for (const lineCode of Object.keys(MTR_LINE_STOPS)) {
     for (const s of MTR_LINE_STOPS[lineCode]) {
@@ -203,14 +203,14 @@ async function searchMTRStation(query, container) {
 
   if (matchedLines.length === 0 && matchedStations.length === 0) {
     if (gen !== container._gen) return;
-    container.innerHTML = '<div class="empty-hint">找不到「' + escapeHtml(query) + '」，请输入车站名（如 中环、旺角）或线路名（如 荃湾线）</div>';
+    container.innerHTML = '<div class="empty-hint">找不到「' + escapeHtml(query) + '」，請輸入車站名（如 中環、旺角）或線路名（如 荃灣線）</div>';
     setStatus('ok');
     return;
   }
 
   const allResults = [];
 
-  /* A) 线路模式：拉取该线全部站候车时间 */
+  /* A) 線路模式：拉取該線全部站候車時間 */
   for (const lineCode of matchedLines) {
     const stops = MTR_LINE_STOPS[lineCode] || [];
     if (!stops.length) continue;
@@ -219,7 +219,7 @@ async function searchMTRStation(query, container) {
       return { ...s, sched };
     }));
     if (entries.some(e => e.sched)) {
-      /* 计算全线最近一班 */
+      /* 计算全線最近一班 */
       let minTs = Infinity;
       for (const e of entries) {
         if (!e.sched) continue;
@@ -244,7 +244,7 @@ async function searchMTRStation(query, container) {
     }
   }
 
-  /* B) 车站模式：该站所在各线的候车时间 */
+  /* B) 車站模式：該站所在各线的候車時間 */
   for (const st of matchedStations) {
     for (const lineCode of st.lines) {
       const sched = await getMTRSchedule(lineCode, st.code);
@@ -276,7 +276,7 @@ async function searchMTRStation(query, container) {
 
   if (allResults.length === 0) {
     if (gen !== container._gen) return;
-    container.innerHTML = '<div class="empty-hint">「' + escapeHtml(query) + '」目前没有即时到站数据</div>';
+    container.innerHTML = '<div class="empty-hint">「' + escapeHtml(query) + '」目前沒有即時到站數據</div>';
     setStatus('ok');
     return;
   }
@@ -297,7 +297,7 @@ async function searchMTRBus(query, container) {
 
   if (!routeInfo && (!etaData || !etaData.busStop || !Array.isArray(etaData.busStop) || etaData.busStop.length === 0)) {
     if (gen !== container._gen) return;
-    container.innerHTML = '<div class="empty-hint">找不到港铁巴士路线「' + escapeHtml(query) + '」，请确认路线编号（如 K51、K65、K75P）</div>';
+    container.innerHTML = '<div class="empty-hint">找不到港鐵巴士路線「' + escapeHtml(query) + '」，請確認路線编号（如 K51、K65、K75P）</div>';
     setStatus('ok');
     return;
   }
@@ -345,7 +345,7 @@ function escapeHtml(str) {
 
 /* ---- 概念图风格结果卡公共辅助 ---- */
 
-/** 从 item 提取主 ETA 展示数据 */
+/** 從 item 提取主 ETA 展示數據 */
 function buildETACard(item) {
   const list = [];
   if (item.etas) {
@@ -355,9 +355,9 @@ function buildETACard(item) {
     }
   }
   if (list.length === 0) {
-    /* 线路模式：直接使用预先算好的全线最近班次 */
+    /* 線路模式：直接使用预先算好的全線最近班次 */
     if (item.mainMins) {
-      return { mainMins: item.mainMins, mainClass: '', mainTime: '', moreText: '全线最近班次' };
+      return { mainMins: item.mainMins, mainClass: '', mainTime: '', moreText: '全線最近班次' };
     }
     return { mainMins: null, mainClass: '', mainTime: '', moreText: '' };
   }
@@ -381,13 +381,13 @@ function routeCardHTML(item, opts) {
   const eta = buildETACard(item);
   const { mainMins, mainClass, moreText } = eta;
 
-  /* 轻铁 705/706 为天水围循环线：705 顺时针、706 逆时针 */
+  /* 輕鐵 705/706 為天水圍循環线：705 順時針、706 逆時針 */
   const lrtDir = (item.type === 'lrt' && (item.route === '705' || item.route === '706'))
     ? (item.route === '705' ? '順時針' : '逆時針') : '';
 
-  const tagText = item.type === 'mtr' ? '港铁'
-    : item.type === 'mtrbus' ? '港铁巴士'
-    : item.type === 'lrt' ? '轻铁'
+  const tagText = item.type === 'mtr' ? '港鐵'
+    : item.type === 'mtrbus' ? '港鐵巴士'
+    : item.type === 'lrt' ? '輕鐵'
     : '公交';
   const no = (item.type === 'bus' || item.type === 'mtrbus' || item.type === 'lrt')
     ? String(item.route)
@@ -399,10 +399,10 @@ function routeCardHTML(item, opts) {
   } else if (item.type === 'mtrbus') {
     nameText = (item.orig && item.dest) ? `${item.orig} → ${item.dest}` : item.route;
   } else if (item.type === 'lrt') {
-    nameText = item.origDest || '轻铁路线';
+    nameText = item.origDest || '輕鐵路線';
   } else {
     nameText = item.mode === 'line'
-      ? `全线 ${(MTR_LINE_STOPS[item.line] || []).length} 个车站候车时间`
+      ? `全線 ${(MTR_LINE_STOPS[item.line] || []).length} 個車站候車時間`
       : `${item.station_name} · ${item.lineName}`;
   }
 
@@ -415,13 +415,13 @@ function routeCardHTML(item, opts) {
   if (opts.removeIndex != null) {
     html += '<div class="rc-actions">';
     if (item.type === 'bus') {
-      html += `<button class="ds-pick" onclick="event.stopPropagation();openStopPicker(${opts.removeIndex})" title="选择显示哪一站等候时间">换站</button>`;
+      html += `<button class="ds-pick" onclick="event.stopPropagation();openStopPicker(${opts.removeIndex})" title="選擇顯示哪一站等候時間">換站</button>`;
     }
     html += `<button class="fav-remove-btn" onclick="event.stopPropagation();removeFavorite(${opts.removeIndex})" title="移除收藏">移除</button>`;
     if (opts.showPick) {
       const showKey = getFavShowKey();
       const used = !!showKey && favKey(item) === showKey;
-      html += `<button class="ds-pick ${used ? 'used' : ''}" onclick="event.stopPropagation();setFavShow(${opts.removeIndex})" title="固定显示该站到站时间">${used ? '✓ 显示中' : '设为显示'}</button>`;
+      html += `<button class="ds-pick ${used ? 'used' : ''}" onclick="event.stopPropagation();setFavShow(${opts.removeIndex})" title="固定顯示該站到站時間">${used ? '✓ 顯示中' : '設為顯示'}</button>`;
     }
     html += '</div>';
   }
@@ -429,10 +429,10 @@ function routeCardHTML(item, opts) {
   html += '<div class="rc-name">' + escapeHtml(nameText) + '</div>';
   html += '<div class="rc-main">';
   if (mainMins !== null) {
-    const num = String(mainMins).replace('分钟', '');
-    html += '<div class="rc-eta"><span class="rc-m ' + mainClass + '">' + num + '</span><span class="rc-u">分钟</span></div>';
+    const num = String(mainMins).replace('分鐘', '');
+    html += '<div class="rc-eta"><span class="rc-m ' + mainClass + '">' + num + '</span><span class="rc-u">分鐘</span></div>';
   } else {
-    html += '<div class="rc-eta"><span class="rc-m">--</span><span class="rc-u">分钟</span></div>';
+    html += '<div class="rc-eta"><span class="rc-m">--</span><span class="rc-u">分鐘</span></div>';
   }
   html += '<div class="rc-sub">';
   if (eta.line1) {
@@ -443,9 +443,9 @@ function routeCardHTML(item, opts) {
       html += '<div class="rc-line"><span class="rc-line-tag">' + eta.line2.label + '</span>' + dir2 + '<span class="rc-line-time">' + eta.line2.time + '</span></div>';
     }
   } else {
-    html += '<div class="rc-stop">' + (mainMins !== null ? escapeHtml(moreText || '暂无到站资讯') : '暂无到站资讯') + '</div>';
+    html += '<div class="rc-stop">' + (mainMins !== null ? escapeHtml(moreText || '暫無到站資訊') : '暫無到站資訊') + '</div>';
   }
-  html += '<div class="rc-more">点按查看全线候车</div>';
+  html += '<div class="rc-more">點按查看全線候車</div>';
   html += '</div>';
   if (opts.removeIndex == null) {
     html += `<button class="fav-btn ${favClass}" data-fav-item='${json}' title="收藏 / 取消收藏" aria-label="${faved ? '取消收藏' : '收藏'}" aria-pressed="${faved}">${favStar}</button>`;
@@ -461,14 +461,14 @@ function routeCardHTML(item, opts) {
     html += `<span class="rc-pcnt">第 ${cur + 1} 站 · 共 ${total} 站</span></div>`;
   } else if (item.type === 'mtrbus' && total > 0) {
     html += '<div class="rc-progress"><div class="rc-bar"><i style="width:4%"></i></div>';
-    html += `<span class="rc-pcnt">共 ${total} 个巴士站</span></div>`;
+    html += `<span class="rc-pcnt">共 ${total} 個巴士站</span></div>`;
   } else if (item.type === 'lrt' && total > 0) {
     html += '<div class="rc-progress"><div class="rc-bar"><i style="width:4%"></i></div>';
-    html += `<span class="rc-pcnt">共 ${total} 个车站 · 轻铁</span></div>`;
+    html += `<span class="rc-pcnt">共 ${total} 個車站 · 輕鐵</span></div>`;
   } else if (item.type === 'mtr') {
     const n = (MTR_LINE_STOPS[item.line] || []).length;
     html += '<div class="rc-progress"><div class="rc-bar"><i style="width:4%"></i></div>';
-    html += `<span class="rc-pcnt">${item.mode === 'line' ? '全线 ' + n + ' 站' : '该线 ' + n + ' 站 · 点按看全线'}</span></div>`;
+    html += `<span class="rc-pcnt">${item.mode === 'line' ? '全線 ' + n + ' 站' : '該線 ' + n + ' 站 · 點按看全線'}</span></div>`;
   }
   html += '</div>';
   return html;
@@ -477,7 +477,7 @@ function routeCardHTML(item, opts) {
 /** Render bus search results（概念图风格） */
 function renderSearchResults(items, container) {
   if (items.length === 0) {
-    container.innerHTML = '<div class="empty-hint">没有结果</div>';
+    container.innerHTML = '<div class="empty-hint">沒有结果</div>';
     return;
   }
   container.innerHTML = '<div class="card-grid">' + items.map(i => routeCardHTML(i)).join('') + '</div>';
@@ -486,7 +486,7 @@ function renderSearchResults(items, container) {
 /** Render MTR search results（概念图风格） */
 function renderMTRSearchResults(items, container) {
   if (items.length === 0) {
-    container.innerHTML = '<div class="empty-hint">没有结果</div>';
+    container.innerHTML = '<div class="empty-hint">沒有结果</div>';
     return;
   }
   container.innerHTML = '<div class="card-grid">' + items.map(i => routeCardHTML(i)).join('') + '</div>';
@@ -495,7 +495,7 @@ function renderMTRSearchResults(items, container) {
 /** Render MTR Bus search results（概念图风格） */
 function renderMTRBusResults(items, container) {
   if (items.length === 0) {
-    container.innerHTML = '<div class="empty-hint">没有结果</div>';
+    container.innerHTML = '<div class="empty-hint">沒有结果</div>';
     return;
   }
   container.innerHTML = '<div class="card-grid">' + items.map(i => routeCardHTML(i)).join('') + '</div>';
@@ -508,16 +508,16 @@ function renderFavorites() {
   document.getElementById('favCount').textContent = favs.length;
 
   if (favs.length === 0) {
-    container.innerHTML = '<div class="empty-hint"><span class="icon">📌</span>搜寻路线后按 ☆ 收藏到首页</div>';
+    container.innerHTML = '<div class="empty-hint"><span class="icon">📌</span>' + t('empty.favs') + '</div>';
     return;
   }
 
   container.innerHTML = `
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-      <button id="exportQuote0Btn" style="background:#555;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" onclick="exportFavoritesForQuote0()" title="汇出收藏路线为 JSON，用于 Quote/0 推送脚本">⬇ 汇出收藏</button>
+      <button id="exportQuote0Btn" style="background:#555;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" onclick="exportFavoritesForQuote0()" title="匯出收藏路線為 JSON，用於 Quote/0 推送脚本">⬇ 匯出收藏</button>
     </div>
     <div id="favShowBox" class="favshow"></div>
-    <div class="loading" id="favLoading"><div class="spinner"></div>载入实时数据中...</div>
+    <div class="loading" id="favLoading"><div class="spinner"></div>載入實時數據中...</div>
   `;
   renderFavShowHint();
 
@@ -525,16 +525,16 @@ function renderFavorites() {
   loadFavoritesETA(favs, container);
 }
 
-/** 收藏页固定显示站提示（数据未到时） */
+/** 收藏页固定顯示站提示（數據未到时） */
 function renderFavShowHint() {
   const box = document.getElementById('favShowBox');
   if (!box) return;
   const showKey = getFavShowKey();
-  if (showKey) box.innerHTML = '<div class="favshow-head">固定显示站</div><div class="favshow-loading">载入中...</div>';
-  else box.innerHTML = '<div class="favshow-hint">在下方收藏卡点「设为显示」可固定该站到站时间</div>';
+  if (showKey) box.innerHTML = '<div class="favshow-head">固定顯示站</div><div class="favshow-loading">載入中...</div>';
+  else box.innerHTML = '<div class="favshow-hint">在下方收藏卡點「設為顯示」可固定該站到站時間</div>';
 }
 
-/** 设为固定显示站（按身份键存储，删除其它收藏不影响） */
+/** 設為固定顯示站（按身份键存储，删除其它收藏不影响） */
 function setFavShow(index) {
   const favs = getFavorites();
   const f = favs[index];
@@ -542,7 +542,7 @@ function setFavShow(index) {
   renderFavorites();
 }
 
-/** 取消固定显示站 */
+/** 取消固定顯示站 */
 function clearFavShow() {
   try { localStorage.removeItem(FAV_SHOW_KEY); } catch (e) {}
   renderFavorites();
@@ -555,7 +555,7 @@ async function loadFavoritesETA(favs, container) {
     if (fav.type === 'bus') {
       if (fav.company === 'kmb') {
         const allEta = await getKMBETA(fav.stop_id);
-        /* 按收藏方向过滤（O=去程, I=回程），并标注方向目的地 */
+        /* 按收藏方向過濾（O=去程, I=回程），并标注方向目的地 */
         const wantDir = fav.direction === 'inbound' ? 'I' : 'O';
         etas = allEta.filter(e => e.route === fav.route && (e.dir || '').toUpperCase() === wantDir)
           .map(e => ({ etaTs: new Date(e.eta).getTime() / 1000, dirLabel: (e.dir === 'I' ? '回' : '去') + (e.dest_tc || '') }))
@@ -569,7 +569,7 @@ async function loadFavoritesETA(favs, container) {
           saveFavorites(fs);
         }
         etas = await getCTBETA(fav.stop_id, fav.route);
-        /* 按收藏方向过滤，避免混入反方向班次 */
+        /* 按收藏方向過濾，避免混入反方向班次 */
         const wantDir = fav.direction === 'inbound' ? 'I' : 'O';
         etas = etas.filter(e => (e.dir || '').toUpperCase() === wantDir)
           .map(e => ({ etaTs: new Date(e.eta).getTime() / 1000, dirLabel: (e.dir === 'I' ? '回' : '去') + (e.dest_tc || '') }))
@@ -577,7 +577,7 @@ async function loadFavoritesETA(favs, container) {
       } else if (fav.company === 'nlb') {
         let rid = fav.routeId;
         if (!rid && fav.route) {
-          /* 兼容旧收藏：收藏未存 routeId 时按路线号反查一次并回写 */
+          /* 兼容旧收藏：收藏未存 routeId 时按路線号反查一次并回写 */
           try {
             const rs = await searchNLBRoute(String(fav.route));
             if (rs && rs[0]) {
@@ -610,7 +610,7 @@ async function loadFavoritesETA(favs, container) {
       }
     } else { /* mtr */
       if (fav.station_id === 'ALL') {
-        /* 线路收藏：重建全线候车 */
+        /* 線路收藏：重建全線候車 */
         const stops = MTR_LINE_STOPS[fav.line] || [];
         const lineEntries = await Promise.all(stops.map(async (s) => {
           const sched = await getMTRSchedule(fav.line, s.code);
@@ -659,26 +659,26 @@ async function loadFavoritesETA(favs, container) {
 /** Render favorite cards（概念图风格） */
 function renderFavoritesCards(items, container) {
   if (items.length === 0) {
-    container.innerHTML = '<div class="empty-hint">暂无收藏路线</div>';
+    container.innerHTML = '<div class="empty-hint">' + t('empty.nofav') + '</div>';
     return;
   }
   const exportBtn = `
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-      <button id="exportQuote0Btn2" style="background:#555;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" onclick="exportFavoritesForQuote0()" title="汇出收藏路线为 JSON，用于 Quote/0 推送脚本">⬇ 汇出收藏</button>
+      <button id="exportQuote0Btn2" style="background:#555;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" onclick="exportFavoritesForQuote0()" title="匯出收藏路線為 JSON，用於 Quote/0 推送脚本">⬇ 匯出收藏</button>
     </div>`;
   const cards = items.map((item) => routeCardHTML(item, { removeIndex: item.index, showPick: true }));
   container.innerHTML = exportBtn + buildFavShowBox(items) + '<div class="card-grid">' + cards.join('') + '</div>';
 }
 
-/** 构建收藏页固定显示站提示框 HTML（renderFavoritesCards 内联使用，避免被整体覆盖） */
+/** 构建收藏页固定顯示站提示框 HTML（renderFavoritesCards 内联使用，避免被整体覆盖） */
 function buildFavShowBox(results) {
   const showKey = getFavShowKey();
   const item = (results || []).find(r => favKey(r) === showKey);
   if (!showKey || !item) {
-    return '<div id="favShowBox" class="favshow"><div class="favshow-hint">在下方收藏卡点「设为显示」可固定该站到站时间</div></div>';
+    return '<div id="favShowBox" class="favshow"><div class="favshow-hint">在下方收藏卡點「設為顯示」可固定該站到站時間</div></div>';
   }
   const card = routeCardHTML(item, { removeIndex: item.index, showPick: true });
-  return '<div id="favShowBox" class="favshow"><div class="favshow-head">固定显示站 <button class="favshow-clear" onclick="clearFavShow()">取消固定</button></div>' + card + '</div>';
+  return '<div id="favShowBox" class="favshow"><div class="favshow-head">固定顯示站 <button class="favshow-clear" onclick="clearFavShow()">取消固定</button></div>' + card + '</div>';
 }
 
 
@@ -747,7 +747,7 @@ function toggleFavByItem(item, btn) {
 function exportFavoritesForQuote0() {
   const favs = getFavorites();
   if (favs.length === 0) {
-    alert('暂无收藏路线');
+    alert(t('empty.nofav'));
     return;
   }
   const exportData = favs.map(f => {
@@ -773,9 +773,9 @@ function exportFavoritesForQuote0() {
    Weather (HKO)
    ========================================================================== */
 
-/* 天气警告已手动收起（本次会话内不再弹出） */
+/* 天氣警告已手动收起（本次会话内不再弹出） */
 let warningDismissed = false;
-/** 渲染天气警告条（HKO rhrread.warningMessage；无警告或已收起时隐藏） */
+/** 渲染天氣警告条（HKO rhrread.warningMessage；无警告或已收起时隐藏） */
 function renderWarningBar(msgs) {
   const bar = document.getElementById('warningBar');
   if (!bar) return;
@@ -800,7 +800,7 @@ async function refreshWeather() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
 
-    /* 天气警告条（与天气同一次请求，无额外开销） */
+    /* 天氣警告条（与天氣同一次請求，无额外开销） */
     renderWarningBar(data.warningMessage);
 
     /* Temperature: prefer 元朗公園 station */
@@ -823,7 +823,7 @@ async function refreshWeather() {
     const update = data.updateTime ? '更新 ' + data.updateTime.slice(11, 16) : '';
     container.innerHTML = '<div class="weather-mini-bar"><span class="wm-desc">' + desc + '</span>' + parts.join('') + '<span class="wm-upd">' + update + '</span></div>';
   } catch (err) {
-    container.innerHTML = '<div class="weather-mini-bar wm-error">天气载入失败</div>';
+    container.innerHTML = '<div class="weather-mini-bar wm-error">天氣載入失敗</div>';
   }
 }
 
@@ -840,7 +840,7 @@ async function refreshSushiro() {
     const resp = await fetch(SUSHIRO_PROXY(SUSHIRO_STORE_API), { signal: AbortSignal.timeout(20000) });
     if (!resp.ok) {
       if (resp.status === 403) {
-        container.innerHTML = '<div class="error-msg">寿司郎资料需从 http://localhost 打开网页才能载入（corsproxy.io 限制）。请用「启动网页.bat」或 python -m http.server 开启本地服务。</div>';
+        container.innerHTML = '<div class="error-msg">寿司郎資料需從 http://localhost 打開網頁才能載入（corsproxy.io 限制）。請用「啟動網頁.bat」或 python -m http.server 開啟本地服务。</div>';
         badge.textContent = '';
         return;
       }
@@ -848,16 +848,16 @@ async function refreshSushiro() {
     }
     const allStores = await resp.json();
     if (!Array.isArray(allStores) || allStores.length === 0) {
-      container.innerHTML = '<div class="empty-hint">暂时没有分店资料</div>';
+      container.innerHTML = '<div class="empty-hint">暫時沒有分店資料</div>';
       badge.textContent = '';
       return;
     }
 
-    /* 只显示新界西分店（葵青/荃湾/屯门/元朗/离岛） */
+    /* 只顯示新界西分店（葵青/荃灣/屯門/元朗/離島） */
     const NTW_AREAS = ['葵青區', '荃灣區', '屯門區', '元朗區', '離島區'];
     const stores = allStores.filter(s => NTW_AREAS.includes(s.area));
     if (stores.length === 0) {
-      container.innerHTML = '<div class="empty-hint">新界西暂时没有分店资料</div>';
+      container.innerHTML = '<div class="empty-hint">新界西暫時沒有分店資料</div>';
       badge.textContent = '';
       return;
     }
@@ -884,23 +884,23 @@ async function refreshSushiro() {
       } else if (wait <= 0) {
         waitText = '直入';
       } else if (wait < 30) {
-        waitText = `${wait}分钟`;
+        waitText = `${wait}分鐘`;
         waitClass = 'medium';
       } else {
-        waitText = `${wait}分钟`;
+        waitText = `${wait}分鐘`;
       }
       html += `<div class="sushiro-card${closed ? ' closed' : ''}">
         <div class="s-name">${s.name || ('分店' + s.id)}</div>
         <div class="s-wait ${waitClass}">${waitText}</div>
-        <div class="s-status">${closed ? '未营业/停止派飞' : (groups > 0 ? `等候 ${groups} 组` : '无需等候')} · ${s.area || ''}</div>
+        <div class="s-status">${closed ? '未營業／停止派飛' : (groups > 0 ? `等候 ${groups} 組` : '無需等候')} · ${s.area || ''}</div>
       </div>`;
     }
     html += '</div>';
-    html += '<div class="sushiro-note">数据来源：寿司郎官方 sushipass API（经 corsproxy.io 代理）· 每 15 秒自动更新</div>';
+    html += '<div class="sushiro-note">數據来源：寿司郎官方 sushipass API（经 corsproxy.io 代理）· 每 15 秒自动更新</div>';
     container.innerHTML = html;
     badge.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
   } catch (err) {
-    container.innerHTML = '<div class="error-msg">寿司郎排队资料载入失败：' + (err.message || '网络错误') + '</div>';
+    container.innerHTML = '<div class="error-msg">寿司郎排队資料載入失敗：' + (err.message || '網絡錯誤') + '</div>';
     badge.textContent = '';
   }
 }
@@ -910,15 +910,15 @@ async function refreshSushiro() {
    K75P Full-Route Live Board
    ========================================================================== */
 
-/* K75P 折叠区展开状态（自动刷新整体重建后保持用户选择） */
+/* K75P 折叠区展开状态（自动刷新整体重建后保持用户選擇） */
 let k75pFoldOpen = false;
 
-/* K75P 循环线 23 站（按真实经过顺序：去程 D010-D080，回程 U011→U010→U020→...→U140） */
+/* K75P 循環线 23 站（按真实经过顺序：去程 D010-D080，回程 U011→U010→U020→...→U140） */
 const K75P_STOPS = [
   { id: 'D010', name: '天瑞' },
-  { id: 'D020', name: '天水围公园', fold: true },
+  { id: 'D020', name: '天水圍公園', fold: true },
   { id: 'D030', name: '天耀邨耀盛楼', fold: true },
-  { id: 'D040', name: '轻铁天耀站', fold: true },
+  { id: 'D040', name: '輕鐵天耀站', fold: true },
   { id: 'D050', name: '天盛苑', fold: true },
   { id: 'D060', name: '石埗路', fold: true },
   { id: 'D070', name: '沙洲里村', fold: true },
@@ -928,35 +928,35 @@ const K75P_STOPS = [
   { id: 'U020', name: '新生村', fold: true },
   { id: 'U030', name: '新李屋村', fold: true },
   { id: 'U040', name: '田心', fold: true },
-  { id: 'U050', name: '乡事委员会', fold: true },
-  { id: 'U060', name: '轻铁洪水桥站' },
+  { id: 'U050', name: '鄉事委員會', fold: true },
+  { id: 'U060', name: '輕鐵洪水桥站' },
   { id: 'U070', name: '洪水桥巴士厂' },
   { id: 'U080', name: '洪福邨' },
   { id: 'U090', name: '石埗村' },
   { id: 'U100', name: '天盛苑' },
-  { id: 'U110', name: '天水围警署' },
-  { id: 'U120', name: '赏湖居' },
-  { id: 'U130', name: '天水围公园' },
+  { id: 'U110', name: '天水圍警署' },
+  { id: 'U120', name: '賞湖居' },
+  { id: 'U130', name: '天水圍公園' },
   { id: 'U140', name: '天瑞' }
 ];
 
-/** 解析 departureTimeText（HH:MM 或 HH:MM:SS）为 "HH:MM" */
+/** 解析 departureTimeText（HH:MM 或 HH:MM:SS）為 "HH:MM" */
 function parseDepartureText(text) {
   if (!text) return '';
   const m = String(text).match(/(\d{1,2}):(\d{2})/);
   return m ? m[1] + ':' + m[2] : '';
 }
 
-/** 载入 K75P 全线 23 站实时班次并渲染 */
+/** 載入 K75P 全線 23 站實時班次并渲染 */
 async function loadK75PAllStops() {
   const container = document.getElementById('k75pContainer');
   const badge = document.getElementById('k75pUpdate');
   if (!container) return;
   try {
     const data = await getMTRBusETA('K75P');
-    if (!data || !data.busStop) throw new Error('无资料');
+    if (!data || !data.busStop) throw new Error('无資料');
 
-    /* 按站分组：过滤占位班次（arrival>=108000），保留发车时间；按到站秒数排序取前 3 班 */
+    /* 按站分组：過濾占位班次（arrival>=108000），保留發車時間；按到站秒数排序取前 3 班 */
     const stopMap = {};
     for (const stop of data.busStop) {
       const buses = (stop.bus || []).map(b => {
@@ -978,7 +978,7 @@ async function loadK75PAllStops() {
     for (const stop of K75P_STOPS) {
       if (stop.fold && !foldOpen) {
         foldOpen = true;
-        html += '<button type="button" class="k75p-fold-btn" id="k75pFoldBtn" onclick="toggleK75PFold()" aria-expanded="' + (k75pFoldOpen ? 'true' : 'false') + '">天水围市 ' + (k75pFoldOpen ? '▴' : '▾') + '</button>';
+        html += '<button type="button" class="k75p-fold-btn" id="k75pFoldBtn" onclick="toggleK75PFold()" aria-expanded="' + (k75pFoldOpen ? 'true' : 'false') + '">天水圍市 ' + (k75pFoldOpen ? '▴' : '▾') + '</button>';
         html += '<div class="k75p-fold' + (k75pFoldOpen ? ' open' : '') + '" id="k75pFold">';
       } else if (!stop.fold && foldOpen) {
         foldOpen = false;
@@ -989,19 +989,19 @@ async function loadK75PAllStops() {
       html += `<span class="k75p-name">${escapeHtml(stop.name)}</span>`;
       html += '<span class="k75p-buses">';
       if (buses.length === 0) {
-        html += '<span class="k75p-bus k75p-none">暂无班次</span>';
+        html += '<span class="k75p-bus k75p-none">暫無班次</span>';
       } else {
         for (const b of buses) {
           let cls = '';
           let label = '';
           if (b.sec > 0 && b.sec < 108000) {
             const mins = Math.max(1, Math.ceil(b.sec / 60));
-            if (b.sec <= 60) { cls = 'soon'; label = '即将到站'; }
-            else { label = mins + ' 分钟'; }
+            if (b.sec <= 60) { cls = 'soon'; label = '即將到站'; }
+            else { label = mins + ' 分鐘'; }
             if (b.isDelayed) { cls = 'delayed'; label += ' · 延误'; }
-            else if (b.isScheduled) { cls = 'scheduled'; label += ' · 定时'; }
+            else if (b.isScheduled) { cls = 'scheduled'; label += ' · 定時'; }
           } else if (b.depText) {
-            cls = 'scheduled'; label = b.depText + ' 发车';
+            cls = 'scheduled'; label = b.depText + ' 發車';
           }
           html += `<span class="k75p-bus ${cls}">${label}</span>`;
         }
@@ -1013,28 +1013,28 @@ async function loadK75PAllStops() {
     container.innerHTML = html;
     badge.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
   } catch (err) {
-    container.innerHTML = '<div class="error-msg">K75P 全线资料载入失败：' + (err.message || '网络错误') + '</div>';
+    container.innerHTML = '<div class="error-msg">K75P 全線資料載入失敗：' + (err.message || '網絡錯誤') + '</div>';
     badge.textContent = '';
   }
 }
 
-/** 展开/折叠 K75P 石埗路至乡事委员会段（厦村市按钮） */
+/** 展开/折叠 K75P 石埗路至鄉事委員會段（厦村市按钮） */
 function toggleK75PFold() {
   const fold = document.getElementById('k75pFold');
   const btn = document.getElementById('k75pFoldBtn');
   if (!fold || !btn) return;
   const open = fold.classList.toggle('open');
   k75pFoldOpen = open;                 /* 记录展开状态，自动刷新重建后保持 */
-  btn.textContent = open ? '天水围市 ▴' : '天水围市 ▾';
+  btn.textContent = open ? '天水圍市 ▴' : '天水圍市 ▾';
   btn.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
 
 /* ==========================================================================
-   Route Detail（点按结果/收藏卡 → 全线候车弹层）
+   Route Detail（點按结果/收藏卡 → 全線候車弹层）
    ========================================================================== */
 
-/** 获取 CTB 路线某方向全部车站 */
+/** 获取 CTB 路線某方向全部車站 */
 async function getCTBRouteStops(route, dir) {
   try {
     const data = await fetchWithProxy(`${CTB_BASE}/route-stop/ctb/${route}/${dir}`);
@@ -1064,9 +1064,9 @@ function openRouteDetail(item) {
   sheet.classList.add('show');
   document.body.classList.add('sheet-open');
   const inner = document.getElementById('detailSheetInner');
-  inner.innerHTML = '<div class="loading"><div class="spinner"></div>载入全线候车时间...</div>';
+  inner.innerHTML = '<div class="loading"><div class="spinner"></div>' + t('loading.detail') + '</div>';
   renderDetailContent(item, inner);
-  /* 弹层打开后把焦点移入，便于键盘操作与读屏 */
+  /* 弹层打開后把焦點移入，便於键盘操作与读屏 */
   requestAnimationFrame(() => {
     const close = inner.querySelector('.ds-close');
     if (close) close.focus();
@@ -1081,7 +1081,7 @@ function closeRouteDetail() {
   document.body.classList.remove('sheet-open');
 }
 
-/** 收藏公交路线：打开换站面板，选择要显示等候时间的站 */
+/** 收藏公交路線：打開換站面板，選擇要顯示等候時間的站 */
 async function openStopPicker(favIndex) {
   const favs = getFavorites();
   const fav = favs[favIndex];
@@ -1092,7 +1092,7 @@ async function openStopPicker(favIndex) {
   mask.classList.add('show');
   sheet.classList.add('show');
   document.body.classList.add('sheet-open');
-  inner.innerHTML = '<div class="loading"><div class="spinner"></div>载入车站列表...</div>';
+  inner.innerHTML = '<div class="loading"><div class="spinner"></div>' + t('loading.stops') + '</div>';
 
   let stops = [];
   try {
@@ -1127,11 +1127,11 @@ async function openStopPicker(favIndex) {
   } catch (e) { stops = []; }
 
   if (stops.length === 0) {
-    inner.innerHTML = '<div class="ds-grab"></div><div class="ds-head"><span class="ds-no">' + escapeHtml(String(fav.route)) + '</span><button class="ds-close" onclick="closeRouteDetail()">×</button></div><div class="empty-hint">无法载入此路线的车站列表</div>';
+    inner.innerHTML = '<div class="ds-grab"></div><div class="ds-head"><span class="ds-no">' + escapeHtml(String(fav.route)) + '</span><button class="ds-close" onclick="closeRouteDetail()">×</button></div><div class="empty-hint">无法載入此路線的車站列表</div>';
     return;
   }
 
-  let h = '<div class="ds-grab"></div><div class="ds-head"><span class="ds-no">' + escapeHtml(String(fav.route)) + ' · 选择车站</span>';
+  let h = '<div class="ds-grab"></div><div class="ds-head"><span class="ds-no">' + escapeHtml(String(fav.route)) + ' · 選擇車站</span>';
   h += '<button class="ds-close" onclick="closeRouteDetail()">×</button></div>';
   h += '<div class="ds-list">';
   stops.forEach((s, i) => {
@@ -1155,7 +1155,7 @@ async function openStopPicker(favIndex) {
   inner.innerHTML = h;
 }
 
-/** 确认换站并刷新收藏 */
+/** 確認換站并刷新收藏 */
 function pickStop(el) {
   const i = parseInt(el.getAttribute('data-i'), 10);
   const sid = el.getAttribute('data-sid');
@@ -1173,26 +1173,26 @@ function pickStop(el) {
 
 /** 渲染详情弹层内容 */
 /* ==========================================================================
-   MTR 车站接驳：轻铁 + 港铁巴士（iOS 概念图功能实装）
+   MTR 車站接驳：輕鐵 + 港鐵巴士（iOS 概念图功能实装）
    ========================================================================== */
 async function buildMTRConnections(item) {
   const station = (item.station_name || '').trim();
   if (!station) return '';
   const parts = [];
 
-  /* --- 轻铁接驳：站名完全匹配 LRT_STATIONS --- */
+  /* --- 輕鐵接驳：站名完全匹配 LRT_STATIONS --- */
   const lrtId = Object.keys(LRT_STATIONS).find(k => LRT_STATIONS[k] === station);
   if (lrtId != null) {
     try {
       const entries = await getLRTEta(Number(lrtId));
       if (entries && entries.length) {
         let h = '<div class="mtr-conn"><div class="conn-block">'
-          + '<div class="conn-title">🚈 轻铁接驳 · ' + escapeHtml(station) + '站</div>';
+          + '<div class="conn-title">🚈 輕鐵接驳 · ' + escapeHtml(station) + '站</div>';
         h += entries.slice(0, 4).map(e => {
           const cls = e.mins <= 1 ? 'soon' : '';
           return '<div class="conn-row"><span class="conn-badge lr">' + escapeHtml(e.routeNo) + '</span>'
             + '<span class="conn-dest">' + escapeHtml(e.dest) + '</span>'
-            + '<span class="conn-eta ' + cls + '">' + e.mins + ' 分钟</span></div>';
+            + '<span class="conn-eta ' + cls + '">' + e.mins + ' 分鐘</span></div>';
         }).join('');
         h += '</div></div>';
         parts.push(h);
@@ -1200,7 +1200,7 @@ async function buildMTRConnections(item) {
     } catch (e) {}
   }
 
-  /* --- 港铁巴士接驳：路线 orig/dest 与站名匹配（统一转繁体，避免简繁不匹配） --- */
+  /* --- 港鐵巴士接驳：路線 orig/dest 与站名匹配（统一转繁體，避免简繁不匹配） --- */
   const base = toTrad(station).replace(/站$/, '');
   const matchedRoutes = Object.keys(MTR_BUS_ROUTES).filter(r => {
     const o = MTR_BUS_ROUTES[r];
@@ -1216,7 +1216,7 @@ async function buildMTRConnections(item) {
       if (!parsed.length) continue;
       const o = MTR_BUS_ROUTES[r];
       let h = '<div class="mtr-conn"><div class="conn-block">'
-        + '<div class="conn-title">🚌 港铁巴士 ' + escapeHtml(r) + ' · ' + escapeHtml(o.orig) + ' → ' + escapeHtml(o.dest) + '</div>';
+        + '<div class="conn-title">🚌 港鐵巴士 ' + escapeHtml(r) + ' · ' + escapeHtml(o.orig) + ' → ' + escapeHtml(o.dest) + '</div>';
       h += parsed.slice(0, 3).map(p => {
         if (!p.eta || isNaN(Date.parse(p.eta))) return '';
         const minsText = minsFromNow(Math.floor(Date.parse(p.eta) / 1000));
@@ -1239,8 +1239,8 @@ async function renderDetailContent(item, inner) {
       const isLine = (item.mode === 'line' || item.station_id === 'ALL');
       title = item.lineName || MTR_LINES[item.line] || item.line;
       const n = (MTR_LINE_STOPS[item.line] || []).length;
-      sub = isLine ? `全线 ${n} 站候车时间` : `${item.station_name} · ${item.lineName}`;
-      meta = '上/下行 候车时间（分钟）';
+      sub = isLine ? `全線 ${n} 站候車時間` : `${item.station_name} · ${item.lineName}`;
+      meta = '上/下行 候車時間（分鐘）';
       tri = true;
       const stops = MTR_LINE_STOPS[item.line] || [];
       const entries = await Promise.all(stops.map(async (s) => {
@@ -1257,21 +1257,21 @@ async function renderDetailContent(item, inner) {
       const em = (ts) => {
         const mins = minsFromNow(ts);
         const cls = etaColorClass(ts);
-        return `<span class="ds-em ${cls}">${String(mins).replace('分钟', '')}<i class="ds-eu">分</i></span>`;
+        return `<span class="ds-em ${cls}">${String(mins).replace('分鐘', '')}<i class="ds-eu">分</i></span>`;
       };
       listHtml = rows.map(r => {
         const u = r.ups.length ? r.ups.map(em).join('') : '<span class="ds-none">—</span>';
         const d = r.downs.length ? r.downs.map(em).join('') : '<span class="ds-none">—</span>';
         return `<div class="ds-stop ds-tri"><span class="ds-sn">${escapeHtml(r.name)}</span><span class="ds-e">${u}</span><span class="ds-e">${d}</span></div>`;
       }).join('');
-      /* 车站详情：附轻铁 / 港铁巴士接驳（仅车站模式） */
+      /* 車站详情：附輕鐵 / 港鐵巴士接驳（仅車站模式） */
       if (!isLine) {
         listHtml += await buildMTRConnections(item);
       }
     } else if (item.type === 'mtrbus') {
       title = String(item.route);
-      sub = item.orig && item.dest ? `${item.orig} → ${item.dest}` : '港铁巴士';
-      meta = '到站时间（分钟）';
+      sub = item.orig && item.dest ? `${item.orig} → ${item.dest}` : '港鐵巴士';
+      meta = '到站時間（分鐘）';
       const data = await getMTRBusETA(item.route);
       const rows = [];
       if (data && Array.isArray(data.busStop)) {
@@ -1295,23 +1295,23 @@ async function renderDetailContent(item, inner) {
             return `<span class="ds-em ${cls}">${mins}<i class="ds-eu">${suffix}</i></span>`;
           }
           if (b.depText) {
-            return `<span class="ds-em scheduled">${b.depText}<i class="ds-eu">发</i></span>`;
+            return `<span class="ds-em scheduled">${b.depText}<i class="ds-eu">發</i></span>`;
           }
           return '<span class="ds-none">—</span>';
         }).join('') : '<span class="ds-none">—</span>';
         return `<div class="ds-stop"><span class="ds-sn">${escapeHtml(r.name)}</span><span class="ds-e">${cells}</span></div>`;
       }).join('');
     } else if (item.type === 'lrt') {
-      /* 轻铁：显示该站各平台实时到站 */
-      title = item.stop_name || item.route || '轻铁车站';
-      sub = '轻铁实时到站';
-      meta = '路线 · 方向（分钟）';
+      /* 輕鐵：顯示該站各平台實時到站 */
+      title = item.stop_name || item.route || '輕鐵車站';
+      sub = '輕鐵實時到站';
+      meta = '路線 · 方向（分鐘）';
       let entries = item.platformData || null;
       if ((!entries || entries.length === 0) && item.station_id != null) {
         entries = await getLRTEta(item.station_id);
       }
       if (!entries || entries.length === 0) {
-        listHtml = '<div class="ds-stop"><span class="ds-sn">暂无实时到站数据</span><span class="ds-e"></span></div>';
+        listHtml = '<div class="ds-stop"><span class="ds-sn">暫無實時到站數據</span><span class="ds-e"></span></div>';
       } else {
         listHtml = entries.map(e => {
           const cls = e.mins <= 1 ? 'soon' : '';
@@ -1322,21 +1322,21 @@ async function renderDetailContent(item, inner) {
         }).join('');
       }
     } else {
-      /* 巴士：展示该路线全部站候车 */
+      /* 巴士：展示該路線全部站候車 */
       title = String(item.route);
       sub = item.origDest || item.stop_name || '';
-      meta = '候车时间（分钟）';
+      meta = '候車時間（分鐘）';
       const em = (ts) => {
         const mins = minsFromNow(ts);
         const cls = etaColorClass(ts);
-        return `<span class="ds-em ${cls}">${String(mins).replace('分钟', '')}<i class="ds-eu">分</i></span>`;
+        return `<span class="ds-em ${cls}">${String(mins).replace('分鐘', '')}<i class="ds-eu">分</i></span>`;
       };
       if (item.company === 'kmb') {
         const stops = await getKMBStops(item.route, item.direction, item.serviceType || '1');
         const allEta = await getKMBETA(item.stop_id);
         const wantDir = item.direction === 'inbound' ? 'I' : 'O';
         const byRoute = allEta.filter(e => e.route === String(item.route) && (e.dir || '').toUpperCase() === wantDir);
-        /* route-stop 缺站名时批量调 stop 接口补全（避免显示纯数字站码） */
+        /* route-stop 缺站名时批量调 stop 接口补全（避免顯示纯数字站码） */
         const missing = stops.filter(s => !(s.name_tc || s.name_en)).map(s => s.stop);
         const names = await Promise.all(missing.map(sid => getKMBStopName(sid)));
         const nameMap = {};
@@ -1370,7 +1370,7 @@ async function renderDetailContent(item, inner) {
           return `<div class="ds-stop"><span class="ds-sn">${escapeHtml(r.name)}</span><span class="ds-e">${cells}</span></div>`;
         }).join('');
       } else {
-        /* NLB（新大屿山巴士）：按路线取站，逐站取 ETA */
+        /* NLB（新大嶼山巴士）：按路線取站，逐站取 ETA */
         const stops = await getNLBRouteStops(item.routeId);
         const rows = [];
         for (let i = 0; i < stops.length; i += 5) {
@@ -1388,8 +1388,8 @@ async function renderDetailContent(item, inner) {
       }
     }
     const colhead = tri
-      ? '<div class="ds-colhead"><span class="ds-sn">车站</span><span class="ds-col">上行</span><span class="ds-col">下行</span></div>'
-      : '<div class="ds-colhead"><span class="ds-sn">车站</span><span class="ds-col">候车时间</span></div>';
+      ? '<div class="ds-colhead"><span class="ds-sn">車站</span><span class="ds-col">上行</span><span class="ds-col">下行</span></div>'
+      : '<div class="ds-colhead"><span class="ds-sn">車站</span><span class="ds-col">候車時間</span></div>';
     inner.innerHTML = `
       <div class="ds-grab"></div>
       <div class="ds-head">
@@ -1401,7 +1401,7 @@ async function renderDetailContent(item, inner) {
       ${colhead}
       <div class="ds-list">${listHtml}</div>`;
   } catch (err) {
-    inner.innerHTML = '<div class="error-msg">载入失败：' + escapeHtml(err.message || '网络错误') + '</div>';
+    inner.innerHTML = '<div class="error-msg">載入失敗：' + escapeHtml(err.message || '網絡錯誤') + '</div>';
   }
 }
 
