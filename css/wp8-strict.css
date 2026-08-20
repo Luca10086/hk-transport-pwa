@@ -1,0 +1,251 @@
+/* ==========================================================================
+   森友出行 · Windows Phone 8 概念版（APK 方向）
+   严格遵循 WP8 Metro 设计：扁平无阴影 · 12/24px 网格 · Segoe UI ·
+   单一 accent · 深色主题 · Pivot 横滑 · App Bar 圆图标 · Live Tiles ·
+   点击「倾斜」反馈 · 无变色
+   ========================================================================== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+
+:root {
+  --bg: #1F1F1F;
+  --surface: #2D2D2D;
+  --surface2: #383838;
+  --text: #FFFFFF;
+  --text2: #B0B0B0;
+  --line: #3A3A3A;
+  --accent: #00A2E8;
+  --accent-dark: #0078B4;
+  --topbar-h: 96px;
+  --appbar-h: 62px;
+}
+body[data-theme="light"] {
+  --bg: #F2F2F2;
+  --surface: #FFFFFF;
+  --surface2: #E8E8E8;
+  --text: #000000;
+  --text2: #666666;
+  --line: #CCCCCC;
+}
+
+html { font-size: 16px; }
+body {
+  font-family: 'Segoe UI Light', 'Segoe UI', 'Segoe WP', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  background: var(--bg); color: var(--text);
+  overflow: hidden;               /* 整个应用不滚动，页面在 pivot 内滚动 */
+}
+
+/* ================= 顶栏：Pivot 大标题 ================= */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  height: var(--topbar-h);
+  padding: calc(24px + env(safe-area-inset-top)) 24px 12px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  background: var(--bg);
+}
+.pivot-title {
+  font-size: 3rem; font-weight: 300; line-height: 1;
+  color: var(--text); letter-spacing: -0.5px;
+  text-transform: lowercase;
+}
+.topbar-refresh {
+  width: 44px; height: 44px; border: 2px solid var(--text); border-radius: 50%;
+  background: transparent; color: var(--text);
+  font-size: 1.3rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+}
+.topbar-refresh:active { transform: scale(0.9); }
+
+/* ================= Pivot：横向窗格 ================= */
+.pivot {
+  position: fixed; top: var(--topbar-h); left: 0; right: 0; bottom: var(--appbar-h);
+  display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+  scrollbar-width: none; -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+}
+.pivot::-webkit-scrollbar { display: none; }
+
+.pane {
+  flex: 0 0 100%; min-width: 100%;
+  scroll-snap-align: start;
+  overflow-y: auto; overscroll-behavior-y: contain;
+  padding: 0 24px 95px;               /* 24px 边距 + 95px 底部留白（规范） */
+  position: relative;
+}
+.pane::-webkit-scrollbar { display: none; }
+
+.pane-title {
+  font-size: 1.6rem; font-weight: 300; color: var(--text);
+  margin: 18px 0 12px; text-transform: lowercase;
+}
+.pane-title:first-child { margin-top: 20px; }
+
+/* ================= 全景背景（首页宽幅 + 视差标题） ================= */
+.panorama-bg {
+  position: absolute; top: 0; left: -200px; right: -200px; height: 160px;
+  background: linear-gradient(90deg, rgba(0,162,232,0.16), rgba(0,162,232,0.03) 55%, rgba(0,162,232,0.12));
+  pointer-events: none; z-index: 0;
+}
+.pane-inner { position: relative; z-index: 1; }
+
+/* ================= Live Tiles ================= */
+.tiles {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;  /* 12px 网格间距 */
+  margin: 20px 0 8px;
+}
+.tile {
+  border: none; cursor: pointer;
+  background: var(--accent); color: #fff;
+  min-height: 96px; padding: 12px;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+  font-size: 1rem; text-align: left; line-height: 1.3;
+}
+.tile b { font-size: 1.6rem; font-weight: 300; font-family: 'Segoe UI Light', sans-serif; }
+.tile-wide { grid-column: span 2; min-height: 72px; }
+.tile:nth-child(2) { background: var(--accent-dark); }
+.tile:nth-child(3) { background: #0078B4; }
+.tile:active { transform: scale(0.96); }
+
+/* ================= 搜索区 ================= */
+.search-block { margin: 18px 0 4px; }
+.metro-input {
+  width: 100%; padding: 14px 0 10px;
+  border: none; border-bottom: 2px solid var(--text2);
+  background: transparent; color: var(--text);
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-size: 1rem;
+  outline: none; border-radius: 0;
+}
+.metro-input:focus { border-bottom-color: var(--accent); }
+.metro-input::placeholder { color: var(--text2); }
+
+.chips { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--text2); background: transparent; color: var(--text2);
+  padding: 7px 14px; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-size: 0.85rem;
+  cursor: pointer; border-radius: 0;
+}
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip:active { transform: scale(0.95); }
+
+.search-btn {
+  width: 100%; padding: 12px; border: none; cursor: pointer;
+  background: var(--accent); color: #fff;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-size: 0.95rem; font-weight: 600;
+  letter-spacing: 1px; text-transform: lowercase;
+}
+.search-btn:active { transform: scale(0.98); }
+
+/* ================= 扁平列表行（Metro 行） ================= */
+.flat-list { display: block; margin: 6px 0; }
+.metro-row {
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; padding: 13px 0;
+  background: none; border: none; border-bottom: 1px solid var(--line);
+  cursor: pointer; text-align: left; color: var(--text);
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+}
+.metro-row:active { transform: scale(0.98); }   /* 倾斜反馈，无变色 */
+.row-no {
+  flex: 0 0 auto; min-width: 54px;
+  font-size: 1.4rem; font-weight: 300; color: var(--accent);
+}
+.row-main { flex: 1; min-width: 0; }
+.row-name { display: block; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-sub { display: block; font-size: 0.78rem; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-eta { flex: 0 0 auto; font-size: 1.3rem; font-weight: 300; color: var(--text); font-variant-numeric: tabular-nums; }
+.row-eta.soon { color: #E51400; }
+.row-eta.medium { color: #F0A30A; }
+.row-eta-detail { font-size: 0.72rem; color: var(--text2); margin-top: 2px; }
+.row-star, .row-remove {
+  flex: 0 0 auto; width: 36px; height: 36px;
+  border: none; background: none; cursor: pointer;
+  font-size: 1.1rem; color: var(--text2);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.row-star:active, .row-remove:active { transform: scale(0.9); }
+.row-remove { font-size: 0.9rem; }
+.metro-empty { padding: 22px 0; color: var(--text2); font-size: 0.9rem; }
+
+/* 站牌卡（站名搜索结果） */
+.stop-row .row-no { font-size: 1rem; }
+.stop-routes { display: flex; flex-direction: column; gap: 3px; }
+.stop-route { display: flex; gap: 10px; font-size: 0.8rem; }
+.stop-route .sr-no { color: var(--accent); min-width: 40px; }
+.stop-route .sr-eta { margin-left: auto; color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ================= 天气条 ================= */
+.weather-bar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; background: var(--surface); color: var(--text);
+  font-size: 0.95rem; margin: 8px 0;
+}
+.weather-bar .w-desc { font-size: 1.1rem; font-weight: 300; }
+.weather-bar .w-item b { font-weight: 400; }
+.weather-bar .w-upd { margin-left: auto; font-size: 0.72rem; color: var(--text2); }
+
+/* 警告条 */
+.warning-bar { padding: 10px 16px; margin: 10px 0; font-size: 0.85rem; }
+.warning-bar.warn-severe { background: #4A1F1F; color: #FFA8A8; }
+.warning-bar.warn-mild { background: #4A4000; color: #FFE082; }
+
+/* ================= 设定列表 ================= */
+.settings-list { margin-top: 10px; }
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 13px 0; border-bottom: 1px solid var(--line);
+  font-size: 0.95rem;
+}
+.setting-row .label { color: var(--text2); }
+.setting-row .val { color: var(--text); }
+.seg { display: flex; gap: 0; }
+.seg button {
+  border: 1px solid var(--line); background: transparent; color: var(--text2);
+  padding: 7px 12px; cursor: pointer; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-size: 0.8rem;
+  border-radius: 0;
+}
+.seg button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.seg button:active { transform: scale(0.94); }
+
+/* ================= App Bar（底部圆图标 + ⋯） ================= */
+.appbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  height: var(--appbar-h);
+  padding: 4px 12px calc(4px + env(safe-area-inset-bottom));
+  background: var(--surface); border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-around;
+}
+.ab-btn {
+  width: 44px; height: 44px; border: none; background: transparent; cursor: pointer;
+  color: var(--text2); display: inline-flex; align-items: center; justify-content: center;
+}
+.ab-btn svg { width: 18px; height: 18px; fill: currentColor; padding: 6px; border: 2px solid currentColor; border-radius: 50%; box-sizing: content-box; }
+.ab-btn.active { color: var(--accent); }
+.ab-btn:active { transform: scale(0.9); }
+.ab-more {
+  width: 44px; height: 44px; border: none; background: transparent; cursor: pointer;
+  color: var(--text2); font-size: 1.3rem;
+}
+.ab-more:active { color: var(--accent); }
+.more-menu {
+  position: absolute; right: 12px; bottom: calc(var(--appbar-h) - 4px);
+  background: var(--surface); border: 1px solid var(--line);
+  min-width: 160px; z-index: 70;
+}
+.more-menu[hidden] { display: none; }
+.more-menu button {
+  display: block; width: 100%; text-align: left; padding: 12px 16px;
+  border: none; background: none; color: var(--text); cursor: pointer;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-size: 0.9rem;
+}
+.more-menu button:active { background: var(--surface2); }
+
+/* ================= 加载/提示 ================= */
+.loading { padding: 24px 0; color: var(--text2); font-size: 0.9rem; }
+.error-msg { padding: 14px 16px; margin: 10px 0; background: #4A1F1F; border: 1px solid #E51400; color: #FFA8A8; font-size: 0.85rem; }
+
+/* ================= 响应式：窄屏字号微调 ================= */
+@media (max-width: 360px) {
+  .pivot-title { font-size: 2.4rem; }
+  .pane { padding-left: 16px; padding-right: 16px; }
+}
