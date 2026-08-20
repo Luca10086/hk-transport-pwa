@@ -1,5 +1,4 @@
 @echo off
-chcp 65001 >nul
 title Senyou WP8 - APK Build
 REM ============================================================
 REM  Senyou Travel (WP8) Android APK one-click build script
@@ -18,11 +17,12 @@ for /d %%i in ("C:\Program Files\Eclipse Adoptium\jdk-21*") do if exist "%%i\bin
 for /d %%i in ("C:\Program Files\Microsoft\jdk-21*") do if exist "%%i\bin\java.exe" if not defined JDK set "JDK=%%i"
 if not defined JDK (
     echo [error] JDK21 not found, LOCALAPPDATA=%LOCALAPPDATA% >> "%LOG%" 2>&1
-    echo.
-    echo [ERROR] 找不到 JDK 21。
-    echo Android Studio 自帶的 Java 25 與 Gradle 8.11 不相容（會報 major version 69）。
-    echo 請先雙擊 setup-jdk.bat 一鍵下載 JDK 21，完成後再重新雙擊本腳本。
-    echo.
+    echo:
+    echo [ERROR] JDK 21 not found.
+    echo Android Studio bundled Java 25 is incompatible with Gradle 8.11
+    echo error Unsupported class file major version 69.
+    echo Please double-click setup-jdk.bat first then run this again.
+    echo:
     goto :fail
 )
 set "JAVA_HOME=%JDK%"
