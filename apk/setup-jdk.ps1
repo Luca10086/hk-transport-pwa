@@ -21,7 +21,7 @@ Write-Host ''
 # 1. 已經裝好（或跑過一次）就直接用
 if (Test-Path (Join-Path $dest 'bin\java.exe')) {
     Write-Host '[OK] JDK 21 已存在，無需重複下載。' -ForegroundColor Green
-    & (Join-Path $dest 'bin\java.exe') -version 2>&1 | Out-String | Write-Host
+    Write-Host (cmd /c "`"$((Join-Path $dest 'bin\java.exe'))`" -version 2>&1")
     Write-Host ''
     Write-Host '完成! 現在雙擊 build-apk.bat 即可。' -ForegroundColor Green
     exit 0
@@ -33,7 +33,7 @@ if (Test-Path $pf) {
     $installed = Get-ChildItem $pf -Directory | Where-Object { $_.Name -like 'jdk-21*' } | Select-Object -First 1
     if ($installed) {
         Write-Host "[OK] 已找到系統安裝的 JDK: $($installed.FullName)" -ForegroundColor Green
-        & (Join-Path $installed.FullName 'bin\java.exe') -version 2>&1 | Out-String | Write-Host
+        Write-Host (cmd /c "`"$((Join-Path $installed.FullName 'bin\java.exe'))`" -version 2>&1")
         Write-Host ''
         Write-Host '完成! 現在雙擊 build-apk.bat 即可。' -ForegroundColor Green
         exit 0
@@ -70,9 +70,9 @@ Remove-Item $zip -Force -ErrorAction SilentlyContinue
 
 # 5. 驗證
 Write-Host '[3/3] 驗證 JDK...'
-$v = & (Join-Path $dest 'bin\java.exe') -version 2>&1 | Out-String
-Write-Host $v
-if ($v -notmatch 'version "21') {
+$v = cmd /c "`"$((Join-Path $dest 'bin\java.exe'))`" -version 2>&1"
+Write-Host ($v -join " ")
+if (($v -join " ") -notmatch 'version "21') {
     Write-Host '[ERROR] 安裝的 Java 版本不對，請刪除後重試。' -ForegroundColor Red
     Write-Host "        $dest"
     exit 1
