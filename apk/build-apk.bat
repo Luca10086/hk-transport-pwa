@@ -72,6 +72,8 @@ echo [4/4] Building debug APK (first time downloads Gradle, please wait)...
 echo [step4] gradlew --stop >> "%LOG%" 2>&1
 cd android
 call gradlew.bat --stop >> "%LOG%" 2>&1
+REM Clean app module incremental outputs (avoids AAPT2 "no data file for changedFile" cache bug)
+if exist "app\build" rmdir /s /q "app\build"
 echo [step5] gradlew assembleDebug >> "%LOG%" 2>&1
 powershell -NoProfile -ExecutionPolicy Bypass -Command "& .\gradlew.bat assembleDebug --console=plain 2>&1 | Tee-Object -FilePath '%~dp0build-log.txt' -Append; exit $LASTEXITCODE"
 if errorlevel 1 (
