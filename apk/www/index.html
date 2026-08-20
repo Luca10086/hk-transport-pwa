@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1F1F1F">
+<title>森友出行 · WP8 概念版</title>
+<link rel="stylesheet" href="css/wp8-strict.css">
+</head>
+<body>
+
+<!-- ================= WP8 系统状态栏 ================= -->
+<div class="statusbar">
+  <span id="statusTime">00:00</span>
+  <span class="sb-right">▲▮▮▮▮</span>
+</div>
+
+<!-- ================= 顶栏：Pivot 大标题 ================= -->
+<header class="topbar">
+  <h1 class="pivot-title" id="pivotTitle">搜尋</h1>
+  <button class="topbar-refresh" id="topbarRefresh" onclick="refreshAll()" aria-label="重新整理">↻</button>
+</header>
+
+<!-- ================= 加载进度条 ================= -->
+<div class="progressbar" id="progressbar" hidden></div>
+
+<!-- ================= Pivot（横滑窗格） ================= -->
+<main class="pivot" id="pivot">
+
+  <!-- 首页：全景 + 磁贴 + 搜索 + 天气 + K75P -->
+  <section class="pane" data-pane="home">
+    <!-- 首页全景 Panorama -->
+    <div class="pano">
+      <div class="pano-bg" id="panoBg" aria-hidden="true"></div>
+      <h1 class="pano-title" id="panoTitle">森友出行</h1>
+      <div class="pano-track" id="panoTrack">
+
+        <!-- 面板 1：磁贴 -->
+        <div class="pano-panel">
+          <div class="tiles">
+            <button class="tile" onclick="goPane('favs')">我的收藏</button>
+            <button class="tile" onclick="goPane('sushi')">壽司郎</button>
+            <button class="tile tile-wide" onclick="goPane('settings')">設定</button>
+            <button class="tile tile-wide tile-flip" id="tileWeather">
+              <span class="tile-face">天氣 <b id="tileWeatherV">--°</b></span>
+              <span class="tile-face tile-face-back" id="tileWeatherD">載入中</span>
+            </button>
+          </div>
+          <!-- 小磁贴：交通方式快捷入口（WP8 Small Tile） -->
+          <div class="tiles-small">
+            <button class="tile-small" onclick="quickTransport('mtr')">港鐵</button>
+            <button class="tile-small" onclick="quickTransport('lrt')">輕鐵</button>
+            <button class="tile-small" onclick="quickTransport('mtrbus')">港鐵巴士</button>
+            <button class="tile-small" onclick="goPanoPanel(2)">K75P</button>
+          </div>
+        </div>
+
+        <!-- 面板 2：搜索 + 结果 -->
+        <div class="pano-panel">
+          <div class="search-block">
+            <input id="searchInput" class="metro-input" placeholder="輸入巴士路線、站名或港鐵車站" aria-label="搜尋"
+                   onkeydown="if(event.key==='Enter') doSearch()">
+            <div class="chips" id="chips">
+              <button class="chip active" data-tp="bus" onclick="setTransport('bus', this)">公交</button>
+              <button class="chip" data-tp="mtrbus" onclick="setTransport('mtrbus', this)">港鐵巴士</button>
+              <button class="chip" data-tp="mtr" onclick="setTransport('mtr', this)">港鐵</button>
+              <button class="chip" data-tp="lrt" onclick="setTransport('lrt', this)">輕鐵</button>
+            </div>
+            <button class="search-btn" onclick="doSearch()">搜尋</button>
+          </div>
+          <div id="results" class="flat-list"></div>
+        </div>
+
+        <!-- 面板 3：天气 + K75P -->
+        <div class="pano-panel">
+          <h3 class="pane-title">天氣</h3>
+          <div id="warningBar" class="warning-bar" hidden></div>
+          <div id="weather" class="weather-bar">載入中…</div>
+          <h3 class="pane-title">k75p 全線實時</h3>
+          <div id="k75p" class="flat-list"></div>
+        </div>
+      </div>
+      <div class="pano-hint" id="panoHint"><i class="on"></i><i></i><i></i></div>
+    </div>
+  </section>
+
+  <!-- 收藏 -->
+  <section class="pane" data-pane="favs">
+    <div class="pane-inner">
+      <h2 class="pane-title">收藏</h2>
+      <div id="favs" class="flat-list"><div class="metro-empty">暫無收藏，在搜尋結果按 ☆ 加入</div></div>
+    </div>
+  </section>
+
+  <!-- 寿司郎 -->
+  <section class="pane" data-pane="sushi">
+    <div class="pane-inner">
+      <h2 class="pane-title">壽司郎</h2>
+      <div id="sushi" class="flat-list"><div class="metro-empty">載入中…</div></div>
+    </div>
+  </section>
+
+  <!-- 设定 -->
+  <section class="pane" data-pane="settings">
+    <div class="pane-inner">
+      <h2 class="pane-title">設定</h2>
+      <div class="settings-list">
+        <div class="setting-row"><span class="label">主題</span>
+          <div class="seg" id="themeSeg">
+            <button data-th="dark" onclick="setTheme('dark')">深色</button>
+            <button data-th="light" onclick="setTheme('light')">淺色</button>
+          </div>
+        </div>
+        <div class="setting-row"><span class="label">強調色</span>
+          <div class="seg" id="accentSeg">
+            <button data-ac="#00A2E8" style="color:#00A2E8" onclick="setAccent('#00A2E8')">青</button>
+            <button data-ac="#0078D4" style="color:#0078D4" onclick="setAccent('#0078D4')">藍</button>
+            <button data-ac="#E81123" style="color:#E81123" onclick="setAccent('#E81123')">紅</button>
+            <button data-ac="#6B69D6" style="color:#6B69D6" onclick="setAccent('#6B69D6')">紫</button>
+          </div>
+        </div>
+        <div class="setting-row"><span class="label">自動重新整理</span>
+          <div class="seg" id="refreshSeg">
+            <button data-rv="15" onclick="setRefresh(15)">15s</button>
+            <button data-rv="30" onclick="setRefresh(30)">30s</button>
+            <button data-rv="60" onclick="setRefresh(60)">60s</button>
+            <button data-rv="0" onclick="setRefresh(0)">關</button>
+          </div>
+        </div>
+        <div class="setting-row"><span class="label">資料來源</span><span class="val">data.gov.hk</span></div>
+        <div class="setting-row"><span class="label">版本</span><span class="val">WP8 概念版 1.0</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= App Bar ================= -->
+<nav class="appbar">
+  <button class="ab-btn active" data-pane="home" onclick="goPane('home')" aria-label="首頁">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+  </button>
+  <button class="ab-btn" data-pane="favs" onclick="goPane('favs')" aria-label="收藏">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+  </button>
+  <button class="ab-btn" data-pane="sushi" onclick="goPane('sushi')" aria-label="壽司郎">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.05 17.56l-17.97.94L3 17l17.98-.94.07 1.5zM21 19.49H3v1.5h18v-1.5zM22 5v7c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-2 1c-1.68 0-3.04.98-3.21 2.23-.64-.73-2.73-2.73-6.54-2.73-4.67 0-6.75 3-6.75 3s2.08 3 6.75 3c3.81 0 5.9-2 6.54-2.73C16.96 10.02 18.32 11 20 11V6z"/></svg>
+  </button>
+  <button class="ab-btn" data-pane="settings" onclick="goPane('settings')" aria-label="設定">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+  </button>
+  <button class="ab-more" onclick="toggleMore()" aria-label="更多選項">⋯</button>
+  <div class="more-menu" id="moreMenu" hidden>
+    <button onclick="moreAction('refresh')">重新整理</button>
+    <button onclick="moreAction('fav')">收藏首條結果</button>
+  </div>
+</nav>
+
+<script src="js/data.js"></script>
+<script src="js/util.js"></script>
+<script src="js/api.js"></script>
+<script src="js/wp8-concept.js"></script>
+</body>
+</html>
