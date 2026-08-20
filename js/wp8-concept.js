@@ -784,7 +784,7 @@ function renderNewsList(el) {
   el.innerHTML = newsItems.map((n, i) => {
     const src = (n.title.match(/ - ([^-]+)$/) || [])[1] || '';
     const clean = n.title.replace(/\s-\s[^-]+$/, '');
-    return '<div class="metro-row row-clickable" onclick="openNews(' + i + ')">'
+    return '<div class="metro-row">'
       + '<span class="row-no" style="font-size:1rem;min-width:34px">' + (i + 1) + '</span>'
       + '<span class="row-main"><span class="row-name">' + escapeHtml(clean) + '</span>'
       + '<span class="row-sub">' + escapeHtml(src) + '</span></span></div>';
@@ -795,13 +795,6 @@ function updateNewsTile() {
   if (!a) return;
   a.textContent = newsItems[0] ? newsItems[0].title.replace(/\s-\s[^-]+$/, '') : '載入中';
   if (b) b.textContent = newsItems[1] ? newsItems[1].title.replace(/\s-\s[^-]+$/, '') : '';
-}
-async function openNews(i) {
-  const n = newsItems[i];
-  if (!n || !n.link) return;
-  const B = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.Browser : null;
-  if (B && B.open) { try { await B.open({ url: n.link }); return; } catch (e) {} }
-  window.open(n.link, '_blank');
 }
 
 /* ---------- 路線圖（港鐵線路時間軸 / 輕鐵站表） ---------- */
