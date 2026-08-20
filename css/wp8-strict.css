@@ -18,6 +18,7 @@ html, body { height: 100%; }
   --accent: #00A2E8;
   --accent-dark: #0078B4;
   --statusbar-h: 0px;      /* 狀態欄已移除，保留變量使佈局計算一致 */
+  --sysbar-h: 0px;         /* 安卓系統狀態欄高度（JS 按 visualViewport 偵測） */
   --topbar-h: 74px;
   --appbar-h: 62px;
 }
@@ -37,11 +38,11 @@ body {
   overflow: hidden;               /* 整个应用不滚动，页面在 pivot 内滚动 */
 }
 
-/* ================= 顶栏：Pivot 大标题 ================= */
+/* ================= 顶栏：Pivot 大标题（避开安卓系统状态栏） ================= */
 .topbar {
-  position: fixed; top: var(--statusbar-h); left: 0; right: 0; z-index: 50;
-  height: var(--topbar-h);
-  padding: calc(14px + env(safe-area-inset-top)) 24px 8px;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  height: calc(var(--topbar-h) + var(--sysbar-h));
+  padding: calc(14px + var(--sysbar-h)) 24px 8px;
   display: flex; align-items: flex-end; justify-content: space-between;
   background: var(--bg);
 }
@@ -61,7 +62,7 @@ body {
 
 /* ================= Pivot：横向窗格 ================= */
 .pivot {
-  position: fixed; top: calc(var(--statusbar-h) + var(--topbar-h)); left: 0; right: 0; bottom: var(--appbar-h);
+  position: fixed; top: calc(var(--topbar-h) + var(--sysbar-h)); left: 0; right: 0; bottom: var(--appbar-h);
   display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
   scrollbar-width: none; -ms-overflow-style: none;
   overscroll-behavior-x: contain;
@@ -105,6 +106,7 @@ body {
   font-size: 1rem; text-align: left; line-height: 1.3;
 }
 .tile b { font-size: 1.6rem; font-weight: 300; font-family: 'Segoe UI Light', sans-serif; }
+.tile-sub { font-size: 0.74rem; opacity: 0.85; margin-top: 2px; }
 .tile-wide { grid-column: span 2; min-height: 72px; }
 /* WP8 官方色板磁貼牆（純色，無漸變無陰影） */
 .tile-cobalt { background: #0050EF; }
@@ -209,9 +211,46 @@ body {
 .lrt-row .row-no { font-size: 1.25rem; min-width: 44px; }
 .lrt-row .row-eta { font-size: 1.05rem; }
 
-/* ================= K75P 首屏下一班 ================= */
-.k75p-now { cursor: pointer; }
-.k75p-now .row-no { font-size: 1.3rem; }
+/* ================= 路線詳情頁（Metro 全屏，右側滑入） ================= */
+.detail-sheet {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 95;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .34s cubic-bezier(.16,1,.3,1);
+}
+.detail-sheet.open { transform: translateX(0); }
+.detail-sheet[hidden] { display: none; }
+.detail-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(8px + var(--sysbar-h)) 16px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  flex: 0 0 auto;
+}
+.back-btn {
+  width: 44px; height: 44px; border: none; background: transparent;
+  color: var(--text); font-size: 1.5rem; cursor: pointer; padding: 0;
+  font-family: 'Segoe UI Symbol', 'Segoe MDL2 Assets', sans-serif;
+}
+.back-btn:active { transform: scale(0.9); }
+.detail-title {
+  flex: 1; font-size: 1.5rem; font-weight: 300; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.detail-body { flex: 1; overflow-y: auto; padding: 8px 24px 40px; }
+.detail-body::-webkit-scrollbar { display: none; }
+.ds-stop {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--line);
+  animation: rowIn .34s cubic-bezier(.16,1,.3,1) backwards;
+}
+.ds-stop .ds-seq { flex: 0 0 auto; width: 30px; color: var(--text2); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.ds-stop .ds-name { flex: 1; font-size: 0.95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-stop .ds-eta { flex: 0 0 auto; font-size: 1.05rem; font-weight: 300; font-variant-numeric: tabular-nums; }
+.ds-stop .ds-eta.soon { color: #E51400; }
+.ds-stop .ds-eta.medium { color: #F0A30A; }
+.row-clickable { cursor: pointer; }
 
 /* ================= 天气条 ================= */
 .weather-bar {
@@ -344,7 +383,7 @@ body.appbar-hidden .pivot { bottom: 0; }
 
 /* ================= 加载进度条 ================= */
 .progressbar {
-  position: fixed; left: 0; right: 0; top: calc(var(--statusbar-h) + var(--topbar-h));
+  position: fixed; left: 0; right: 0; top: calc(var(--topbar-h) + var(--sysbar-h));
   height: 3px; z-index: 55; background: transparent; overflow: hidden;
   pointer-events: none;
 }

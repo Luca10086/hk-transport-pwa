@@ -39,6 +39,11 @@
               <span class="tile-face">天氣 <b id="tileWeatherV">--°</b></span>
               <span class="tile-face tile-face-back" id="tileWeatherD">載入中</span>
             </button>
+            <button class="tile tile-wide tile-cobalt" id="tileK75P" onclick="goPanoPanel(2)">
+              <span>K75P · 天瑞</span>
+              <b id="k75pTileV">--</b>
+              <span class="tile-sub" id="k75pTileSub">載入中</span>
+            </button>
           </div>
           <!-- 小磁贴：交通方式快捷入口（WP8 Small Tile） -->
           <div class="tiles-small">
@@ -47,10 +52,6 @@
             <button class="tile-small tile-magenta" onclick="quickTransport('mtrbus')">港鐵巴士</button>
             <button class="tile-small tile-teal" onclick="goPanoPanel(2)">K75P 全線</button>
           </div>
-
-          <!-- K75P 下一班（首屏直達，點按看全線） -->
-          <h3 class="pane-title">K75P 下一班</h3>
-          <div id="k75pNow" class="flat-list k75p-now"></div>
         </div>
 
         <!-- 面板 2：搜索 + 结果 -->
@@ -152,6 +153,15 @@
     <button onclick="moreAction('fav')">收藏首條結果</button>
   </div>
 </nav>
+
+<!-- ================= 路線詳情（點擊路線後右側滑入） ================= -->
+<div class="detail-sheet" id="detailSheet" hidden>
+  <header class="detail-bar">
+    <button class="back-btn" onclick="closeRouteDetail()" aria-label="返回">←</button>
+    <div class="detail-title" id="detailTitle">路線詳情</div>
+  </header>
+  <div class="detail-body" id="detailBody"></div>
+</div>
 
 <script src="js/data.js"></script>
 <script src="js/util.js"></script>

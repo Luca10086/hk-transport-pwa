@@ -152,6 +152,7 @@ async function searchBusRouteConcept(q, container) {
     results.push({
       no: r.route, name: '往 ' + (dir === 'outbound' ? r.dest_tc : r.orig_tc), sub: '由 ' + (dir === 'outbound' ? r.orig_tc : r.dest_tc) + ' 開出', group: '九巴',
       etas: etas.map(e => ({ ts: e.ts, dest: '' })),
+      detail: { type: 'bus', company: 'kmb', route: String(r.route), direction: dir, orig: dir === 'outbound' ? (r.orig_tc || '') : (r.dest_tc || ''), dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') },
       fav: { type: 'bus', company: 'kmb', route: r.route, stop_id: first.stop_id || first.stop, stop_name: first.name_tc || '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
     });
   }
@@ -168,6 +169,7 @@ async function searchBusRouteConcept(q, container) {
       results.push({
         no: String(r.route), name: '往 ' + (dir === 'outbound' ? r.dest_tc : r.orig_tc), sub: '由 ' + (dir === 'outbound' ? r.orig_tc : r.dest_tc) + ' 開出', group: '城巴',
         etas: etas.map(e => ({ ts: e.ts, dest: '' })),
+        detail: { type: 'bus', company: 'ctb', route: String(r.route), direction: dir, orig: dir === 'outbound' ? (r.orig_tc || '') : (r.dest_tc || ''), dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') },
         fav: { type: 'bus', company: 'ctb', route: String(r.route), stop_id: first.stop || first.stop_id, stop_name: '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
       });
     }
@@ -178,6 +180,7 @@ async function searchBusRouteConcept(q, container) {
     const etas = (await getNLBETA(r.routeId, stops[0].stopId)).map(e => ({ ts: e.etaTs, dest: '' })).sort((a, b) => a.ts - b.ts).slice(0, 3);
     results.push({
       no: String(r.routeNo || r.routeId), name: r.routeName_c || '', sub: stops[0].stopName_c ? '由 ' + stops[0].stopName_c + ' 開出' : '', group: '新大嶼山巴士', etas,
+      detail: { type: 'bus', company: 'nlb', route: String(r.routeNo || r.routeId), routeId: r.routeId },
       fav: { type: 'bus', company: 'nlb', route: String(r.routeNo || r.routeId), routeId: r.routeId, stop_id: stops[0].stopId, stop_name: stops[0].stopName_c || '', dest: r.routeName_c || '' }
     });
   }
@@ -235,6 +238,7 @@ async function searchMTRConcept(q, container) {
       etas.sort((a, b) => a.ts - b.ts);
       results.push({
         no: 'MTR', name: s.name, group: '港鐵', etas,
+        detail: { type: 'mtr', station_id: s.code, station_name: s.name, line: Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code)), lineName: MTR_LINES[Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code))] || '' },
         fav: { type: 'mtr', line: Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code)), lineName: MTR_LINES[Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code))] || '', station_id: s.code, station_name: s.name }
       });
     }
@@ -291,6 +295,7 @@ async function searchMTRBusConcept(q, container) {
   const etas = parsed.map(p => ({ ts: parseHK(p.eta) / 1000, dest: p.stop_name })).sort((a, b) => a.ts - b.ts).slice(0, 4);
   const results = [{
     no: routeNum, name: info ? info.orig + ' → ' + info.dest : routeNum, group: '港鐵巴士', etas,
+    detail: { type: 'mtrbus', route: routeNum, orig: info ? info.orig : '', dest: info ? info.dest : '' },
     fav: { type: 'mtrbus', route: routeNum, orig: info ? info.orig : '', dest: info ? info.dest : '' }
   }];
   lastResults = results;
@@ -312,7 +317,10 @@ function renderResults(items, container) {
     const star = it.fav
       ? '<button class="row-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(it.fav).replace(/'/g, '&#39;') + '\'>' + (isFavorited(it.fav) ? '★' : '☆') + '</button>'
       : '';
-    return head + '<div class="metro-row">'
+    const click = it.detail
+      ? ' class="metro-row row-clickable" data-detail=\'' + JSON.stringify(it.detail).replace(/'/g, '&#39;') + '\' onclick="openRouteDetail(this)"'
+      : ' class="metro-row"';
+    return head + '<div' + click + '>'
       + '<span class="row-no">' + escapeHtml(String(it.no)) + '</span>'
       + '<span class="row-main"><span class="row-name">' + escapeHtml(it.name || '') + '</span>'
       + (it.sub ? '<span class="row-sub">' + escapeHtml(it.sub) + '</span>' : '')
@@ -343,6 +351,168 @@ function favFirstResult() {
     saveFavorites(favs);
   }
   renderFavs();
+}
+
+/* ---------- 路線詳情（點擊路線後右側滑入的全屏頁） ---------- */
+const _ctbNameCache2 = {};
+async function ctbStopName(stopId) {
+  const key = String(stopId);
+  if (_ctbNameCache2[key]) return _ctbNameCache2[key];
+  try {
+    const data = await fetchWithProxy(`${CTB_BASE}/stop/${key}`);
+    const d = data && data.data;
+    _ctbNameCache2[key] = (d && (d.name_tc || d.name_en)) || ('站 ' + key);
+  } catch (e) { _ctbNameCache2[key] = '站 ' + key; }
+  return _ctbNameCache2[key];
+}
+function detailTitle(d) {
+  if (d.type === 'bus') return d.route + (d.orig && d.dest ? ' · ' + d.orig + ' → ' + d.dest : '');
+  if (d.type === 'mtrbus') return d.route + (d.orig && d.dest ? ' · ' + d.orig + ' → ' + d.dest : '');
+  if (d.type === 'mtr') return d.station_name || '';
+  return '';
+}
+function openRouteDetail(btn) {
+  const raw = btn ? btn.getAttribute('data-detail') : null;
+  if (!raw) return;
+  let detail;
+  try { detail = JSON.parse(raw); } catch (e) { return; }
+  const sheet = $('detailSheet');
+  if (!sheet) return;
+  $('detailTitle').textContent = detailTitle(detail);
+  sheet.hidden = false;
+  requestAnimationFrame(() => sheet.classList.add('open'));
+  renderRouteDetail(detail, $('detailBody'));
+}
+function closeRouteDetail() {
+  const sheet = $('detailSheet');
+  if (!sheet) return;
+  sheet.classList.remove('open');
+  setTimeout(() => { sheet.hidden = true; }, 360);
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const sheet = $('detailSheet');
+    if (sheet && !sheet.hidden) closeRouteDetail();
+  }
+});
+async function renderRouteDetail(detail, body) {
+  body.innerHTML = '<div class="loading">載入中…</div>';
+  try {
+    if (detail.type === 'mtr') { await renderMTRStationDetail(detail, body); return; }
+    if (detail.type === 'mtrbus') { await renderMTRBusDetail(detail, body); return; }
+    let stops = [], wantDir = 'O';
+    if (detail.company === 'kmb') {
+      stops = await getKMBStops(detail.route, detail.direction || 'outbound', '1');
+      wantDir = detail.direction === 'inbound' ? 'I' : 'O';
+      if (stops.length) {
+        const missing = stops.filter(s => !(s.name_tc || s.name_en)).map(s => s.stop);
+        const names = await Promise.all(missing.map(sid => getKMBStopName(sid)));
+        const nm = {};
+        missing.forEach((sid, i) => { nm[String(sid)] = names[i]; });
+        stops = stops.map(s => ({ ...s, name_tc: s.name_tc || s.name_en || nm[String(s.stop)] || '' }));
+      }
+    } else if (detail.company === 'ctb') {
+      stops = await getCTBStops(detail.route, detail.direction || 'outbound');
+      wantDir = detail.direction === 'inbound' ? 'I' : 'O';
+      if (stops.length) stops = await Promise.all(stops.map(async s => {
+        const sid = s.stop || s.stop_id;
+        const name = sid ? await ctbStopName(sid) : '';
+        return { ...s, name_tc: name };
+      }));
+    } else if (detail.company === 'nlb') {
+      let rid = detail.routeId;
+      if (!rid) { const rs = await searchNLBRoute(String(detail.route)); if (rs && rs[0]) rid = rs[0].routeId; }
+      stops = rid ? await getNLBRouteStops(rid) : [];
+    }
+    if (!stops.length) { body.innerHTML = '<div class="metro-empty">無法載入此路線的車站列表</div>'; return; }
+    const rows = [];
+    for (let i = 0; i < stops.length; i += 5) {
+      const batch = stops.slice(i, i + 5);
+      const results = await Promise.all(batch.map(async s => {
+        let ts = [];
+        if (detail.company === 'kmb') {
+          const sid = s.stop_id || s.stop;
+          ts = (await getKMBETA(sid)).filter(e => e.route === String(detail.route) && (e.dir || '').toUpperCase() === wantDir)
+            .map(e => parseHK(e.eta) / 1000).filter(Boolean).sort((a, b) => a - b);
+        } else if (detail.company === 'ctb') {
+          const sid = s.stop || s.stop_id;
+          ts = (await getCTBETA(sid, detail.route)).filter(e => (e.dir || '').toUpperCase() === wantDir)
+            .map(e => parseHK(e.eta) / 1000).filter(Boolean).sort((a, b) => a - b);
+        } else {
+          ts = (await getNLBETA(detail.routeId || rid, s.stopId)).map(e => e.etaTs).filter(Boolean).sort((a, b) => a - b);
+        }
+        let name = '';
+        if (detail.company === 'kmb') name = s.name_tc || ('站 ' + (s.stop_id || s.stop));
+        else if (detail.company === 'ctb') name = s.name_tc || s.name || ('站 ' + (s.stop || s.stop_id));
+        else name = s.stopName_c || s.stopName_s || ('站 ' + s.stopId);
+        return { name, ts };
+      }));
+      rows.push(...results);
+    }
+    body.innerHTML = rows.map((r, i) =>
+      '<div class="ds-stop">'
+      + '<span class="ds-seq">' + (i + 1) + '</span>'
+      + '<span class="ds-name">' + escapeHtml(r.name) + '</span>'
+      + '<span class="ds-eta ' + etaCls(r.ts[0]) + '">' + (r.ts[0] ? etaText(r.ts[0]) : '—') + '</span>'
+      + '</div>').join('');
+  } catch (e) {
+    body.innerHTML = '<div class="error-msg">詳情載入失敗</div>';
+  }
+}
+async function renderMTRStationDetail(detail, body) {
+  const lines = [];
+  for (const lc of Object.keys(MTR_LINE_STOPS)) {
+    if (!MTR_LINE_STOPS[lc].some(x => x.code === detail.station_id)) continue;
+    const sched = await getMTRSchedule(lc, detail.station_id);
+    const d = (sched && sched[lc + '-' + detail.station_id]) || {};
+    const ts = [...(d.UP || []), ...(d.DOWN || [])]
+      .map(t => (t && t.time ? parseHK(t.time) / 1000 : null)).filter(Boolean).sort((a, b) => a - b);
+    lines.push({ line: MTR_LINES[lc] || lc, ts });
+  }
+  body.innerHTML = lines.map(l =>
+    '<div class="ds-stop">'
+    + '<span class="ds-seq" style="width:auto;min-width:56px">' + escapeHtml(l.line) + '</span>'
+    + '<span class="ds-name">下一班</span>'
+    + '<span class="ds-eta ' + etaCls(l.ts[0]) + '">' + (l.ts[0] ? etaText(l.ts[0]) : '—') + '</span>'
+    + '</div>').join('') || '<div class="metro-empty">暫無班次資料</div>';
+}
+async function renderMTRBusDetail(detail, body) {
+  const data = await getMTRBusETA(detail.route);
+  if (!data || !Array.isArray(data.busStop)) { body.innerHTML = '<div class="metro-empty">暫無資料</div>'; return; }
+  const nameFor = (id) => {
+    const raw = String(id || '').replace(/^K75P-/, '');
+    if (detail.route === 'K75P') {
+      const st = K75P_STOPS.find(x => x.id === raw);
+      if (st) return st.name;
+    }
+    return raw;
+  };
+  const rows = [];
+  for (const stop of data.busStop) {
+    const secs = (stop.bus || []).map(b => parseInt(b.arrivalTimeInSecond) || 0)
+      .filter(s => s > 0 && s < 108000).sort((a, b) => a - b);
+    rows.push({ name: nameFor(stop.busStopId), secs });
+  }
+  body.innerHTML = rows.map((r, i) =>
+    '<div class="ds-stop">'
+    + '<span class="ds-seq">' + (i + 1) + '</span>'
+    + '<span class="ds-name">' + escapeHtml(r.name) + '</span>'
+    + '<span class="ds-eta ' + (r.secs.length && r.secs[0] <= 60 ? 'soon' : '') + '">' + (r.secs.length ? (r.secs[0] <= 60 ? '即將' : Math.max(1, Math.ceil(r.secs[0] / 60)) + ' 分鐘') : '—') + '</span>'
+    + '</div>').join('');
+}
+function favDetailFor(f) {
+  if (f.type === 'bus') {
+    const dir = f.direction === 'inbound';
+    return {
+      type: 'bus', company: f.company, route: String(f.route), routeId: f.routeId,
+      direction: f.direction || 'outbound',
+      orig: dir ? (f.dest || '') : (f.stop_name || ''),
+      dest: dir ? (f.stop_name || '') : (f.dest || '')
+    };
+  }
+  if (f.type === 'mtrbus') return { type: 'mtrbus', route: f.route, orig: f.orig || '', dest: f.dest || '' };
+  if (f.type === 'mtr' && f.station_id) return { type: 'mtr', station_id: f.station_id, station_name: f.station_name || '', line: f.line, lineName: f.lineName };
+  return null;
 }
 
 /* ---------- 收藏 ---------- */
@@ -377,7 +547,9 @@ async function renderFavs() {
     const it = { i, no: favNo(f), title: favTitle(f), sub: favSub(f), etas };
     const det = (it.etas || []).slice(0, 2).map(e =>
       '<span class="row-eta-detail">' + (e.dest ? escapeHtml(e.dest) + ' · ' : '') + etaText(e.ts) + '</span>').join('');
-    html += '<div class="metro-row fav-row">'
+    const d = favDetailFor(f);
+    const click = d ? ' data-detail=\'' + JSON.stringify(d).replace(/'/g, '&#39;') + '\' onclick="openRouteDetail(this)"' : '';
+    html += '<div class="metro-row fav-row' + (d ? ' row-clickable' : '') + '"' + click + '>'
       + '<span class="row-no">' + escapeHtml(it.no) + '</span>'
       + '<span class="row-main"><span class="row-name">' + escapeHtml(it.title) + '</span>'
       + (it.sub ? '<span class="row-sub">' + escapeHtml(it.sub) + '</span>' : '')
@@ -520,34 +692,22 @@ async function refreshSushiro() {
   }
 }
 
-/* ---------- K75P（首屏下一班 + 全線實時） ---------- */
+/* ---------- K75P（首屏天瑞磁貼 + 全線實時） ---------- */
 async function loadK75PNow() {
-  const el = $('k75pNow');
-  if (!el) return;
+  const v = $('k75pTileV'), s = $('k75pTileSub');
+  if (!v) return;
   try {
     const data = await getMTRBusETA('K75P');
-    if (!data || !Array.isArray(data.busStop)) { el.innerHTML = '<div class="metro-empty">暫無資料</div>'; return; }
-    const stops = {};
-    for (const stop of data.busStop) stops[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
-    const next = [];
-    for (const st of K75P_STOPS) {
-      for (const b of (stops[st.id] || [])) {
-        const sec = parseInt(b.arrivalTimeInSecond) || 0;
-        if (sec > 0 && sec < 108000) next.push({ sec, name: st.name });
-      }
-    }
-    next.sort((a, b) => a.sec - b.sec);
-    if (!next.length) { el.innerHTML = '<div class="metro-empty">暫無班次</div>'; return; }
-    const fmt = s => s <= 60 ? '即將到站' : Math.max(1, Math.ceil(s / 60)) + ' 分鐘';
-    const first = next[0];
-    const sub = next[1] ? '次班 ' + escapeHtml(next[1].name) + ' · ' + fmt(next[1].sec) : '點按查看全線';
-    el.innerHTML = '<div class="metro-row k75p-now-row" onclick="goPanoPanel(2)">'
-      + '<span class="row-no">K75P</span>'
-      + '<span class="row-main"><span class="row-name">' + escapeHtml(first.name) + '</span>'
-      + '<span class="row-sub">' + sub + '</span></span>'
-      + '<span class="row-eta ' + (first.sec <= 60 ? 'soon' : '') + '">' + fmt(first.sec) + '</span></div>';
+    if (!data || !Array.isArray(data.busStop)) { v.textContent = '--'; s.textContent = '暫無資料'; return; }
+    const stop = (data.busStop || []).find(x => String(x.busStopId || '').replace(/^K75P-/, '') === 'D010') || {};
+    const secs = (stop.bus || []).map(b => parseInt(b.arrivalTimeInSecond) || 0)
+      .filter(x => x > 0 && x < 108000).sort((a, b) => a - b);
+    const fmt = x => x <= 60 ? '即將' : Math.max(1, Math.ceil(x / 60)) + ' 分鐘';
+    if (!secs.length) { v.textContent = '—'; s.textContent = '天瑞 · 暫無班次'; return; }
+    v.textContent = fmt(secs[0]);
+    s.textContent = secs[1] ? '次班 ' + fmt(secs[1]) : '天瑞總站';
   } catch (e) {
-    el.innerHTML = '<div class="error-msg">K75P 載入失敗</div>';
+    v.textContent = '--'; s.textContent = '載入失敗';
   }
 }
 
@@ -622,9 +782,21 @@ function useSegoeGlyphs() {
   if (more) more.innerHTML = '<span class="ab-glyph">' + APP_GLYPHS.more + '</span>';
 }
 
+/* ---------- 頂欄避讓安卓系統狀態欄（全屏邊到邊模式） ---------- */
+function applySysbarInset() {
+  const vv = window.visualViewport;
+  const h = vv ? Math.max(0, Math.round(vv.offsetTop || 0)) : 0;
+  document.documentElement.style.setProperty('--sysbar-h', h + 'px');
+}
+
 /* ---------- 初始化 ---------- */
 document.addEventListener('DOMContentLoaded', () => {
   useSegoeGlyphs();
+  applySysbarInset();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', applySysbarInset);
+    window.visualViewport.addEventListener('scroll', applySysbarInset);
+  }
   const th = localStorage.getItem('wp8concept_theme') || 'dark';
   const ac = localStorage.getItem('wp8concept_accent') || '#00A2E8';
   const rv = localStorage.getItem('wp8concept_refresh') || '30';
