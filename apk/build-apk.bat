@@ -40,16 +40,11 @@ echo ============================================================
 echo  Senyou Travel - Windows Phone 8 - APK Build
 echo ============================================================
 
-REM 2. Install npm dependencies (first time only)
-if not exist "node_modules" (
-    echo [1/4] Installing npm dependencies...
-    echo [step1] npm install >> "%LOG%" 2>&1
-    call npm install --no-audit --no-fund >> "%LOG%" 2>&1
-    if errorlevel 1 goto :fail
-) else (
-    echo [1/4] npm dependencies already installed, skip
-    echo [step1] skip >> "%LOG%" 2>&1
-)
+REM 2. Install npm dependencies (picks up newly added plugins)
+echo [1/4] Installing npm dependencies...
+echo [step1] npm install >> "%LOG%" 2>&1
+call npm install --no-audit --no-fund >> "%LOG%" 2>&1
+if errorlevel 1 goto :fail
 
 REM 2.5. Bump Beta version counter (Beta 0.1 build N, +1 per build)
 echo [step2.5] bump version >> "%LOG%" 2>&1

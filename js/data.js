@@ -13,6 +13,10 @@ const MTR_BASE = 'https://rt.data.gov.hk/v1/transport/mtr';
 
 /* Weather API (HKO open data, supports CORS) */
 const WEATHER_API = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc';
+const WEATHER_FND_API = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc';
+
+/* 香港要聞（Google News RSS，需經 CORS 代理） */
+const NEWS_RSS = 'https://news.google.com/rss?hl=zh-HK&gl=HK&ceid=HK:zh-Hant';
 
 /* Sushiro official queue API (no CORS header → must go through corsproxy.io) */
 const SUSHIRO_STORE_API = 'https://sushipass.sushiro.com.hk/api/2.0/info/storelist?latitude=22&longitude=114&numresults=50&region=HK';

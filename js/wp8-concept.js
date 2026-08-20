@@ -16,7 +16,7 @@ const etaCls = (ts) => ts ? etaColorClass(ts) : '';
 const parseHK = parseHKTime;
 
 /* ---------- Pivot（横滑窗格） ---------- */
-const PIVOT_TITLES = { home: '搜尋', favs: '收藏', sushi: '壽司郎', settings: '設定' };
+const PIVOT_TITLES = { home: '搜尋', favs: '收藏', sushi: '壽司郎', news: '要聞', map: '路線圖', settings: '設定' };
 const pivot = $('pivot');
 let curPane = '';
 function updatePivot() {
@@ -50,6 +50,8 @@ function moreAction(a) {
   toggleMore();
   if (a === 'refresh') refreshAll();
   else if (a === 'fav') favFirstResult();
+  else if (a === 'news') goPane('news');
+  else if (a === 'map') goPane('map');
 }
 document.addEventListener('click', (e) => {
   const m = $('moreMenu');
@@ -312,6 +314,7 @@ function renderResults(items, container) {
       ? '<div class="metro-group">' + escapeHtml(it.group) + '</div>' : '';
     if (it.group) lastGroup = it.group;
     const first = it.etas && it.etas[0];
+    const nite = /^N\d/i.test(String(it.no || ''));
     const sub = (it.etas || []).slice(1, 3).map((e, idx) =>
       '<span class="row-eta-detail">' + (e.dest ? escapeHtml(e.dest) + ' · ' : labels[idx] + ' ') + etaText(e.ts) + '</span>').join('');
     const star = it.fav
@@ -322,7 +325,7 @@ function renderResults(items, container) {
       : ' class="metro-row"';
     return head + '<div' + click + '>'
       + '<span class="row-no">' + escapeHtml(String(it.no)) + '</span>'
-      + '<span class="row-main"><span class="row-name">' + escapeHtml(it.name || '') + '</span>'
+      + '<span class="row-main"><span class="row-name">' + escapeHtml(it.name || '') + (nite ? '<span class="badge-nite">通宵</span>' : '') + '</span>'
       + (it.sub ? '<span class="row-sub">' + escapeHtml(it.sub) + '</span>' : '')
       + sub + '</span>'
       + '<span class="row-eta ' + etaCls(first && first.ts) + '">' + (first ? etaText(first.ts) : '—') + '</span>'
@@ -380,6 +383,7 @@ function openRouteDetail(btn) {
   if (!sheet) return;
   $('detailTitle').textContent = detailTitle(detail);
   sheet.hidden = false;
+  document.body.classList.add('detail-open');
   requestAnimationFrame(() => sheet.classList.add('open'));
   renderRouteDetail(detail, $('detailBody'));
 }
@@ -387,6 +391,7 @@ function closeRouteDetail() {
   const sheet = $('detailSheet');
   if (!sheet) return;
   sheet.classList.remove('open');
+  document.body.classList.remove('detail-open');
   setTimeout(() => { sheet.hidden = true; }, 360);
 }
 document.addEventListener('keydown', (e) => {
@@ -400,64 +405,89 @@ async function renderRouteDetail(detail, body) {
   try {
     if (detail.type === 'mtr') { await renderMTRStationDetail(detail, body); return; }
     if (detail.type === 'mtrbus') { await renderMTRBusDetail(detail, body); return; }
-    let stops = [], wantDir = 'O';
-    if (detail.company === 'kmb') {
-      stops = await getKMBStops(detail.route, detail.direction || 'outbound', '1');
-      wantDir = detail.direction === 'inbound' ? 'I' : 'O';
-      if (stops.length) {
-        const missing = stops.filter(s => !(s.name_tc || s.name_en)).map(s => s.stop);
-        const names = await Promise.all(missing.map(sid => getKMBStopName(sid)));
-        const nm = {};
-        missing.forEach((sid, i) => { nm[String(sid)] = names[i]; });
-        stops = stops.map(s => ({ ...s, name_tc: s.name_tc || s.name_en || nm[String(s.stop)] || '' }));
-      }
-    } else if (detail.company === 'ctb') {
-      stops = await getCTBStops(detail.route, detail.direction || 'outbound');
-      wantDir = detail.direction === 'inbound' ? 'I' : 'O';
-      if (stops.length) stops = await Promise.all(stops.map(async s => {
-        const sid = s.stop || s.stop_id;
-        const name = sid ? await ctbStopName(sid) : '';
-        return { ...s, name_tc: name };
-      }));
-    } else if (detail.company === 'nlb') {
-      let rid = detail.routeId;
-      if (!rid) { const rs = await searchNLBRoute(String(detail.route)); if (rs && rs[0]) rid = rs[0].routeId; }
-      stops = rid ? await getNLBRouteStops(rid) : [];
+    if (detail.company === 'kmb' || detail.company === 'ctb') {
+      const dirA = detail.direction === 'inbound' ? 'inbound' : 'outbound';
+      const dirB = dirA === 'inbound' ? 'outbound' : 'inbound';
+      const label = d => (d === 'outbound' ? '去程' : '回程');
+      body.innerHTML = '<div class="dir-tabs">'
+        + '<button class="dir-tab active" onclick="switchDir(this, 0)">' + label(dirA) + '</button>'
+        + '<button class="dir-tab" onclick="switchDir(this, 1)">' + label(dirB) + '</button>'
+        + '</div>'
+        + '<div class="detail-dirs">'
+        + '<div class="detail-dir" id="dir0"><div class="loading">載入中…</div></div>'
+        + '<div class="detail-dir" id="dir1"><div class="loading">載入中…</div></div>'
+        + '</div>';
+      renderDirStops(detail, dirA, $('dir0'));
+      renderDirStops(detail, dirB, $('dir1'));
+      return;
     }
-    if (!stops.length) { body.innerHTML = '<div class="metro-empty">無法載入此路線的車站列表</div>'; return; }
-    const rows = [];
-    for (let i = 0; i < stops.length; i += 5) {
-      const batch = stops.slice(i, i + 5);
-      const results = await Promise.all(batch.map(async s => {
-        let ts = [];
-        if (detail.company === 'kmb') {
-          const sid = s.stop_id || s.stop;
-          ts = (await getKMBETA(sid)).filter(e => e.route === String(detail.route) && (e.dir || '').toUpperCase() === wantDir)
-            .map(e => parseHK(e.eta) / 1000).filter(Boolean).sort((a, b) => a - b);
-        } else if (detail.company === 'ctb') {
-          const sid = s.stop || s.stop_id;
-          ts = (await getCTBETA(sid, detail.route)).filter(e => (e.dir || '').toUpperCase() === wantDir)
-            .map(e => parseHK(e.eta) / 1000).filter(Boolean).sort((a, b) => a - b);
-        } else {
-          ts = (await getNLBETA(detail.routeId || rid, s.stopId)).map(e => e.etaTs).filter(Boolean).sort((a, b) => a - b);
-        }
-        let name = '';
-        if (detail.company === 'kmb') name = s.name_tc || ('站 ' + (s.stop_id || s.stop));
-        else if (detail.company === 'ctb') name = s.name_tc || s.name || ('站 ' + (s.stop || s.stop_id));
-        else name = s.stopName_c || s.stopName_s || ('站 ' + s.stopId);
-        return { name, ts };
-      }));
-      rows.push(...results);
-    }
-    body.innerHTML = rows.map((r, i) =>
-      '<div class="ds-stop">'
-      + '<span class="ds-seq">' + (i + 1) + '</span>'
-      + '<span class="ds-name">' + escapeHtml(r.name) + '</span>'
-      + '<span class="ds-eta ' + etaCls(r.ts[0]) + '">' + (r.ts[0] ? etaText(r.ts[0]) : '—') + '</span>'
-      + '</div>').join('');
+    renderDirStops(detail, detail.direction || 'outbound', body);
   } catch (e) {
     body.innerHTML = '<div class="error-msg">詳情載入失敗</div>';
   }
+}
+function switchDir(btn, i) {
+  document.querySelectorAll('.dir-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const dirs = document.querySelector('.detail-dirs');
+  if (dirs) dirs.scrollTo({ left: dirs.clientWidth * i, behavior: 'smooth' });
+}
+async function renderDirStops(detail, direction, container) {
+  let stops = [], wantDir = 'O';
+  if (detail.company === 'kmb') {
+    stops = await getKMBStops(detail.route, direction, '1');
+    wantDir = direction === 'inbound' ? 'I' : 'O';
+    if (stops.length) {
+      const missing = stops.filter(s => !(s.name_tc || s.name_en)).map(s => s.stop);
+      const names = await Promise.all(missing.map(sid => getKMBStopName(sid)));
+      const nm = {};
+      missing.forEach((sid, i) => { nm[String(sid)] = names[i]; });
+      stops = stops.map(s => ({ ...s, name_tc: s.name_tc || s.name_en || nm[String(s.stop)] || '' }));
+    }
+  } else if (detail.company === 'ctb') {
+    stops = await getCTBStops(detail.route, direction);
+    wantDir = direction === 'inbound' ? 'I' : 'O';
+    if (stops.length) stops = await Promise.all(stops.map(async s => {
+      const sid = s.stop || s.stop_id;
+      const name = sid ? await ctbStopName(sid) : '';
+      return { ...s, name_tc: name };
+    }));
+  } else if (detail.company === 'nlb') {
+    let rid = detail.routeId;
+    if (!rid) { const rs = await searchNLBRoute(String(detail.route)); if (rs && rs[0]) rid = rs[0].routeId; }
+    stops = rid ? await getNLBRouteStops(rid) : [];
+  }
+  if (!stops.length) { container.innerHTML = '<div class="metro-empty">無法載入此路線的車站列表</div>'; return; }
+  const rows = [];
+  for (let i = 0; i < stops.length; i += 5) {
+    const batch = stops.slice(i, i + 5);
+    const results = await Promise.all(batch.map(async s => {
+      let ts = [];
+      if (detail.company === 'kmb') {
+        const sid = s.stop_id || s.stop;
+        ts = (await getKMBETA(sid)).filter(e => e.route === String(detail.route) && (e.dir || '').toUpperCase() === wantDir)
+          .map(e => parseHK(e.eta) / 1000).filter(Boolean).sort((a, b) => a - b);
+      } else if (detail.company === 'ctb') {
+        const sid = s.stop || s.stop_id;
+        ts = (await getCTBETA(sid, detail.route)).filter(e => (e.dir || '').toUpperCase() === wantDir)
+          .map(e => parseHK(e.eta) / 1000).filter(Boolean).sort((a, b) => a - b);
+      } else {
+        ts = (await getNLBETA(detail.routeId || rid, s.stopId)).map(e => e.etaTs).filter(Boolean).sort((a, b) => a - b);
+      }
+      let name = '';
+      if (detail.company === 'kmb') name = s.name_tc || ('站 ' + (s.stop_id || s.stop));
+      else if (detail.company === 'ctb') name = s.name_tc || s.name || ('站 ' + (s.stop || s.stop_id));
+      else name = s.stopName_c || s.stopName_s || ('站 ' + s.stopId);
+      return { name, ts };
+    }));
+    rows.push(...results);
+  }
+  container.innerHTML = rows.map((r, i) =>
+    '<div class="ds-stop">'
+    + '<span class="ds-seq">' + (i + 1) + '</span>'
+    + '<span class="ds-name">' + escapeHtml(r.name) + '</span>'
+    + '<span class="ds-eta ' + etaCls(r.ts[0]) + '">' + (r.ts[0] ? etaText(r.ts[0]) : '—') + '</span>'
+    + '</div>').join('');
 }
 async function renderMTRStationDetail(detail, body) {
   const lines = [];
@@ -648,11 +678,41 @@ async function refreshWeather() {
       + (hko ? '<span class="w-item"><b>' + hko.value + '°C</b></span>' : '')
       + '<span class="w-upd">' + upd + '</span>';
     if (hko) $('tileWeatherV').textContent = hko.value + '°';
+    const tile = $('tileWeather');
+    if (tile) tile.style.background = weatherTileColor(icon);
     const td = $('tileWeatherD');
     if (td) td.textContent = HKO_ICONS[icon] || '';
+    fetchForecast();
   } catch (e) {
     el.textContent = '天氣載入失敗';
   }
+}
+/* 天氣磁貼背景隨天氣變化（WP8 官方色板） */
+function weatherTileColor(icon) {
+  const i = Number(icon);
+  if (i === 65) return '#D80073';                 /* 雷暴 → 洋紅 */
+  if (i >= 62 && i <= 64) return '#0050EF';       /* 雨 → 鈷藍 */
+  if (i >= 60 && i <= 61) return '#647687';       /* 陰 → 鋼灰 */
+  if (i >= 50 && i <= 54) return '#1BA1E2';       /* 陽光 → 青 */
+  if (i >= 70 && i <= 77) return '#00ABA9';       /* 良好 → 青綠 */
+  if (i === 90 || i === 91) return '#FA6800';     /* 熱 → 橙 */
+  return '#1BA1E2';
+}
+/* 明日天氣預報（HKO fnd 九天天氣） */
+async function fetchForecast() {
+  try {
+    const resp = await fetch(WEATHER_FND_API, { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) return;
+    const d = await resp.json();
+    const list = (d && d.weatherForecast) || [];
+    const tomorrow = list[1] || list[0];
+    if (!tomorrow) return;
+    const range = (tomorrow.forecastMintemp && tomorrow.forecastMaxtemp)
+      ? tomorrow.forecastMintemp.value + '-' + tomorrow.forecastMaxtemp.value + '°' : '';
+    const sub = $('tileWeatherSub'), back = $('tileWeatherD');
+    if (sub) sub.textContent = '明天 ' + range;
+    if (back) back.textContent = (tomorrow.forecastWeather || '') + ' ' + range;
+  } catch (e) {}
 }
 
 /* ---------- 寿司郎（只顯示元朗/屯門/天水圍 · 顯示排隊組數） ---------- */
@@ -690,6 +750,113 @@ async function refreshSushiro() {
   } catch (e) {
     el.innerHTML = '<div class="error-msg">壽司郎暫時無法連線，請稍後再試</div>';
   }
+}
+
+/* ---------- 要聞（Google News HK RSS → 扁平列表 + 翻轉磁貼） ---------- */
+let newsItems = [];
+async function fetchNewsRSS() {
+  const tries = [NEWS_RSS, CORS_PROXIES[0](NEWS_RSS)];
+  for (const u of tries) {
+    try {
+      const r = await fetch(u, { signal: AbortSignal.timeout(15000) });
+      if (r.ok) return await r.text();
+    } catch (e) {}
+  }
+  throw new Error('unreachable');
+}
+async function refreshNews() {
+  const el = $('news');
+  try {
+    const text = await fetchNewsRSS();
+    const doc = new DOMParser().parseFromString(text, 'text/xml');
+    newsItems = [...doc.querySelectorAll('item')].slice(0, 12).map(it => ({
+      title: (it.querySelector('title') || {}).textContent || '',
+      link: (it.querySelector('link') || {}).textContent || '',
+      date: (it.querySelector('pubDate') || {}).textContent || ''
+    })).filter(x => x.title);
+    if (el) renderNewsList(el);
+    updateNewsTile();
+  } catch (e) {
+    if (el) el.innerHTML = '<div class="error-msg">要聞載入失敗，請稍後再試</div>';
+  }
+}
+function renderNewsList(el) {
+  el.innerHTML = newsItems.map((n, i) => {
+    const src = (n.title.match(/ - ([^-]+)$/) || [])[1] || '';
+    const clean = n.title.replace(/\s-\s[^-]+$/, '');
+    return '<div class="metro-row row-clickable" onclick="openNews(' + i + ')">'
+      + '<span class="row-no" style="font-size:1rem;min-width:34px">' + (i + 1) + '</span>'
+      + '<span class="row-main"><span class="row-name">' + escapeHtml(clean) + '</span>'
+      + '<span class="row-sub">' + escapeHtml(src) + '</span></span></div>';
+  }).join('');
+}
+function updateNewsTile() {
+  const a = $('newsTile1'), b = $('newsTile2');
+  if (!a) return;
+  a.textContent = newsItems[0] ? newsItems[0].title.replace(/\s-\s[^-]+$/, '') : '載入中';
+  if (b) b.textContent = newsItems[1] ? newsItems[1].title.replace(/\s-\s[^-]+$/, '') : '';
+}
+async function openNews(i) {
+  const n = newsItems[i];
+  if (!n || !n.link) return;
+  const B = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.Browser : null;
+  if (B && B.open) { try { await B.open({ url: n.link }); return; } catch (e) {} }
+  window.open(n.link, '_blank');
+}
+
+/* ---------- 路線圖（港鐵線路時間軸 / 輕鐵站表） ---------- */
+let mapMode = 'mtr';
+function renderMapLines() {
+  const box = $('mapLines');
+  if (!box) return;
+  const lines = Object.keys(MTR_LINE_STOPS).map(lc => ({ code: lc, name: MTR_LINES[lc] || lc }));
+  box.innerHTML = '<button class="map-line-btn' + (mapMode === 'mtr' ? ' active' : '') + '" onclick="setMapMode(\'mtr\', this)">港鐵</button>'
+    + '<button class="map-line-btn' + (mapMode === 'lrt' ? ' active' : '') + '" onclick="setMapMode(\'lrt\', this)">輕鐵</button>'
+    + lines.map(l => '<button class="map-line-btn" data-lc="' + l.code + '" onclick="renderMTRLine(\'' + l.code + '\', this)">' + escapeHtml(l.name) + '</button>').join('');
+  renderMTRLine(Object.keys(MTR_LINE_STOPS)[0], box.querySelector('.map-line-btn[data-lc]'));
+}
+function setMapMode(m, btn) {
+  mapMode = m;
+  document.querySelectorAll('#mapLines .map-line-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (m === 'mtr') {
+    renderMTRLine(Object.keys(MTR_LINE_STOPS)[0], document.querySelector('#mapLines .map-line-btn[data-lc]'));
+  } else {
+    renderLRTMap();
+  }
+}
+function renderMTRLine(lc, btn) {
+  const body = $('mapBody');
+  if (!body) return;
+  document.querySelectorAll('#mapLines .map-line-btn').forEach(b => b.classList.toggle('active', b === btn));
+  const stops = MTR_LINE_STOPS[lc] || [];
+  const all = Object.keys(MTR_LINE_STOPS);
+  body.innerHTML = '<div class="map-timeline">' + stops.map(s => {
+    const serving = all.filter(x => MTR_LINE_STOPS[x].some(y => y.code === s.code));
+    const inter = serving.length > 1;
+    return '<div class="map-station' + (inter ? ' interchange' : '') + '">'
+      + '<span class="ms-name">' + escapeHtml(s.name) + '</span>'
+      + '<span class="ms-code">' + escapeHtml(s.code || '') + '</span>'
+      + (inter ? '<span class="ms-lines">轉乘 ' + escapeHtml(serving.map(x => MTR_LINES[x]).join(' / ')) + '</span>' : '')
+      + '</div>';
+  }).join('') + '</div>';
+}
+function renderLRTMap() {
+  const body = $('mapBody');
+  if (!body) return;
+  const regions = [['屯門', 1, 300], ['天水圍', 425, 560], ['元朗', 560, 920]];
+  let html = '';
+  for (const [rn, lo, hi] of regions) {
+    html += '<div class="metro-group">' + rn + '</div><div class="map-timeline">';
+    for (const id of Object.keys(LRT_STATIONS)) {
+      const n = Number(id);
+      if (n >= lo && n <= hi) {
+        html += '<div class="map-station"><span class="ms-name">' + escapeHtml(LRT_STATIONS[id]) + '</span><span class="ms-code">' + id + '</span></div>';
+      }
+    }
+    html += '</div>';
+  }
+  body.innerHTML = html;
 }
 
 /* ---------- K75P（首屏天瑞磁貼 + 全線實時） ---------- */
@@ -765,7 +932,7 @@ function restartAutoRefresh() {
 function refreshAll() {
   const pb = $('progressbar');
   if (pb) pb.hidden = false;
-  Promise.all([renderFavs(), refreshWeather(), refreshSushiro(), loadK75PNow(), loadK75P()]).finally(() => {
+  Promise.all([renderFavs(), refreshWeather(), refreshSushiro(), refreshNews(), loadK75PNow(), loadK75P()]).finally(() => {
     if (pb) pb.hidden = true;
   });
 }
@@ -780,6 +947,110 @@ function useSegoeGlyphs() {
   });
   const more = document.querySelector('.ab-more');
   if (more) more.innerHTML = '<span class="ab-glyph">' + APP_GLYPHS.more + '</span>';
+}
+
+/* ---------- 下拉刷新 ---------- */
+function initPullToRefresh() {
+  const ptr = $('ptr');
+  if (!ptr) return;
+  let startY = null, armed = false;
+  document.addEventListener('touchstart', (e) => {
+    const sc = e.target.closest ? e.target.closest('.pane, .pano-panel, .detail-dir') : null;
+    if (!sc || sc.scrollTop > 0) { startY = null; return; }
+    startY = e.touches[0].clientY;
+    armed = false;
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (startY == null) return;
+    const sc = e.target.closest ? e.target.closest('.pane, .pano-panel, .detail-dir') : null;
+    if (!sc || sc.scrollTop > 0) { startY = null; return; }
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 30) {
+      armed = true;
+      ptr.classList.add('show');
+      if (e.cancelable) e.preventDefault();
+    }
+  }, { passive: false });
+  document.addEventListener('touchend', (e) => {
+    if (startY == null) return;
+    const was = armed;
+    armed = false; startY = null;
+    ptr.classList.remove('show');
+    if (was) refreshAll();
+  }, { passive: true });
+}
+
+/* ---------- 磁貼長按：換色 / 隱藏 / 還原 ---------- */
+const TILE_STORAGE = 'wp8concept_tiles';
+const TILE_COLORS = ['#0050EF', '#1BA1E2', '#D80073', '#00ABA9'];
+function initTileMenu() {
+  const menu = $('tileMenu');
+  if (!menu) return;
+  let timer = null;
+  document.addEventListener('touchstart', (e) => {
+    const t = e.target.closest ? e.target.closest('.tile, .tile-small') : null;
+    if (!t) return;
+    timer = setTimeout(() => { window.__tileMenuOpen = true; showTileMenu(t); }, 520);
+  }, { passive: true });
+  const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  document.addEventListener('touchend', cancel, { passive: true });
+  document.addEventListener('touchmove', cancel, { passive: true });
+  document.addEventListener('click', (e) => {
+    if (window.__tileMenuOpen) { e.preventDefault(); e.stopPropagation(); window.__tileMenuOpen = false; }
+    if (!menu.hidden && !e.target.closest('.tile-menu')) menu.hidden = true;
+  }, true);
+}
+function showTileMenu(tile) {
+  const menu = $('tileMenu');
+  if (!menu) return;
+  const key = tile.dataset.tile || tile.id || tile.textContent.trim().slice(0, 4);
+  const r = tile.getBoundingClientRect();
+  const mk = (label, fn) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.onclick = () => { menu.hidden = true; window.__tileMenuOpen = false; fn(); };
+    menu.appendChild(b);
+  };
+  menu.innerHTML = '';
+  mk('換色', () => cycleTileColor(tile));
+  mk('隱藏此磁貼', () => hideTile(key));
+  mk('還原全部磁貼', () => restoreTiles());
+  menu.hidden = false;
+  menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 170)) + 'px';
+  menu.style.top = Math.max(8, r.top - menu.offsetHeight - 6) + 'px';
+}
+function cycleTileColor(tile) {
+  let ci = parseInt(tile.dataset.ci || '0', 10);
+  ci = (ci + 1) % TILE_COLORS.length;
+  tile.dataset.ci = String(ci);
+  tile.style.background = TILE_COLORS[ci];
+  saveTilePrefs();
+}
+function loadTilePrefs() {
+  let p = {};
+  try { p = JSON.parse(localStorage.getItem(TILE_STORAGE) || '{}'); } catch (e) {}
+  document.querySelectorAll('.tile[data-tile], .tile-small[data-tile]').forEach(t => {
+    const c = p[t.dataset.tile];
+    if (!c) return;
+    if (c.bg) { t.style.background = c.bg; t.dataset.ci = String(TILE_COLORS.indexOf(c.bg)); }
+    if (c.hidden) t.style.display = 'none';
+  });
+}
+function saveTilePrefs() {
+  const p = {};
+  document.querySelectorAll('.tile[data-tile], .tile-small[data-tile]').forEach(t => {
+    p[t.dataset.tile] = { bg: t.style.background || '', hidden: t.style.display === 'none' };
+  });
+  localStorage.setItem(TILE_STORAGE, JSON.stringify(p));
+}
+function hideTile(key) {
+  const t = document.querySelector('[data-tile="' + key + '"]');
+  if (t) t.style.display = 'none';
+  saveTilePrefs();
+}
+function restoreTiles() {
+  localStorage.removeItem(TILE_STORAGE);
+  document.querySelectorAll('.tile[data-tile], .tile-small[data-tile]').forEach(t => { t.style.display = ''; t.style.background = ''; });
 }
 
 /* ---------- 頂欄避讓安卓系統狀態欄（全屏邊到邊模式） ---------- */
@@ -841,10 +1112,16 @@ document.addEventListener('DOMContentLoaded', () => {
   /* 磁贴翻转（Live Tile 动画） */
   let flipOn = false;
   setInterval(() => {
-    const tile = $('tileWeather');
-    if (tile) { flipOn = !flipOn; tile.classList.toggle('flip', flipOn); }
+    flipOn = !flipOn;
+    const w = $('tileWeather'), n = $('tileNews');
+    if (w) w.classList.toggle('flip', flipOn);
+    if (n) n.classList.toggle('flip', flipOn);
   }, 5000);
 
+  loadTilePrefs();
+  initPullToRefresh();
+  initTileMenu();
+  renderMapLines();
   updatePivot();
   refreshAll();
   restartAutoRefresh();

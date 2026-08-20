@@ -18,6 +18,12 @@
 <!-- ================= 加载进度条 ================= -->
 <div class="progressbar" id="progressbar" hidden></div>
 
+<!-- ================= 下拉刷新提示 ================= -->
+<div class="ptr" id="ptr">放開以重新整理</div>
+
+<!-- ================= 磁貼長按選單 ================= -->
+<div class="tile-menu" id="tileMenu" hidden></div>
+
 <!-- ================= Pivot（横滑窗格） ================= -->
 <main class="pivot" id="pivot">
 
@@ -29,28 +35,33 @@
       <h1 class="pano-title" id="panoTitle">森友出行</h1>
       <div class="pano-track" id="panoTrack">
 
-        <!-- 面板 1：磁贴（WP8 官方色板：cobalt/cyan/magenta/teal 純色牆） -->
+        <!-- 面板 1：磁贴（WP8 官方色板純色牆：小=1/4、中=1/2、寬=全寬） -->
         <div class="pano-panel">
           <div class="tiles">
-            <button class="tile tile-cobalt" onclick="goPane('favs')">我的收藏</button>
-            <button class="tile tile-magenta" onclick="goPane('sushi')">壽司郎</button>
-            <button class="tile tile-wide tile-cyan" onclick="goPane('settings')">設定</button>
-            <button class="tile tile-wide tile-flip tile-teal" id="tileWeather">
-              <span class="tile-face">天氣 <b id="tileWeatherV">--°</b></span>
-              <span class="tile-face tile-face-back" id="tileWeatherD">載入中</span>
+            <button class="tile tile-cobalt" data-tile="favs" onclick="goPane('favs')">我的收藏</button>
+            <button class="tile tile-magenta" data-tile="sushi" onclick="goPane('sushi')">壽司郎</button>
+            <button class="tile tile-wide tile-flip tile-teal" id="tileWeather" data-tile="weather" onclick="refreshWeather()">
+              <span class="tile-face"><span>天氣</span><b id="tileWeatherV">--°</b><span class="tile-sub" id="tileWeatherSub">載入中</span></span>
+              <span class="tile-face tile-face-back" id="tileWeatherD">明天 --</span>
             </button>
-            <button class="tile tile-wide tile-cobalt" id="tileK75P" onclick="goPanoPanel(2)">
+            <button class="tile tile-wide tile-cobalt" id="tileK75P" data-tile="k75p" onclick="goPanoPanel(2)">
               <span>K75P · 天瑞</span>
               <b id="k75pTileV">--</b>
               <span class="tile-sub" id="k75pTileSub">載入中</span>
             </button>
+            <button class="tile tile-wide tile-flip tile-magenta" id="tileNews" data-tile="news" onclick="goPane('news')">
+              <span class="tile-face"><span>要聞</span><span class="tile-sub" id="newsTile1">載入中</span></span>
+              <span class="tile-face tile-face-back" id="newsTile2"></span>
+            </button>
+            <button class="tile tile-cyan" data-tile="map" onclick="goPane('map')">路線圖</button>
+            <button class="tile tile-teal" data-tile="settings" onclick="goPane('settings')">設定</button>
           </div>
           <!-- 小磁贴：交通方式快捷入口（WP8 Small Tile） -->
           <div class="tiles-small">
-            <button class="tile-small tile-cobalt" onclick="quickTransport('mtr')">港鐵</button>
-            <button class="tile-small tile-cyan" onclick="quickTransport('lrt')">輕鐵</button>
-            <button class="tile-small tile-magenta" onclick="quickTransport('mtrbus')">港鐵巴士</button>
-            <button class="tile-small tile-teal" onclick="goPanoPanel(2)">K75P 全線</button>
+            <button class="tile-small tile-cobalt" data-tile="mtr" onclick="quickTransport('mtr')">港鐵</button>
+            <button class="tile-small tile-cyan" data-tile="lrt" onclick="quickTransport('lrt')">輕鐵</button>
+            <button class="tile-small tile-magenta" data-tile="mtrbus" onclick="quickTransport('mtrbus')">港鐵巴士</button>
+            <button class="tile-small tile-teal" data-tile="k75pline" onclick="goPanoPanel(2)">K75P 全線</button>
           </div>
         </div>
 
@@ -96,6 +107,23 @@
     <div class="pane-inner">
       <h2 class="pane-title">壽司郎</h2>
       <div id="sushi" class="flat-list"><div class="metro-empty">載入中…</div></div>
+    </div>
+  </section>
+
+  <!-- 要聞 -->
+  <section class="pane" data-pane="news">
+    <div class="pane-inner">
+      <h2 class="pane-title">要聞</h2>
+      <div id="news" class="flat-list"><div class="metro-empty">載入中…</div></div>
+    </div>
+  </section>
+
+  <!-- 路线图 -->
+  <section class="pane" data-pane="map">
+    <div class="pane-inner">
+      <h2 class="pane-title">路線圖</h2>
+      <div class="map-lines" id="mapLines"></div>
+      <div class="map-body" id="mapBody"></div>
     </div>
   </section>
 
@@ -151,6 +179,8 @@
   <div class="more-menu" id="moreMenu" hidden>
     <button onclick="moreAction('refresh')">重新整理</button>
     <button onclick="moreAction('fav')">收藏首條結果</button>
+    <button onclick="moreAction('news')">要聞</button>
+    <button onclick="moreAction('map')">路線圖</button>
   </div>
 </nav>
 
