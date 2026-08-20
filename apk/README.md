@@ -19,11 +19,13 @@ apk/
 ## 本地构建步骤（在你的电脑上执行）
 
 ### ⚡ 方式一：一键脚本（推荐）
-**双击 `build-apk.bat`**——脚本会自动：设置 JDK/SDK 环境变量 → 安装依赖 → 生成原生工程 → 同步资源 → 构建 debug APK → 打开产物文件夹。
-首次构建会下载 Gradle（约 10~30 分钟），失败就再双击一次（断点续传）。
+1. **首次请先双击 `setup-jdk.bat`**——自动下载 Temurin **JDK 21**（免管理员权限，约 200MB）。
+   Capacitor 7 的 Gradle 8.11 不支持 Android Studio 自带的新版 Java 25（会报 `major version 69`），必须用 JDK 21。
+2. **双击 `build-apk.bat`**——脚本会自动：找到 JDK 21 → 安装依赖 → 生成原生工程 → 同步资源 → 构建 debug APK → 打开产物文件夹。
+   首次构建会下载 Gradle 与依赖（约 10~30 分钟），失败就再双击一次（断点续传）。
 
 ### 🔧 方式二：手动命令
-（需自行设置 `JAVA_HOME`=`C:\Program Files\Android\Android Studio\jbr`、`ANDROID_HOME`=`%LOCALAPPDATA%\Android\Sdk`）
+（需自行设置 `JAVA_HOME` 指向 **JDK 21**（如 `%LOCALAPPDATA%\Android\jdk21`），`ANDROID_HOME`=`%LOCALAPPDATA%\Android\Sdk`）
 
 ```bash
 # 1. 进入 apk 目录
@@ -57,6 +59,7 @@ gradlew.bat assembleDebug
 
 | 问题 | 处理 |
 |---|---|
+| `Unsupported class file major version 69` | 正在用 Java 25 构建；双击 `setup-jdk.bat` 安装 JDK 21 后再构建 |
 | `npx cap add android` 报 SDK 找不到 | 检查 Android Studio 已装 SDK；或 `sdkmanager` 安装 platform-tools |
 | Gradle 下载慢 | 修改 `android/build.gradle` 使用国内镜像（阿里云 maven） |
 | 应用内网络请求失败 | 数据源（data.gov.hk / etabus / HKO）均支持 CORS，WebView 可直接访问；寿司郎仍需代理（与 PWA 相同限制） |
