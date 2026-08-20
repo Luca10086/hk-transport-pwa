@@ -870,7 +870,7 @@ function renderMapLines() {
   const lines = Object.keys(MTR_LINE_STOPS).map(lc => ({ code: lc, name: MTR_LINES[lc] || lc }));
   box.innerHTML = '<button class="map-line-btn' + (mapMode === 'mtr' ? ' active' : '') + '" onclick="setMapMode(\'mtr\', this)">港鐵</button>'
     + '<button class="map-line-btn' + (mapMode === 'lrt' ? ' active' : '') + '" onclick="setMapMode(\'lrt\', this)">輕鐵</button>'
-    + '<button class="map-line-btn' + (mapMode === 'bus' ? ' active' : '') + '" onclick="setMapMode(\'bus\', this)">巴士位置</button>'
+    + '<button class="map-line-btn' + (mapMode === 'bus' ? ' active' : '') + '" id="mapBusBtn" onclick="setMapMode(\'bus\', this)">巴士位置</button>'
     + lines.map(l => '<button class="map-line-btn" data-lc="' + l.code + '" onclick="renderMTRLine(\'' + l.code + '\', this)">' + escapeHtml(l.name) + '</button>').join('');
   renderMTRLine(Object.keys(MTR_LINE_STOPS)[0], box.querySelector('.map-line-btn[data-lc]'));
 }
@@ -983,19 +983,40 @@ async function refreshBusMap() {
 }
 
 /* ---------- K75P（首屏天瑞磁貼 + 全線實時） ---------- */
+function goBusMap() {
+  goPane('map');
+  setTimeout(() => {
+    const btn = $('mapBusBtn');
+    setMapMode('bus', btn);
+  }, 400);
+}
 async function loadK75PNow() {
   const v = $('k75pTileV'), s = $('k75pTileSub');
   if (!v) return;
   try {
     const data = await getMTRBusETA('K75P');
     if (!data || !Array.isArray(data.busStop)) { v.textContent = '--'; s.textContent = '暫無資料'; return; }
+    /* 路上班次統計（按 busId 去重：同一班車會出現在多個站的列表） */
+    const liveIds = new Set(), schedIds = new Set();
+    for (const stop of data.busStop) {
+      for (const b of (stop.bus || [])) {
+        const sec = parseInt(b.arrivalTimeInSecond) || 0;
+        if (sec <= 0 || sec >= 108000) continue;
+        const isLive = !!(b.busLocation && Number(b.busLocation.latitude) && Number(b.busLocation.longitude));
+        if (isLive) liveIds.add(b.busId);
+        else if (isFlag(b.isScheduled)) schedIds.add(b.busId);
+      }
+    }
+    /* 天瑞（D010）下一班 */
     const stop = (data.busStop || []).find(x => String(x.busStopId || '').replace(/^K75P-/, '') === 'D010') || {};
     const secs = (stop.bus || []).map(b => parseInt(b.arrivalTimeInSecond) || 0)
       .filter(x => x > 0 && x < 108000).sort((a, b) => a - b);
     const fmt = x => x <= 60 ? '即將' : Math.max(1, Math.ceil(x / 60)) + ' 分鐘';
     if (!secs.length) { v.textContent = '—'; s.textContent = '天瑞 · 暫無班次'; return; }
     v.textContent = fmt(secs[0]);
-    s.textContent = secs[1] ? '次班 ' + fmt(secs[1]) : '天瑞總站';
+    let sub = '實時 ' + liveIds.size + ' 班';
+    if (schedIds.size > 0) sub += ' · 定時 ' + schedIds.size + ' 班';
+    s.textContent = sub;
   } catch (e) {
     v.textContent = '--'; s.textContent = '載入失敗';
   }
@@ -1008,17 +1029,30 @@ async function loadK75P() {
     if (!data || !Array.isArray(data.busStop)) { el.innerHTML = '<div class="metro-empty">暫無資料</div>'; return; }
     const stopMap = {};
     for (const stop of data.busStop) stopMap[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
-    el.innerHTML = K75P_STOPS.map(st => {
-      const secs = (stopMap[st.id] || []).map(b => parseInt(b.arrivalTimeInSecond) || 0)
-        .filter(s => s > 0 && s < 108000).sort((a, b) => a - b);
-      const label = secs.length ? (secs[0] <= 60 ? '即將到站' : Math.max(1, Math.ceil(secs[0] / 60)) + ' 分鐘') : '—';
-      const sub = secs.length > 1 ? '次班 ' + (secs[1] <= 60 ? '即將到站' : Math.max(1, Math.ceil(secs[1] / 60)) + ' 分鐘') : '';
-      return '<div class="metro-row k75p-row">'
-        + '<span class="row-main"><span class="row-name">' + escapeHtml(st.name) + '</span>'
-        + (sub ? '<span class="row-sub">' + sub + '</span>' : '')
-        + '</span>'
-        + '<span class="row-eta ' + (secs.length && secs[0] <= 60 ? 'soon' : '') + '">' + label + '</span></div>';
-    }).join('');
+    const fmt = x => x <= 60 ? '即將到站' : Math.max(1, Math.ceil(x / 60)) + ' 分鐘';
+    el.innerHTML = '<div class="k75p-map-link" onclick="goBusMap()">📍 實時位置地圖（點按查看巴士在哪）<span>›</span></div>'
+      + K75P_STOPS.map(st => {
+        const buses = (stopMap[st.id] || [])
+          .map(b => ({
+            sec: parseInt(b.arrivalTimeInSecond) || 0,
+            scheduled: isFlag(b.isScheduled),
+            live: !!(b.busLocation && Number(b.busLocation.latitude) && Number(b.busLocation.longitude))
+          }))
+          .filter(b => b.sec > 0 && b.sec < 108000)
+          .sort((a, b) => a.sec - b.sec);
+        const first = buses[0];
+        const label = first ? fmt(first.sec) : '—';
+        const tag = first ? (first.live ? '<span class="k75p-tag live">實時</span>' : (first.scheduled ? '<span class="k75p-tag sched">定時</span>' : '')) : '';
+        const second = buses[1];
+        const sub = second
+          ? '次班 ' + fmt(second.sec) + (second.live ? ' · 實時' : (second.scheduled ? ' · 定時' : ''))
+          : '';
+        return '<div class="metro-row k75p-row">'
+          + '<span class="row-main"><span class="row-name">' + escapeHtml(st.name) + tag + '</span>'
+          + (sub ? '<span class="row-sub">' + sub + '</span>' : '')
+          + '</span>'
+          + '<span class="row-eta ' + (first && first.sec <= 60 ? 'soon' : '') + '">' + label + '</span></div>';
+      }).join('');
   } catch (e) {
     el.innerHTML = '<div class="error-msg">K75P 載入失敗</div>';
   }
