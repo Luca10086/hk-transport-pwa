@@ -117,15 +117,18 @@ body {
 }
 .tile b { font-size: 1.6rem; font-weight: 300; font-family: 'Segoe UI Light', sans-serif; }
 .tile-wide { grid-column: span 2; min-height: 72px; }
-.tile:nth-child(2) { background: var(--accent-dark); }
-.tile:nth-child(3) { background: #0078B4; }
+/* WP8 官方色板磁貼牆（純色，無漸變無陰影） */
+.tile-cobalt { background: #0050EF; }
+.tile-cyan   { background: #1BA1E2; }
+.tile-magenta{ background: #D80073; }
+.tile-teal   { background: #00ABA9; }
 .tile:active { transform: scale(0.96); }
 
 /* 小磁贴（1/4 小方，WP8 Small Tile） */
 .tiles-small { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
 .tile-small {
   border: none; cursor: pointer;
-  background: var(--surface2); color: var(--text);
+  background: var(--surface2); color: #fff;
   min-height: 62px; padding: 8px;
   font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-size: 0.82rem;
   display: flex; align-items: flex-end; text-align: left; line-height: 1.25;
@@ -163,6 +166,12 @@ body {
 
 /* ================= 扁平列表行（Metro 行） ================= */
 .flat-list { display: block; margin: 6px 0; }
+/* Metro 分隔標題（如「九巴」「城巴」「港鐵」） */
+.metro-group {
+  font-size: 0.95rem; font-weight: 300; color: var(--accent);
+  letter-spacing: 1px; margin: 16px 0 2px;
+}
+.metro-group:first-child { margin-top: 6px; }
 .metro-row {
   display: flex; align-items: center; gap: 14px;
   width: 100%; padding: 13px 0;
@@ -260,15 +269,23 @@ body {
 .appbar.hidden { transform: translateY(110%); }
 body.appbar-hidden .pivot { bottom: 0; }
 .ab-btn {
-  width: 44px; height: 44px; border: none; background: transparent; cursor: pointer;
-  color: var(--text2); display: inline-flex; align-items: center; justify-content: center;
+  width: 56px; height: 44px; border: none; background: transparent; cursor: pointer;
+  color: var(--text); display: inline-flex; align-items: center; justify-content: center;
 }
-.ab-btn svg { width: 18px; height: 18px; fill: currentColor; padding: 6px; border: 2px solid currentColor; border-radius: 50%; box-sizing: content-box; }
+/* WP8 App Bar：裸字形圖標（無圓圈），細線條 Segoe UI Symbol 風格 */
+.ab-btn svg {
+  width: 26px; height: 26px; fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.ab-glyph {
+  font-family: 'Segoe UI Symbol', 'Segoe MDL2 Assets', sans-serif;
+  font-size: 1.55rem; line-height: 1; font-weight: 400;
+}
 .ab-btn.active { color: var(--accent); }
 .ab-btn:active { transform: scale(0.9); }
 .ab-more {
-  width: 44px; height: 44px; border: none; background: transparent; cursor: pointer;
-  color: var(--text2); font-size: 1.3rem;
+  width: 56px; height: 44px; border: none; background: transparent; cursor: pointer;
+  color: var(--text); font-size: 1.5rem;
 }
 .ab-more:active { color: var(--accent); }
 .more-menu {

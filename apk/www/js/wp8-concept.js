@@ -150,7 +150,7 @@ async function searchBusRouteConcept(q, container) {
       .map(e => ({ ts: parseHK(e.eta) / 1000, dest: e.dest_tc || '' }))
       .sort((a, b) => a.ts - b.ts).slice(0, 3);
     results.push({
-      no: r.route, name: (r.orig_tc || '') + ' → ' + (r.dest_tc || ''),
+      no: r.route, name: (r.orig_tc || '') + ' → ' + (r.dest_tc || ''), group: '九巴',
       etas, fav: { type: 'bus', company: 'kmb', route: r.route, stop_id: first.stop_id || first.stop, stop_name: first.name_tc || '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
     });
   }
@@ -165,7 +165,7 @@ async function searchBusRouteConcept(q, container) {
         .map(e => ({ ts: parseHK(e.eta) / 1000, dest: e.dest_tc || '' }))
         .sort((a, b) => a.ts - b.ts).slice(0, 3);
       results.push({
-        no: String(r.route), name: (r.orig_tc && r.dest_tc) ? (dir === 'inbound' ? r.dest_tc + ' → ' + r.orig_tc : r.orig_tc + ' → ' + r.dest_tc) : '',
+        no: String(r.route), name: (r.orig_tc && r.dest_tc) ? (dir === 'inbound' ? r.dest_tc + ' → ' + r.orig_tc : r.orig_tc + ' → ' + r.dest_tc) : '', group: '城巴',
         etas, fav: { type: 'bus', company: 'ctb', route: String(r.route), stop_id: first.stop || first.stop_id, stop_name: '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
       });
     }
@@ -175,7 +175,7 @@ async function searchBusRouteConcept(q, container) {
     if (!stops.length) continue;
     const etas = (await getNLBETA(r.routeId, stops[0].stopId)).map(e => ({ ts: e.etaTs, dest: '' })).sort((a, b) => a.ts - b.ts).slice(0, 3);
     results.push({
-      no: String(r.routeNo || r.routeId), name: r.routeName_c || '', etas,
+      no: String(r.routeNo || r.routeId), name: r.routeName_c || '', group: '新大嶼山巴士', etas,
       fav: { type: 'bus', company: 'nlb', route: String(r.routeNo || r.routeId), routeId: r.routeId, stop_id: stops[0].stopId, stop_name: stops[0].stopName_c || '', dest: r.routeName_c || '' }
     });
   }
@@ -198,7 +198,7 @@ async function searchBusStopConcept(q, container) {
     items.push({ no: '站', name: st.name_tc || st.name_en, stopRoutes: routes });
   }
   lastResults = [];
-  container.innerHTML = items.map(it =>
+  container.innerHTML = '<div class="metro-group">巴士站</div>' + items.map(it =>
     '<div class="metro-row stop-row">'
     + '<span class="row-no">站</span>'
     + '<span class="row-main"><span class="row-name">' + escapeHtml(it.name) + '</span>'
@@ -232,7 +232,7 @@ async function searchMTRConcept(q, container) {
       }
       etas.sort((a, b) => a.ts - b.ts);
       results.push({
-        no: 'MTR', name: s.name, etas,
+        no: 'MTR', name: s.name, group: '港鐵', etas,
         fav: { type: 'mtr', line: Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code)), lineName: MTR_LINES[Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code))] || '', station_id: s.code, station_name: s.name }
       });
     }
@@ -283,24 +283,28 @@ async function searchMTRBusConcept(q, container) {
   const info = MTR_BUS_ROUTES[routeNum];
   const etas = parsed.map(p => ({ ts: parseHK(p.eta) / 1000, dest: p.stop_name })).sort((a, b) => a.ts - b.ts).slice(0, 4);
   const results = [{
-    no: routeNum, name: info ? info.orig + ' → ' + info.dest : routeNum, etas,
+    no: routeNum, name: info ? info.orig + ' → ' + info.dest : routeNum, group: '港鐵巴士', etas,
     fav: { type: 'mtrbus', route: routeNum, orig: info ? info.orig : '', dest: info ? info.dest : '' }
   }];
   lastResults = results;
   renderResults(results, container);
 }
 
-/* ---------- 渲染：扁平 Metro 行 ---------- */
+/* ---------- 渲染：扁平 Metro 行（含 Metro 分隔標題） ---------- */
 function renderResults(items, container) {
   if (!items.length) { container.innerHTML = '<div class="metro-empty">沒有結果</div>'; return; }
+  let lastGroup = null;
   container.innerHTML = items.map(it => {
+    const head = (it.group && it.group !== lastGroup)
+      ? '<div class="metro-group">' + escapeHtml(it.group) + '</div>' : '';
+    if (it.group) lastGroup = it.group;
     const first = it.etas && it.etas[0];
     const sub = (it.etas || []).slice(0, 2).map(e =>
       '<span class="row-eta-detail">' + escapeHtml(e.dest || '') + ' · ' + etaText(e.ts) + '</span>').join('');
     const star = it.fav
       ? '<button class="row-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(it.fav).replace(/'/g, '&#39;') + '\'>' + (isFavorited(it.fav) ? '★' : '☆') + '</button>'
       : '';
-    return '<div class="metro-row">'
+    return head + '<div class="metro-row">'
       + '<span class="row-no">' + escapeHtml(String(it.no)) + '</span>'
       + '<span class="row-main"><span class="row-name">' + escapeHtml(it.name || '') + '</span>' + sub + '</span>'
       + '<span class="row-eta ' + etaCls(first && first.ts) + '">' + (first ? etaText(first.ts) : '—') + '</span>'
@@ -563,8 +567,21 @@ function refreshAll() {
   });
 }
 
+/* ---------- App Bar：Windows 桌面用真正的 Segoe UI Symbol 字形（WP8 原味），流動裝置保留細線 SVG ---------- */
+const APP_GLYPHS = { home: '\uE10F', favs: '\uE113', sushi: '\uE56C', settings: '\uE115', more: '\uE10C' };
+function useSegoeGlyphs() {
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+  document.querySelectorAll('.ab-btn[data-pane]').forEach(b => {
+    const g = APP_GLYPHS[b.dataset.pane];
+    if (g != null) b.innerHTML = '<span class="ab-glyph">' + g + '</span>';
+  });
+  const more = document.querySelector('.ab-more');
+  if (more) more.innerHTML = '<span class="ab-glyph">' + APP_GLYPHS.more + '</span>';
+}
+
 /* ---------- 初始化 ---------- */
 document.addEventListener('DOMContentLoaded', () => {
+  useSegoeGlyphs();
   const th = localStorage.getItem('wp8concept_theme') || 'dark';
   const ac = localStorage.getItem('wp8concept_accent') || '#00A2E8';
   const rv = localStorage.getItem('wp8concept_refresh') || '30';
