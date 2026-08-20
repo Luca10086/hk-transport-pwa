@@ -50,14 +50,7 @@ function moreAction(a) {
   toggleMore();
   if (a === 'refresh') refreshAll();
   else if (a === 'fav') favFirstResult();
-  else if (a === 'speak') speakFirstResult();
   else if (a === 'map') goPane('map');
-}
-function speakFirstResult() {
-  const r = lastResults[0];
-  if (!r) return;
-  const first = r.etas && r.etas[0];
-  speakText(r.no + '，' + (r.name || '') + (first ? ('，下一班 ' + etaText(first.ts)) : ''));
 }
 document.addEventListener('click', (e) => {
   const m = $('moreMenu');
@@ -326,9 +319,6 @@ function renderResults(items, container) {
     const star = it.fav
       ? '<button class="row-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(it.fav).replace(/'/g, '&#39;') + '\'>' + (isFavorited(it.fav) ? '★' : '☆') + '</button>'
       : '';
-    const speak = first
-      ? '<button class="row-speak" onclick="speakRow(event, this)" data-speak=\'' + JSON.stringify({ no: it.no, name: it.name, ts: first.ts }).replace(/'/g, '&#39;') + '\' title="語音播報">▶</button>'
-      : '';
     const click = it.detail
       ? ' class="metro-row row-clickable" data-detail=\'' + JSON.stringify(it.detail).replace(/'/g, '&#39;') + '\' onclick="openRouteDetail(this)"'
       : ' class="metro-row"';
@@ -339,28 +329,8 @@ function renderResults(items, container) {
       + sub + '</span>'
       + '<span class="row-eta ' + etaCls(first && first.ts) + '">' + (first ? etaText(first.ts) : '—') + '</span>'
       + star
-      + speak
       + '</div>';
   }).join('');
-}
-/* 語音播報（Web Speech API，zh-HK） */
-function speakRow(ev, btn) {
-  ev.stopPropagation();
-  let d;
-  try { d = JSON.parse(btn.getAttribute('data-speak')); } catch (e) { return; }
-  speakText(d.no + '，' + d.name + '，下一班 ' + etaText(d.ts));
-}
-function speakText(text) {
-  try {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'zh-HK';
-    const voices = window.speechSynthesis.getVoices();
-    const v = voices.find(x => /zh|yue|cmn/i.test(x.lang || ''));
-    if (v) u.voice = v;
-    window.speechSynthesis.speak(u);
-  } catch (e) {}
 }
 
 function toggleRowFav(ev, btn) {

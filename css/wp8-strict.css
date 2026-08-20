@@ -530,15 +530,6 @@ body.detail-open .appbar { transform: translateY(100%); }
 .map-station .ms-code { color: var(--text2); font-size: 0.75rem; margin-left: 6px; }
 .map-station .ms-lines { color: var(--text2); font-size: 0.72rem; margin-left: 6px; }
 
-/* ================= 語音播報按鈕 ================= */
-.row-speak {
-  flex: 0 0 auto; width: 36px; height: 36px;
-  border: none; background: none; cursor: pointer;
-  font-size: 0.85rem; color: var(--text2);
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.row-speak:active { transform: scale(0.9); color: var(--accent); }
-
 /* ================= 巴士實時位置地圖 ================= */
 .bus-map { height: 420px; margin: 10px 0; background: var(--surface); }
 .bus-map[hidden] { display: none; }
