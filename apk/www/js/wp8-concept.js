@@ -576,19 +576,7 @@ async function renderFavs() {
     }
     const etas = await favETAs(f);
     if (i === 0) firstEtas = etas;
-    const it = { i, no: favNo(f), title: favTitle(f), sub: favSub(f), etas };
-    const det = (it.etas || []).slice(0, 2).map(e =>
-      '<span class="row-eta-detail">' + (e.dest ? escapeHtml(e.dest) + ' · ' : '') + etaText(e.ts) + '</span>').join('');
-    const d = favDetailFor(f);
-    const click = d ? ' data-detail=\'' + JSON.stringify(d).replace(/'/g, '&#39;') + '\' onclick="openRouteDetail(this)"' : '';
-    html += '<div class="metro-row fav-row' + (d ? ' row-clickable' : '') + '"' + click + '>'
-      + '<span class="row-no">' + escapeHtml(it.no) + '</span>'
-      + '<span class="row-main"><span class="row-name">' + escapeHtml(it.title) + '</span>'
-      + (it.sub ? '<span class="row-sub">' + escapeHtml(it.sub) + '</span>' : '')
-      + det + '</span>'
-      + '<span class="row-eta ' + etaCls(it.etas[0] && it.etas[0].ts) + '">' + (it.etas[0] ? etaText(it.etas[0].ts) : '—') + '</span>'
-      + '<button class="row-remove" data-i="' + i + '" onclick="removeFav(event, this)">✕</button>'
-      + '</div>';
+    html += favCardHTML(f, i, etas);
   }
   box.innerHTML = html;
   updateFavTile(favs[0], firstEtas);
@@ -601,6 +589,101 @@ function updateFavTile(f, etas) {
   if (etas && etas[0]) v.textContent = etaText(etas[0].ts);
   else v.textContent = '—';
   s.textContent = favNo(f) + ' · ' + favTitle(f);
+}
+/* 收藏卡片（移植自 PWA 的線路顯示，樣式跟隨 WP8/紫色主風格） */
+function favCardHTML(f, i, etas) {
+  const tag = f.type === 'mtr' ? '港鐵' : f.type === 'mtrbus' ? '港鐵巴士' : f.type === 'lrt' ? '輕鐵' : '公交';
+  const first = etas && etas[0];
+  const det = (etas || []).slice(0, 3).map(e =>
+    '<div class="fav-line"><span class="fav-line-label">' + (e.dest ? escapeHtml(e.dest) : '下一班') + '</span>'
+    + '<span class="fav-line-time ' + etaCls(e.ts) + '">' + etaText(e.ts) + '</span></div>').join('');
+  const sub = favSubLine(f);
+  const d = favDetailFor(f);
+  const click = d ? ' data-detail=\'' + JSON.stringify(d).replace(/'/g, '&#39;') + '\' onclick="openRouteDetail(this)"' : '';
+  return '<div class="fav-card' + (d ? ' row-clickable' : '') + '"' + click + '>'
+    + '<div class="fav-head"><span class="fav-no">' + escapeHtml(favNo(f)) + '</span>'
+    + '<span class="fav-tag">' + tag + '</span>'
+    + '<span class="fav-actions">'
+    + (f.type === 'bus' ? '<button class="fav-pick" onclick="event.stopPropagation();openFavStopPicker(' + i + ')">換站</button>' : '')
+    + '<button class="fav-remove" onclick="event.stopPropagation();removeFav(event, this)" data-i="' + i + '">✕</button>'
+    + '</span></div>'
+    + '<div class="fav-name">' + escapeHtml(favTitle(f)) + '</div>'
+    + (sub ? '<div class="fav-sub">' + escapeHtml(sub) + '</div>' : '')
+    + '<div class="fav-eta-main">' + (first ? etaText(first.ts) : '—') + '</div>'
+    + (det ? '<div class="fav-lines">' + det + '</div>' : '')
+    + (d ? '<div class="fav-more">點按查看全線候車</div>' : '')
+    + '</div>';
+}
+function favSubLine(f) {
+  if (f.type === 'bus') {
+    const dir = f.direction === 'inbound' ? '回程' : '去程';
+    return (f.stop_name ? '站：' + f.stop_name + ' · ' : '') + dir;
+  }
+  if (f.type === 'lrt') return '輕鐵車站';
+  if (f.type === 'mtr') return (f.lineName || f.line) + ' 線';
+  if (f.type === 'mtrbus') return '港鐵巴士';
+  return '';
+}
+/* 換站：列出路線車站供選擇 */
+async function openFavStopPicker(index) {
+  const favs = getFavorites();
+  const f = favs[index];
+  if (!f || f.type !== 'bus') return;
+  const sheet = $('detailSheet');
+  if (!sheet) return;
+  $('detailTitle').textContent = favNo(f) + ' · 選擇車站';
+  sheet.hidden = false;
+  document.body.classList.add('detail-open');
+  requestAnimationFrame(() => sheet.classList.add('open'));
+  const body = $('detailBody');
+  body.innerHTML = '<div class="loading">載入車站…</div>';
+  const stops = await fetchFavStops(f);
+  body.innerHTML = stops.length
+    ? stops.map((s, idx) =>
+        '<div class="ds-stop row-clickable" data-idx="' + index + '" data-sid="' + escapeHtml(String(s.id)) + '" data-sn="' + escapeHtml(String(s.name)) + '" onclick="pickFavStopFrom(this)">'
+        + '<span class="ds-seq">' + (idx + 1) + '</span>'
+        + '<span class="ds-name' + (String(s.id) === String(f.stop_id) ? '" style="color:var(--accent)' : '') + '">' + escapeHtml(s.name) + (String(s.id) === String(f.stop_id) ? '（當前）' : '') + '</span></div>').join('')
+    : '<div class="metro-empty">無法載入車站列表</div>';
+}
+function pickFavStopFrom(btn) {
+  const idx = parseInt(btn.getAttribute('data-idx'), 10);
+  const sid = btn.getAttribute('data-sid');
+  const sn = btn.getAttribute('data-sn');
+  const favs = getFavorites();
+  if (favs[idx] && sid != null && sid !== '') {
+    favs[idx].stop_id = sid;
+    favs[idx].stop_name = sn;
+    saveFavorites(favs);
+  }
+  closeRouteDetail();
+  renderFavs();
+}
+async function fetchFavStops(f) {
+  try {
+    if (f.company === 'kmb') {
+      const stops = await getKMBStops(f.route, f.direction === 'inbound' ? 'inbound' : 'outbound', '1');
+      if (stops.length) {
+        const missing = stops.filter(s => !(s.name_tc || s.name_en)).map(s => s.stop);
+        const names = await Promise.all(missing.map(sid => getKMBStopName(sid)));
+        const nm = {};
+        missing.forEach((sid, j) => { nm[String(sid)] = names[j]; });
+        return stops.map(s => ({ id: s.stop_id || s.stop, name: s.name_tc || s.name_en || nm[String(s.stop)] || ('站 ' + (s.stop_id || s.stop)) }));
+      }
+    } else if (f.company === 'ctb') {
+      const stops = await getCTBStops(f.route, f.direction === 'inbound' ? 'inbound' : 'outbound');
+      return await Promise.all(stops.map(async s => {
+        const sid = s.stop || s.stop_id;
+        const name = sid ? await ctbStopName(sid) : '';
+        return { id: sid, name: name || ('站 ' + sid) };
+      }));
+    } else if (f.company === 'nlb') {
+      let rid = f.routeId;
+      if (!rid) { const rs = await searchNLBRoute(String(f.route)); if (rs && rs[0]) rid = rs[0].routeId; }
+      const stops = rid ? await getNLBRouteStops(rid) : [];
+      return stops.map(s => ({ id: s.stopId, name: s.stopName_c || s.stopName_s || ('站 ' + s.stopId) }));
+    }
+  } catch (e) {}
+  return [];
 }
 async function favETAs(f) {
   try {
@@ -699,16 +782,16 @@ async function refreshWeather() {
     el.textContent = '天氣載入失敗';
   }
 }
-/* 天氣磁貼背景隨天氣變化（墨綠系） */
+/* 天氣磁貼背景隨天氣變化（紫色系） */
 function weatherTileColor(icon) {
   const i = Number(icon);
-  if (i === 65) return '#004D40';                 /* 雷暴 → 墨青綠 */
-  if (i >= 62 && i <= 64) return '#00695C';       /* 雨 → 青綠 */
-  if (i >= 60 && i <= 61) return '#455A64';       /* 陰 → 灰綠 */
-  if (i >= 50 && i <= 54) return '#2E7D32';       /* 陽光 → 綠 */
-  if (i >= 70 && i <= 77) return '#558B2F';       /* 良好 → 橄欖 */
-  if (i === 90 || i === 91) return '#9E9D24';     /* 熱 → 黃綠 */
-  return '#2E7D32';
+  if (i === 65) return '#4C1D95';                 /* 雷暴 → 深紫 */
+  if (i >= 62 && i <= 64) return '#6D28D9';       /* 雨 → 紫 */
+  if (i >= 60 && i <= 61) return '#4E4A5E';       /* 陰 → 灰紫 */
+  if (i >= 50 && i <= 54) return '#7C3AED';       /* 陽光 → 紫羅蘭 */
+  if (i >= 70 && i <= 77) return '#8B5CF6';       /* 良好 → 淡紫 */
+  if (i === 90 || i === 91) return '#9A6BDB';     /* 熱 → 暖紫 */
+  return '#7C3AED';
 }
 /* 明日天氣預報（HKO fnd 九天天氣） */
 async function fetchForecast() {
@@ -876,7 +959,7 @@ async function refreshBusMap() {
         const lat = Number(loc.latitude), lng = Number(loc.longitude);
         if (!lat || !lng || seen.has(b.busId)) continue;
         seen.add(b.busId);
-        L.circleMarker([lat, lng], { radius: 7, color: '#2FA36B', weight: 2, fillColor: '#2FA36B', fillOpacity: 0.9 })
+        L.circleMarker([lat, lng], { radius: 7, color: '#8B5CF6', weight: 2, fillColor: '#8B5CF6', fillOpacity: 0.9 })
           .bindPopup('巴士 ' + escapeHtml(String(b.busId || '?')) + '<br>到下一站 ' + escapeHtml(String(b.arrivalTimeText || '')))
           .addTo(busLayer);
       }
@@ -1019,7 +1102,7 @@ function initPullToRefresh() {
 
 /* ---------- 磁貼長按：換色 / 隱藏 / 還原 ---------- */
 const TILE_STORAGE = 'wp8concept_tiles';
-const TILE_COLORS = ['#1B5E20', '#2E7D32', '#00695C', '#558B2F'];
+const TILE_COLORS = ['#5B21B6', '#7C3AED', '#6D28D9', '#4C1D95'];
 function initTileMenu() {
   const menu = $('tileMenu');
   if (!menu) return;
@@ -1143,10 +1226,12 @@ function initTileDrag() {
   }, { passive: true });
 }
 
-/* ---------- 頂欄避讓安卓系統狀態欄（全屏邊到邊模式） ---------- */
+/* ---------- 頂欄避讓安卓系統狀態欄（全屏邊到邊模式；Android 設最低下限） ---------- */
 function applySysbarInset() {
   const vv = window.visualViewport;
-  const h = vv ? Math.max(0, Math.round(vv.offsetTop || 0)) : 0;
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const measured = vv ? Math.round(vv.offsetTop || 0) : 0;
+  const h = Math.max(isAndroid ? 28 : 0, measured);
   document.documentElement.style.setProperty('--sysbar-h', h + 'px');
 }
 
@@ -1159,7 +1244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.visualViewport.addEventListener('scroll', applySysbarInset);
   }
   const th = localStorage.getItem('wp8concept_theme') || 'dark';
-  const ac = localStorage.getItem('wp8concept_accent') || '#2FA36B';
+  const ac = localStorage.getItem('wp8concept_accent') || '#8B5CF6';
   const rv = localStorage.getItem('wp8concept_refresh') || '30';
   const ui = localStorage.getItem('wp8concept_ui') || 'wp8';
   if (th === 'light') document.body.dataset.theme = 'light';
@@ -1181,17 +1266,14 @@ document.addEventListener('DOMContentLoaded', () => {
   /* 首页全景视差：requestAnimationFrame 缓动插值，滚动更顺滑 */
   const panoTrack = $('panoTrack');
   if (panoTrack) {
-    let bgCur = 0, titleCur = 0, raf = null;
+    let titleCur = 0, raf = null;
     const panoTick = () => {
       const targetX = panoTrack.scrollLeft;
-      bgCur += (targetX * 0.5 - bgCur) * 0.14;
-      titleCur += (-targetX * 0.35 - titleCur) * 0.14;
-      const bg = $('panoBg'), title = $('panoTitle');
-      if (bg) bg.style.transform = 'translateX(' + bgCur.toFixed(2) + 'px)';
+      titleCur += (-targetX * 0.3 - titleCur) * 0.12;
+      const title = $('panoTitle');
       if (title) title.style.transform = 'translateX(' + titleCur.toFixed(2) + 'px)';
-      if (Math.abs(targetX * 0.5 - bgCur) > 0.3 || Math.abs(-targetX * 0.35 - titleCur) > 0.3) {
-        raf = requestAnimationFrame(panoTick);
-      } else raf = null;
+      if (Math.abs(-targetX * 0.3 - titleCur) > 0.3) raf = requestAnimationFrame(panoTick);
+      else raf = null;
     };
     const onPanoScroll = () => {
       const x = panoTrack.scrollLeft;

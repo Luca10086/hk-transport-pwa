@@ -9,26 +9,26 @@
 html, body { height: 100%; }
 
 :root {
-  --bg: #101D15;          /* 墨綠黑 */
-  --surface: #1B2E22;
-  --surface2: #24382B;
+  --bg: #15121C;          /* 深紫黑 */
+  --surface: #221D31;
+  --surface2: #2A2440;
   --text: #FFFFFF;
-  --text2: #A9BFB1;
-  --line: #2E4536;
-  --accent: #2FA36B;      /* 主色：翠綠（墨綠系） */
-  --accent-dark: #1B5E20;
+  --text2: #B3A9CE;
+  --line: #352E52;
+  --accent: #8B5CF6;      /* 主色：紫 */
+  --accent-dark: #6D28D9;
   --statusbar-h: 0px;      /* 狀態欄已移除，保留變量使佈局計算一致 */
   --sysbar-h: 0px;         /* 安卓系統狀態欄高度（JS 按 visualViewport 偵測） */
-  --topbar-h: 92px;        /* 加大頂部空間，避免與系統狀態欄貼太近 */
+  --topbar-h: 104px;       /* 加大頂部空間，避免與系統狀態欄貼太近 */
   --appbar-h: 62px;
 }
 body[data-theme="light"] {
-  --bg: #F2F5F3;
+  --bg: #F4F2F8;
   --surface: #FFFFFF;
-  --surface2: #E8EDEA;
-  --text: #0E1F15;
-  --text2: #4E6455;
-  --line: #C4D0C8;
+  --surface2: #EBE8F2;
+  --text: #1A1425;
+  --text2: #5A5170;
+  --line: #D3CCE3;
 }
 
 html { font-size: 16px; }
@@ -42,7 +42,7 @@ body {
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   height: calc(var(--topbar-h) + var(--sysbar-h));
-  padding: calc(20px + var(--sysbar-h)) 24px 12px;   /* 與安卓狀態欄保持呼吸距離 */
+  padding: calc(34px + var(--sysbar-h)) 24px 14px;   /* 與安卓狀態欄保持充分呼吸距離 */
   display: flex; align-items: flex-end; justify-content: space-between;
   background: var(--bg);
 }
@@ -119,11 +119,11 @@ body {
 .tile b { font-size: 1.5rem; font-weight: 300; font-family: 'Segoe UI Light', sans-serif; }
 .tile-sub { font-size: 0.74rem; opacity: 0.85; margin-top: 2px; }
 .tile-wide { grid-column: span 4; min-height: 76px; }
-/* WP8 官方色板磁貼牆 → 墨綠系純色 */
-.tile-cobalt { background: #1B5E20; }
-.tile-cyan   { background: #2E7D32; }
-.tile-magenta{ background: #00695C; }
-.tile-teal   { background: #558B2F; }
+/* WP8 磁貼牆 → 紫色系純色 */
+.tile-cobalt { background: #5B21B6; }
+.tile-cyan   { background: #7C3AED; }
+.tile-magenta{ background: #6D28D9; }
+.tile-teal   { background: #4C1D95; }
 .tile:active { transform: scale(0.96); }
 
 /* 小磁贴（1/4 小方，WP8 Small Tile） */
@@ -262,6 +262,29 @@ body {
 .ds-stop .ds-eta.soon { color: #E51400; }
 .ds-stop .ds-eta.medium { color: #F0A30A; }
 .row-clickable { cursor: pointer; }
+
+/* ================= 收藏卡片（移植自 PWA，紫色 WP8 風格） ================= */
+.fav-card { border-bottom: 1px solid var(--line); padding: 15px 0; cursor: pointer; }
+.fav-head { display: flex; align-items: center; gap: 10px; }
+.fav-no { font-size: 1.5rem; font-weight: 300; font-family: 'Segoe UI Light', sans-serif; color: var(--accent); }
+.fav-tag { font-size: 0.68rem; color: var(--text2); border: 1px solid var(--line); padding: 1px 8px; }
+.fav-actions { margin-left: auto; display: flex; gap: 8px; }
+.fav-pick, .fav-remove {
+  border: 1px solid var(--line); background: transparent; color: var(--text2);
+  padding: 4px 10px; font-size: 0.78rem; cursor: pointer; border-radius: 0;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+}
+.fav-pick:active, .fav-remove:active { color: var(--accent); border-color: var(--accent); }
+.fav-name { font-size: 1.05rem; margin-top: 9px; }
+.fav-sub { font-size: 0.78rem; color: var(--text2); margin-top: 3px; }
+.fav-eta-main { font-size: 2.2rem; font-weight: 300; font-family: 'Segoe UI Light', sans-serif; margin-top: 9px; line-height: 1.1; }
+.fav-lines { margin-top: 4px; }
+.fav-line { display: flex; justify-content: space-between; gap: 16px; font-size: 0.82rem; padding: 3px 0; }
+.fav-line-label { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-line-time { color: var(--text); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.fav-line-time.soon { color: #E51400; }
+.fav-line-time.medium { color: #F0A30A; }
+.fav-more { font-size: 0.72rem; color: var(--text2); margin-top: 7px; }
 
 /* ================= 天气条 ================= */
 .weather-bar {
@@ -434,12 +457,14 @@ body.appbar-hidden .pivot { bottom: 0; }
 /* ================= 摺疊屏 / 大屏優化：利用寬度，而不是放大版手機 =================
    展開態（約 7 吋以上）每屏並列兩個窗格：首頁全景並列兩塊面板，
    Pivot 同屏顯示兩個分頁，充分利用摺疊後的多餘寬度。 */
+/* ================= 摺疊屏 / 大屏優化：單欄全寬、加大邊距與字號，保持可讀性 ================= */
 @media (min-width: 700px) {
-  .pane { flex: 0 0 50%; min-width: 50%; padding-left: 32px; padding-right: 32px; }
-  .pano-panel { flex: 0 0 50%; min-width: 50%; padding-left: 32px; padding-right: 32px; }
-  .tiles { gap: 14px; max-width: 720px; }
-  .tiles-small { gap: 14px; }
-  .search-block { max-width: 560px; }
+  html { font-size: 18px; }
+  .pane { padding-left: 44px; padding-right: 44px; }
+  .pano-panel { padding-left: 44px; padding-right: 44px; }
+  .tiles { gap: 16px; }
+  .tiles-small { gap: 16px; }
+  .search-block { max-width: 640px; }
 }
 
 /* 雙屏 / 摺疊設備：內容避開鉸鏈縫（viewport segments 環境變量） */

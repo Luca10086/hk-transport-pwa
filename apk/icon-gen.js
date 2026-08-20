@@ -7,8 +7,8 @@ const fs = require('fs');
 const path = require('path');
 
 const RES = path.join(__dirname, 'android', 'app', 'src', 'main', 'res');
-const GREEN_BG = [0x14, 0x53, 0x2D];
-const GREEN_FG = [0x2F, 0xA3, 0x6B];
+const GREEN_BG = [0x4C, 0x1D, 0x95];
+const GREEN_FG = [0x8B, 0x5C, 0xF6];
 const WHITE = [0xFF, 0xFF, 0xFF];
 
 /* ---------- PNG 編碼 ---------- */
@@ -127,21 +127,21 @@ for (const [name] of Object.entries(densities)) {
 /* ---------- XML 資源 ---------- */
 fs.writeFileSync(path.join(RES, 'values', 'colors.xml'),
   '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n' +
-  '    <color name="colorPrimary">#14532D</color>\n' +
-  '    <color name="colorPrimaryDark">#0F3D2E</color>\n' +
-  '    <color name="colorAccent">#2FA36B</color>\n' +
+  '    <color name="colorPrimary">#4C1D95</color>\n' +
+  '    <color name="colorPrimaryDark">#2A1257</color>\n' +
+  '    <color name="colorAccent">#8B5CF6</color>\n' +
   '</resources>\n');
 console.log('wrote values/colors.xml');
 fs.writeFileSync(path.join(RES, 'values', 'ic_launcher_background.xml'),
   '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n' +
-  '    <color name="ic_launcher_background">#14532D</color>\n' +
+  '    <color name="ic_launcher_background">#4C1D95</color>\n' +
   '</resources>\n');
 console.log('wrote values/ic_launcher_background.xml');
 fs.writeFileSync(path.join(RES, 'drawable', 'ic_launcher_background.xml'),
   '<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n' +
   '    android:width="108dp" android:height="108dp"\n' +
   '    android:viewportHeight="108" android:viewportWidth="108">\n' +
-  '    <path android:fillColor="#14532D" android:pathData="M0,0h108v108h-108z" />\n' +
+  '    <path android:fillColor="#4C1D95" android:pathData="M0,0h108v108h-108z" />\n' +
   '</vector>\n');
 console.log('wrote drawable/ic_launcher_background.xml');
 fs.writeFileSync(path.join(RES, 'drawable-v24', 'ic_launcher_foreground.xml'),
@@ -149,7 +149,7 @@ fs.writeFileSync(path.join(RES, 'drawable-v24', 'ic_launcher_foreground.xml'),
   '    android:width="108dp" android:height="108dp"\n' +
   '    android:viewportHeight="108" android:viewportWidth="108">\n' +
   '    <path android:fillColor="#FFFFFF" android:pathData="M34,23 L74,23 A11,11 0 0 1 85,34 L85,74 A11,11 0 0 1 74,85 L34,85 A11,11 0 0 1 23,74 L23,34 A11,11 0 0 1 34,23 Z" />\n' +
-  '    <path android:fillColor="#14532D" android:pathData="M40,49 L56,49 L56,59 L40,59 Z M56,44 L66,54 L56,64 Z" />\n' +
+  '    <path android:fillColor="#4C1D95" android:pathData="M40,49 L56,49 L56,59 L40,59 Z M56,44 L66,54 L56,64 Z" />\n' +
   '</vector>\n');
 console.log('wrote drawable-v24/ic_launcher_foreground.xml');
 console.log('DONE');
