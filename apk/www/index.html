@@ -33,6 +33,9 @@
     <div class="pano">
       <div class="pano-bg" id="panoBg" aria-hidden="true"></div>
       <h1 class="pano-title" id="panoTitle">森友出行</h1>
+      <button class="pano-search" onclick="goPanoPanel(1);setTimeout(function(){var i=document.getElementById('searchInput');if(i)i.focus();},360)" aria-label="搜尋路線">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+      </button>
       <div class="pano-track" id="panoTrack">
 
         <!-- 面板 1：磁贴（WP8 官方色板純色牆：小=1/4、中=1/2、寬=全寬） -->

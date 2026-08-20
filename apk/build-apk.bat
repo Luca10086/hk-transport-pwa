@@ -46,10 +46,6 @@ echo [step1] npm install >> "%LOG%" 2>&1
 call npm install --no-audit --no-fund >> "%LOG%" 2>&1
 if errorlevel 1 goto :fail
 
-REM 2.5. Bump Beta version counter (Beta 0.1 build N, +1 per build)
-echo [step2.5] bump version >> "%LOG%" 2>&1
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0bump-version.ps1" >> "%LOG%" 2>&1
-
 REM 3. Generate Android native project (first time only)
 if not exist "android" (
     echo [2/4] Generating Android native project...
@@ -60,6 +56,10 @@ if not exist "android" (
     echo [2/4] Android project already exists, skip
     echo [step2] skip >> "%LOG%" 2>&1
 )
+
+REM 3.5. Bump Beta version (counter + web version.js + android versionName/versionCode)
+echo [step3.5] bump version >> "%LOG%" 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0bump-version.ps1" >> "%LOG%" 2>&1
 
 REM 4. Sync web assets into the native project
 echo [3/4] Syncing web assets...

@@ -36,7 +36,16 @@ function updatePivot() {
   document.querySelectorAll('.ab-btn[data-pane]').forEach(b => b.classList.toggle('active', b.dataset.pane === cur));
 }
 pivot.addEventListener('scroll', () => requestAnimationFrame(updatePivot), { passive: true });
+let paneHistory = [];
+let consumingBack = false;
 function goPane(name) {
+  const pane = pivot.querySelector('.pane[data-pane="' + name + '"]');
+  if (!pane) return;
+  const prev = paneHistory[paneHistory.length - 1];
+  if (prev !== name) { paneHistory.push(name); try { history.pushState({ wp8Pane: name }, ''); } catch (e) {} }
+  pivot.scrollTo({ left: pane.offsetLeft, behavior: 'smooth' });
+}
+function goPaneBack(name) {
   const pane = pivot.querySelector('.pane[data-pane="' + name + '"]');
   if (pane) pivot.scrollTo({ left: pane.offsetLeft, behavior: 'smooth' });
 }
@@ -384,15 +393,36 @@ function openRouteDetail(btn) {
   sheet.hidden = false;
   document.body.classList.add('detail-open');
   requestAnimationFrame(() => sheet.classList.add('open'));
+  paneHistory.push(null);
+  try { history.pushState({ wp8Sheet: true }, ''); } catch (e) {}
   renderRouteDetail(detail, $('detailBody'));
 }
 function closeRouteDetail() {
   const sheet = $('detailSheet');
-  if (!sheet) return;
+  if (!sheet || sheet.hidden) return;
   sheet.classList.remove('open');
   document.body.classList.remove('detail-open');
   setTimeout(() => { sheet.hidden = true; }, 360);
+  if (history.state && history.state.wp8Sheet) {
+    paneHistory.pop();
+    consumingBack = true;
+    try { history.back(); } catch (e) { consumingBack = false; }
+  }
 }
+/* 安卓返回鍵：先關詳情頁，再回上一分頁，最後才退出 */
+window.addEventListener('popstate', () => {
+  if (consumingBack) { consumingBack = false; return; }
+  const sheet = $('detailSheet');
+  if (sheet && !sheet.hidden) {
+    sheet.classList.remove('open');
+    document.body.classList.remove('detail-open');
+    setTimeout(() => { sheet.hidden = true; }, 360);
+    return;
+  }
+  paneHistory.pop();
+  const prev = paneHistory[paneHistory.length - 1];
+  if (prev) goPaneBack(prev);
+});
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const sheet = $('detailSheet');
@@ -1263,24 +1293,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const verEl = $('appVersion');
   if (verEl) verEl.textContent = APP_VERSION;
 
-  /* 首页全景视差：requestAnimationFrame 缓动插值，滚动更顺滑 */
+  /* 首页全景：僅更新指示點（無任何位移動畫，杜絕拖影） */
   const panoTrack = $('panoTrack');
   if (panoTrack) {
-    let titleCur = 0, raf = null;
-    const panoTick = () => {
-      const targetX = panoTrack.scrollLeft;
-      titleCur += (-targetX * 0.3 - titleCur) * 0.12;
-      const title = $('panoTitle');
-      if (title) title.style.transform = 'translateX(' + titleCur.toFixed(2) + 'px)';
-      if (Math.abs(-targetX * 0.3 - titleCur) > 0.3) raf = requestAnimationFrame(panoTick);
-      else raf = null;
-    };
     const onPanoScroll = () => {
       const x = panoTrack.scrollLeft;
       const panelW = panoTrack.clientWidth >= 700 ? panoTrack.clientWidth / 2 : panoTrack.clientWidth;
       const hint = $('panoHint');
       if (hint) hint.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', i === Math.min(2, Math.round(x / (panelW || 1)))));
-      if (!raf) raf = requestAnimationFrame(panoTick);
     };
     panoTrack.addEventListener('scroll', onPanoScroll, { passive: true });
     onPanoScroll();

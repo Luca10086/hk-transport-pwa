@@ -14,3 +14,13 @@ if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Ou
 $js = "window.APP_VERSION = 'Beta 0.1 build " + $n + "';"
 [System.IO.File]::WriteAllText((Join-Path $dir 'version.js'), $js + [Environment]::NewLine)
 Write-Host ("App version: Beta 0.1 build " + $n)
+
+# Sync Android versionName/versionCode (installer shows 0.1.N instead of 1.0)
+$gradleFile = Join-Path $root 'android\app\build.gradle'
+if (Test-Path $gradleFile) {
+  $g = [System.IO.File]::ReadAllText($gradleFile)
+  $g = [regex]::Replace($g, 'versionCode\s+\d+', ('versionCode ' + $n))
+  $g = [regex]::Replace($g, 'versionName\s+"[^"]*"', ('versionName "0.1.' + $n + '"'))
+  [System.IO.File]::WriteAllText($gradleFile, $g)
+  Write-Host ("Android version: 0.1." + $n)
+}
