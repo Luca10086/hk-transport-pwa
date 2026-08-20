@@ -150,8 +150,9 @@ async function searchBusRouteConcept(q, container) {
       .map(e => ({ ts: parseHK(e.eta) / 1000, dest: e.dest_tc || '' }))
       .sort((a, b) => a.ts - b.ts).slice(0, 3);
     results.push({
-      no: r.route, name: (r.orig_tc || '') + ' → ' + (r.dest_tc || ''), group: '九巴',
-      etas, fav: { type: 'bus', company: 'kmb', route: r.route, stop_id: first.stop_id || first.stop, stop_name: first.name_tc || '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
+      no: r.route, name: '往 ' + (dir === 'outbound' ? r.dest_tc : r.orig_tc), sub: '由 ' + (dir === 'outbound' ? r.orig_tc : r.dest_tc) + ' 開出', group: '九巴',
+      etas: etas.map(e => ({ ts: e.ts, dest: '' })),
+      fav: { type: 'bus', company: 'kmb', route: r.route, stop_id: first.stop_id || first.stop, stop_name: first.name_tc || '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
     });
   }
   for (const r of (ctbRoutes || [])) {
@@ -165,8 +166,9 @@ async function searchBusRouteConcept(q, container) {
         .map(e => ({ ts: parseHK(e.eta) / 1000, dest: e.dest_tc || '' }))
         .sort((a, b) => a.ts - b.ts).slice(0, 3);
       results.push({
-        no: String(r.route), name: (r.orig_tc && r.dest_tc) ? (dir === 'inbound' ? r.dest_tc + ' → ' + r.orig_tc : r.orig_tc + ' → ' + r.dest_tc) : '', group: '城巴',
-        etas, fav: { type: 'bus', company: 'ctb', route: String(r.route), stop_id: first.stop || first.stop_id, stop_name: '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
+        no: String(r.route), name: '往 ' + (dir === 'outbound' ? r.dest_tc : r.orig_tc), sub: '由 ' + (dir === 'outbound' ? r.orig_tc : r.dest_tc) + ' 開出', group: '城巴',
+        etas: etas.map(e => ({ ts: e.ts, dest: '' })),
+        fav: { type: 'bus', company: 'ctb', route: String(r.route), stop_id: first.stop || first.stop_id, stop_name: '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
       });
     }
   }
@@ -175,7 +177,7 @@ async function searchBusRouteConcept(q, container) {
     if (!stops.length) continue;
     const etas = (await getNLBETA(r.routeId, stops[0].stopId)).map(e => ({ ts: e.etaTs, dest: '' })).sort((a, b) => a.ts - b.ts).slice(0, 3);
     results.push({
-      no: String(r.routeNo || r.routeId), name: r.routeName_c || '', group: '新大嶼山巴士', etas,
+      no: String(r.routeNo || r.routeId), name: r.routeName_c || '', sub: stops[0].stopName_c ? '由 ' + stops[0].stopName_c + ' 開出' : '', group: '新大嶼山巴士', etas,
       fav: { type: 'bus', company: 'nlb', route: String(r.routeNo || r.routeId), routeId: r.routeId, stop_id: stops[0].stopId, stop_name: stops[0].stopName_c || '', dest: r.routeName_c || '' }
     });
   }
@@ -241,6 +243,15 @@ async function searchMTRConcept(q, container) {
   renderResults(results, container);
 }
 
+/* 轻铁行（搜索结果与收藏共用，保证显示一致） */
+function lrtRowHTML(e) {
+  return '<div class="metro-row lrt-row">'
+    + '<span class="row-no">' + escapeHtml(e.routeNo) + '</span>'
+    + '<span class="row-main"><span class="row-name">往 ' + escapeHtml(e.dest) + '</span>'
+    + '<span class="row-sub">' + escapeHtml(e.platformId) + ' 號月台' + (e.dep ? ' · 開出' : '') + '</span></span>'
+    + '<span class="row-eta ' + (e.mins === 0 ? 'soon' : '') + '">' + (e.mins === 0 ? '即將' : e.mins + ' 分鐘') + '</span></div>';
+}
+
 /* 轻铁：按站分组，站名头 + 每路线一行（路线号/目的地/月台/到站时间） */
 async function searchLRTConcept(q, container) {
   const ids = Object.keys(LRT_STATIONS).filter(id => LRT_STATIONS[id].includes(q));
@@ -263,11 +274,7 @@ async function searchLRTConcept(q, container) {
       if (seen.has(key)) continue;
       seen.add(key);
       if (rows++ >= 6) break;
-      html += '<div class="metro-row lrt-row">'
-        + '<span class="row-no">' + escapeHtml(e.routeNo) + '</span>'
-        + '<span class="row-main"><span class="row-name">往 ' + escapeHtml(e.dest) + '</span>'
-        + '<span class="row-sub">' + escapeHtml(e.platformId) + ' 號月台' + (e.dep ? ' · 開出' : '') + '</span></span>'
-        + '<span class="row-eta ' + (e.mins === 0 ? 'soon' : '') + '">' + (e.mins === 0 ? '即將' : e.mins + ' 分鐘') + '</span></div>';
+      html += lrtRowHTML(e);
     }
     if (!rows) html += '<div class="metro-empty">暫無到站資料</div>';
   }
@@ -290,23 +297,26 @@ async function searchMTRBusConcept(q, container) {
   renderResults(results, container);
 }
 
-/* ---------- 渲染：扁平 Metro 行（含 Metro 分隔標題） ---------- */
+/* ---------- 渲染：扁平 Metro 行（含 Metro 分隔標題；與輕鐵同構：路線號 / 目的地 / 副資訊 / 右側班次） ---------- */
 function renderResults(items, container) {
   if (!items.length) { container.innerHTML = '<div class="metro-empty">沒有結果</div>'; return; }
   let lastGroup = null;
+  const labels = ['次班', '三班'];
   container.innerHTML = items.map(it => {
     const head = (it.group && it.group !== lastGroup)
       ? '<div class="metro-group">' + escapeHtml(it.group) + '</div>' : '';
     if (it.group) lastGroup = it.group;
     const first = it.etas && it.etas[0];
-    const sub = (it.etas || []).slice(0, 2).map(e =>
-      '<span class="row-eta-detail">' + escapeHtml(e.dest || '') + ' · ' + etaText(e.ts) + '</span>').join('');
+    const sub = (it.etas || []).slice(1, 3).map((e, idx) =>
+      '<span class="row-eta-detail">' + (e.dest ? escapeHtml(e.dest) + ' · ' : labels[idx] + ' ') + etaText(e.ts) + '</span>').join('');
     const star = it.fav
       ? '<button class="row-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(it.fav).replace(/'/g, '&#39;') + '\'>' + (isFavorited(it.fav) ? '★' : '☆') + '</button>'
       : '';
     return head + '<div class="metro-row">'
       + '<span class="row-no">' + escapeHtml(String(it.no)) + '</span>'
-      + '<span class="row-main"><span class="row-name">' + escapeHtml(it.name || '') + '</span>' + sub + '</span>'
+      + '<span class="row-main"><span class="row-name">' + escapeHtml(it.name || '') + '</span>'
+      + (it.sub ? '<span class="row-sub">' + escapeHtml(it.sub) + '</span>' : '')
+      + sub + '</span>'
       + '<span class="row-eta ' + etaCls(first && first.ts) + '">' + (first ? etaText(first.ts) : '—') + '</span>'
       + star
       + '</div>';
@@ -340,23 +350,43 @@ async function renderFavs() {
   const box = $('favs');
   const favs = getFavorites();
   if (!favs.length) { box.innerHTML = '<div class="metro-empty">暫無收藏，在搜尋結果按 ☆ 加入</div>'; return; }
-  const items = [];
+  let html = '';
   for (let i = 0; i < favs.length; i++) {
-    const etas = await favETAs(favs[i]);
-    items.push({ i, no: favNo(favs[i]), title: favTitle(favs[i]), sub: favSub(favs[i]), etas });
-  }
-  box.innerHTML = items.map(it => {
+    const f = favs[i];
+    /* 輕鐵收藏：與搜索結果顯示完全一致（站名頭 + 各路線行） */
+    if (f.type === 'lrt' && f.station_id != null) {
+      let entries = [];
+      try { entries = await getLRTEta(f.station_id); } catch (e) {}
+      html += '<div class="lrt-station">'
+        + '<span class="lrt-head">' + escapeHtml(f.stop_name || f.route || '') + '</span>'
+        + '<button class="row-remove" data-i="' + i + '" onclick="removeFav(event, this)">✕</button>'
+        + '</div>';
+      const seen = new Set();
+      let rows = 0;
+      for (const e of entries) {
+        const key = e.routeNo + '|' + e.dest + '|' + e.dep;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (rows++ >= 4) break;
+        html += lrtRowHTML(e);
+      }
+      if (!rows) html += '<div class="metro-empty">暫無到站資料</div>';
+      continue;
+    }
+    const etas = await favETAs(f);
+    const it = { i, no: favNo(f), title: favTitle(f), sub: favSub(f), etas };
     const det = (it.etas || []).slice(0, 2).map(e =>
       '<span class="row-eta-detail">' + (e.dest ? escapeHtml(e.dest) + ' · ' : '') + etaText(e.ts) + '</span>').join('');
-    return '<div class="metro-row fav-row">'
+    html += '<div class="metro-row fav-row">'
       + '<span class="row-no">' + escapeHtml(it.no) + '</span>'
       + '<span class="row-main"><span class="row-name">' + escapeHtml(it.title) + '</span>'
       + (it.sub ? '<span class="row-sub">' + escapeHtml(it.sub) + '</span>' : '')
       + det + '</span>'
       + '<span class="row-eta ' + etaCls(it.etas[0] && it.etas[0].ts) + '">' + (it.etas[0] ? etaText(it.etas[0].ts) : '—') + '</span>'
-      + '<button class="row-remove" data-i="' + it.i + '" onclick="removeFav(event, this)">✕</button>'
+      + '<button class="row-remove" data-i="' + i + '" onclick="removeFav(event, this)">✕</button>'
       + '</div>';
-  }).join('');
+  }
+  box.innerHTML = html;
 }
 async function favETAs(f) {
   try {
@@ -453,25 +483,38 @@ async function refreshWeather() {
   }
 }
 
-/* ---------- 寿司郎（扁平列表） ---------- */
+/* ---------- 寿司郎（只顯示元朗/屯門/天水圍 · 顯示排隊組數） ---------- */
+async function fetchSushiroData() {
+  const url = SUSHIRO_STORE_API;
+  const tries = [url, SUSHIRO_PROXY(url), CORS_PROXIES[0](url)];
+  for (const u of tries) {
+    try {
+      const resp = await fetch(u, { signal: AbortSignal.timeout(15000) });
+      if (resp.ok) return await resp.json();
+    } catch (e) {}
+  }
+  throw new Error('unreachable');
+}
 async function refreshSushiro() {
   const el = $('sushi');
   try {
-    const resp = await fetch(SUSHIRO_PROXY(SUSHIRO_STORE_API), { signal: AbortSignal.timeout(20000) });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const all = await resp.json();
-    const NTW = ['葵青區', '荃灣區', '屯門區', '元朗區', '離島區'];
-    const stores = (Array.isArray(all) ? all : []).filter(s => NTW.includes(s.area))
-      .sort((a, b) => (a.wait || 0) - (b.wait || 0));
+    const all = await fetchSushiroData();
+    /* 天水圍的分店歸屬「元朗區」，故按 元朗區 + 屯門區 過濾 */
+    const areas = ['元朗區', '屯門區'];
+    const stores = (Array.isArray(all) ? all : []).filter(s => areas.includes(s.area))
+      .sort((a, b) => ((a.waitingGroup || 0) - (b.waitingGroup || 0)) || ((a.wait || 0) - (b.wait || 0)));
     el.innerHTML = stores.map(s => {
       const closed = s.storeStatus !== 'OPEN';
-      const wait = closed ? '已停飛' : (s.wait <= 0 ? '直入' : s.wait + '分鐘');
+      const groups = parseInt(s.waitingGroup, 10) || 0;
+      const mins = parseInt(s.wait, 10) || 0;
+      const right = closed ? '休息' : ((groups > 0 || mins > 0) ? groups + ' 組' : '直入');
+      const sub = closed ? s.area : ((groups > 0 || mins > 0) ? '約 ' + mins + ' 分鐘 · 排隊 ' + groups + ' 組' : s.area + ' · 無需等候');
       return '<div class="metro-row">'
         + '<span class="row-no" style="font-size:1rem;min-width:40px">' + escapeHtml((s.name || '').slice(0, 2)) + '</span>'
         + '<span class="row-main"><span class="row-name">' + escapeHtml(s.name || '') + '</span>'
-        + '<span class="row-sub">' + escapeHtml(s.area || '') + '</span></span>'
-        + '<span class="row-eta ' + (closed ? 'soon' : '') + '">' + wait + '</span></div>';
-    }).join('') || '<div class="metro-empty">新界西暫時沒有分店資料</div>';
+        + '<span class="row-sub">' + sub + '</span></span>'
+        + '<span class="row-eta ' + (closed ? 'soon' : ((groups > 0 || mins > 0) ? 'medium' : '')) + '">' + right + '</span></div>';
+    }).join('') || '<div class="metro-empty">元朗、屯門、天水圍暫無分店資料</div>';
   } catch (e) {
     el.innerHTML = '<div class="error-msg">壽司郎暫時無法連線，請稍後再試</div>';
   }
@@ -592,25 +635,32 @@ document.addEventListener('DOMContentLoaded', () => {
   syncSegs('#accentSeg', ac);
   syncSegs('#refreshSeg', rv);
 
-  /* WP8 系统状态栏时钟 */
-  const tickClock = () => {
-    const el = $('statusTime');
-    if (el) el.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
-  };
-  tickClock();
-  setInterval(tickClock, 30000);
+  /* 版本（Beta 0.1 build N，由構建腳本自動疊加） */
+  const APP_VERSION = (typeof window !== 'undefined' && window.APP_VERSION) ? window.APP_VERSION : 'Beta 0.1';
+  const verEl = $('appVersion');
+  if (verEl) verEl.textContent = APP_VERSION;
 
-  /* 首页全景视差：背景与标题随横向滚动以不同速度移动 */
+  /* 首页全景视差：requestAnimationFrame 缓动插值，滚动更顺滑 */
   const panoTrack = $('panoTrack');
   if (panoTrack) {
+    let bgCur = 0, titleCur = 0, raf = null;
+    const panoTick = () => {
+      const targetX = panoTrack.scrollLeft;
+      bgCur += (targetX * 0.5 - bgCur) * 0.14;
+      titleCur += (-targetX * 0.35 - titleCur) * 0.14;
+      const bg = $('panoBg'), title = $('panoTitle');
+      if (bg) bg.style.transform = 'translateX(' + bgCur.toFixed(2) + 'px)';
+      if (title) title.style.transform = 'translateX(' + titleCur.toFixed(2) + 'px)';
+      if (Math.abs(targetX * 0.5 - bgCur) > 0.3 || Math.abs(-targetX * 0.35 - titleCur) > 0.3) {
+        raf = requestAnimationFrame(panoTick);
+      } else raf = null;
+    };
     const onPanoScroll = () => {
       const x = panoTrack.scrollLeft;
-      const w = panoTrack.clientWidth || 1;
-      const bg = $('panoBg'), title = $('panoTitle');
-      if (bg) bg.style.transform = 'translateX(' + (x * 0.5) + 'px)';
-      if (title) title.style.transform = 'translateX(' + (-x * 0.35) + 'px)';
+      const panelW = panoTrack.clientWidth >= 700 ? panoTrack.clientWidth / 2 : panoTrack.clientWidth;
       const hint = $('panoHint');
-      if (hint) hint.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', i === Math.round(x / w)));
+      if (hint) hint.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', i === Math.min(2, Math.round(x / (panelW || 1)))));
+      if (!raf) raf = requestAnimationFrame(panoTick);
     };
     panoTrack.addEventListener('scroll', onPanoScroll, { passive: true });
     onPanoScroll();

@@ -1,3 +1,5 @@
 node_modules/
 android/
 build-log.txt
+build-counter.txt
+www/js/version.js

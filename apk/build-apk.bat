@@ -51,6 +51,10 @@ if not exist "node_modules" (
     echo [step1] skip >> "%LOG%" 2>&1
 )
 
+REM 2.5. Bump Beta version counter (Beta 0.1 build N, +1 per build)
+echo [step2.5] bump version >> "%LOG%" 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0bump-version.ps1" >> "%LOG%" 2>&1
+
 REM 3. Generate Android native project (first time only)
 if not exist "android" (
     echo [2/4] Generating Android native project...
