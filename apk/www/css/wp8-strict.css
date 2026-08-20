@@ -132,17 +132,6 @@ body {
 .tile-teal   { background: #4C1D95; }
 .tile:active { transform: scale(0.96); }
 
-/* 小磁贴（1/4 小方，WP8 Small Tile） */
-.tiles-small { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
-.tile-small {
-  border: none; cursor: pointer;
-  background: var(--surface2); color: #fff;
-  min-height: 4rem; padding: 8px;
-  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-size: 0.82rem;
-  display: flex; align-items: flex-end; text-align: left; line-height: 1.25;
-}
-.tile-small:active { transform: scale(0.95); }
-
 /* ================= 搜索区 ================= */
 .search-block { margin: 18px 0 4px; }
 .metro-input {
@@ -291,6 +280,18 @@ body {
 .fav-line-time.soon { color: #E51400; }
 .fav-line-time.medium { color: #F0A30A; }
 .fav-more { font-size: 0.72rem; color: var(--text2); margin-top: 7px; }
+/* 收藏分頁器 */
+.fav-pager {
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  margin-top: 14px;
+}
+.fav-pager button {
+  width: 40px; height: 40px; border: 1px solid var(--line); background: transparent;
+  color: var(--text); font-size: 1.1rem; cursor: pointer; border-radius: 0;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+}
+.fav-pager button:disabled { opacity: 0.3; cursor: default; }
+.fav-pager .fav-pager-info { font-size: 0.8rem; color: var(--text2); font-variant-numeric: tabular-nums; }
 
 /* ================= K75P：實時/定時標記 + 地圖入口 ================= */
 .k75p-tag { font-size: 0.68rem; margin-left: 7px; padding: 0 6px; vertical-align: middle; }

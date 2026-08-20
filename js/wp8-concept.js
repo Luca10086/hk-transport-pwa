@@ -559,14 +559,27 @@ function favDetailFor(f) {
   return null;
 }
 
-/* ---------- 收藏 ---------- */
+/* ---------- 收藏（每頁 2 條，第 3 條起分頁） ---------- */
+const FAVS_PER_PAGE = 2;
+let favPage = 0;
+function favPageGo(p) {
+  favPage = p;
+  renderFavs();
+}
 async function renderFavs() {
   const box = $('favs');
   const favs = getFavorites();
   if (!favs.length) { box.innerHTML = '<div class="metro-empty">暫無收藏，在搜尋結果按 ☆ 加入</div>'; updateFavTile(null); return; }
+  const totalPages = Math.ceil(favs.length / FAVS_PER_PAGE);
+  if (favPage >= totalPages) favPage = totalPages - 1;
+  if (favPage < 0) favPage = 0;
+  const start = favPage * FAVS_PER_PAGE;
+  const pageFavs = favs.slice(start, start + FAVS_PER_PAGE);
   let html = '';
   let firstEtas = null;
-  for (let i = 0; i < favs.length; i++) {
+  if (start > 0) firstEtas = await favETAs(favs[0]);
+  for (let pi = 0; pi < pageFavs.length; pi++) {
+    const i = start + pi;
     const f = favs[i];
     /* 輕鐵收藏：與搜索結果顯示完全一致（站名頭 + 各路線行） */
     if (f.type === 'lrt' && f.station_id != null) {
@@ -592,6 +605,13 @@ async function renderFavs() {
     const etas = await favETAs(f);
     if (i === 0) firstEtas = etas;
     html += favCardHTML(f, i, etas);
+  }
+  if (totalPages > 1) {
+    html += '<div class="fav-pager">'
+      + '<button ' + (favPage === 0 ? 'disabled' : 'onclick="favPageGo(' + (favPage - 1) + ')"') + ' aria-label="上一頁">‹</button>'
+      + '<span class="fav-pager-info">' + (favPage + 1) + ' / ' + totalPages + '</span>'
+      + '<button ' + (favPage === totalPages - 1 ? 'disabled' : 'onclick="favPageGo(' + (favPage + 1) + ')"') + ' aria-label="下一頁">›</button>'
+      + '</div>';
   }
   box.innerHTML = html;
   updateFavTile(favs[0], firstEtas);

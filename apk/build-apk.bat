@@ -88,6 +88,10 @@ echo  BUILD SUCCESS
 echo  APK: %~dp0android\app\build\outputs\apk\debug\app-debug.apk
 echo ============================================================
 echo [success] %date% %time% >> "%LOG%" 2>&1
+REM Copy a versioned APK (senyou-wp8-v0.1.N.apk)
+for /f %%v in ('type "%~dp0build-counter.txt"') do set "VER=%%v"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$d='%~dp0android\app\build\outputs\apk\debug\'; Copy-Item (Join-Path $d 'app-debug.apk') (Join-Path $d ('senyou-wp8-v0.1.'+$env:VER+'.apk')) -Force" >> "%LOG%" 2>&1
+echo  Versioned: senyou-wp8-v0.1.%VER%.apk
 start explorer "%~dp0android\app\build\outputs\apk\debug"
 goto :eof
 
