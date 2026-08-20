@@ -18,13 +18,12 @@ apk/
 
 ## 本地构建步骤（在你的电脑上执行）
 
-### 前置条件
-1. 安装 [Node.js](https://nodejs.org/)（LTS 即可）
-2. 安装 [Android Studio](https://developer.android.com/studio)（含 Android SDK）
-   - 建议安装 **API 34+** 的 SDK Platform 与 Build-Tools
-   - 配置环境变量 `ANDROID_HOME`（Android Studio 一般自动配置）
+### ⚡ 方式一：一键脚本（推荐）
+**双击 `build-apk.bat`**——脚本会自动：设置 JDK/SDK 环境变量 → 安装依赖 → 生成原生工程 → 同步资源 → 构建 debug APK → 打开产物文件夹。
+首次构建会下载 Gradle（约 10~30 分钟），失败就再双击一次（断点续传）。
 
-### 步骤
+### 🔧 方式二：手动命令
+（需自行设置 `JAVA_HOME`=`C:\Program Files\Android\Android Studio\jbr`、`ANDROID_HOME`=`%LOCALAPPDATA%\Android\Sdk`）
 
 ```bash
 # 1. 进入 apk 目录
