@@ -57,6 +57,54 @@ document.addEventListener('click', (e) => {
   if (!e.target.closest('.ab-more') && !e.target.closest('.more-menu')) m.hidden = true;
 });
 
+/* ---------- 全景面板跳转 + 小磁贴快捷入口 ---------- */
+function goPanoPanel(i) {
+  const track = $('panoTrack');
+  const panels = track ? track.querySelectorAll('.pano-panel') : [];
+  if (track && panels[i]) track.scrollTo({ left: panels[i].offsetLeft, behavior: 'smooth' });
+}
+function quickTransport(tp) {
+  const chip = document.querySelector('#chips .chip[data-tp="' + tp + '"]');
+  setTransport(tp, chip);
+  goPanoPanel(1);
+  const input = $('searchInput');
+  if (input) input.focus();
+}
+
+/* ---------- 3D Tilt：按压时向触控点倾斜 ---------- */
+let tiltedEl = null;
+document.addEventListener('touchstart', (e) => {
+  const el = e.target && e.target.closest ? e.target.closest('.tile, .tile-small, .metro-row, .ab-btn, .ab-more, .chip, .search-btn, .topbar-refresh') : null;
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const tx = ((e.touches[0].clientX - r.left) / (r.width || 1)) - 0.5;
+  const ty = ((e.touches[0].clientY - r.top) / (r.height || 1)) - 0.5;
+  el.style.transform = 'perspective(420px) rotateX(' + (-ty * 12) + 'deg) rotateY(' + (tx * 12) + 'deg) scale(0.97)';
+  tiltedEl = el;
+}, { passive: true });
+const resetTilt = () => { if (tiltedEl) { tiltedEl.style.transform = ''; tiltedEl = null; } };
+document.addEventListener('touchend', resetTilt, { passive: true });
+document.addEventListener('touchcancel', resetTilt, { passive: true });
+
+/* ---------- App Bar 滚动自动隐藏 ---------- */
+let lastScrollTop = 0;
+let barHidden = false;
+document.addEventListener('scroll', (e) => {
+  const t = e.target;
+  if (!t || typeof t.scrollTop !== 'number') return;
+  const y = t.scrollTop;
+  if (y > lastScrollTop + 6 && !barHidden) {
+    barHidden = true;
+    document.querySelector('.appbar').classList.add('hidden');
+    document.body.classList.add('appbar-hidden');
+  } else if (y < lastScrollTop - 6 && barHidden) {
+    barHidden = false;
+    document.querySelector('.appbar').classList.remove('hidden');
+    document.body.classList.remove('appbar-hidden');
+  }
+  lastScrollTop = y;
+}, { capture: true, passive: true });
+
 /* ---------- 搜索 ---------- */
 let currentTransport = 'bus';
 function setTransport(tp, btn) {

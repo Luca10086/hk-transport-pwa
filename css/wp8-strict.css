@@ -121,6 +121,17 @@ body {
 .tile:nth-child(3) { background: #0078B4; }
 .tile:active { transform: scale(0.96); }
 
+/* 小磁贴（1/4 小方，WP8 Small Tile） */
+.tiles-small { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+.tile-small {
+  border: none; cursor: pointer;
+  background: var(--surface2); color: var(--text);
+  min-height: 62px; padding: 8px;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; font-size: 0.82rem;
+  display: flex; align-items: flex-end; text-align: left; line-height: 1.25;
+}
+.tile-small:active { transform: scale(0.95); }
+
 /* ================= 搜索区 ================= */
 .search-block { margin: 18px 0 4px; }
 .metro-input {
@@ -221,14 +232,17 @@ body {
 .seg button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .seg button:active { transform: scale(0.94); }
 
-/* ================= App Bar（底部圆图标 + ⋯） ================= */
+/* ================= App Bar（底部圆图标 + ⋯，滚动自动隐藏） ================= */
 .appbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
   height: var(--appbar-h);
   padding: 4px 12px calc(4px + env(safe-area-inset-bottom));
   background: var(--surface); border-top: 1px solid var(--line);
   display: flex; align-items: center; justify-content: space-around;
+  transition: transform .25s ease;
 }
+.appbar.hidden { transform: translateY(110%); }
+body.appbar-hidden .pivot { bottom: 0; }
 .ab-btn {
   width: 44px; height: 44px; border: none; background: transparent; cursor: pointer;
   color: var(--text2); display: inline-flex; align-items: center; justify-content: center;
@@ -258,10 +272,13 @@ body {
 .pano { position: relative; width: 100%; height: 100%; overflow: hidden; }
 .pano-bg {
   position: absolute; top: 0; bottom: 0; left: -60%; right: -60%;
+  /* 渐变纹理图：光斑 + 斜纹肌理 + 暗角 */
   background:
-    radial-gradient(circle at 18% 20%, rgba(0,162,232,0.28), rgba(0,162,232,0) 40%),
-    radial-gradient(circle at 70% 65%, rgba(0,120,180,0.22), rgba(0,120,180,0) 45%),
-    linear-gradient(180deg, #232323 0%, #1B1B1B 100%);
+    radial-gradient(circle at 18% 20%, rgba(0,162,232,0.30), rgba(0,162,232,0) 42%),
+    radial-gradient(circle at 72% 68%, rgba(0,120,180,0.24), rgba(0,120,180,0) 46%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cpath d='M0 44 L44 0' stroke='rgba(255,255,255,0.035)' stroke-width='1.4'/%3E%3Cpath d='M0 22 L22 0 M22 44 L44 22' stroke='rgba(255,255,255,0.025)' stroke-width='1'/%3E%3C/svg%3E") repeat,
+    radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.25) 100%),
+    linear-gradient(180deg, #262626 0%, #171717 100%);
   pointer-events: none;
   will-change: transform;
 }
@@ -330,6 +347,12 @@ body {
 .flat-list .metro-row:nth-child(6) { animation-delay: .15s; }
 .flat-list .metro-row:nth-child(n+7) { animation-delay: .18s; }
 @keyframes rowIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+
+/* ================= 3D 倾斜（Tilt）：按压时向触控点倾斜 ================= */
+.tile, .tile-small, .metro-row, .ab-btn, .ab-more, .chip, .search-btn, .topbar-refresh {
+  transition: transform .12s ease;
+  will-change: transform;
+}
 
 /* ================= 加载/提示 ================= */
 .loading { padding: 24px 0; color: var(--text2); font-size: 0.9rem; }
