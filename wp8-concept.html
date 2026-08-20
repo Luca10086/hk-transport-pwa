@@ -9,53 +9,71 @@
 </head>
 <body>
 
+<!-- ================= WP8 系统状态栏 ================= -->
+<div class="statusbar">
+  <span id="statusTime">00:00</span>
+  <span class="sb-right">▲▮▮▮▮</span>
+</div>
+
 <!-- ================= 顶栏：Pivot 大标题 ================= -->
 <header class="topbar">
   <h1 class="pivot-title" id="pivotTitle">搜尋</h1>
   <button class="topbar-refresh" id="topbarRefresh" onclick="refreshAll()" aria-label="重新整理">↻</button>
 </header>
 
+<!-- ================= 加载进度条 ================= -->
+<div class="progressbar" id="progressbar" hidden></div>
+
 <!-- ================= Pivot（横滑窗格） ================= -->
 <main class="pivot" id="pivot">
 
   <!-- 首页：全景 + 磁贴 + 搜索 + 天气 + K75P -->
   <section class="pane" data-pane="home">
-    <div class="panorama-bg" aria-hidden="true"></div>
-    <div class="pane-inner">
-      <h2 class="pane-title">首頁</h2>
+    <!-- 首页全景 Panorama -->
+    <div class="pano">
+      <div class="pano-bg" id="panoBg" aria-hidden="true"></div>
+      <h1 class="pano-title" id="panoTitle">森友出行</h1>
+      <div class="pano-track" id="panoTrack">
 
-      <!-- Live Tiles -->
-      <div class="tiles">
-        <button class="tile" onclick="goPane('favs')">我的收藏</button>
-        <button class="tile" onclick="goPane('sushi')">壽司郎</button>
-        <button class="tile tile-wide" onclick="goPane('settings')">設定</button>
-        <button class="tile tile-wide" id="tileWeather" onclick="document.getElementById('weather').scrollIntoView()">
-          天氣<br><b id="tileWeatherV">--°</b>
-        </button>
-      </div>
-
-      <!-- 搜索 -->
-      <div class="search-block">
-        <input id="searchInput" class="metro-input" placeholder="輸入巴士路線、站名或港鐵車站" aria-label="搜尋"
-               onkeydown="if(event.key==='Enter') doSearch()">
-        <div class="chips" id="chips">
-          <button class="chip active" data-tp="bus" onclick="setTransport('bus', this)">公交</button>
-          <button class="chip" data-tp="mtrbus" onclick="setTransport('mtrbus', this)">港鐵巴士</button>
-          <button class="chip" data-tp="mtr" onclick="setTransport('mtr', this)">港鐵</button>
-          <button class="chip" data-tp="lrt" onclick="setTransport('lrt', this)">輕鐵</button>
+        <!-- 面板 1：磁贴 -->
+        <div class="pano-panel">
+          <div class="tiles">
+            <button class="tile" onclick="goPane('favs')">我的收藏</button>
+            <button class="tile" onclick="goPane('sushi')">壽司郎</button>
+            <button class="tile tile-wide" onclick="goPane('settings')">設定</button>
+            <button class="tile tile-wide tile-flip" id="tileWeather">
+              <span class="tile-face">天氣 <b id="tileWeatherV">--°</b></span>
+              <span class="tile-face tile-face-back" id="tileWeatherD">載入中</span>
+            </button>
+          </div>
         </div>
-        <button class="search-btn" onclick="doSearch()">搜尋</button>
+
+        <!-- 面板 2：搜索 + 结果 -->
+        <div class="pano-panel">
+          <div class="search-block">
+            <input id="searchInput" class="metro-input" placeholder="輸入巴士路線、站名或港鐵車站" aria-label="搜尋"
+                   onkeydown="if(event.key==='Enter') doSearch()">
+            <div class="chips" id="chips">
+              <button class="chip active" data-tp="bus" onclick="setTransport('bus', this)">公交</button>
+              <button class="chip" data-tp="mtrbus" onclick="setTransport('mtrbus', this)">港鐵巴士</button>
+              <button class="chip" data-tp="mtr" onclick="setTransport('mtr', this)">港鐵</button>
+              <button class="chip" data-tp="lrt" onclick="setTransport('lrt', this)">輕鐵</button>
+            </div>
+            <button class="search-btn" onclick="doSearch()">搜尋</button>
+          </div>
+          <div id="results" class="flat-list"></div>
+        </div>
+
+        <!-- 面板 3：天气 + K75P -->
+        <div class="pano-panel">
+          <h3 class="pane-title">天氣</h3>
+          <div id="warningBar" class="warning-bar" hidden></div>
+          <div id="weather" class="weather-bar">載入中…</div>
+          <h3 class="pane-title">k75p 全線實時</h3>
+          <div id="k75p" class="flat-list"></div>
+        </div>
       </div>
-      <div id="results" class="flat-list"></div>
-
-      <!-- 天气 -->
-      <h3 class="pane-title">天氣</h3>
-      <div id="warningBar" class="warning-bar" hidden></div>
-      <div id="weather" class="weather-bar">載入中…</div>
-
-      <!-- K75P -->
-      <h3 class="pane-title">k75p 全線實時</h3>
-      <div id="k75p" class="flat-list"></div>
+      <div class="pano-hint" id="panoHint"><i class="on"></i><i></i><i></i></div>
     </div>
   </section>
 

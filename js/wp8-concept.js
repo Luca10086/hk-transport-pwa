@@ -18,12 +18,21 @@ const parseHK = parseHKTime;
 /* ---------- Pivot（横滑窗格） ---------- */
 const PIVOT_TITLES = { home: '搜尋', favs: '收藏', sushi: '壽司郎', settings: '設定' };
 const pivot = $('pivot');
+let curPane = '';
 function updatePivot() {
   let cur = 'home';
   pivot.querySelectorAll('.pane').forEach(p => {
     if (p.offsetLeft <= pivot.scrollLeft + 60) cur = p.dataset.pane;
   });
-  $('pivotTitle').textContent = PIVOT_TITLES[cur] || '';
+  if (cur !== curPane) {
+    curPane = cur;
+    const t = $('pivotTitle');
+    t.classList.add('switch');
+    setTimeout(() => {
+      t.textContent = PIVOT_TITLES[cur] || '';
+      t.classList.remove('switch');
+    }, 160);
+  }
   document.querySelectorAll('.ab-btn[data-pane]').forEach(b => b.classList.toggle('active', b.dataset.pane === cur));
 }
 pivot.addEventListener('scroll', () => requestAnimationFrame(updatePivot), { passive: true });
@@ -346,6 +355,8 @@ async function refreshWeather() {
       + (hko ? '<span class="w-item"><b>' + hko.value + '°C</b></span>' : '')
       + '<span class="w-upd">' + upd + '</span>';
     if (hko) $('tileWeatherV').textContent = hko.value + '°';
+    const td = $('tileWeatherD');
+    if (td) td.textContent = HKO_ICONS[icon] || '';
   } catch (e) {
     el.textContent = '天氣載入失敗';
   }
@@ -423,10 +434,11 @@ function restartAutoRefresh() {
   if (sec > 0) autoTimer = setInterval(() => { if (!document.hidden) refreshAll(); }, sec * 1000);
 }
 function refreshAll() {
-  renderFavs();
-  refreshWeather();
-  refreshSushiro();
-  loadK75P();
+  const pb = $('progressbar');
+  if (pb) pb.hidden = false;
+  Promise.all([renderFavs(), refreshWeather(), refreshSushiro(), loadK75P()]).finally(() => {
+    if (pb) pb.hidden = true;
+  });
 }
 
 /* ---------- 初始化 ---------- */
@@ -440,6 +452,38 @@ document.addEventListener('DOMContentLoaded', () => {
   syncSegs('#themeSeg', th);
   syncSegs('#accentSeg', ac);
   syncSegs('#refreshSeg', rv);
+
+  /* WP8 系统状态栏时钟 */
+  const tickClock = () => {
+    const el = $('statusTime');
+    if (el) el.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
+  };
+  tickClock();
+  setInterval(tickClock, 30000);
+
+  /* 首页全景视差：背景与标题随横向滚动以不同速度移动 */
+  const panoTrack = $('panoTrack');
+  if (panoTrack) {
+    const onPanoScroll = () => {
+      const x = panoTrack.scrollLeft;
+      const w = panoTrack.clientWidth || 1;
+      const bg = $('panoBg'), title = $('panoTitle');
+      if (bg) bg.style.transform = 'translateX(' + (x * 0.5) + 'px)';
+      if (title) title.style.transform = 'translateX(' + (-x * 0.35) + 'px)';
+      const hint = $('panoHint');
+      if (hint) hint.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', i === Math.round(x / w)));
+    };
+    panoTrack.addEventListener('scroll', onPanoScroll, { passive: true });
+    onPanoScroll();
+  }
+
+  /* 磁贴翻转（Live Tile 动画） */
+  let flipOn = false;
+  setInterval(() => {
+    const tile = $('tileWeather');
+    if (tile) { flipOn = !flipOn; tile.classList.toggle('flip', flipOn); }
+  }, 5000);
+
   updatePivot();
   refreshAll();
   restartAutoRefresh();
