@@ -16,7 +16,7 @@ const etaCls = (ts) => ts ? etaColorClass(ts) : '';
 const parseHK = parseHKTime;
 
 /* ---------- Pivot（横滑窗格） ---------- */
-const PIVOT_TITLES = { home: '搜尋', favs: '收藏', sushi: '壽司郎', map: '路線圖', settings: '設定' };
+const PIVOT_TITLES = { home: '森友出行', favs: '收藏', sushi: '壽司郎', map: '路線圖', settings: '設定' };
 const pivot = $('pivot');
 let curPane = '';
 function updatePivot() {
@@ -80,21 +80,6 @@ function quickTransport(tp) {
   const input = $('searchInput');
   if (input) input.focus();
 }
-
-/* ---------- 3D Tilt：按压时向触控点倾斜 ---------- */
-let tiltedEl = null;
-document.addEventListener('touchstart', (e) => {
-  const el = e.target && e.target.closest ? e.target.closest('.tile, .tile-small, .metro-row, .ab-btn, .ab-more, .chip, .search-btn, .topbar-refresh') : null;
-  if (!el) return;
-  const r = el.getBoundingClientRect();
-  const tx = ((e.touches[0].clientX - r.left) / (r.width || 1)) - 0.5;
-  const ty = ((e.touches[0].clientY - r.top) / (r.height || 1)) - 0.5;
-  el.style.transform = 'perspective(420px) rotateX(' + (-ty * 12) + 'deg) rotateY(' + (tx * 12) + 'deg) scale(0.97)';
-  tiltedEl = el;
-}, { passive: true });
-const resetTilt = () => { if (tiltedEl) { tiltedEl.style.transform = ''; tiltedEl = null; } };
-document.addEventListener('touchend', resetTilt, { passive: true });
-document.addEventListener('touchcancel', resetTilt, { passive: true });
 
 /* ---------- App Bar 滚动自动隐藏 ---------- */
 let lastScrollTop = 0;

@@ -11,8 +11,13 @@
 
 <!-- ================= 顶栏：Pivot 大标题 ================= -->
 <header class="topbar">
-  <h1 class="pivot-title" id="pivotTitle">搜尋</h1>
-  <button class="topbar-refresh" id="topbarRefresh" onclick="refreshAll()" aria-label="重新整理">↻</button>
+  <h1 class="pivot-title" id="pivotTitle">森友出行</h1>
+  <div class="topbar-actions">
+    <button class="topbar-search" onclick="goPane('home');setTimeout(function(){goPanoPanel(1);var i=document.getElementById('searchInput');if(i)i.focus();},400)" aria-label="搜尋路線">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+    </button>
+    <button class="topbar-refresh" id="topbarRefresh" onclick="refreshAll()" aria-label="重新整理">↻</button>
+  </div>
 </header>
 
 <!-- ================= 加载进度条 ================= -->
@@ -32,10 +37,6 @@
     <!-- 首页全景 Panorama -->
     <div class="pano">
       <div class="pano-bg" id="panoBg" aria-hidden="true"></div>
-      <h1 class="pano-title" id="panoTitle">森友出行</h1>
-      <button class="pano-search" onclick="goPanoPanel(1);setTimeout(function(){var i=document.getElementById('searchInput');if(i)i.focus();},360)" aria-label="搜尋路線">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
-      </button>
       <div class="pano-track" id="panoTrack">
 
         <!-- 面板 1：磁贴（WP8 官方色板純色牆：小=1/4、中=1/2、寬=全寬） -->
