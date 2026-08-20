@@ -151,7 +151,7 @@ async function searchBusRouteConcept(q, container) {
       .sort((a, b) => a.ts - b.ts).slice(0, 3);
     results.push({
       no: r.route, name: (r.orig_tc || '') + ' → ' + (r.dest_tc || ''),
-      etas, fav: { type: 'bus', company: 'kmb', route: r.route, stop_id: first.stop_id || first.stop, stop_name: first.name_tc || '', direction: dir }
+      etas, fav: { type: 'bus', company: 'kmb', route: r.route, stop_id: first.stop_id || first.stop, stop_name: first.name_tc || '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
     });
   }
   for (const r of (ctbRoutes || [])) {
@@ -166,7 +166,7 @@ async function searchBusRouteConcept(q, container) {
         .sort((a, b) => a.ts - b.ts).slice(0, 3);
       results.push({
         no: String(r.route), name: (r.orig_tc && r.dest_tc) ? (dir === 'inbound' ? r.dest_tc + ' → ' + r.orig_tc : r.orig_tc + ' → ' + r.dest_tc) : '',
-        etas, fav: { type: 'bus', company: 'ctb', route: String(r.route), stop_id: first.stop || first.stop_id, stop_name: '', direction: dir }
+        etas, fav: { type: 'bus', company: 'ctb', route: String(r.route), stop_id: first.stop || first.stop_id, stop_name: '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
       });
     }
   }
@@ -176,7 +176,7 @@ async function searchBusRouteConcept(q, container) {
     const etas = (await getNLBETA(r.routeId, stops[0].stopId)).map(e => ({ ts: e.etaTs, dest: '' })).sort((a, b) => a.ts - b.ts).slice(0, 3);
     results.push({
       no: String(r.routeNo || r.routeId), name: r.routeName_c || '', etas,
-      fav: { type: 'bus', company: 'nlb', route: String(r.routeNo || r.routeId), routeId: r.routeId, stop_id: stops[0].stopId, stop_name: stops[0].stopName_c || '' }
+      fav: { type: 'bus', company: 'nlb', route: String(r.routeNo || r.routeId), routeId: r.routeId, stop_id: stops[0].stopId, stop_name: stops[0].stopName_c || '', dest: r.routeName_c || '' }
     });
   }
   lastResults = results;
@@ -241,18 +241,38 @@ async function searchMTRConcept(q, container) {
   renderResults(results, container);
 }
 
-/* 轻铁 */
+/* 轻铁：按站分组，站名头 + 每路线一行（路线号/目的地/月台/到站时间） */
 async function searchLRTConcept(q, container) {
   const ids = Object.keys(LRT_STATIONS).filter(id => LRT_STATIONS[id].includes(q));
-  const results = [];
-  for (const id of ids.slice(0, 8)) {
-    const entries = await getLRTEta(Number(id));
-    const now = Math.floor(Date.now() / 1000);
-    const etas = entries.slice(0, 3).map(e => ({ ts: now + e.mins * 60, dest: (e.routeNo || '') + ' · ' + e.dest }));
-    results.push({ no: '輕鐵', name: LRT_STATIONS[id], etas, fav: { type: 'lrt', route: LRT_STATIONS[id], station_id: Number(id), stop_name: LRT_STATIONS[id] } });
+  if (!ids.length) { container.innerHTML = '<div class="metro-empty">找不到輕鐵車站「' + escapeHtml(q) + '」</div>'; lastResults = []; return; }
+  let html = '';
+  const firstFavs = [];
+  for (const id of ids.slice(0, 5)) {
+    const sid = Number(id);
+    const entries = await getLRTEta(sid);
+    const fav = { type: 'lrt', route: LRT_STATIONS[id], station_id: sid, stop_name: LRT_STATIONS[id] };
+    firstFavs.push({ fav });
+    html += '<div class="lrt-station">'
+      + '<span class="lrt-head">' + escapeHtml(LRT_STATIONS[id]) + '</span>'
+      + '<button class="row-star lrt-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(fav).replace(/'/g, '&#39;') + '\'>' + (isFavorited(fav) ? '★' : '☆') + '</button>'
+      + '</div>';
+    const seen = new Set();
+    let rows = 0;
+    for (const e of entries) {
+      const key = e.routeNo + '|' + e.dest + '|' + e.dep;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (rows++ >= 6) break;
+      html += '<div class="metro-row lrt-row">'
+        + '<span class="row-no">' + escapeHtml(e.routeNo) + '</span>'
+        + '<span class="row-main"><span class="row-name">往 ' + escapeHtml(e.dest) + '</span>'
+        + '<span class="row-sub">' + escapeHtml(e.platformId) + ' 號月台' + (e.dep ? ' · 開出' : '') + '</span></span>'
+        + '<span class="row-eta ' + (e.mins === 0 ? 'soon' : '') + '">' + (e.mins === 0 ? '即將' : e.mins + ' 分鐘') + '</span></div>';
+    }
+    if (!rows) html += '<div class="metro-empty">暫無到站資料</div>';
   }
-  lastResults = results;
-  renderResults(results, container);
+  container.innerHTML = html;
+  lastResults = firstFavs;
 }
 
 /* 港铁巴士 */
@@ -278,7 +298,7 @@ function renderResults(items, container) {
     const sub = (it.etas || []).slice(0, 2).map(e =>
       '<span class="row-eta-detail">' + escapeHtml(e.dest || '') + ' · ' + etaText(e.ts) + '</span>').join('');
     const star = it.fav
-      ? '<button class="row-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(it.fav).replace(/'/g, '&#39;') + '\'>☆</button>'
+      ? '<button class="row-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(it.fav).replace(/'/g, '&#39;') + '\'>' + (isFavorited(it.fav) ? '★' : '☆') + '</button>'
       : '';
     return '<div class="metro-row">'
       + '<span class="row-no">' + escapeHtml(String(it.no)) + '</span>'
@@ -319,16 +339,20 @@ async function renderFavs() {
   const items = [];
   for (let i = 0; i < favs.length; i++) {
     const etas = await favETAs(favs[i]);
-    items.push({ i, no: favNo(favs[i]), name: favName(favs[i]), etas });
+    items.push({ i, no: favNo(favs[i]), title: favTitle(favs[i]), sub: favSub(favs[i]), etas });
   }
-  box.innerHTML = items.map(it =>
-    '<div class="metro-row">'
-    + '<span class="row-no">' + escapeHtml(it.no) + '</span>'
-    + '<span class="row-main"><span class="row-name">' + escapeHtml(it.name) + '</span></span>'
-    + '<span class="row-eta ' + etaCls(it.etas[0]) + '">' + (it.etas[0] ? etaText(it.etas[0]) : '—') + '</span>'
-    + '<button class="row-remove" data-i="' + it.i + '" onclick="removeFav(event, this)">✕</button>'
-    + '</div>'
-  ).join('');
+  box.innerHTML = items.map(it => {
+    const det = (it.etas || []).slice(0, 2).map(e =>
+      '<span class="row-eta-detail">' + (e.dest ? escapeHtml(e.dest) + ' · ' : '') + etaText(e.ts) + '</span>').join('');
+    return '<div class="metro-row fav-row">'
+      + '<span class="row-no">' + escapeHtml(it.no) + '</span>'
+      + '<span class="row-main"><span class="row-name">' + escapeHtml(it.title) + '</span>'
+      + (it.sub ? '<span class="row-sub">' + escapeHtml(it.sub) + '</span>' : '')
+      + det + '</span>'
+      + '<span class="row-eta ' + etaCls(it.etas[0] && it.etas[0].ts) + '">' + (it.etas[0] ? etaText(it.etas[0].ts) : '—') + '</span>'
+      + '<button class="row-remove" data-i="' + it.i + '" onclick="removeFav(event, this)">✕</button>'
+      + '</div>';
+  }).join('');
 }
 async function favETAs(f) {
   try {
@@ -336,28 +360,33 @@ async function favETAs(f) {
       if (f.company === 'kmb') {
         const wantDir = f.direction === 'inbound' ? 'I' : 'O';
         return (await getKMBETA(f.stop_id)).filter(e => e.route === f.route && (e.dir || '').toUpperCase() === wantDir)
-          .map(e => parseHK(e.eta) / 1000).filter(Boolean).sort((a, b) => a - b).slice(0, 2);
+          .map(e => ({ ts: parseHK(e.eta) / 1000, dest: e.dest_tc || '' })).filter(e => e.ts)
+          .sort((a, b) => a.ts - b.ts).slice(0, 2);
       }
       if (f.company === 'ctb') {
         const wantDir = f.direction === 'inbound' ? 'I' : 'O';
         return (await getCTBETA(f.stop_id, f.route)).filter(e => (e.dir || '').toUpperCase() === wantDir)
-          .map(e => parseHK(e.eta) / 1000).filter(Boolean).sort((a, b) => a - b).slice(0, 2);
+          .map(e => ({ ts: parseHK(e.eta) / 1000, dest: e.dest_tc || '' })).filter(e => e.ts)
+          .sort((a, b) => a.ts - b.ts).slice(0, 2);
       }
       if (f.company === 'nlb' && f.routeId) {
-        return (await getNLBETA(f.routeId, f.stop_id)).map(e => e.etaTs).filter(Boolean).sort((a, b) => a - b).slice(0, 2);
+        return (await getNLBETA(f.routeId, f.stop_id)).filter(e => e.etaTs)
+          .map(e => ({ ts: e.etaTs, dest: '' })).sort((a, b) => a.ts - b.ts).slice(0, 2);
       }
     } else if (f.type === 'lrt' && f.station_id != null) {
       const entries = await getLRTEta(f.station_id);
       const now = Math.floor(Date.now() / 1000);
-      return entries.slice(0, 2).map(e => now + e.mins * 60);
+      return entries.slice(0, 2).map(e => ({ ts: now + e.mins * 60, dest: e.routeNo + ' 往 ' + e.dest }));
     } else if (f.type === 'mtrbus') {
       const parsed = parseMTRBusETAData(await getMTRBusETA(f.route));
-      return parsed.map(p => parseHK(p.eta) / 1000).filter(Boolean).sort((a, b) => a - b).slice(0, 2);
+      return parsed.map(p => ({ ts: parseHK(p.eta) / 1000, dest: '' })).filter(e => e.ts)
+        .sort((a, b) => a.ts - b.ts).slice(0, 2);
     } else if (f.type === 'mtr' && f.station_id && f.station_id !== 'ALL') {
       const sched = await getMTRSchedule(f.line, f.station_id);
       const d = (sched && sched[f.line + '-' + f.station_id]) || {};
-      return [...(d.UP || []), ...(d.DOWN || [])].map(t => (t && t.time ? parseHK(t.time) / 1000 : null))
-        .filter(Boolean).sort((a, b) => a - b).slice(0, 2);
+      return [...(d.UP || []), ...(d.DOWN || [])]
+        .map(t => (t && t.time ? { ts: parseHK(t.time) / 1000, dest: (t.dest || f.lineName || '') } : null))
+        .filter(Boolean).sort((a, b) => a.ts - b.ts).slice(0, 2);
     }
   } catch (e) {}
   return [];
@@ -366,11 +395,21 @@ function favNo(f) {
   if (f.type === 'mtr') return f.lineName || f.route || 'MTR';
   return f.route || '?';
 }
-function favName(f) {
-  if (f.type === 'bus') return f.stop_name || f.destination || f.route;
+function favTitle(f) {
+  if (f.type === 'bus') {
+    if (f.company === 'nlb') return f.dest || f.stop_name || f.route;
+    return f.dest ? '往 ' + f.dest : (f.stop_name || f.route);
+  }
   if (f.type === 'lrt') return f.stop_name || f.route || '';
   if (f.type === 'mtr') return f.station_name || f.lineName || '';
   if (f.type === 'mtrbus') return (f.orig && f.dest) ? f.orig + ' → ' + f.dest : f.route;
+  return '';
+}
+function favSub(f) {
+  if (f.type === 'bus') return '巴士 · ' + (f.direction === 'inbound' ? '回程' : '去程');
+  if (f.type === 'lrt') return '輕鐵車站';
+  if (f.type === 'mtr') return (f.lineName || f.line || '') + ' 線';
+  if (f.type === 'mtrbus') return '港鐵巴士';
   return '';
 }
 function removeFav(ev, btn) {
@@ -434,18 +473,53 @@ async function refreshSushiro() {
   }
 }
 
-/* ---------- K75P（扁平列表） ---------- */
+/* ---------- K75P（首屏下一班 + 全線實時） ---------- */
+async function loadK75PNow() {
+  const el = $('k75pNow');
+  if (!el) return;
+  try {
+    const data = await getMTRBusETA('K75P');
+    if (!data || !Array.isArray(data.busStop)) { el.innerHTML = '<div class="metro-empty">暫無資料</div>'; return; }
+    const stops = {};
+    for (const stop of data.busStop) stops[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
+    const next = [];
+    for (const st of K75P_STOPS) {
+      for (const b of (stops[st.id] || [])) {
+        const sec = parseInt(b.arrivalTimeInSecond) || 0;
+        if (sec > 0 && sec < 108000) next.push({ sec, name: st.name });
+      }
+    }
+    next.sort((a, b) => a.sec - b.sec);
+    if (!next.length) { el.innerHTML = '<div class="metro-empty">暫無班次</div>'; return; }
+    const fmt = s => s <= 60 ? '即將到站' : Math.max(1, Math.ceil(s / 60)) + ' 分鐘';
+    const first = next[0];
+    const sub = next[1] ? '次班 ' + escapeHtml(next[1].name) + ' · ' + fmt(next[1].sec) : '點按查看全線';
+    el.innerHTML = '<div class="metro-row k75p-now-row" onclick="goPanoPanel(2)">'
+      + '<span class="row-no">K75P</span>'
+      + '<span class="row-main"><span class="row-name">' + escapeHtml(first.name) + '</span>'
+      + '<span class="row-sub">' + sub + '</span></span>'
+      + '<span class="row-eta ' + (first.sec <= 60 ? 'soon' : '') + '">' + fmt(first.sec) + '</span></div>';
+  } catch (e) {
+    el.innerHTML = '<div class="error-msg">K75P 載入失敗</div>';
+  }
+}
+
 async function loadK75P() {
   const el = $('k75p');
   try {
     const data = await getMTRBusETA('K75P');
     if (!data || !Array.isArray(data.busStop)) { el.innerHTML = '<div class="metro-empty">暫無資料</div>'; return; }
-    el.innerHTML = data.busStop.map(stop => {
-      const secs = (stop.bus || []).map(b => parseInt(b.arrivalTimeInSecond) || 0)
+    const stopMap = {};
+    for (const stop of data.busStop) stopMap[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
+    el.innerHTML = K75P_STOPS.map(st => {
+      const secs = (stopMap[st.id] || []).map(b => parseInt(b.arrivalTimeInSecond) || 0)
         .filter(s => s > 0 && s < 108000).sort((a, b) => a - b);
-      const label = secs.length ? Math.max(1, Math.ceil(secs[0] / 60)) + '分鐘' : '—';
-      return '<div class="metro-row">'
-        + '<span class="row-no" style="font-size:1rem">' + escapeHtml(stop.busStopNameTc || stop.busStopName || stop.busStopId || '') + '</span>'
+      const label = secs.length ? (secs[0] <= 60 ? '即將到站' : Math.max(1, Math.ceil(secs[0] / 60)) + ' 分鐘') : '—';
+      const sub = secs.length > 1 ? '次班 ' + (secs[1] <= 60 ? '即將到站' : Math.max(1, Math.ceil(secs[1] / 60)) + ' 分鐘') : '';
+      return '<div class="metro-row k75p-row">'
+        + '<span class="row-main"><span class="row-name">' + escapeHtml(st.name) + '</span>'
+        + (sub ? '<span class="row-sub">' + sub + '</span>' : '')
+        + '</span>'
         + '<span class="row-eta ' + (secs.length && secs[0] <= 60 ? 'soon' : '') + '">' + label + '</span></div>';
     }).join('');
   } catch (e) {
@@ -484,7 +558,7 @@ function restartAutoRefresh() {
 function refreshAll() {
   const pb = $('progressbar');
   if (pb) pb.hidden = false;
-  Promise.all([renderFavs(), refreshWeather(), refreshSushiro(), loadK75P()]).finally(() => {
+  Promise.all([renderFavs(), refreshWeather(), refreshSushiro(), loadK75PNow(), loadK75P()]).finally(() => {
     if (pb) pb.hidden = true;
   });
 }

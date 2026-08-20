@@ -139,6 +139,34 @@ const MTR_BUS_ROUTES = {
   'K18': { orig: '大埔墟站', dest: '廣福', orig_en: 'Tai Po Market Station', dest_en: 'Kwong Fuk' },
 };
 
+/* K75P 循環線 23 站（按實際行經順序：去程 D010-D080，回程 U011→U010→U020→…→U140）
+   港鐵巴士 API 只回傳 busStopId（如 K75P-D010），不帶中文站名，故內建此表映射 */
+const K75P_STOPS = [
+  { id: 'D010', name: '天瑞' },
+  { id: 'D020', name: '天水圍公園', fold: true },
+  { id: 'D030', name: '天耀邨耀盛樓', fold: true },
+  { id: 'D040', name: '輕鐵天耀站', fold: true },
+  { id: 'D050', name: '天盛苑', fold: true },
+  { id: 'D060', name: '石埗路', fold: true },
+  { id: 'D070', name: '沙洲里村', fold: true },
+  { id: 'D080', name: '廈村市', fold: true },
+  { id: 'U011', name: '新屋村', fold: true },
+  { id: 'U010', name: '李屋村', fold: true },
+  { id: 'U020', name: '新生村', fold: true },
+  { id: 'U030', name: '新李屋村', fold: true },
+  { id: 'U040', name: '田心', fold: true },
+  { id: 'U050', name: '鄉事委員會', fold: true },
+  { id: 'U060', name: '輕鐵洪水橋站' },
+  { id: 'U070', name: '洪水橋巴士廠' },
+  { id: 'U080', name: '洪福邨' },
+  { id: 'U090', name: '石埗村' },
+  { id: 'U100', name: '天盛苑' },
+  { id: 'U110', name: '天水圍警署' },
+  { id: 'U120', name: '賞湖居' },
+  { id: 'U130', name: '天水圍公園' },
+  { id: 'U140', name: '天瑞' }
+];
+
 /* CORS proxy list – try each in order on failure */
 const CORS_PROXIES = [
   (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,

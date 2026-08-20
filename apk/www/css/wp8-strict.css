@@ -199,6 +199,22 @@ body {
 .stop-route .sr-no { color: var(--accent); min-width: 40px; }
 .stop-route .sr-eta { margin-left: auto; color: var(--text); font-variant-numeric: tabular-nums; }
 
+/* ================= 轻铁站分组（站名头 + 每路线一行） ================= */
+.lrt-station {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 16px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+.lrt-station:first-child { margin-top: 6px; }
+.lrt-head { font-size: 1.15rem; font-weight: 300; color: var(--text); }
+.lrt-star { font-size: 1rem; }
+.lrt-row .row-no { font-size: 1.25rem; min-width: 44px; }
+.lrt-row .row-eta { font-size: 1.05rem; }
+
+/* ================= K75P 首屏下一班 ================= */
+.k75p-now { cursor: pointer; }
+.k75p-now .row-no { font-size: 1.3rem; }
+
 /* ================= 天气条 ================= */
 .weather-bar {
   display: flex; align-items: center; gap: 14px;
@@ -272,13 +288,8 @@ body.appbar-hidden .pivot { bottom: 0; }
 .pano { position: relative; width: 100%; height: 100%; overflow: hidden; }
 .pano-bg {
   position: absolute; top: 0; bottom: 0; left: -60%; right: -60%;
-  /* 渐变纹理图：光斑 + 斜纹肌理 + 暗角 */
-  background:
-    radial-gradient(circle at 18% 20%, rgba(0,162,232,0.30), rgba(0,162,232,0) 42%),
-    radial-gradient(circle at 72% 68%, rgba(0,120,180,0.24), rgba(0,120,180,0) 46%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cpath d='M0 44 L44 0' stroke='rgba(255,255,255,0.035)' stroke-width='1.4'/%3E%3Cpath d='M0 22 L22 0 M22 44 L44 22' stroke='rgba(255,255,255,0.025)' stroke-width='1'/%3E%3C/svg%3E") repeat,
-    radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.25) 100%),
-    linear-gradient(180deg, #262626 0%, #171717 100%);
+  /* WP8 Metro 精髓：純色扁平背景，無漸變、無紋理、無暗角 */
+  background: var(--bg);
   pointer-events: none;
   will-change: transform;
 }

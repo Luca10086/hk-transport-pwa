@@ -51,8 +51,12 @@
             <button class="tile-small" onclick="quickTransport('mtr')">港鐵</button>
             <button class="tile-small" onclick="quickTransport('lrt')">輕鐵</button>
             <button class="tile-small" onclick="quickTransport('mtrbus')">港鐵巴士</button>
-            <button class="tile-small" onclick="goPanoPanel(2)">K75P</button>
+            <button class="tile-small" onclick="goPanoPanel(2)">K75P 全線</button>
           </div>
+
+          <!-- K75P 下一班（首屏直達，點按看全線） -->
+          <h3 class="pane-title">K75P 下一班</h3>
+          <div id="k75pNow" class="flat-list k75p-now"></div>
         </div>
 
         <!-- 面板 2：搜索 + 结果 -->

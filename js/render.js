@@ -953,32 +953,7 @@ async function refreshSushiro() {
 /* K75P 折叠区展开状态（自动刷新整体重建后保持用户選擇） */
 let k75pFoldOpen = false;
 
-/* K75P 循環线 23 站（按真实经过顺序：去程 D010-D080，回程 U011→U010→U020→...→U140） */
-const K75P_STOPS = [
-  { id: 'D010', name: '天瑞' },
-  { id: 'D020', name: '天水圍公園', fold: true },
-  { id: 'D030', name: '天耀邨耀盛楼', fold: true },
-  { id: 'D040', name: '輕鐵天耀站', fold: true },
-  { id: 'D050', name: '天盛苑', fold: true },
-  { id: 'D060', name: '石埗路', fold: true },
-  { id: 'D070', name: '沙洲里村', fold: true },
-  { id: 'D080', name: '厦村市', fold: true },
-  { id: 'U011', name: '新屋村', fold: true },
-  { id: 'U010', name: '李屋村', fold: true },
-  { id: 'U020', name: '新生村', fold: true },
-  { id: 'U030', name: '新李屋村', fold: true },
-  { id: 'U040', name: '田心', fold: true },
-  { id: 'U050', name: '鄉事委員會', fold: true },
-  { id: 'U060', name: '輕鐵洪水桥站' },
-  { id: 'U070', name: '洪水桥巴士厂' },
-  { id: 'U080', name: '洪福邨' },
-  { id: 'U090', name: '石埗村' },
-  { id: 'U100', name: '天盛苑' },
-  { id: 'U110', name: '天水圍警署' },
-  { id: 'U120', name: '賞湖居' },
-  { id: 'U130', name: '天水圍公園' },
-  { id: 'U140', name: '天瑞' }
-];
+/* K75P 23 站表已移入共用数据层 data.js（K75P_STOPS），PWA 与 APK 概念版共用 */
 
 /** 解析 departureTimeText（HH:MM 或 HH:MM:SS）為 "HH:MM" */
 function parseDepartureText(text) {
