@@ -16,7 +16,7 @@ const etaCls = (ts) => ts ? etaColorClass(ts) : '';
 const parseHK = parseHKTime;
 
 /* ---------- Pivot（横滑窗格） ---------- */
-const PIVOT_TITLES = { home: '搜尋', favs: '收藏', sushi: '壽司郎', news: '要聞', map: '路線圖', settings: '設定' };
+const PIVOT_TITLES = { home: '搜尋', favs: '收藏', sushi: '壽司郎', map: '路線圖', settings: '設定' };
 const pivot = $('pivot');
 let curPane = '';
 function updatePivot() {
@@ -50,8 +50,14 @@ function moreAction(a) {
   toggleMore();
   if (a === 'refresh') refreshAll();
   else if (a === 'fav') favFirstResult();
-  else if (a === 'news') goPane('news');
+  else if (a === 'speak') speakFirstResult();
   else if (a === 'map') goPane('map');
+}
+function speakFirstResult() {
+  const r = lastResults[0];
+  if (!r) return;
+  const first = r.etas && r.etas[0];
+  speakText(r.no + '，' + (r.name || '') + (first ? ('，下一班 ' + etaText(first.ts)) : ''));
 }
 document.addEventListener('click', (e) => {
   const m = $('moreMenu');
@@ -320,6 +326,9 @@ function renderResults(items, container) {
     const star = it.fav
       ? '<button class="row-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(it.fav).replace(/'/g, '&#39;') + '\'>' + (isFavorited(it.fav) ? '★' : '☆') + '</button>'
       : '';
+    const speak = first
+      ? '<button class="row-speak" onclick="speakRow(event, this)" data-speak=\'' + JSON.stringify({ no: it.no, name: it.name, ts: first.ts }).replace(/'/g, '&#39;') + '\' title="語音播報">▶</button>'
+      : '';
     const click = it.detail
       ? ' class="metro-row row-clickable" data-detail=\'' + JSON.stringify(it.detail).replace(/'/g, '&#39;') + '\' onclick="openRouteDetail(this)"'
       : ' class="metro-row"';
@@ -330,8 +339,28 @@ function renderResults(items, container) {
       + sub + '</span>'
       + '<span class="row-eta ' + etaCls(first && first.ts) + '">' + (first ? etaText(first.ts) : '—') + '</span>'
       + star
+      + speak
       + '</div>';
   }).join('');
+}
+/* 語音播報（Web Speech API，zh-HK） */
+function speakRow(ev, btn) {
+  ev.stopPropagation();
+  let d;
+  try { d = JSON.parse(btn.getAttribute('data-speak')); } catch (e) { return; }
+  speakText(d.no + '，' + d.name + '，下一班 ' + etaText(d.ts));
+}
+function speakText(text) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-HK';
+    const voices = window.speechSynthesis.getVoices();
+    const v = voices.find(x => /zh|yue|cmn/i.test(x.lang || ''));
+    if (v) u.voice = v;
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
 }
 
 function toggleRowFav(ev, btn) {
@@ -549,14 +578,16 @@ function favDetailFor(f) {
 async function renderFavs() {
   const box = $('favs');
   const favs = getFavorites();
-  if (!favs.length) { box.innerHTML = '<div class="metro-empty">暫無收藏，在搜尋結果按 ☆ 加入</div>'; return; }
+  if (!favs.length) { box.innerHTML = '<div class="metro-empty">暫無收藏，在搜尋結果按 ☆ 加入</div>'; updateFavTile(null); return; }
   let html = '';
+  let firstEtas = null;
   for (let i = 0; i < favs.length; i++) {
     const f = favs[i];
     /* 輕鐵收藏：與搜索結果顯示完全一致（站名頭 + 各路線行） */
     if (f.type === 'lrt' && f.station_id != null) {
       let entries = [];
       try { entries = await getLRTEta(f.station_id); } catch (e) {}
+      if (i === 0) firstEtas = entries.slice(0, 2).map(e => ({ ts: Math.floor(Date.now() / 1000) + e.mins * 60 }));
       html += '<div class="lrt-station">'
         + '<span class="lrt-head">' + escapeHtml(f.stop_name || f.route || '') + '</span>'
         + '<button class="row-remove" data-i="' + i + '" onclick="removeFav(event, this)">✕</button>'
@@ -574,6 +605,7 @@ async function renderFavs() {
       continue;
     }
     const etas = await favETAs(f);
+    if (i === 0) firstEtas = etas;
     const it = { i, no: favNo(f), title: favTitle(f), sub: favSub(f), etas };
     const det = (it.etas || []).slice(0, 2).map(e =>
       '<span class="row-eta-detail">' + (e.dest ? escapeHtml(e.dest) + ' · ' : '') + etaText(e.ts) + '</span>').join('');
@@ -589,6 +621,16 @@ async function renderFavs() {
       + '</div>';
   }
   box.innerHTML = html;
+  updateFavTile(favs[0], firstEtas);
+}
+/* 首頁「收藏①」智能磁貼：顯示第一條收藏的下一班 */
+function updateFavTile(f, etas) {
+  const v = $('favTileV'), s = $('favTileS');
+  if (!v) return;
+  if (!f) { v.textContent = '—'; s.textContent = '暫無收藏'; return; }
+  if (etas && etas[0]) v.textContent = etaText(etas[0].ts);
+  else v.textContent = '—';
+  s.textContent = favNo(f) + ' · ' + favTitle(f);
 }
 async function favETAs(f) {
   try {
@@ -687,16 +729,16 @@ async function refreshWeather() {
     el.textContent = '天氣載入失敗';
   }
 }
-/* 天氣磁貼背景隨天氣變化（WP8 官方色板） */
+/* 天氣磁貼背景隨天氣變化（墨綠系） */
 function weatherTileColor(icon) {
   const i = Number(icon);
-  if (i === 65) return '#D80073';                 /* 雷暴 → 洋紅 */
-  if (i >= 62 && i <= 64) return '#0050EF';       /* 雨 → 鈷藍 */
-  if (i >= 60 && i <= 61) return '#647687';       /* 陰 → 鋼灰 */
-  if (i >= 50 && i <= 54) return '#1BA1E2';       /* 陽光 → 青 */
-  if (i >= 70 && i <= 77) return '#00ABA9';       /* 良好 → 青綠 */
-  if (i === 90 || i === 91) return '#FA6800';     /* 熱 → 橙 */
-  return '#1BA1E2';
+  if (i === 65) return '#004D40';                 /* 雷暴 → 墨青綠 */
+  if (i >= 62 && i <= 64) return '#00695C';       /* 雨 → 青綠 */
+  if (i >= 60 && i <= 61) return '#455A64';       /* 陰 → 灰綠 */
+  if (i >= 50 && i <= 54) return '#2E7D32';       /* 陽光 → 綠 */
+  if (i >= 70 && i <= 77) return '#558B2F';       /* 良好 → 橄欖 */
+  if (i === 90 || i === 91) return '#9E9D24';     /* 熱 → 黃綠 */
+  return '#2E7D32';
 }
 /* 明日天氣預報（HKO fnd 九天天氣） */
 async function fetchForecast() {
@@ -752,52 +794,7 @@ async function refreshSushiro() {
   }
 }
 
-/* ---------- 要聞（Google News HK RSS → 扁平列表 + 翻轉磁貼） ---------- */
-let newsItems = [];
-async function fetchNewsRSS() {
-  const tries = [NEWS_RSS, CORS_PROXIES[0](NEWS_RSS)];
-  for (const u of tries) {
-    try {
-      const r = await fetch(u, { signal: AbortSignal.timeout(15000) });
-      if (r.ok) return await r.text();
-    } catch (e) {}
-  }
-  throw new Error('unreachable');
-}
-async function refreshNews() {
-  const el = $('news');
-  try {
-    const text = await fetchNewsRSS();
-    const doc = new DOMParser().parseFromString(text, 'text/xml');
-    newsItems = [...doc.querySelectorAll('item')].slice(0, 12).map(it => ({
-      title: (it.querySelector('title') || {}).textContent || '',
-      link: (it.querySelector('link') || {}).textContent || '',
-      date: (it.querySelector('pubDate') || {}).textContent || ''
-    })).filter(x => x.title);
-    if (el) renderNewsList(el);
-    updateNewsTile();
-  } catch (e) {
-    if (el) el.innerHTML = '<div class="error-msg">要聞載入失敗，請稍後再試</div>';
-  }
-}
-function renderNewsList(el) {
-  el.innerHTML = newsItems.map((n, i) => {
-    const src = (n.title.match(/ - ([^-]+)$/) || [])[1] || '';
-    const clean = n.title.replace(/\s-\s[^-]+$/, '');
-    return '<div class="metro-row">'
-      + '<span class="row-no" style="font-size:1rem;min-width:34px">' + (i + 1) + '</span>'
-      + '<span class="row-main"><span class="row-name">' + escapeHtml(clean) + '</span>'
-      + '<span class="row-sub">' + escapeHtml(src) + '</span></span></div>';
-  }).join('');
-}
-function updateNewsTile() {
-  const a = $('newsTile1'), b = $('newsTile2');
-  if (!a) return;
-  a.textContent = newsItems[0] ? newsItems[0].title.replace(/\s-\s[^-]+$/, '') : '載入中';
-  if (b) b.textContent = newsItems[1] ? newsItems[1].title.replace(/\s-\s[^-]+$/, '') : '';
-}
-
-/* ---------- 路線圖（港鐵線路時間軸 / 輕鐵站表） ---------- */
+/* ---------- 路線圖（港鐵線路時間軸 / 輕鐵站表 / 巴士位置） ---------- */
 let mapMode = 'mtr';
 function renderMapLines() {
   const box = $('mapLines');
@@ -805,6 +802,7 @@ function renderMapLines() {
   const lines = Object.keys(MTR_LINE_STOPS).map(lc => ({ code: lc, name: MTR_LINES[lc] || lc }));
   box.innerHTML = '<button class="map-line-btn' + (mapMode === 'mtr' ? ' active' : '') + '" onclick="setMapMode(\'mtr\', this)">港鐵</button>'
     + '<button class="map-line-btn' + (mapMode === 'lrt' ? ' active' : '') + '" onclick="setMapMode(\'lrt\', this)">輕鐵</button>'
+    + '<button class="map-line-btn' + (mapMode === 'bus' ? ' active' : '') + '" onclick="setMapMode(\'bus\', this)">巴士位置</button>'
     + lines.map(l => '<button class="map-line-btn" data-lc="' + l.code + '" onclick="renderMTRLine(\'' + l.code + '\', this)">' + escapeHtml(l.name) + '</button>').join('');
   renderMTRLine(Object.keys(MTR_LINE_STOPS)[0], box.querySelector('.map-line-btn[data-lc]'));
 }
@@ -812,10 +810,15 @@ function setMapMode(m, btn) {
   mapMode = m;
   document.querySelectorAll('#mapLines .map-line-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  if (m === 'mtr') {
-    renderMTRLine(Object.keys(MTR_LINE_STOPS)[0], document.querySelector('#mapLines .map-line-btn[data-lc]'));
+  const body = $('mapBody'), bm = $('busMap');
+  if (m === 'bus') {
+    if (body) body.style.display = 'none';
+    initBusMap();
   } else {
-    renderLRTMap();
+    if (body) body.style.display = '';
+    if (bm) bm.hidden = true;
+    if (m === 'mtr') renderMTRLine(Object.keys(MTR_LINE_STOPS)[0], document.querySelector('#mapLines .map-line-btn[data-lc]'));
+    else renderLRTMap();
   }
 }
 function renderMTRLine(lc, btn) {
@@ -850,6 +853,65 @@ function renderLRTMap() {
     html += '</div>';
   }
   body.innerHTML = html;
+}
+
+/* ---------- 巴士實時位置地圖（港鐵巴士，Leaflet + OSM） ---------- */
+let busMap = null, busLayer = null;
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = res;
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+function loadCss(href) {
+  const l = document.createElement('link');
+  l.rel = 'stylesheet';
+  l.href = href;
+  document.head.appendChild(l);
+}
+async function initBusMap() {
+  const box = $('busMap');
+  if (!box) return;
+  box.hidden = false;
+  try {
+    if (!window.L) {
+      await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+      loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+    }
+    if (!busMap) {
+      busMap = L.map(box, { attributionControl: false }).setView([22.445, 113.995], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(busMap);
+      busLayer = L.layerGroup().addTo(busMap);
+      L.control.attribution({ position: 'bottomright', prefix: false }).addAttribution('© OpenStreetMap').addTo(busMap);
+    }
+    setTimeout(() => { if (busMap) busMap.invalidateSize(); }, 120);
+    refreshBusMap();
+  } catch (e) {
+    box.innerHTML = '<div class="error-msg">地圖載入失敗，請檢查網絡</div>';
+  }
+}
+async function refreshBusMap() {
+  if (!busMap || !busLayer) return;
+  try {
+    const data = await getMTRBusETA('K75P');
+    busLayer.clearLayers();
+    if (!data || !Array.isArray(data.busStop)) return;
+    const seen = new Set();
+    for (const stop of data.busStop) {
+      for (const b of (stop.bus || [])) {
+        const loc = b.busLocation || {};
+        const lat = Number(loc.latitude), lng = Number(loc.longitude);
+        if (!lat || !lng || seen.has(b.busId)) continue;
+        seen.add(b.busId);
+        L.circleMarker([lat, lng], { radius: 7, color: '#2FA36B', weight: 2, fillColor: '#2FA36B', fillOpacity: 0.9 })
+          .bindPopup('巴士 ' + escapeHtml(String(b.busId || '?')) + '<br>到下一站 ' + escapeHtml(String(b.arrivalTimeText || '')))
+          .addTo(busLayer);
+      }
+    }
+  } catch (e) {}
 }
 
 /* ---------- K75P（首屏天瑞磁貼 + 全線實時） ---------- */
@@ -896,7 +958,8 @@ async function loadK75P() {
 
 /* ---------- 设定 ---------- */
 function syncSegs(sel, val) {
-  document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('active', (b.dataset.th || b.dataset.ac || b.dataset.rv) === val));
+  const v = String(val);
+  document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('active', [b.dataset.th, b.dataset.ac, b.dataset.rv, b.dataset.ui, b.dataset.ct].includes(v)));
 }
 function setTheme(th) {
   document.body.dataset.theme = th;
@@ -908,6 +971,16 @@ function setAccent(c) {
   document.documentElement.style.setProperty('--accent-dark', c);
   localStorage.setItem('wp8concept_accent', c);
   syncSegs('#accentSeg', c);
+}
+function setUIMode(m) {
+  document.body.dataset.ui = m;
+  localStorage.setItem('wp8concept_ui', m);
+  syncSegs('#uiSeg', m);
+}
+function setContrast(on) {
+  document.body.classList.toggle('high-contrast', !!on);
+  localStorage.setItem('wp8concept_contrast', on ? '1' : '0');
+  syncSegs('#contrastSeg', on ? '1' : '0');
 }
 function setRefresh(sec) {
   localStorage.setItem('wp8concept_refresh', String(sec));
@@ -925,9 +998,10 @@ function restartAutoRefresh() {
 function refreshAll() {
   const pb = $('progressbar');
   if (pb) pb.hidden = false;
-  Promise.all([renderFavs(), refreshWeather(), refreshSushiro(), refreshNews(), loadK75PNow(), loadK75P()]).finally(() => {
+  Promise.all([renderFavs(), refreshWeather(), refreshSushiro(), loadK75PNow(), loadK75P()]).finally(() => {
     if (pb) pb.hidden = true;
   });
+  if (busMap) refreshBusMap();
 }
 
 /* ---------- App Bar：Windows 桌面用真正的 Segoe UI Symbol 字形（WP8 原味），流動裝置保留細線 SVG ---------- */
@@ -975,7 +1049,7 @@ function initPullToRefresh() {
 
 /* ---------- 磁貼長按：換色 / 隱藏 / 還原 ---------- */
 const TILE_STORAGE = 'wp8concept_tiles';
-const TILE_COLORS = ['#0050EF', '#1BA1E2', '#D80073', '#00ABA9'];
+const TILE_COLORS = ['#1B5E20', '#2E7D32', '#00695C', '#558B2F'];
 function initTileMenu() {
   const menu = $('tileMenu');
   if (!menu) return;
@@ -1007,6 +1081,7 @@ function showTileMenu(tile) {
   menu.innerHTML = '';
   mk('換色', () => cycleTileColor(tile));
   mk('隱藏此磁貼', () => hideTile(key));
+  mk(window.__tileDragMode ? '結束拖動排序' : '拖動排序', () => toggleTileDrag());
   mk('還原全部磁貼', () => restoreTiles());
   menu.hidden = false;
   menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 170)) + 'px';
@@ -1022,6 +1097,7 @@ function cycleTileColor(tile) {
 function loadTilePrefs() {
   let p = {};
   try { p = JSON.parse(localStorage.getItem(TILE_STORAGE) || '{}'); } catch (e) {}
+  if (Array.isArray(p._order) && p._order.length) applyTileOrder(p._order);
   document.querySelectorAll('.tile[data-tile], .tile-small[data-tile]').forEach(t => {
     const c = p[t.dataset.tile];
     if (!c) return;
@@ -1029,11 +1105,22 @@ function loadTilePrefs() {
     if (c.hidden) t.style.display = 'none';
   });
 }
+function tileOrder() {
+  return [...document.querySelectorAll('.tile[data-tile], .tile-small[data-tile]')].map(t => t.dataset.tile);
+}
+function applyTileOrder(order) {
+  document.querySelectorAll('.tiles, .tiles-small').forEach(container => {
+    const kids = [...container.querySelectorAll('.tile[data-tile], .tile-small[data-tile]')];
+    kids.sort((a, b) => order.indexOf(a.dataset.tile) - order.indexOf(b.dataset.tile));
+    kids.forEach(k => container.appendChild(k));
+  });
+}
 function saveTilePrefs() {
   const p = {};
   document.querySelectorAll('.tile[data-tile], .tile-small[data-tile]').forEach(t => {
     p[t.dataset.tile] = { bg: t.style.background || '', hidden: t.style.display === 'none' };
   });
+  p._order = tileOrder();
   localStorage.setItem(TILE_STORAGE, JSON.stringify(p));
 }
 function hideTile(key) {
@@ -1044,6 +1131,46 @@ function hideTile(key) {
 function restoreTiles() {
   localStorage.removeItem(TILE_STORAGE);
   document.querySelectorAll('.tile[data-tile], .tile-small[data-tile]').forEach(t => { t.style.display = ''; t.style.background = ''; });
+}
+function toggleTileDrag() {
+  window.__tileDragMode = !window.__tileDragMode;
+  document.body.classList.toggle('tile-dragmode', !!window.__tileDragMode);
+}
+/* 拖動排序（觸控：進入拖動模式後按住磁貼移動） */
+function initTileDrag() {
+  let dragEl = null, startX = 0, startY = 0;
+  document.addEventListener('touchstart', (e) => {
+    if (!window.__tileDragMode) return;
+    const t = e.target.closest ? e.target.closest('.tile[data-tile], .tile-small[data-tile]') : null;
+    if (!t) return;
+    dragEl = t;
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!dragEl) return;
+    const dx = e.touches[0].clientX - startX, dy = e.touches[0].clientY - startY;
+    if (Math.abs(dx) + Math.abs(dy) < 8) return;
+    dragEl.classList.add('dragging');
+    dragEl.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    dragEl.style.zIndex = '99';
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('touchend', (e) => {
+    if (!dragEl) return;
+    const over = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    const target = over && over.closest ? over.closest('.tile[data-tile], .tile-small[data-tile]') : null;
+    if (target && target !== dragEl) {
+      const parent = dragEl.parentElement;
+      const rect = target.getBoundingClientRect();
+      const before = e.changedTouches[0].clientX < rect.left + rect.width / 2;
+      if (before) parent.insertBefore(dragEl, target);
+      else parent.insertBefore(dragEl, target.nextSibling);
+      saveTilePrefs();
+    }
+    dragEl.classList.remove('dragging');
+    dragEl.style.transform = ''; dragEl.style.zIndex = '';
+    dragEl = null;
+  }, { passive: true });
 }
 
 /* ---------- 頂欄避讓安卓系統狀態欄（全屏邊到邊模式） ---------- */
@@ -1062,14 +1189,19 @@ document.addEventListener('DOMContentLoaded', () => {
     window.visualViewport.addEventListener('scroll', applySysbarInset);
   }
   const th = localStorage.getItem('wp8concept_theme') || 'dark';
-  const ac = localStorage.getItem('wp8concept_accent') || '#00A2E8';
+  const ac = localStorage.getItem('wp8concept_accent') || '#2FA36B';
   const rv = localStorage.getItem('wp8concept_refresh') || '30';
+  const ui = localStorage.getItem('wp8concept_ui') || 'wp8';
   if (th === 'light') document.body.dataset.theme = 'light';
+  document.body.dataset.ui = ui;
   document.documentElement.style.setProperty('--accent', ac);
   document.documentElement.style.setProperty('--accent-dark', ac);
+  if (localStorage.getItem('wp8concept_contrast') === '1') document.body.classList.add('high-contrast');
   syncSegs('#themeSeg', th);
   syncSegs('#accentSeg', ac);
   syncSegs('#refreshSeg', rv);
+  syncSegs('#uiSeg', ui);
+  syncSegs('#contrastSeg', localStorage.getItem('wp8concept_contrast') === '1' ? '1' : '0');
 
   /* 版本（Beta 0.1 build N，由構建腳本自動疊加） */
   const APP_VERSION = (typeof window !== 'undefined' && window.APP_VERSION) ? window.APP_VERSION : 'Beta 0.1';
@@ -1106,14 +1238,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let flipOn = false;
   setInterval(() => {
     flipOn = !flipOn;
-    const w = $('tileWeather'), n = $('tileNews');
+    const w = $('tileWeather');
     if (w) w.classList.toggle('flip', flipOn);
-    if (n) n.classList.toggle('flip', flipOn);
   }, 5000);
 
   loadTilePrefs();
   initPullToRefresh();
   initTileMenu();
+  initTileDrag();
   renderMapLines();
   updatePivot();
   refreshAll();

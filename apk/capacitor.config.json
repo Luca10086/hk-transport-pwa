@@ -7,5 +7,11 @@
   },
   "android": {
     "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "backgroundColor": "#14532D",
+      "showDuration": 1500
+    }
   }
 }

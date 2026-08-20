@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#1F1F1F">
 <title>森友出行 · WP8 概念版</title>
 <link rel="stylesheet" href="css/wp8-strict.css">
+<link rel="stylesheet" href="css/wp10-skin.css">
 </head>
 <body>
 
@@ -49,9 +50,10 @@
               <b id="k75pTileV">--</b>
               <span class="tile-sub" id="k75pTileSub">載入中</span>
             </button>
-            <button class="tile tile-wide tile-flip tile-magenta" id="tileNews" data-tile="news" onclick="goPane('news')">
-              <span class="tile-face"><span>要聞</span><span class="tile-sub" id="newsTile1">載入中</span></span>
-              <span class="tile-face tile-face-back" id="newsTile2"></span>
+            <button class="tile tile-wide tile-cyan" id="tileFav" data-tile="favlive" onclick="goPane('favs')">
+              <span>收藏 ①</span>
+              <b id="favTileV">—</b>
+              <span class="tile-sub" id="favTileS">暫無收藏</span>
             </button>
             <button class="tile tile-cyan" data-tile="map" onclick="goPane('map')">路線圖</button>
             <button class="tile tile-teal" data-tile="settings" onclick="goPane('settings')">設定</button>
@@ -110,20 +112,13 @@
     </div>
   </section>
 
-  <!-- 要聞 -->
-  <section class="pane" data-pane="news">
-    <div class="pane-inner">
-      <h2 class="pane-title">要聞</h2>
-      <div id="news" class="flat-list"><div class="metro-empty">載入中…</div></div>
-    </div>
-  </section>
-
   <!-- 路线图 -->
   <section class="pane" data-pane="map">
     <div class="pane-inner">
       <h2 class="pane-title">路線圖</h2>
       <div class="map-lines" id="mapLines"></div>
       <div class="map-body" id="mapBody"></div>
+      <div id="busMap" class="bus-map" hidden></div>
     </div>
   </section>
 
@@ -140,10 +135,23 @@
         </div>
         <div class="setting-row"><span class="label">強調色</span>
           <div class="seg" id="accentSeg">
-            <button data-ac="#00A2E8" style="color:#00A2E8" onclick="setAccent('#00A2E8')">青</button>
-            <button data-ac="#0078D4" style="color:#0078D4" onclick="setAccent('#0078D4')">藍</button>
-            <button data-ac="#E81123" style="color:#E81123" onclick="setAccent('#E81123')">紅</button>
-            <button data-ac="#6B69D6" style="color:#6B69D6" onclick="setAccent('#6B69D6')">紫</button>
+            <button data-ac="#14532D" style="color:#2FA36B" onclick="setAccent('#14532D')">墨</button>
+            <button data-ac="#2FA36B" style="color:#2FA36B" onclick="setAccent('#2FA36B')">翠</button>
+            <button data-ac="#00695C" style="color:#2FA36B" onclick="setAccent('#00695C')">青</button>
+            <button data-ac="#558B2F" style="color:#2FA36B" onclick="setAccent('#558B2F')">橄</button>
+          </div>
+        </div>
+        <div class="setting-row"><span class="label">介面風格</span>
+          <div class="seg" id="uiSeg">
+            <button data-ui="wp7" onclick="setUIMode('wp7')">WP7</button>
+            <button data-ui="wp8" onclick="setUIMode('wp8')">WP8</button>
+            <button data-ui="wp10" onclick="setUIMode('wp10')">WP10</button>
+          </div>
+        </div>
+        <div class="setting-row"><span class="label">高對比</span>
+          <div class="seg" id="contrastSeg">
+            <button data-ct="1" onclick="setContrast(1)">開</button>
+            <button data-ct="0" onclick="setContrast(0)">關</button>
           </div>
         </div>
         <div class="setting-row"><span class="label">自動重新整理</span>
@@ -179,7 +187,7 @@
   <div class="more-menu" id="moreMenu" hidden>
     <button onclick="moreAction('refresh')">重新整理</button>
     <button onclick="moreAction('fav')">收藏首條結果</button>
-    <button onclick="moreAction('news')">要聞</button>
+    <button onclick="moreAction('speak')">語音播報首條</button>
     <button onclick="moreAction('map')">路線圖</button>
   </div>
 </nav>

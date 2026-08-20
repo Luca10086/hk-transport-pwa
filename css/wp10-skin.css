@@ -1,0 +1,127 @@
+/* ==========================================================================
+   森友出行 · Windows 10（UWP）皮膚
+   設計語言：Fluent/UWP —— 壓克力半透明欄、克制留白、細邊框、
+   中型標題、無磁貼翻轉、柔和觸感。以 body[data-ui="wp10"] 啟用。
+   配色與 WP8 共享墨綠令牌（--accent 等）。
+   ========================================================================== */
+
+body[data-ui="wp10"] {
+  --bg: #16241B;             /* 更深一級的墨綠黑 */
+  --surface: rgba(255, 255, 255, 0.055);
+  --surface2: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.14);
+  --topbar-h: 76px;
+}
+body[data-ui="wp10"][data-theme="light"] {
+  --bg: #EDF2EF;
+  --surface: rgba(0, 0, 0, 0.04);
+  --surface2: rgba(0, 0, 0, 0.08);
+  --line: rgba(0, 0, 0, 0.14);
+}
+
+/* 頂欄 / App Bar：壓克力（半透明 + 背景模糊） */
+body[data-ui="wp10"] .topbar {
+  background: rgba(22, 36, 27, 0.82);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid var(--line);
+}
+body[data-ui="wp10"][data-theme="light"] .topbar {
+  background: rgba(237, 242, 239, 0.82);
+}
+body[data-ui="wp10"] .appbar {
+  background: rgba(22, 36, 27, 0.86);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+body[data-ui="wp10"][data-theme="light"] .appbar {
+  background: rgba(237, 242, 239, 0.86);
+}
+
+/* Pivot 標題：UWP 中型（Semibold，非全大寫也不小寫） */
+body[data-ui="wp10"] .pivot-title {
+  font-size: 2rem;
+  font-weight: 600;
+  font-family: 'Segoe UI', sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+body[data-ui="wp10"] .pane-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  font-family: 'Segoe UI', sans-serif;
+  text-transform: none;
+}
+
+/* 磁貼 → UWP 快捷按鈕：小號、扁平、細微圓角 */
+body[data-ui="wp10"] .tile {
+  min-height: 64px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+body[data-ui="wp10"] .tile-wide { min-height: 56px; }
+body[data-ui="wp10"] .tile b { font-size: 1.3rem; font-weight: 600; }
+body[data-ui="wp10"] .tile-small {
+  min-height: 48px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* 搜尋：UWP TextBox（帶框） */
+body[data-ui="wp10"] .metro-input {
+  border: 2px solid var(--line);
+  border-bottom-width: 2px;
+  background: var(--surface2);
+  padding: 12px 12px 10px;
+}
+body[data-ui="wp10"] .metro-input:focus { border-color: var(--accent); }
+body[data-ui="wp10"] .search-btn {
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 11px;
+}
+body[data-ui="wp10"] .chip {
+  border-width: 2px;
+  border-radius: 4px;
+  font-weight: 600;
+  background: var(--surface2);
+  color: var(--text);
+}
+body[data-ui="wp10"] .chip.active { background: var(--accent); border-color: var(--accent); }
+
+/* 列表：更多留白 + 懸停感 */
+body[data-ui="wp10"] .metro-row { padding: 15px 0; }
+body[data-ui="wp10"] .row-no { font-weight: 400; font-size: 1.2rem; }
+body[data-ui="wp10"] .row-name { font-weight: 400; }
+body[data-ui="wp10"] .lrt-head { font-weight: 600; font-size: 1.05rem; }
+body[data-ui="wp10"] .metro-group {
+  font-weight: 600; font-size: 0.8rem; letter-spacing: 0;
+  color: var(--text2);
+}
+
+/* 控件：UWP 按鈕式（細圓角、實心強調） */
+body[data-ui="wp10"] .seg button { border-radius: 4px; font-weight: 600; }
+body[data-ui="wp10"] .dir-tab, body[data-ui="wp10"] .map-line-btn { border-radius: 4px; }
+body[data-ui="wp10"] .topbar-refresh { border-width: 2px; }
+body[data-ui="wp10"] .more-menu { border-radius: 4px; }
+
+/* 詳情頁：壓克力頂欄 */
+body[data-ui="wp10"] .detail-bar {
+  background: rgba(22, 36, 27, 0.85);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+body[data-ui="wp10"][data-theme="light"] .detail-bar {
+  background: rgba(237, 242, 239, 0.85);
+}
+body[data-ui="wp10"] .detail-title { font-weight: 600; font-size: 1.3rem; }
+
+/* 天氣條 / 警告：卡片化 */
+body[data-ui="wp10"] .weather-bar { border-radius: 4px; background: var(--surface2); }
+body[data-ui="wp10"] .error-msg { border-radius: 4px; }
