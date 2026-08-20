@@ -24,8 +24,11 @@ set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
 set "ANDROID_SDK_ROOT=%LOCALAPPDATA%\Android\Sdk"
 set "PATH=%JAVA_HOME%\bin;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\cmdline-tools\latest\bin;%PATH%"
 echo JDK 21: %JAVA_HOME%
+"%JAVA_HOME%\bin\java.exe" -version
 
 cd /d "%~dp0"
+set "LOG=%~dp0build-log.txt"
+del "%LOG%" 2>nul
 
 echo ============================================================
 echo  Senyou Travel - Windows Phone 8 - APK Build
@@ -51,13 +54,15 @@ if not exist "android" (
 
 REM 4. Sync web assets into the native project
 echo [3/4] Syncing web assets...
-call npx cap sync android
+call npx cap sync android >> "%LOG%" 2>&1
 if errorlevel 1 goto :fail
 
-REM 5. Build debug APK (first build downloads Gradle, may take a while)
+REM 5. Stop stale Gradle daemons, then build debug APK
 echo [4/4] Building debug APK (first time downloads Gradle, please wait)...
 cd android
-call gradlew.bat assembleDebug
+echo Stopping stale Gradle daemons (fixes Java 25 daemon reuse)...
+call gradlew.bat --stop
+powershell -NoProfile -ExecutionPolicy Bypass -Command "& .\gradlew.bat assembleDebug --console=plain 2>&1 | Tee-Object -FilePath '%~dp0build-log.txt' -Append; exit $LASTEXITCODE"
 if errorlevel 1 (
     cd ..
     goto :fail
@@ -80,5 +85,6 @@ echo  Common issues:
 echo   - Gradle download slow/failed: just run this script again
 echo   - SDK not found: check ANDROID_HOME in this script
 echo   - Unsupported class file major version 69: run setup-jdk.bat first
+echo  Full log: %~dp0build-log.txt
 echo ============================================================
 pause
