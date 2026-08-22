@@ -40,10 +40,14 @@ echo ============================================================
 echo  Senyou Travel - Windows Phone 8 - APK Build
 echo ============================================================
 
-REM 2. Install npm dependencies (picks up newly added plugins)
+REM 2. Install npm dependencies (npm ci when lockfile exists)
 echo [1/4] Installing npm dependencies...
 echo [step1] npm install >> "%LOG%" 2>&1
-call npm install --no-audit --no-fund >> "%LOG%" 2>&1
+if exist "package-lock.json" (
+    call npm ci --no-audit --no-fund >> "%LOG%" 2>&1
+) else (
+    call npm install --no-audit --no-fund >> "%LOG%" 2>&1
+)
 if errorlevel 1 goto :fail
 
 REM 3. Generate Android native project (first time only)
@@ -97,9 +101,15 @@ goto :eof
 
 :fail
 echo [fail] %date% %time% >> "%LOG%" 2>&1
+REM Roll back the build counter so a failed build does not skip a number
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0bump-version.ps1" -undo >> "%LOG%" 2>&1
 echo.
 echo ============================================================
 echo  BUILD FAILED - see the error messages above.
 echo  Full log: %~dp0build-log.txt
+echo  Last 40 lines of log:
+echo ------------------------------------------------------------
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Content '%~dp0build-log.txt' -Tail 40"
+echo ------------------------------------------------------------
 echo ============================================================
 pause

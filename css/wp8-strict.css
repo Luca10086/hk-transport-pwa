@@ -303,6 +303,23 @@ body {
   color: var(--accent); font-size: 0.85rem; cursor: pointer;
 }
 .k75p-map-link:active { opacity: 0.7; }
+.k75p-fold-btn {
+  width: 100%; padding: 9px 0; border: none; background: transparent;
+  color: var(--text2); font-size: 0.85rem; cursor: pointer; text-align: left;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+}
+.k75p-fold-btn:active { color: var(--accent); }
+
+/* ================= 最近搜尋 ================= */
+.recent-box { padding: 2px 0 0; }
+.recent-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.recent-chip {
+  border: 1px solid var(--line); background: transparent; color: var(--text2);
+  border-radius: 12px; padding: 4px 12px; font-size: 0.78rem; cursor: pointer;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+}
+.recent-chip:active { color: var(--accent); border-color: var(--accent); }
+body[data-ui="uwp"] .recent-chip { border-radius: 4px; background: rgba(255,255,255,.06); border: none; }
 
 /* ================= 天气条 ================= */
 .weather-bar {
@@ -559,6 +576,104 @@ body[data-ui="wp8"] .ds-stop .ds-name { font-size: 1.05rem; }
 body[data-ui="wp8"] .ds-stop .ds-eta { font-size: 1.75rem; font-weight: 300; }
 /* 設定：去線留白 */
 body[data-ui="wp8"] .setting-row { border-bottom: none; padding: 17px 0; }
+
+/* ==========================================================================
+   可訪問性修正（全皮膚）：焦點可見 + 觸控目標 ≥40px
+   ========================================================================== */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row-star, .row-remove { min-width: 40px; min-height: 40px; }
+.fav-pick, .fav-remove { min-height: 40px; padding: 6px 14px; }
+.ab-btn:focus-visible, .ab-more:focus-visible, .topbar-search:focus-visible, .topbar-refresh:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+/* 數據新鮮度標記 */
+.last-update {
+  position: fixed; z-index: 49; right: 12px;
+  top: calc(var(--topbar-h) + var(--sysbar-h) + 4px);
+  font-size: 10px; color: var(--text2); pointer-events: none;
+  background: rgba(0,0,0,.35); padding: 1px 8px; border-radius: 8px;
+}
+
+/* ==========================================================================
+   UWP 第三皮膚（Fluent：丙烯酸、Surface 卡、ListView、CommandBar 標籤）
+   ========================================================================== */
+body[data-ui="uwp"] {
+  --bg: #202020;
+  --surface: #2D2D2D;
+  --surface2: #2A2A2A;
+  --text: #FFFFFF;
+  --text2: #C7C7C7;
+  --line: rgba(255,255,255,.12);
+  --radius: 4px;
+  --shadow: 0 1px 3px rgba(0,0,0,.35);
+  --blur: 18px;
+}
+body[data-ui="uwp"][data-theme="light"] {
+  --bg: #F3F3F3;
+  --surface: #FFFFFF;
+  --surface2: #F9F9F9;
+  --text: #000000;
+  --text2: #5F5F5F;
+  --line: rgba(0,0,0,.12);
+}
+/* 標題字級：Title 26 SemiBold；正文 Body 15；輔助 Caption 12 */
+body[data-ui="uwp"] .pivot-title { font-size: 1.625rem; font-weight: 600; font-family: 'Segoe UI', sans-serif; letter-spacing: 0; text-transform: none; }
+body[data-ui="uwp"] .pane-title { font-size: 1.4rem; font-weight: 600; font-family: 'Segoe UI', sans-serif; text-transform: none; }
+body[data-ui="uwp"] .metro-row .row-name, body[data-ui="uwp"] .fav-name, body[data-ui="uwp"] .setting-row .l { font-size: 0.94rem; }
+body[data-ui="uwp"] .metro-row .row-sub, body[data-ui="uwp"] .row-eta-detail, body[data-ui="uwp"] .fav-sub, body[data-ui="uwp"] .fav-line { font-size: 0.75rem; }
+/* Surface 卡（磁貼 → 卡片） */
+body[data-ui="uwp"] .tile {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-weight: 600;
+}
+body[data-ui="uwp"] .tile-cobalt { background: #7B68EE; }
+body[data-ui="uwp"] .tile-cyan   { background: #4F6BED; }
+body[data-ui="uwp"] .tile-magenta{ background: #33B2C9; }
+body[data-ui="uwp"] .tile-teal   { background: #3DBB8F; }
+body[data-ui="uwp"] .tile { min-height: 5.5rem; }
+body[data-ui="uwp"] .tile-wide { min-height: 4.5rem; }
+body[data-ui="uwp"] .tile b { font-size: 1.5rem; font-weight: 300; }
+/* ListView：hover/按下高亮 */
+body[data-ui="uwp"] .metro-row { border-bottom: none; border-radius: var(--radius); padding: 12px 10px; }
+body[data-ui="uwp"] .metro-row:active, body[data-ui="uwp"] .fav-card:active { background: rgba(255,255,255,.08); }
+body[data-ui="uwp"] .metro-row .row-no { font-size: 1.625rem; font-weight: 300; }
+body[data-ui="uwp"] .metro-row .row-eta { font-size: 1.5rem; font-weight: 400; line-height: 1.15; }
+body[data-ui="uwp"] .fav-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface2); box-shadow: var(--shadow); padding: 14px; }
+body[data-ui="uwp"] .fav-eta-main { font-size: 2.75rem; line-height: 1.15; }
+body[data-ui="uwp"] .metro-group { font-size: 0.81rem; font-weight: 600; color: var(--text2); letter-spacing: 0; }
+/* CommandBar：圖標 + 標籤 */
+body[data-ui="uwp"] .appbar { background: rgba(32,32,32,.9); }
+body[data-ui="uwp"] .ab-btn, body[data-ui="uwp"] .ab-more { flex-direction: column; width: 64px; height: 48px; gap: 2px; }
+body[data-ui="uwp"] .ab-label { display: block; font-size: 11px; color: inherit; }
+.ab-label { display: none; }
+body[data-ui="uwp"] .ab-btn svg { width: 22px; height: 22px; }
+/* 控件：4px 圓角 */
+body[data-ui="uwp"] .chip, body[data-ui="uwp"] .seg button, body[data-ui="uwp"] .dir-tab,
+body[data-ui="uwp"] .map-line-btn, body[data-ui="uwp"] .fav-pick, body[data-ui="uwp"] .fav-remove,
+body[data-ui="uwp"] .more-menu, body[data-ui="uwp"] .weather-bar, body[data-ui="uwp"] .warning-bar,
+body[data-ui="uwp"] .error-msg { border-radius: var(--radius); }
+body[data-ui="uwp"] .chip { background: rgba(255,255,255,.06); border: none; }
+body[data-ui="uwp"] .chip.active { background: #5A4BD1; color: #FFF; }
+body[data-ui="uwp"] .seg button { border-color: var(--line); }
+body[data-ui="uwp"] .seg button.active { background: #5A4BD1; border-color: #5A4BD1; color: #FFF; }
+body[data-ui="uwp"] .search-btn { border-radius: var(--radius); font-weight: 600; letter-spacing: 0; text-transform: none; }
+body[data-ui="uwp"] .metro-input { border: 2px solid var(--line); background: rgba(255,255,255,.06); padding: 10px 12px; }
+body[data-ui="uwp"] .metro-input:focus { border-color: var(--accent); }
+body[data-ui="uwp"] .topbar-search, body[data-ui="uwp"] .topbar-refresh { border-radius: var(--radius); }
+body[data-ui="uwp"] .topbar-search:hover, body[data-ui="uwp"] .topbar-refresh:hover { background: rgba(255,255,255,.08); }
+/* 丙烯酸：內容滾穿頂欄底（@supports 回退實色） */
+body[data-ui="uwp"] .topbar { background: #262626; }
+body[data-ui="uwp"] .pivot { top: 0; }
+body[data-ui="uwp"] .pane { padding-top: calc(var(--topbar-h) + var(--sysbar-h) + 8px); }
+body[data-ui="uwp"] .pano-panel { padding-top: calc(var(--topbar-h) + var(--sysbar-h) + 8px); }
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  body[data-ui="uwp"] .topbar, body[data-ui="uwp"] .appbar, body[data-ui="uwp"] .detail-bar {
+    background: rgba(38,38,38,.72);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+}
 
 /* ================= 翻頁動畫：詳情頁推入時背景微縮 ================= */
 .pivot, .appbar, .topbar { transition: transform .3s cubic-bezier(.16,1,.3,1), opacity .3s ease; }

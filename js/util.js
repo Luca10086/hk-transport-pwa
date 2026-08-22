@@ -4,24 +4,26 @@
    Utility Functions
    ========================================================================== */
 
-/** Fetch with CORS proxy fallback（任何失败都尝试下一代理，且始终基于原始 URL，避免双重代理） */
+/** Fetch with CORS proxy race（直連與全部代理並行競速，最先成功者勝；全部失敗才報錯） */
 async function fetchWithProxy(originalUrl, proxyIndex = 0) {
-  /* proxyIndex 0 = 直连；1..N = 依次套用 CORS_PROXIES[proxyIndex-1]，URL 始终是原始地址 */
-  const url = proxyIndex === 0 ? originalUrl : CORS_PROXIES[proxyIndex - 1](originalUrl);
-  try {
-    const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return await resp.json();
-  } catch (err) {
-    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-      throw new Error('请求超时，服务可能暂时不可用');
-    }
-    /* 直连被 CORS 拦截或代理失败（HTTP 错误/网络错误）时，换下一个代理重试 */
-    if (proxyIndex < CORS_PROXIES.length) {
-      return fetchWithProxy(originalUrl, proxyIndex + 1);
-    }
-    throw err;
-  }
+  const attempts = [originalUrl, ...CORS_PROXIES.map(p => p(originalUrl))];
+  return await new Promise((resolve, reject) => {
+    let pending = attempts.length;
+    let settled = false;
+    attempts.forEach(url => {
+      fetch(url, { signal: AbortSignal.timeout(15000) })
+        .then(async resp => {
+          if (settled) return;
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const data = await resp.json();
+          if (!settled) { settled = true; resolve(data); }
+        })
+        .catch(() => {
+          pending -= 1;
+          if (pending <= 0 && !settled) { settled = true; reject(new Error('所有來源均無法連線')); }
+        });
+    });
+  });
 }
 
 /** Format Unix timestamp (seconds) to HH:MM (no seconds) */

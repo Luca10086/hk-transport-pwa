@@ -16,7 +16,7 @@
     <button class="topbar-search" onclick="goPane('home');setTimeout(function(){goPanoPanel(1);var i=document.getElementById('searchInput');if(i)i.focus();},400)" aria-label="搜尋路線">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
     </button>
-    <button class="topbar-refresh" id="topbarRefresh" onclick="refreshAll()" aria-label="重新整理">↻</button>
+    <button class="topbar-refresh" id="topbarRefresh" onclick="refreshAll(true)" aria-label="重新整理">↻</button>
   </div>
 </header>
 
@@ -25,6 +25,9 @@
 
 <!-- ================= 下拉刷新提示 ================= -->
 <div class="ptr" id="ptr">放開以重新整理</div>
+
+<!-- ================= 數據新鮮度 ================= -->
+<span class="last-update" id="lastUpdate"></span>
 
 <!-- ================= 磁貼長按選單 ================= -->
 <div class="tile-menu" id="tileMenu" hidden></div>
@@ -73,9 +76,12 @@
               <button class="chip" data-tp="mtrbus" onclick="setTransport('mtrbus', this)">港鐵巴士</button>
               <button class="chip" data-tp="mtr" onclick="setTransport('mtr', this)">港鐵</button>
               <button class="chip" data-tp="lrt" onclick="setTransport('lrt', this)">輕鐵</button>
+              <button class="chip" data-night="1" onclick="toggleNight(this)" title="只顯示通宵 N 線">通宵</button>
             </div>
             <button class="search-btn" onclick="doSearch()">搜尋</button>
           </div>
+          <!-- 最近搜尋 -->
+          <div id="recentBox" class="recent-box"></div>
           <div id="results" class="flat-list"></div>
         </div>
 
@@ -141,6 +147,7 @@
           <div class="seg" id="uiSeg">
             <button data-ui="wp7" onclick="setUIMode('wp7')">WP7</button>
             <button data-ui="wp8" onclick="setUIMode('wp8')">WP8</button>
+            <button data-ui="uwp" onclick="setUIMode('uwp')">UWP</button>
           </div>
         </div>
         <div class="setting-row"><span class="label">高對比</span>
@@ -167,16 +174,16 @@
 <!-- ================= App Bar ================= -->
 <nav class="appbar">
   <button class="ab-btn active" data-pane="home" onclick="goPane('home')" aria-label="首頁">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5V21a1 1 0 01-1 1h-5.5v-6h-5v6H4a1 1 0 01-1-1z"/></svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5V21a1 1 0 01-1 1h-5.5v-6h-5v6H4a1 1 0 01-1-1z"/></svg><span class="ab-label">首頁</span>
   </button>
   <button class="ab-btn" data-pane="favs" onclick="goPane('favs')" aria-label="收藏">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span class="ab-label">收藏</span>
   </button>
   <button class="ab-btn" data-pane="sushi" onclick="goPane('sushi')" aria-label="壽司郎">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 2.5L6.7 21M14.8 2.5l2.5 18.5M5 17.5c0 1.93 3.13 3.5 7 3.5s7-1.57 7-3.5S16.13 14 12 14s-7 1.57-7 3.5z"/></svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 2.5L6.7 21M14.8 2.5l2.5 18.5M5 17.5c0 1.93 3.13 3.5 7 3.5s7-1.57 7-3.5S16.13 14 12 14s-7 1.57-7 3.5z"/></svg><span class="ab-label">壽司郎</span>
   </button>
   <button class="ab-btn" data-pane="settings" onclick="goPane('settings')" aria-label="設定">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.3"/><path d="M19.4 13.5a7.9 7.9 0 000-3l2-1.5-2-3.4-2.3.9a7.9 7.9 0 00-2.6-1.5L14.2 2h-4l-.3 2.5a7.9 7.9 0 00-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.9 7.9 0 000 3l-2 1.5 2 3.4 2.3-.9a7.9 7.9 0 002.6 1.5l.3 2.5h4l.3-2.5a7.9 7.9 0 002.6-1.5l2.3.9 2-3.4-2-1.5z"/></svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.3"/><path d="M19.4 13.5a7.9 7.9 0 000-3l2-1.5-2-3.4-2.3.9a7.9 7.9 0 00-2.6-1.5L14.2 2h-4l-.3 2.5a7.9 7.9 0 00-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.9 7.9 0 000 3l-2 1.5 2 3.4 2.3-.9a7.9 7.9 0 002.6 1.5l.3 2.5h4l.3-2.5a7.9 7.9 0 002.6-1.5l2.3.9 2-3.4-2-1.5z"/></svg><span class="ab-label">設定</span>
   </button>
   <button class="ab-more" onclick="toggleMore()" aria-label="更多選項">⋯</button>
   <div class="more-menu" id="moreMenu" hidden>

@@ -1,4 +1,6 @@
 # 森友出行 APK 版本計數器：每次構建 +1，寫入 www/js/version.js（Beta 0.1 build N）
+# -undo：構建失敗時回滾計數（不跳號）
+param([switch]$undo)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $counter = Join-Path $root 'build-counter.txt'
@@ -6,6 +8,12 @@ $n = 0
 if (Test-Path $counter) {
   $t = (Get-Content $counter -Raw).Trim()
   if ($t -match '^\d+$') { $n = [int]$t }
+}
+if ($undo) {
+  $n = [Math]::Max(0, $n - 1)
+  Set-Content -Path $counter -Value ($n.ToString()) -Encoding ascii
+  Write-Host ("Build counter rolled back to " + $n)
+  exit 0
 }
 $n++
 Set-Content -Path $counter -Value ($n.ToString()) -Encoding ascii

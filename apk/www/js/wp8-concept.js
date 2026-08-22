@@ -57,7 +57,7 @@ function toggleMore() {
 }
 function moreAction(a) {
   toggleMore();
-  if (a === 'refresh') refreshAll();
+  if (a === 'refresh') refreshAll(true);
   else if (a === 'fav') favFirstResult();
   else if (a === 'map') goPane('map');
 }
@@ -100,6 +100,40 @@ document.addEventListener('scroll', (e) => {
   lastScrollTop = y;
 }, { capture: true, passive: true });
 
+/* ---------- 通宵模式過濾 ---------- */
+let nightOnly = false;
+function toggleNight(btn) {
+  nightOnly = !nightOnly;
+  btn.classList.toggle('active', nightOnly);
+  if (lastResults.length) renderResults(lastResults, $('results'));
+}
+/* ---------- 最近搜尋 ---------- */
+const RECENT_KEY = 'wp8concept_recent';
+function addRecentSearch(q) {
+  try {
+    const list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+    const idx = list.indexOf(q);
+    if (idx >= 0) list.splice(idx, 1);
+    list.unshift(q);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 8)));
+  } catch (e) {}
+  renderRecents();
+}
+function renderRecents() {
+  const box = $('recentBox');
+  if (!box) return;
+  try {
+    const list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+    if (!list.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="recent-chips">' + list.map(q =>
+      '<button class="recent-chip" onclick="recentSearch(\'' + escapeHtml(q).replace(/'/g, '&#39;') + '\')">' + escapeHtml(q) + '</button>').join('') + '</div>';
+  } catch (e) { box.innerHTML = ''; }
+}
+function recentSearch(q) {
+  const input = $('searchInput');
+  if (input) input.value = q;
+  doSearch();
+}
 /* ---------- 搜索 ---------- */
 let currentTransport = 'bus';
 function setTransport(tp, btn) {
@@ -121,6 +155,7 @@ async function doSearch() {
     if (/[\u4e00-\u9fff]/.test(q)) await searchBusStopConcept(q, box);
     else await searchBusRouteConcept(q, box);
   }
+  addRecentSearch(q);
 }
 
 /* 公交：路线号 */
@@ -299,6 +334,7 @@ async function searchMTRBusConcept(q, container) {
 
 /* ---------- 渲染：扁平 Metro 行（含 Metro 分隔標題；與輕鐵同構：路線號 / 目的地 / 副資訊 / 右側班次） ---------- */
 function renderResults(items, container) {
+  if (nightOnly) items = items.filter(it => /^N\d/i.test(String(it.no || '')));
   if (!items.length) { container.innerHTML = '<div class="metro-empty">沒有結果</div>'; return; }
   let lastGroup = null;
   const labels = ['次班', '三班'];
@@ -513,12 +549,21 @@ async function renderMTRStationDetail(detail, body) {
       .map(t => (t && t.time ? parseHK(t.time) / 1000 : null)).filter(Boolean).sort((a, b) => a - b);
     lines.push({ line: MTR_LINES[lc] || lc, ts });
   }
-  body.innerHTML = lines.map(l =>
+  /* 首班 / 尾班（由全日班表推算） */
+  let first = null, last = null;
+  for (const l of lines) for (const ts of l.ts) {
+    if (ts && (!first || ts < first)) first = ts;
+    if (ts && (!last || ts > last)) last = ts;
+  }
+  const head = (first && last)
+    ? '<div class="metro-group">首班 ' + formatTime(first) + ' · 尾班 ' + formatTime(last) + '</div>'
+    : '';
+  body.innerHTML = head + (lines.map(l =>
     '<div class="ds-stop">'
     + '<span class="ds-seq" style="width:auto;min-width:56px">' + escapeHtml(l.line) + '</span>'
     + '<span class="ds-name">下一班</span>'
     + '<span class="ds-eta ' + etaCls(l.ts[0]) + '">' + (l.ts[0] ? etaText(l.ts[0]) : '—') + '</span>'
-    + '</div>').join('') || '<div class="metro-empty">暫無班次資料</div>';
+    + '</div>').join('') || '<div class="metro-empty">暫無班次資料</div>');
 }
 async function renderMTRBusDetail(detail, body) {
   const data = await getMTRBusETA(detail.route);
@@ -559,35 +604,30 @@ function favDetailFor(f) {
   return null;
 }
 
-/* ---------- 收藏（每頁 2 條，第 3 條起分頁） ---------- */
-const FAVS_PER_PAGE = 2;
-let favPage = 0;
-function favPageGo(p) {
-  favPage = p;
-  renderFavs();
+/* ---------- 收藏（滾動列表 + 釘選磁貼 + 長按拖動排序） ---------- */
+function pinnedFavKey() {
+  try { return localStorage.getItem('wp8concept_pinned_fav') || ''; } catch (e) { return ''; }
 }
 async function renderFavs() {
   const box = $('favs');
   const favs = getFavorites();
   if (!favs.length) { box.innerHTML = '<div class="metro-empty">暫無收藏，在搜尋結果按 ☆ 加入</div>'; updateFavTile(null); return; }
-  const totalPages = Math.ceil(favs.length / FAVS_PER_PAGE);
-  if (favPage >= totalPages) favPage = totalPages - 1;
-  if (favPage < 0) favPage = 0;
-  const start = favPage * FAVS_PER_PAGE;
-  const pageFavs = favs.slice(start, start + FAVS_PER_PAGE);
   let html = '';
+  let pinnedEtas = null;
   let firstEtas = null;
-  if (start > 0) firstEtas = await favETAs(favs[0]);
-  for (let pi = 0; pi < pageFavs.length; pi++) {
-    const i = start + pi;
+  const pinKey = pinnedFavKey();
+  for (let i = 0; i < favs.length; i++) {
     const f = favs[i];
     /* 輕鐵收藏：與搜索結果顯示完全一致（站名頭 + 各路線行） */
     if (f.type === 'lrt' && f.station_id != null) {
       let entries = [];
       try { entries = await getLRTEta(f.station_id); } catch (e) {}
-      if (i === 0) firstEtas = entries.slice(0, 2).map(e => ({ ts: Math.floor(Date.now() / 1000) + e.mins * 60 }));
+      const etasTs = entries.slice(0, 2).map(e => ({ ts: Math.floor(Date.now() / 1000) + e.mins * 60 }));
+      if (i === 0) firstEtas = etasTs;
+      if (favKey(f) === pinKey) pinnedEtas = etasTs;
       html += '<div class="lrt-station">'
         + '<span class="lrt-head">' + escapeHtml(f.stop_name || f.route || '') + '</span>'
+        + '<button class="fav-pick" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (favKey(f) === pinKey ? '✓ 釘選' : '釘選') + '</button>'
         + '<button class="row-remove" data-i="' + i + '" onclick="removeFav(event, this)">✕</button>'
         + '</div>';
       const seen = new Set();
@@ -604,17 +644,72 @@ async function renderFavs() {
     }
     const etas = await favETAs(f);
     if (i === 0) firstEtas = etas;
-    html += favCardHTML(f, i, etas);
-  }
-  if (totalPages > 1) {
-    html += '<div class="fav-pager">'
-      + '<button ' + (favPage === 0 ? 'disabled' : 'onclick="favPageGo(' + (favPage - 1) + ')"') + ' aria-label="上一頁">‹</button>'
-      + '<span class="fav-pager-info">' + (favPage + 1) + ' / ' + totalPages + '</span>'
-      + '<button ' + (favPage === totalPages - 1 ? 'disabled' : 'onclick="favPageGo(' + (favPage + 1) + ')"') + ' aria-label="下一頁">›</button>'
-      + '</div>';
+    if (favKey(f) === pinKey) pinnedEtas = etas;
+    html += favCardHTML(f, i, etas, favKey(f) === pinKey);
   }
   box.innerHTML = html;
-  updateFavTile(favs[0], firstEtas);
+  updateFavTile(favs.find(f => favKey(f) === pinKey) || favs[0], pinnedEtas || firstEtas);
+}
+function togglePinFav(i) {
+  const favs = getFavorites();
+  const f = favs[i];
+  if (!f) return;
+  const key = favKey(f);
+  if (pinnedFavKey() === key) localStorage.removeItem('wp8concept_pinned_fav');
+  else localStorage.setItem('wp8concept_pinned_fav', key);
+  renderFavs();
+}
+/* 長按拖動排序（收藏列表） */
+function initFavDrag() {
+  let dragEl = null, startY = 0, timer = null, moved = false;
+  const box = $('favs');
+  if (!box) return;
+  box.addEventListener('touchstart', (e) => {
+    const card = e.target.closest ? e.target.closest('.fav-card, .lrt-station') : null;
+    if (!card || e.target.closest('.fav-pick, .row-remove, .fav-remove')) return;
+    startY = e.touches[0].clientY;
+    moved = false;
+    timer = setTimeout(() => { window.__favDrag = true; dragEl = card; card.classList.add('dragging'); }, 520);
+  }, { passive: true });
+  box.addEventListener('touchmove', (e) => {
+    if (!dragEl) return;
+    const dy = e.touches[0].clientY - startY;
+    if (Math.abs(dy) < 10) return;
+    moved = true;
+    dragEl.style.transform = 'translateY(' + dy + 'px)';
+    dragEl.style.zIndex = '99';
+    dragEl.style.position = 'relative';
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  const endDrag = (e) => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (!dragEl) { window.__favDrag = false; return; }
+    const y = e.changedTouches ? e.changedTouches[0].clientY : 0;
+    const over = document.elementFromPoint(window.innerWidth / 2, y);
+    const target = over && over.closest ? over.closest('.fav-card, .lrt-station') : null;
+    if (target && target !== dragEl && moved) {
+      const favs = getFavorites();
+      const from = parseInt(dragEl.getAttribute('data-i') || dragEl.getAttribute('data-fi') || '-1', 10);
+      const to = parseInt(target.getAttribute('data-i') || target.getAttribute('data-fi') || '-1', 10);
+      if (from >= 0 && to >= 0 && from !== to) {
+        const item = favs.splice(from, 1)[0];
+        favs.splice(to, 0, item);
+        saveFavorites(favs);
+      }
+    }
+    dragEl.classList.remove('dragging');
+    dragEl.style.transform = '';
+    dragEl.style.zIndex = '';
+    dragEl.style.position = '';
+    dragEl = null;
+    window.__favDrag = false;
+    if (moved) renderFavs();
+  };
+  box.addEventListener('touchend', endDrag, { passive: true });
+  box.addEventListener('touchcancel', endDrag, { passive: true });
+  document.addEventListener('click', (e) => {
+    if (window.__favDrag) { e.preventDefault(); e.stopPropagation(); window.__favDrag = false; }
+  }, true);
 }
 /* 首頁「收藏①」智能磁貼：顯示第一條收藏的下一班 */
 function updateFavTile(f, etas) {
@@ -625,8 +720,8 @@ function updateFavTile(f, etas) {
   else v.textContent = '—';
   s.textContent = favNo(f) + ' · ' + favTitle(f);
 }
-/* 收藏卡片（移植自 PWA 的線路顯示，樣式跟隨 WP8/紫色主風格） */
-function favCardHTML(f, i, etas) {
+/* 收藏卡片（滾動列表 + 釘選） */
+function favCardHTML(f, i, etas, pinned) {
   const tag = f.type === 'mtr' ? '港鐵' : f.type === 'mtrbus' ? '港鐵巴士' : f.type === 'lrt' ? '輕鐵' : '公交';
   const first = etas && etas[0];
   const det = (etas || []).slice(0, 3).map(e =>
@@ -635,11 +730,12 @@ function favCardHTML(f, i, etas) {
   const sub = favSubLine(f);
   const d = favDetailFor(f);
   const click = d ? ' data-detail=\'' + JSON.stringify(d).replace(/'/g, '&#39;') + '\' onclick="openRouteDetail(this)"' : '';
-  return '<div class="fav-card' + (d ? ' row-clickable' : '') + '"' + click + '>'
+  return '<div class="fav-card' + (d ? ' row-clickable' : '') + '" data-fi="' + i + '"' + click + '>'
     + '<div class="fav-head"><span class="fav-no">' + escapeHtml(favNo(f)) + '</span>'
     + '<span class="fav-tag">' + tag + '</span>'
     + '<span class="fav-actions">'
     + (f.type === 'bus' ? '<button class="fav-pick" onclick="event.stopPropagation();openFavStopPicker(' + i + ')">換站</button>' : '')
+    + '<button class="fav-pick" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (pinned ? '✓ 釘選' : '釘選') + '</button>'
     + '<button class="fav-remove" onclick="event.stopPropagation();removeFav(event, this)" data-i="' + i + '">✕</button>'
     + '</span></div>'
     + '<div class="fav-name">' + escapeHtml(favTitle(f)) + '</div>'
@@ -966,8 +1062,13 @@ async function initBusMap() {
   box.hidden = false;
   try {
     if (!window.L) {
-      await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
-      loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+      try {
+        await loadScript('lib/leaflet/leaflet.js');
+        loadCss('lib/leaflet/leaflet.css');
+      } catch (e) {
+        await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+        loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+      }
     }
     if (!busMap) {
       busMap = L.map(box, { attributionControl: false }).setView([22.445, 113.995], 13);
@@ -1042,6 +1143,11 @@ async function loadK75PNow() {
   }
 }
 
+let k75pFoldOpen = false;
+function toggleK75PFold() {
+  k75pFoldOpen = !k75pFoldOpen;
+  loadK75P();
+}
 async function loadK75P() {
   const el = $('k75p');
   try {
@@ -1050,29 +1156,36 @@ async function loadK75P() {
     const stopMap = {};
     for (const stop of data.busStop) stopMap[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
     const fmt = x => x <= 60 ? '即將到站' : Math.max(1, Math.ceil(x / 60)) + ' 分鐘';
-    el.innerHTML = '<div class="k75p-map-link" onclick="goBusMap()">📍 實時位置地圖（點按查看巴士在哪）<span>›</span></div>'
-      + K75P_STOPS.map(st => {
-        const buses = (stopMap[st.id] || [])
-          .map(b => ({
-            sec: parseInt(b.arrivalTimeInSecond) || 0,
-            scheduled: isFlag(b.isScheduled),
-            live: !!(b.busLocation && Number(b.busLocation.latitude) && Number(b.busLocation.longitude))
-          }))
-          .filter(b => b.sec > 0 && b.sec < 108000)
-          .sort((a, b) => a.sec - b.sec);
-        const first = buses[0];
-        const label = first ? fmt(first.sec) : '—';
-        const tag = first ? (first.live ? '<span class="k75p-tag live">實時</span>' : (first.scheduled ? '<span class="k75p-tag sched">定時</span>' : '')) : '';
-        const second = buses[1];
-        const sub = second
-          ? '次班 ' + fmt(second.sec) + (second.live ? ' · 實時' : (second.scheduled ? ' · 定時' : ''))
-          : '';
-        return '<div class="metro-row k75p-row">'
-          + '<span class="row-main"><span class="row-name">' + escapeHtml(st.name) + tag + '</span>'
-          + (sub ? '<span class="row-sub">' + sub + '</span>' : '')
-          + '</span>'
-          + '<span class="row-eta ' + (first && first.sec <= 60 ? 'soon' : '') + '">' + label + '</span></div>';
-      }).join('');
+    const rows = ['<div class="k75p-map-link" onclick="goBusMap()">📍 實時位置地圖（點按查看巴士在哪）<span>›</span></div>'];
+    let foldInserted = false;
+    for (const st of K75P_STOPS) {
+      if (st.fold && !foldInserted) {
+        foldInserted = true;
+        rows.push('<button class="k75p-fold-btn" onclick="toggleK75PFold()" aria-expanded="' + (k75pFoldOpen ? 'true' : 'false') + '">天水圍市 ' + (k75pFoldOpen ? '▴' : '▾') + '</button>');
+      }
+      if (st.fold && !k75pFoldOpen) continue;
+      const buses = (stopMap[st.id] || [])
+        .map(b => ({
+          sec: parseInt(b.arrivalTimeInSecond) || 0,
+          scheduled: isFlag(b.isScheduled),
+          live: !!(b.busLocation && Number(b.busLocation.latitude) && Number(b.busLocation.longitude))
+        }))
+        .filter(b => b.sec > 0 && b.sec < 108000)
+        .sort((a, b) => a.sec - b.sec);
+      const first = buses[0];
+      const label = first ? fmt(first.sec) : '—';
+      const tag = first ? (first.live ? '<span class="k75p-tag live">實時</span>' : (first.scheduled ? '<span class="k75p-tag sched">定時</span>' : '')) : '';
+      const second = buses[1];
+      const sub = second
+        ? '次班 ' + fmt(second.sec) + (second.live ? ' · 實時' : (second.scheduled ? ' · 定時' : ''))
+        : '';
+      rows.push('<div class="metro-row k75p-row">'
+        + '<span class="row-main"><span class="row-name">' + escapeHtml(st.name) + tag + '</span>'
+        + (sub ? '<span class="row-sub">' + sub + '</span>' : '')
+        + '</span>'
+        + '<span class="row-eta ' + (first && first.sec <= 60 ? 'soon' : '') + '">' + label + '</span></div>');
+    }
+    el.innerHTML = rows.join('');
   } catch (e) {
     el.innerHTML = '<div class="error-msg">K75P 載入失敗</div>';
   }
@@ -1110,18 +1223,32 @@ function setRefresh(sec) {
   restartAutoRefresh();
 }
 
-/* ---------- 自动刷新 ---------- */
+/* ---------- 自動刷新（在途鎖 + 最小間隔 + 新鮮度標記） ---------- */
 let autoTimer = null;
+let refreshing = false;
+let lastRefreshAt = 0;
 function restartAutoRefresh() {
   if (autoTimer) clearInterval(autoTimer);
   const sec = parseInt(localStorage.getItem('wp8concept_refresh') || '30', 10) || 0;
   if (sec > 0) autoTimer = setInterval(() => { if (!document.hidden) refreshAll(); }, sec * 1000);
 }
-function refreshAll() {
+function updateLastUpdate() {
+  const el = $('lastUpdate');
+  if (!el) return;
+  el.textContent = '更新於 ' + new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+function refreshAll(force) {
+  const now = Date.now();
+  if (refreshing) return;
+  if (!force && now - lastRefreshAt < 5000) return;   /* 最小刷新間隔 5 秒 */
+  refreshing = true;
   const pb = $('progressbar');
   if (pb) pb.hidden = false;
   Promise.all([renderFavs(), refreshWeather(), refreshSushiro(), loadK75PNow(), loadK75P()]).finally(() => {
+    refreshing = false;
+    lastRefreshAt = Date.now();
     if (pb) pb.hidden = true;
+    updateLastUpdate();
   });
   if (busMap) refreshBusMap();
 }
@@ -1165,7 +1292,7 @@ function initPullToRefresh() {
     const was = armed;
     armed = false; startY = null;
     ptr.classList.remove('show');
-    if (was) refreshAll();
+    if (was) refreshAll(true);
   }, { passive: true });
 }
 
@@ -1173,9 +1300,10 @@ function initPullToRefresh() {
 const TILE_STORAGE = 'wp8concept_tiles';
 /* 磁貼換色：WP8 用原生 accent 色板，WP7 保留暗紫系 */
 function tilePalette() {
-  return document.body.dataset.ui === 'wp7'
-    ? ['#5B21B6', '#7C3AED', '#6D28D9', '#4C1D95']
-    : ['#AA00FF', '#6A00FF', '#0050EF', '#00ABA9'];
+  const ui = document.body.dataset.ui;
+  if (ui === 'wp7') return ['#5B21B6', '#7C3AED', '#6D28D9', '#4C1D95'];
+  if (ui === 'uwp') return ['#7B68EE', '#4F6BED', '#33B2C9', '#3DBB8F'];
+  return ['#AA00FF', '#6A00FF', '#0050EF', '#00ABA9'];
 }
 function initTileMenu() {
   const menu = $('tileMenu');
@@ -1320,7 +1448,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const th = localStorage.getItem('wp8concept_theme') || 'dark';
   const ui = localStorage.getItem('wp8concept_ui') || 'wp8';
-  const ac = localStorage.getItem('wp8concept_accent') || (ui === 'wp7' ? '#8B5CF6' : '#AA00FF');
+  const ac = localStorage.getItem('wp8concept_accent') || (ui === 'wp7' ? '#8B5CF6' : (ui === 'uwp' ? '#7B68EE' : '#AA00FF'));
   const rv = localStorage.getItem('wp8concept_refresh') || '30';
   if (th === 'light') document.body.dataset.theme = 'light';
   document.body.dataset.ui = ui;
@@ -1351,19 +1479,24 @@ document.addEventListener('DOMContentLoaded', () => {
     onPanoScroll();
   }
 
-  /* 磁贴翻转（Live Tile 动画） */
-  let flipOn = false;
-  setInterval(() => {
-    flipOn = !flipOn;
-    const w = $('tileWeather');
-    if (w) w.classList.toggle('flip', flipOn);
-  }, 5000);
+  /* 磁贴翻转（Live Tile 动画：10 秒間隔，尊重減少動畫） */
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceMotion) {
+    let flipOn = false;
+    setInterval(() => {
+      flipOn = !flipOn;
+      const w = $('tileWeather');
+      if (w) w.classList.toggle('flip', flipOn);
+    }, 10000);
+  }
 
   loadTilePrefs();
   initPullToRefresh();
   initTileMenu();
   initTileDrag();
+  initFavDrag();
   renderMapLines();
+  renderRecents();
   updatePivot();
   refreshAll();
   restartAutoRefresh();
