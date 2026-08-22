@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>森友出行 · UWP 概念圖板（全頁面版）</title>
+<style>
+  :root {
+    --bg: #202020; --card: #2A2A2A; --text: #FFF; --text2: #C7C7C7;
+    --accent: #7B68EE; --accent2: #4F6BED; --line: rgba(255,255,255,.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #101010; color: #E8E8E8;
+    font-family: 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    padding: 40px 28px 80px;
+  }
+  h1 { font-weight: 300; font-size: 32px; margin-bottom: 6px; }
+  h1 b { font-weight: 600; color: var(--accent); }
+  .sub { color: #8B8B8B; margin-bottom: 8px; font-size: 14px; }
+  .principles { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 34px; }
+  .principles span { border: 1px solid #333; color: #AAA; padding: 6px 12px; font-size: 12px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 34px; }
+  .shot { width: 320px; }
+  .shot h3 { font-weight: 600; font-size: 15px; margin: 10px 2px 4px; color: #FFF; }
+  .shot h3 small { color: #777; font-weight: 400; font-size: 12px; margin-left: 6px; }
+  .shot p { color: #888; font-size: 12px; line-height: 1.6; margin: 0 2px; max-width: 320px; }
+  .phone { width: 300px; height: 620px; background: var(--bg); overflow: hidden; position: relative; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 16px 12px;
+    background: rgba(32,32,32,.72);
+    -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar .t { font-size: 26px; font-weight: 600; }
+  .topbar .t.sm { font-size: 20px; }
+  .topbar .acts { display: flex; gap: 8px; }
+  .cbtn { width: 40px; height: 40px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #D6D6D6; font-size: 18px; background: transparent; border: 1px solid transparent; }
+  .cbtn:hover { background: rgba(255,255,255,.08); }
+  .cbtn.wide { width: auto; font-size: 13px; padding: 8px 12px; border: 1px solid var(--line); color: #CCC; }
+  .cbtn.on { color: var(--accent); }
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 16px 16px 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 12px; min-height: 96px; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: 0 1px 3px rgba(0,0,0,.35); position: relative; color: #FFF; }
+  .card.w { grid-column: span 2; min-height: 72px; }
+  .card .lab { font-size: 12px; color: var(--text2); }
+  .card b { font-size: 24px; font-weight: 300; }
+  .card .ac { color: var(--accent); font-weight: 600; font-size: 16px; }
+  .card.t-accent { background: var(--accent); border-color: transparent; }
+  .card.t-accent .lab { color: rgba(255,255,255,.8); }
+  .searchbar { display: flex; gap: 8px; padding: 14px 16px 0; }
+  .searchbox { flex: 1; border: 2px solid var(--line); border-radius: 4px; background: rgba(255,255,255,.06); padding: 10px 12px; color: #777; font-size: 14px; }
+  .searchbox:focus { border-color: var(--accent); }
+  .chips { display: flex; gap: 8px; padding: 10px 16px 0; flex-wrap: wrap; }
+  .chip { border-radius: 4px; padding: 6px 12px; font-size: 12px; background: rgba(255,255,255,.06); color: #BBB; }
+  .chip.on { background: var(--accent); color: #FFF; }
+  .list { padding: 6px 16px 0; }
+  .group { font-size: 13px; font-weight: 600; color: var(--text2); padding: 14px 16px 4px; }
+  .lrow { display: flex; align-items: center; gap: 14px; padding: 12px 10px; border-radius: 4px; }
+  .lrow:hover { background: rgba(255,255,255,.08); }
+  .lrow.sel { background: rgba(255,255,255,.06); box-shadow: inset 3px 0 0 var(--accent); }
+  .lrow .no { width: 72px; font-size: 26px; font-weight: 300; color: var(--accent); }
+  .lrow .no.sm { font-size: 20px; }
+  .lrow .main { flex: 1; min-width: 0; }
+  .lrow .name { font-size: 15px; }
+  .lrow .cap { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .lrow .eta { font-size: 22px; font-variant-numeric: tabular-nums; }
+  .lrow .eta.soon { color: #C42B1C; }
+  .lrow .eta.medium { color: #F7630C; }
+  .badge { border-radius: 3px; padding: 1px 6px; font-size: 11px; margin-left: 6px; }
+  .badge.live { background: rgba(123,104,238,.25); color: #B9A6FF; }
+  .badge.sched { background: rgba(255,255,255,.1); color: var(--text2); }
+  .fav { padding: 6px 8px 0; }
+  .fcard { border: 1px solid var(--line); border-radius: 4px; background: var(--card); padding: 14px; margin: 6px 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  .fcard.sel { box-shadow: inset 3px 0 0 var(--accent), 0 1px 3px rgba(0,0,0,.35); }
+  .fcard .head { display: flex; align-items: baseline; gap: 10px; }
+  .fcard .no { font-size: 26px; font-weight: 300; color: var(--accent); }
+  .fcard .type { font-size: 11px; color: var(--text2); }
+  .fcard .dest { font-size: 17px; margin-top: 8px; }
+  .fcard .cap { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .fcard .big { font-size: 44px; font-weight: 300; line-height: 1.1; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .fcard .big small { font-size: 15px; color: var(--text2); }
+  .fcard .bar { height: 3px; background: rgba(255,255,255,.12); border-radius: 2px; margin-top: 10px; }
+  .fcard .bar i { display: block; height: 100%; width: 76%; background: var(--accent); border-radius: 2px; }
+  .fcard .cap2 { font-size: 11px; color: var(--text2); margin-top: 5px; }
+  .frow { display: flex; gap: 10px; margin-top: 10px; }
+  .pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; }
+  .pager .arw { color: #FFF; font-size: 18px; }
+  .pager .page { color: var(--text2); font-size: 12px; }
+  .tabs { display: flex; gap: 6px; padding: 12px 16px 4px; }
+  .tab { border-radius: 4px; padding: 5px 16px; font-size: 13px; color: #BBB; border: 1px solid transparent; }
+  .tab.on { background: rgba(255,255,255,.08); color: #FFF; border-color: var(--line); }
+  .searchpick { display: flex; align-items: center; gap: 12px; padding: 12px 10px; border-radius: 4px; }
+  .searchpick:hover { background: rgba(255,255,255,.08); }
+  .searchpick .idx { width: 28px; font-size: 13px; color: var(--text2); }
+  .searchpick .nm { flex: 1; font-size: 15px; }
+  .searchpick .tag { color: var(--accent); font-size: 12px; }
+  .banner { margin: 14px 16px 0; border-radius: 4px; padding: 10px 12px; font-size: 13px; background: rgba(196,43,28,.18); color: #FF9C8F; }
+  .weather { margin: 8px 16px 0; border-radius: 4px; background: var(--card); border: 1px solid var(--line); padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  .weather .w1 { display: flex; align-items: center; gap: 12px; }
+  .weather .temp { font-size: 34px; font-weight: 300; }
+  .weather .desc { font-size: 13px; color: var(--text2); }
+  .weather .tomorrow { font-size: 12px; color: var(--text2); border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; }
+  .mk { width: 100%; height: 150px; border-radius: 4px; margin: 10px 16px 0; width: calc(100% - 32px); background: #24301F; position: relative; overflow: hidden; border: 1px solid var(--line); }
+  .mk .dot { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(123,104,238,.25); }
+  .mk .road { position: absolute; left: 0; right: 0; top: 46%; height: 14px; background: rgba(255,255,255,.1); }
+  .mk .road2 { top: 66%; height: 10px; }
+  .mk .lbl { position: absolute; top: 6px; left: 8px; font-size: 10px; color: #9AA; }
+  .settings { padding: 4px 16px 0; }
+  .group2 { font-size: 13px; font-weight: 600; color: var(--text2); padding: 14px 0 0; }
+  .srow { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; }
+  .srow .l { font-size: 15px; }
+  .srow .cap { font-size: 12px; color: var(--text2); }
+  .toggle { width: 46px; height: 24px; border-radius: 12px; background: rgba(255,255,255,.16); position: relative; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; left: 3px; top: 3px; background: #FFF; }
+  .toggle.on { background: var(--accent); }
+  .toggle.on::after { left: 25px; }
+  .seg { display: flex; gap: 8px; }
+  .seg b { border: 1px solid var(--line); border-radius: 4px; color: #BBB; padding: 5px 12px; font-size: 12px; font-weight: 400; }
+  .seg b.on { background: var(--accent); border-color: var(--accent); color: #FFF; }
+  .cbar {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: rgba(32,32,32,.8);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    border-top: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-around; padding: 8px 8px 10px;
+  }
+  .cbar .item { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #CCC; font-size: 11px; }
+  .cbar .item .g { font-size: 19px; }
+  .cbar .item.on { color: var(--accent); }
+  .note { margin-top: 46px; border-top: 1px solid #222; padding-top: 20px; color: #888; font-size: 13px; line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<h1>森友出行 · <b>UWP 概念圖板（全頁面版）</b></h1>
+<div class="sub">依 Fluent Design System + 官方 Windows-universal-samples 實證 — 14 屏，覆蓋 App 所有頁面（設計意向稿）</div>
+<div class="principles">
+  <span>Acrylic</span><span>Surface 卡</span><span>ListView 高亮</span><span>CommandBar 帶標籤</span>
+  <span>Master-Detail</span><span>Entrance 動畫</span><span>ToggleSwitch</span><span>4px 圓角</span>
+</div>
+
+<div class="grid">
+
+<!-- 01 首頁磁貼牆 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">森友出行</div><div class="acts"><span class="cbtn">⌕</span><span class="cbtn">↻</span></div></div>
+    <div class="cards">
+      <div class="card t-accent"><span class="lab">收藏</span><b>68X</b></div>
+      <div class="card"><span class="lab">壽司郎</span><span class="ac">元朗 6 組</span></div>
+      <div class="card w"><span class="lab">天氣</span><b>14°</b><span class="cap">明天 多云 18–23°</span></div>
+      <div class="card w"><span class="lab">K75P · 天瑞</span><b>8 分鐘</b><span class="cap">實時 3 班 · 定時 1 班</span></div>
+      <div class="card w"><span class="lab">收藏① 68X</span><b>3 分鐘</b><span class="cap">往 佐敦西</span></div>
+    </div>
+    <div class="cbar"><span class="item on"><span class="g">⌂</span>首頁</span><span class="item"><span class="g">♥</span>收藏</span><span class="item"><span class="g">♨</span>壽司郎</span><span class="item"><span class="g">▦</span>路線</span><span class="item"><span class="g">⚙</span>設定</span></div>
+  </div>
+  <h3>01 首頁 · 磁貼牆 <small>→ 卡片網格</small></h3>
+  <p>磁貼 → Surface 卡（1px 邊框+細陰影+4px 圓角）；首項可用 accent 卡；底部 CommandBar 五項帶標籤。</p>
+</div>
+
+<!-- 02 搜尋面板 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">搜尋</div><div class="acts"><span class="cbtn">⌕</span></div></div>
+    <div class="searchbar"><div class="searchbox">輸入巴士路線、站名或港鐵車站…</div></div>
+    <div class="chips"><span class="chip on">公交</span><span class="chip">港鐵巴士</span><span class="chip">港鐵</span><span class="chip">輕鐵</span></div>
+    <div class="group">快速入口</div>
+    <div class="list">
+      <div class="lrow"><span class="no sm">K75P</span><div class="main"><div class="name">港鐵巴士 · 天水圍</div><div class="cap">天瑞 → 天恆</div></div><span class="eta">8 分</span></div>
+      <div class="lrow"><span class="no sm">68X</span><div class="main"><div class="name">九巴 · 元朗—佐敦</div><div class="cap">去程</div></div><span class="eta">3 分</span></div>
+    </div>
+  </div>
+  <h3>02 搜尋面板</h3>
+  <p>UWP TextBox（2px 邊框+focus accent）；Chip 4px 圓角；搜尋歷史/常用路線以 ListView 呈現。</p>
+</div>
+
+<!-- 03 搜尋結果巴士 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t" class="sm">搜尋結果</div><div class="acts"><span class="cbtn">⌕</span></div></div>
+    <div class="group">九巴</div>
+    <div class="list">
+      <div class="lrow sel"><span class="no">68X</span><div class="main"><div class="name">往 佐敦西</div><div class="cap">由 洪水橋 開出 · 通宵車</div></div><span class="eta">3 分</span></div>
+      <div class="lrow"><span class="no">68</span><div class="main"><div class="name">往 深水埗</div><div class="cap">由 元朗 開出</div></div><span class="eta medium">12 分</span></div>
+      <div class="lrow"><span class="no">68M</span><div class="main"><div class="name">往 荃灣</div><div class="cap">由 元朗 開出</div></div><span class="eta soon">即將</span></div>
+    </div>
+    <div class="group">城巴</div>
+    <div class="list">
+      <div class="lrow"><span class="no">N8X</span><div class="main"><div class="name">往 銅鑼灣</div><div class="cap">通宵 · 由 尖沙咀 開出</div></div><span class="eta">15 分</span></div>
+    </div>
+  </div>
+  <h3>03 搜尋結果 · 巴士</h3>
+  <p>分組標題（九巴/城巴）+ ListView 選擇行（accent 左條）；夜班通宵標記；ETA 22px tabular。</p>
+</div>
+
+<!-- 04 搜尋結果車站 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t" class="sm">搜尋結果 · 車站</div><div class="acts"></div></div>
+    <div class="group">巴士站</div>
+    <div class="list">
+      <div class="lrow sel"><div class="main"><div class="name">天水圍市中心總站</div><div class="cap">停靠：68X · 269B · K65</div></div><span class="eta">3 分</span></div>
+      <div class="lrow"><div class="main"><div class="name">天瑞邨</div><div class="cap">停靠：K75P · K76</div></div><span class="eta">8 分</span></div>
+      <div class="lrow"><div class="main"><div class="name">天瑞總站</div><div class="cap">停靠：K75P · K76</div></div><span class="eta">—</span></div>
+    </div>
+  </div>
+  <h3>04 搜尋結果 · 車站</h3>
+  <p>站名停靠路線 aggregator：主行站名、Caption 列出停靠線，選中展開各線 ETA。</p>
+</div>
+
+<!-- 05 輕鐵 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t" class="sm">搜尋結果 · 輕鐵</div></div>
+    <div class="group">天瑞站</div>
+    <div class="list">
+      <div class="lrow"><span class="no">610</span><div class="main"><div class="name">往 屯門碼頭</div><div class="cap">月台 2</div></div><span class="eta">2 分</span></div>
+      <div class="lrow"><span class="no">705</span><div class="main"><div class="name">順時針 · 天水圍</div><div class="cap">月台 2</div></div><span class="eta">6 分</span></div>
+      <div class="lrow"><span class="no">751</span><div class="main"><div class="name">往 友愛</div><div class="cap">月台 1</div></div><span class="eta medium">11 分</span></div>
+    </div>
+  </div>
+  <h3>05 搜尋結果 · 輕鐵</h3>
+  <p>站名分組 + 每路線一行（路線號/目的地/月台/ETA）；706 標「逆時針」。</p>
+</div>
+
+<!-- 06 收藏 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">收藏</div><div class="acts"><span class="cbtn">＋</span></div></div>
+    <div class="fav">
+      <div class="fcard sel">
+        <div class="head"><span class="no">68X</span><span class="type">公交</span></div>
+        <div class="dest">往 佐敦西</div><div class="cap">站：洪水橋 · 去程</div>
+        <div class="big">3<small> 分鐘</small></div>
+        <div class="bar"><i></i></div><div class="cap2">第 4 站 / 共 26 站</div>
+        <div class="frow"><span class="cbtn wide">換站</span><span class="cbtn wide">移除</span></div>
+      </div>
+      <div class="fcard">
+        <div class="head"><span class="no">K75P</span><span class="type">港鐵巴士</span></div>
+        <div class="dest">天水圍 → 天恆</div><div class="cap">天瑞 · 去程</div>
+        <div class="big">8<small> 分鐘</small></div>
+        <div class="bar"><i style="width:38%"></i></div><div class="cap2">第 1 站 / 共 23 站</div>
+      </div>
+    </div>
+    <div class="pager"><span class="arw">‹</span><span class="page">1 / 2</span><span class="arw">›</span></div>
+  </div>
+  <h3>06 收藏 <small>Master-Detail · 分頁</small></h3>
+  <p>Surface 卡 + 車程位置進度條（官方 MasterDetail 模式）；換站/移除 CommandBar 式按鈕；分頁 2 條/頁。</p>
+</div>
+
+<!-- 07 換站 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t sm">68X · 選擇車站</div><div class="acts"><span class="cbtn">‹</span></div></div>
+    <div class="list">
+      <div class="searchpick"><span class="idx">1</span><span class="nm">洪水橋</span><span class="tag">3 分</span></div>
+      <div class="searchpick sel"><span class="idx">4</span><span class="nm">天水圍市中心</span><span class="tag">當前</span></div>
+      <div class="searchpick"><span class="idx">5</span><span class="nm">天瑞</span><span class="tag">8 分</span></div>
+      <div class="searchpick"><span class="idx">6</span><span class="nm">天瑞邨</span><span class="tag">—</span></div>
+      <div class="searchpick"><span class="idx">7</span><span class="nm">賞湖居</span><span class="tag">—</span></div>
+    </div>
+  </div>
+  <h3>07 換站選單</h3>
+  <p>點選換站：每站一行帶「當前」標記與該站 ETA；入場用 Entrance 淡入（官方頁面轉場）。</p>
+</div>
+
+<!-- 08 路線詳情 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t sm">68X · 往佐敦西</div><div class="acts"><span class="cbtn">‹</span></div></div>
+    <div class="tabs"><span class="tab on">去程</span><span class="tab">回程</span></div>
+    <div class="list">
+      <div class="lrow"><span class="no sm">1</span><div class="main"><div class="name">洪水橋</div></div><span class="eta">3 分</span></div>
+      <div class="lrow"><span class="no sm">2</span><div class="main"><div class="name">洪福邨</div></div><span class="eta">4 分</span></div>
+      <div class="lrow"><span class="no sm">3</span><div class="main"><div class="name">石埗路</div></div><span class="eta">6 分</span></div>
+      <div class="lrow sel"><span class="no sm">4</span><div class="main"><div class="name">天水圍市中心</div></div><span class="eta medium">11 分</span></div>
+      <div class="lrow"><span class="no sm">5</span><div class="main"><div class="name">天瑞</div></div><span class="eta">—</span></div>
+    </div>
+  </div>
+  <h3>08 路線詳情</h3>
+  <p>去程/回程橫滑；站行 hover 高亮；「當前站」accent 左條；頁面 Exits 動畫（Entrance 對應）。</p>
+</div>
+
+<!-- 09 K75P 全線 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t sm">K75P 全線實時</div><div class="acts"><span class="cbtn wide">📍 地圖</span></div></div>
+    <div class="list">
+      <div class="lrow"><span class="no sm">1</span><div class="main"><div class="name">天瑞<span class="badge live">實時</span></div><div class="cap">次班 12 分鐘 · 實時</div></div><span class="eta">8 分</span></div>
+      <div class="lrow"><span class="no sm">2</span><div class="main"><div class="name">天水圍公園<span class="badge live">實時</span></div></div><span class="eta">9 分</span></div>
+      <div class="lrow"><span class="no sm">3</span><div class="main"><div class="name">天耀邨耀盛樓<span class="badge sched">定時</span></div></div><span class="eta">15 分</span></div>
+      <div class="lrow"><span class="no sm">4</span><div class="main"><div class="name">輕鐵天耀站</div></div><span class="eta">—</span></div>
+    </div>
+  </div>
+  <h3>09 K75P 全線實時</h3>
+  <p>每站「實時/定時」徽章（官方命令字樣）；頂部 CommandBar「📍 地圖」直達巴士位置。</p>
+</div>
+
+<!-- 10 天氣 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">天氣</div><div class="acts"><span class="cbtn">↻</span></div></div>
+    <div class="banner">☔ 暴雨警告信號現正生效</div>
+    <div class="weather">
+      <div class="w1"><span style="font-size:30px">🌧</span><span class="temp">24°</span><span class="desc">多雲有雨<br>相對濕度 88%</span></div>
+      <div class="tomorrow">明天 18–23° 短暫陽光 · 預測低壓區移近</div>
+    </div>
+    <div class="group">未來幾天</div>
+    <div class="list">
+      <div class="lrow"><div class="main"><div class="name">週五</div><div class="cap">多雲有雨</div></div><span class="eta medium">18–23°</span></div>
+      <div class="lrow"><div class="main"><div class="name">週六</div><div class="cap">短暫陽光</div></div><span class="eta">20–24°</span></div>
+    </div>
+  </div>
+  <h3>10 天氣 + 警告</h3>
+  <p>警告條（狀態色）→ 當前卡（Surface）→ 未來幾天 ListView；溫度為強讀數 34px。</p>
+</div>
+
+<!-- 11 壽司郎 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">壽司郎</div><div class="acts"><span class="cbtn">↻</span></div></div>
+    <div class="group">元朗 · 屯門 · 天水圍</div>
+    <div class="list">
+      <div class="lrow"><span class="no sm" style="color:var(--accent)">元朗</span><div class="main"><div class="name">元朗千色匯店</div><div class="cap">約 25 分鐘</div></div><span class="eta medium">8 組</span></div>
+      <div class="lrow"><span class="no sm" style="color:var(--accent)">屯門</span><div class="main"><div class="name">屯門市廣場店</div><div class="cap">約 15 分鐘</div></div><span class="eta">4 組</span></div>
+      <div class="lrow"><span class="no sm" style="color:var(--accent)">天水圍</span><div class="main"><div class="name">天水圍店</div><div class="cap">直入無需等候</div></div><span class="eta">0 組</span></div>
+    </div>
+  </div>
+  <h3>11 壽司郎</h3>
+  <p>區域 Caption + 分店 ListView；右側強讀數 = 排隊組數；副行「約 X 分鐘」；休息店狀態色。</p>
+</div>
+
+<!-- 12 路線圖港鐵 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">路線圖</div><div class="acts"></div></div>
+    <div class="chips"><span class="chip on">港鐵</span><span class="chip">輕鐵</span><span class="chip">巴士位置</span></div>
+    <div class="list">
+      <div class="lrow"><span class="no sm" style="color:var(--accent)">屯馬綫</span></div>
+      <div class="lrow"><span class="no sm">1</span><div class="main"><div class="name">烏溪沙</div></div></div>
+      <div class="lrow"><span class="no sm">2</span><div class="main"><div class="name">大水坑</div></div></div>
+      <div class="lrow sel"><span class="no sm">3</span><div class="main"><div class="name">天水圍</div><div class="cap">轉乘 輕鐵</div></div></div>
+      <div class="lrow"><span class="no sm">4</span><div class="main"><div class="name">朗屏</div></div></div>
+    </div>
+  </div>
+  <h3>12 路線圖 · 港鐵</h3>
+  <p>線路 Chip 切換；站序時間軸行；換乘站 Caption 標記；點站可看候車。</p>
+</div>
+
+<!-- 13 巴士位置 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t sm">巴士位置 · K75P</div><div class="acts"><span class="cbtn">↻</span></div></div>
+    <div class="mk"><div class="road"></div><div class="road road2"></div><span class="lbl">天水圍 · 洪水橋一帶（地圖示意）</span>
+      <span class="dot" style="left:18%;top:40%"></span>
+      <span class="dot" style="left:55%;top:60%"></span>
+      <span class="dot" style="left:74%;top:44%"></span>
+    </div>
+    <div class="list">
+      <div class="lrow"><div class="main"><div class="name">巴士 539</div><div class="cap">9 分鐘後到 天瑞</div></div><span class="badge live">實時</span></div>
+      <div class="lrow"><div class="main"><div class="name">巴士 323</div><div class="cap">22 分鐘後到 天瑞</div></div><span class="badge sched">定時</span></div>
+    </div>
+  </div>
+  <h3>13 路線圖 · 巴士位置</h3>
+  <p>Leaflt 地圖 + 紫色圓標；列表同步「車牌 + 到站預測 + 實時/定時」；30 秒自動刷新。</p>
+</div>
+
+<!-- 14 設定 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">設定</div><div class="acts"></div></div>
+    <div class="settings">
+      <div class="group2">外觀</div>
+      <div class="srow"><span class="l">主題</span><div class="seg"><b class="on">深色</b><b>淺色</b></div></div>
+      <div class="srow"><span class="l">強調色</span><div class="seg"><b class="on">紫</b><b>藍</b><b>青</b><b>綠</b></div></div>
+      <div class="srow"><span class="l">介面風格</span><div class="seg"><b>WP7</b><b>WP8</b><b class="on">UWP</b></div></div>
+      <div class="group2">出行</div>
+      <div class="srow"><span class="l">自動刷新 30 秒</span><span class="toggle on"></span></div>
+      <div class="srow"><span class="l">高對比</span><span class="toggle"></span></div>
+      <div class="srow"><span class="l">版本</span><span class="cap">Beta 0.1 build 12</span></div>
+    </div>
+  </div>
+  <h3>14 設定</h3>
+  <p>ToggleSwitch（圓形滑子）+ 分組（外觀/出行）；風格切換預留 UWP 檔位；版本 Caption。</p>
+</div>
+
+</div>
+
+<div class="note">
+  對照當前 App 頁面：01 首頁磁貼牆 · 02 搜尋面板 · 03 巴士結果 · 04 車站結果 · 05 輕鐵結果 ·
+  06 收藏 · 07 換站 · 08 路線詳情 · 09 K75P 全線 · 10 天氣 · 11 壽司郎 · 12 路線圖港鐵 ·
+  13 巴士位置 · 14 設定 —— 共 14 屏全覆蓋。<br>
+  共同語言：丙烯酸頂欄、Surface 卡（4px/1px 邊框/細陰影）、ListView（hover 高亮 + 選中 accent 左條）、
+  CommandBar（圖標+標籤）、Entrance 淡入、ToggleSwitch；來源：Fluent Design System + 官方樣本實證。
+</div>
+
+</body>
+</html>
