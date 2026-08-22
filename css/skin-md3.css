@@ -1,0 +1,191 @@
+/* ==========================================================================
+   森友出行（概念版）· Material Design 3 皮膚（body[data-ui="md"]）
+   Material You Token：淺色（surface #FEF7FF）與深色（#141218）雙主題；
+   組件語法：TopAppBar / Tonal Card / 圓形 Avatar / NavigationBar pill /
+   FAB / Bottom Sheet / Switch / SegmentedButton；Roboto。
+   ========================================================================== */
+
+body[data-ui="md"] {
+  font-family: 'Roboto', 'Segoe UI', 'Noto Sans TC', sans-serif;
+}
+
+/* ---------- MD Token ---------- */
+body[data-ui="md"][data-theme="light"] {
+  --bg: #FEF7FF;
+  --surface: #FEF7FF;
+  --surface2: #F3EDF7;
+  --text: #1D1B20;
+  --text2: #49454F;
+  --line: #CAC4D0;
+  --accent: #6750A4;
+  --accent-dark: #4F378B;
+  --md-primary-container: #EADDFF;
+  --md-on-primary-container: #21005D;
+  --md-secondary-container: #E8DEF8;
+  --md-on-secondary-container: #1D192B;
+  --md-tertiary-container: #FFD8E4;
+  --md-on-tertiary-container: #31111D;
+  --md-surface-container: #F3EDF7;
+  --md-surface-hi: #ECE6F0;
+  --md-outline: #79747E;
+  --md-shadow: 0 1px 2px rgba(33,0,93,.12), 0 1px 3px 1px rgba(33,0,93,.10);
+  --md-shadow3: 0 4px 8px rgba(33,0,93,.25), 0 4px 12px 4px rgba(33,0,93,.16);
+}
+body[data-ui="md"] {
+  --bg: #141218;
+  --surface: #141218;
+  --surface2: #211F26;
+  --text: #E6E0E9;
+  --text2: #CAC4D0;
+  --line: #49454F;
+  --accent: #D0BCFF;
+  --accent-dark: #4F378B;
+  --md-primary-container: #4F378B;
+  --md-on-primary-container: #EADDFF;
+  --md-secondary-container: #4A4458;
+  --md-on-secondary-container: #E8DEF8;
+  --md-tertiary-container: #633B48;
+  --md-on-tertiary-container: #FFD8E4;
+  --md-surface-container: #211F26;
+  --md-surface-hi: #2B2930;
+  --md-outline: #938F99;
+  --md-shadow: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.20);
+  --md-shadow3: 0 4px 8px rgba(0,0,0,.35), 0 4px 12px 4px rgba(0,0,0,.25);
+}
+
+/* ---------- 磁貼 → Tonal Card（16px 圓角 + elev） ---------- */
+body[data-ui="md"] .tile {
+  border-radius: 16px;
+  background: var(--md-surface-container);
+  color: var(--text);
+  box-shadow: var(--md-shadow);
+  min-height: 5.6rem;
+  font-weight: 400;
+}
+body[data-ui="md"] .tile b { color: var(--text); }
+body[data-ui="md"] .tile-cobalt { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+body[data-ui="md"] .tile-cobalt b, body[data-ui="md"] .tile-cobalt .tile-sub { color: var(--md-on-primary-container); }
+body[data-ui="md"] .tile-cyan { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+body[data-ui="md"] .tile-cyan b, body[data-ui="md"] .tile-cyan .tile-sub { color: var(--md-on-secondary-container); }
+body[data-ui="md"] .tile-magenta { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+body[data-ui="md"] .tile-magenta b, body[data-ui="md"] .tile-magenta .tile-sub { color: var(--md-on-tertiary-container); }
+body[data-ui="md"] .tile-teal { background: var(--md-surface-hi); color: var(--text); }
+body[data-ui="md"] .tile-wide { min-height: 4.6rem; }
+body[data-ui="md"] .tile .tile-sub { opacity: .9; }
+
+/* ---------- 頂欄 TopAppBar：無邊圓形 Icon Button ---------- */
+body[data-ui="md"] .topbar { border-bottom: none; }
+body[data-ui="md"] .topbar-search,
+body[data-ui="md"] .topbar-refresh {
+  width: 48px; height: 48px; border: none; border-radius: 50%;
+  background: transparent; color: var(--text2); font-size: 1.4rem;
+}
+body[data-ui="md"] .topbar-search:active, body[data-ui="md"] .topbar-refresh:active { background: var(--md-surface-hi); }
+body[data-ui="md"] .topbar-search svg { width: 22px; height: 22px; stroke-width: 1.6; }
+body[data-ui="md"] .pivot-title { font-size: 1.4rem; font-weight: 400; letter-spacing: .1px; }
+body[data-ui="md"] .pane-title { font-size: 1.25rem; font-weight: 400; }
+
+/* ---------- 列表：圓形 Avatar 路線號 + primary 分組 ---------- */
+body[data-ui="md"] .metro-row .row-no,
+body[data-ui="md"] .lrt-row .row-no {
+  width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
+  background: var(--md-primary-container); color: var(--md-on-primary-container);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 600;
+}
+body[data-ui="md"] .metro-row .row-eta { color: var(--accent); font-weight: 500; font-size: 1.25rem; }
+body[data-ui="md"] .metro-row .row-eta.soon { color: #B3261E; }
+body[data-ui="md"] .metro-group { font-size: 0.81rem; font-weight: 500; color: var(--accent); letter-spacing: 0; }
+body[data-ui="md"] .metro-row .row-name { font-weight: 400; }
+body[data-ui="md"] .metro-row .row-sub { color: var(--text2); }
+/* 收藏卡 */
+body[data-ui="md"] .fav-card {
+  border: none; border-radius: 16px;
+  background: var(--md-surface-container); box-shadow: var(--md-shadow);
+  padding: 14px;
+}
+body[data-ui="md"] .fav-no { color: var(--accent); font-weight: 500; font-size: 1.35rem; }
+body[data-ui="md"] .fav-eta-main { font-size: 2.5rem; color: var(--text); }
+body[data-ui="md"] .fav-card:active { background: var(--md-surface-hi); }
+/* 輕鐵 / 詳情站行：同 Avatar 語法 */
+body[data-ui="md"] .lrt-station { border-bottom: none; }
+body[data-ui="md"] .lrt-head { font-weight: 500; color: var(--text); }
+body[data-ui="md"] .ds-stop .ds-seq {
+  width: 34px; height: 34px; min-width: 34px; border-radius: 50%;
+  background: var(--md-surface-hi); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 0.72rem;
+}
+body[data-ui="md"] .ds-stop .ds-eta { color: var(--accent); font-weight: 500; }
+
+/* ---------- 輸入/按鈕/chips：MD 形狀 ---------- */
+body[data-ui="md"] .metro-input {
+  border: none; border-radius: 28px; background: var(--md-surface-hi);
+  padding: 10px 16px; color: var(--text);
+}
+body[data-ui="md"] .metro-input:focus { outline: 2px solid var(--accent); }
+body[data-ui="md"] .chip { border-radius: 8px; border: none; background: var(--md-surface-hi); color: var(--text2); }
+body[data-ui="md"] .chip.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); font-weight: 500; }
+body[data-ui="md"] .search-btn {
+  border-radius: 20px; background: var(--accent-dark); color: var(--md-on-primary-container);
+  font-weight: 500; letter-spacing: 0; text-transform: none;
+}
+body[data-ui="md"] .seg { border: 1px solid var(--md-outline); border-radius: 8px; overflow: hidden; gap: 0; }
+body[data-ui="md"] .seg button { border: none; border-radius: 0; background: transparent; color: var(--text2); }
+body[data-ui="md"] .seg button.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); font-weight: 500; }
+body[data-ui="md"] .dir-tab, body[data-ui="md"] .map-line-btn { border-radius: 8px; border: none; background: var(--md-surface-hi); color: var(--text2); }
+body[data-ui="md"] .dir-tab.active, body[data-ui="md"] .map-line-btn.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+body[data-ui="md"] .recent-chip { border-radius: 8px; border: none; background: var(--md-surface-hi); color: var(--text2); }
+body[data-ui="md"] .weather-bar, body[data-ui="md"] .warning-bar, body[data-ui="md"] .error-msg { border-radius: 12px; }
+body[data-ui="md"] .warning-bar.warn-severe { background: #F9DEDC; color: #93000A; }
+body[data-ui="md"] .warning-bar.warn-mild { background: #FFF4E5; color: #7D3A00; }
+body[data-ui="md"] .more-menu { border-radius: 12px; box-shadow: var(--md-shadow3); }
+
+/* ---------- App Bar → NavigationBar（pill 指示器 + label） ---------- */
+body[data-ui="md"] .appbar {
+  background: var(--md-surface-container); border-top: 1px solid var(--line);
+}
+body[data-ui="md"] .ab-btn, body[data-ui="md"] .ab-more {
+  position: relative; flex-direction: column; gap: 2px;
+  width: 64px; height: 52px; color: var(--text2);
+}
+body[data-ui="md"] .ab-label { display: block; font-size: 12px; line-height: 1; color: inherit; }
+body[data-ui="md"] .ab-btn::before {
+  content: ''; position: absolute; left: 50%; top: 2px; transform: translateX(-50%);
+  width: 64px; height: 32px; border-radius: 16px;
+  background: var(--md-secondary-container);
+  opacity: 0; transition: opacity .2s ease;
+}
+body[data-ui="md"] .ab-btn.active { color: var(--text); }
+body[data-ui="md"] .ab-btn.active::before { opacity: 1; }
+body[data-ui="md"] .ab-btn svg, body[data-ui="md"] .ab-glyph { position: relative; z-index: 1; }
+
+/* ---------- FAB（主操作＝搜尋；僅 MD 顯示） ---------- */
+.fab-senyou { display: none; }
+body[data-ui="md"] .fab-senyou {
+  display: flex; align-items: center; justify-content: center;
+  position: fixed; right: 16px; bottom: calc(var(--appbar-h) + 20px); z-index: 58;
+  width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer;
+  background: var(--md-primary-container); color: var(--md-on-primary-container);
+  box-shadow: var(--md-shadow3);
+  transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s ease;
+}
+body[data-ui="md"] .fab-senyou:active { transform: translateY(-3px) scale(1.06); box-shadow: 0 8px 18px rgba(0,0,0,.35); }
+
+/* ---------- 詳情 → Modal Bottom Sheet（28px 頂圓角 + 從下方滑入） ---------- */
+body[data-ui="md"] .detail-sheet {
+  top: 44px;
+  transform: translateY(102%);
+  border-radius: 28px 28px 0 0;
+  box-shadow: var(--md-shadow3);
+}
+body[data-ui="md"] .detail-sheet.open { transform: translateY(0); }
+body[data-ui="md"] .detail-bar { border-bottom: none; justify-content: center; position: relative; padding-top: 8px; }
+body[data-ui="md"] .detail-bar::before {
+  content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  width: 32px; height: 4px; border-radius: 2px; background: var(--md-outline);
+}
+body[data-ui="md"] .back-btn { position: absolute; left: 12px; top: 2px; color: var(--text); }
+body[data-ui="md"] .detail-title { font-size: 1.1rem; font-weight: 500; text-align: center; padding-top: 10px; }
+
+/* ---------- 設定行：MD 節奏 ---------- */
+body[data-ui="md"] .setting-row { min-height: 52px; }

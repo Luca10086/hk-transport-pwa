@@ -29,7 +29,7 @@ const UI_STRINGS = {
     to: '往', from: '由', depart: '開出',
     theme: '主題', accent: '強調色', uiStyle: '介面風格', contrast: '高對比', autoRefresh: '自動重新整理',
     dataSource: '資料來源', version: '版本', langLabel: '語言', weather: '天氣', k75pTitle: 'K75P 全線實時',
-    favFirst: '收藏首條結果' },
+    favFirst: '收藏首條結果', noMotion: '減少動畫' },
   en: { home: 'Senyou Transit', favs: 'Favourites', sushi: 'Sushiro', map: 'Route Map', settings: 'Settings',
     bus: 'Bus', mtrbus: 'MTR Bus', mtr: 'MTR', lrt: 'Light Rail', night: 'Night', searchBtn: 'Search',
     refresh: 'Refresh', placeholder: 'Enter route, stop or MTR station',
@@ -38,7 +38,7 @@ const UI_STRINGS = {
     to: 'To', from: 'From', depart: '',
     theme: 'Theme', accent: 'Accent colour', uiStyle: 'UI style', contrast: 'High contrast', autoRefresh: 'Auto refresh',
     dataSource: 'Data source', version: 'Version', langLabel: 'Language', weather: 'Weather', k75pTitle: 'K75P Live Board',
-    favFirst: 'Favourite first' }
+    favFirst: 'Favourite first', noMotion: 'Reduce motion' }
 };
 let uiLang = 'zh';
 function t(key) { return (UI_STRINGS[uiLang] && UI_STRINGS[uiLang][key]) || UI_STRINGS.zh[key] || key; }
@@ -299,6 +299,8 @@ async function searchBusStopConcept(q, container, gen) {
     items.push({ no: '站', name: st.name_tc || st.name_en, stopRoutes: routes });
   }
   if (gen != null && gen !== searchGen) return;
+  if (container.dataset.animated) container.classList.add('no-anim');
+  container.dataset.animated = '1';
   lastResults = [];
   container.innerHTML = '<div class="metro-group">' + t('grpBusStop') + '</div>' + items.map(it =>
     '<div class="metro-row stop-row">'
@@ -406,6 +408,8 @@ async function searchMTRBusConcept(q, container, gen) {
 function renderResults(items, container) {
   if (nightOnly) items = items.filter(it => /^N\d/i.test(String(it.no || '')));
   if (!items.length) { container.innerHTML = '<div class="metro-empty">' + t('noResult') + '</div>'; return; }
+  if (container.dataset.animated) container.classList.add('no-anim');
+  container.dataset.animated = '1';
   let lastGroup = null;
   const labels = ['次班', '三班'];
   container.innerHTML = items.map(it => {
@@ -1292,7 +1296,7 @@ async function loadK75P() {
 /* ---------- 设定 ---------- */
 function syncSegs(sel, val) {
   const v = String(val);
-  document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('active', [b.dataset.th, b.dataset.ac, b.dataset.rv, b.dataset.ui, b.dataset.ct, b.dataset.lg].includes(v)));
+  document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('active', [b.dataset.th, b.dataset.ac, b.dataset.rv, b.dataset.ui, b.dataset.ct, b.dataset.lg, b.dataset.mo].includes(v)));
 }
 function setTheme(th) {
   document.body.dataset.theme = th;
@@ -1314,6 +1318,31 @@ function setContrast(on) {
   document.body.classList.toggle('high-contrast', !!on);
   localStorage.setItem('wp8concept_contrast', on ? '1' : '0');
   syncSegs('#contrastSeg', on ? '1' : '0');
+}
+function setNoMotion(on) {
+  document.body.classList.toggle('no-motion', !!on);
+  try { localStorage.setItem('wp8concept_nomotion', on ? '1' : '0'); } catch (e) {}
+  syncSegs('#motionSeg', on ? '1' : '0');
+}
+/* ---------- 3D Tilt（防護原則：僅按壓瞬間；低端設備/減少動畫時禁用） ---------- */
+function initTilt() {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if ((navigator.hardwareConcurrency || 8) <= 4) return;
+  const SEL = '.tile, .tile-small, .metro-row, .ab-btn, .ab-more, .chip, .search-btn, .topbar-refresh, .fav-card, .fab-senyou';
+  let tiltedEl = null;
+  const reset = () => { if (tiltedEl) { tiltedEl.style.transform = ''; tiltedEl = null; } };
+  document.addEventListener('touchstart', (e) => {
+    if (document.body.classList.contains('no-motion')) return;
+    const el = e.target && e.target.closest ? e.target.closest(SEL) : null;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const tx = ((e.touches[0].clientX - r.left) / (r.width || 1)) - 0.5;
+    const ty = ((e.touches[0].clientY - r.top) / (r.height || 1)) - 0.5;
+    el.style.transform = 'perspective(420px) rotateX(' + (-ty * 12) + 'deg) rotateY(' + (tx * 12) + 'deg) scale(0.97)';
+    tiltedEl = el;
+  }, { passive: true });
+  document.addEventListener('touchend', reset, { passive: true });
+  document.addEventListener('touchcancel', reset, { passive: true });
 }
 function setRefresh(sec) {
   localStorage.setItem('wp8concept_refresh', String(sec));
@@ -1401,6 +1430,7 @@ function tilePalette() {
   const ui = document.body.dataset.ui;
   if (ui === 'wp7') return ['#5B21B6', '#7C3AED', '#6D28D9', '#4C1D95'];
   if (ui === 'uwp') return ['#7B68EE', '#4F6BED', '#33B2C9', '#3DBB8F'];
+  if (ui === 'md') return ['#4F378B', '#7D5260', '#633B48', '#6750A4'];
   return ['#AA00FF', '#6A00FF', '#0050EF', '#00ABA9'];
 }
 function initTileMenu() {
@@ -1546,7 +1576,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const th = localStorage.getItem('wp8concept_theme') || 'dark';
   const ui = localStorage.getItem('wp8concept_ui') || 'wp8';
-  const ac = localStorage.getItem('wp8concept_accent') || (ui === 'wp7' ? '#8B5CF6' : (ui === 'uwp' ? '#7B68EE' : '#AA00FF'));
+  const ac = localStorage.getItem('wp8concept_accent') || (ui === 'wp7' ? '#8B5CF6' : (ui === 'uwp' ? '#7B68EE' : (ui === 'md' ? '#6750A4' : '#AA00FF')));
   const rv = localStorage.getItem('wp8concept_refresh') || '30';
   if (th === 'light') document.body.dataset.theme = 'light';
   document.body.dataset.ui = ui;
@@ -1561,6 +1591,8 @@ document.addEventListener('DOMContentLoaded', () => {
   uiLang = localStorage.getItem('wp8concept_lang') || 'zh';
   syncSegs('#langSeg', uiLang);
   applyLang();
+  if (localStorage.getItem('wp8concept_nomotion') === '1') document.body.classList.add('no-motion');
+  syncSegs('#motionSeg', localStorage.getItem('wp8concept_nomotion') === '1' ? '1' : '0');
 
   /* 版本（Beta 0.1 build N，由構建腳本自動疊加） */
   const APP_VERSION = (typeof window !== 'undefined' && window.APP_VERSION) ? window.APP_VERSION : 'Beta 0.1';
@@ -1580,11 +1612,12 @@ document.addEventListener('DOMContentLoaded', () => {
     onPanoScroll();
   }
 
-  /* 磁贴翻转（Live Tile 动画：10 秒間隔，尊重減少動畫） */
+  /* 磁贴翻转（Live Tile 3D 翻面：10 秒間隔，尊重減少動畫與手動開關） */
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reduceMotion) {
     let flipOn = false;
     setInterval(() => {
+      if (document.body.classList.contains('no-motion')) return;
       flipOn = !flipOn;
       const w = $('tileWeather');
       if (w) w.classList.toggle('flip', flipOn);
@@ -1596,6 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTileMenu();
   initTileDrag();
   initFavDrag();
+  initTilt();
   renderMapLines();
   renderRecents();
   updatePivot();

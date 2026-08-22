@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="css/skin-wp7.css">
 <link rel="stylesheet" href="css/skin-wp8.css">
 <link rel="stylesheet" href="css/skin-uwp.css">
+<link rel="stylesheet" href="css/skin-md3.css">
 </head>
 <body>
 
@@ -31,6 +32,11 @@
 
 <!-- ================= 數據新鮮度 ================= -->
 <span class="last-update" id="lastUpdate"></span>
+
+<!-- ================= FAB（MD 皮膚主操作＝搜尋） ================= -->
+<button class="fab-senyou" onclick="goPane('home');setTimeout(function(){goPanoPanel(1);var i=document.getElementById('searchInput');if(i)i.focus();},400)" aria-label="搜尋路線">
+  <svg viewBox="0 0 24 24" aria-hidden="true" style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+</button>
 
 <!-- ================= 磁貼長按選單 ================= -->
 <div class="tile-menu" id="tileMenu" hidden></div>
@@ -151,6 +157,7 @@
             <button data-ui="wp7" onclick="setUIMode('wp7')">WP7</button>
             <button data-ui="wp8" onclick="setUIMode('wp8')">WP8</button>
             <button data-ui="uwp" onclick="setUIMode('uwp')">UWP</button>
+            <button data-ui="md" onclick="setUIMode('md')">MD</button>
           </div>
         </div>
         <div class="setting-row"><span class="label" data-i18n="contrast">高對比</span>
@@ -163,6 +170,12 @@
           <div class="seg" id="langSeg">
             <button data-lg="zh" onclick="setLang('zh')">中文</button>
             <button data-lg="en" onclick="setLang('en')">EN</button>
+          </div>
+        </div>
+        <div class="setting-row"><span class="label" data-i18n="noMotion">減少動畫</span>
+          <div class="seg" id="motionSeg">
+            <button data-mo="1" onclick="setNoMotion(1)">開</button>
+            <button data-mo="0" onclick="setNoMotion(0)">關</button>
           </div>
         </div>
         <div class="setting-row"><span class="label" data-i18n="autoRefresh">自動重新整理</span>
