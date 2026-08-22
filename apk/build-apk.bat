@@ -67,7 +67,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0bump-version.ps1" >> "
 
 REM 3.6. Auto-sync repo sources into www (index/css/js/lib; version.js stays from bump)
 echo [step3.6] sync sources to www >> "%LOG%" 2>&1
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Copy-Item '%~dp0..\wp8-concept.html' '%~dp0www\index.html' -Force; Copy-Item '%~dp0..\css\wp8-strict.css','%~dp0..\css\skin-wp7.css','%~dp0..\css\skin-wp8.css','%~dp0..\css\skin-uwp.css' '%~dp0www\css\' -Force; Copy-Item '%~dp0..\js\data.js','%~dp0..\js\util.js','%~dp0..\js\api.js','%~dp0..\js\wp8-concept.js' '%~dp0www\js\' -Force; if (Test-Path '%~dp0..\lib') { Copy-Item '%~dp0..\lib\*' '%~dp0www\lib\' -Force -Recurse }" >> "%LOG%" 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Copy-Item '%~dp0..\wp8-concept.html' '%~dp0www\index.html' -Force; Copy-Item '%~dp0..\css\wp8-strict.css','%~dp0..\css\skin-wp7.css','%~dp0..\css\skin-wp8.css','%~dp0..\css\skin-uwp.css','%~dp0..\css\skin-md3.css' '%~dp0www\css\' -Force; Copy-Item '%~dp0..\js\data.js','%~dp0..\js\util.js','%~dp0..\js\api.js','%~dp0..\js\wp8-concept.js' '%~dp0www\js\' -Force; if (Test-Path '%~dp0..\lib') { Copy-Item '%~dp0..\lib\*' '%~dp0www\lib\' -Force -Recurse }" >> "%LOG%" 2>&1
 
 REM 4. Sync web assets into the native project
 echo [3/4] Syncing web assets...
