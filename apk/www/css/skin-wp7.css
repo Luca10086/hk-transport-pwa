@@ -1,0 +1,13 @@
+/* WP7 皮膚（由 wp8-strict.css 拆出；純黑 + 更大磁貼） */
+/* ================= WP7 變體：純黑 + 更大磁貼 ================= */
+body[data-ui="wp7"] {
+  --bg: #000000;
+  --surface: #111111;
+  --surface2: #1A1A1A;
+  --line: #2A2A2A;
+}
+body[data-ui="wp7"] .tile { min-height: 112px; font-size: 1.05rem; }
+body[data-ui="wp7"] .tile-wide { min-height: 84px; }
+body[data-ui="wp7"] .pivot-title { font-size: 3.2rem; }
+body[data-ui="wp7"] .topbar { background: #000; }
+

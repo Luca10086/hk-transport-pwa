@@ -11,12 +11,58 @@ function escapeHtml(str) {
   div.textContent = str == null ? '' : String(str);
   return div.innerHTML;
 }
+/* 屬性安全轉義：用於 data-* / 內聯屬性，防止引號注入（XSS） */
+function safeAttr(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* ---------- 語言（繁中 / English） ---------- */
+const UI_STRINGS = {
+  zh: { home: '森友出行', favs: '收藏', sushi: '壽司郎', map: '路線圖', settings: '設定',
+    bus: '公交', mtrbus: '港鐵巴士', mtr: '港鐵', lrt: '輕鐵', night: '通宵', searchBtn: '搜尋',
+    refresh: '重新整理', placeholder: '輸入巴士路線、站名或港鐵車站',
+    noResult: '沒有結果', errSearch: '搜尋出錯，請稍後再試',
+    grpKMB: '九巴', grpCTB: '城巴', grpNLB: '新大嶼山巴士', grpMTR: '港鐵', grpMTRBus: '港鐵巴士', grpBusStop: '巴士站',
+    to: '往', from: '由', depart: '開出',
+    theme: '主題', accent: '強調色', uiStyle: '介面風格', contrast: '高對比', autoRefresh: '自動重新整理',
+    dataSource: '資料來源', version: '版本', langLabel: '語言', weather: '天氣', k75pTitle: 'K75P 全線實時',
+    favFirst: '收藏首條結果' },
+  en: { home: 'Senyou Transit', favs: 'Favourites', sushi: 'Sushiro', map: 'Route Map', settings: 'Settings',
+    bus: 'Bus', mtrbus: 'MTR Bus', mtr: 'MTR', lrt: 'Light Rail', night: 'Night', searchBtn: 'Search',
+    refresh: 'Refresh', placeholder: 'Enter route, stop or MTR station',
+    noResult: 'No results', errSearch: 'Search failed, please try again',
+    grpKMB: 'KMB', grpCTB: 'Citybus', grpNLB: 'NLB', grpMTR: 'MTR', grpMTRBus: 'MTR Bus', grpBusStop: 'Bus Stops',
+    to: 'To', from: 'From', depart: '',
+    theme: 'Theme', accent: 'Accent colour', uiStyle: 'UI style', contrast: 'High contrast', autoRefresh: 'Auto refresh',
+    dataSource: 'Data source', version: 'Version', langLabel: 'Language', weather: 'Weather', k75pTitle: 'K75P Live Board',
+    favFirst: 'Favourite first' }
+};
+let uiLang = 'zh';
+function t(key) { return (UI_STRINGS[uiLang] && UI_STRINGS[uiLang][key]) || UI_STRINGS.zh[key] || key; }
+function setLang(l) {
+  uiLang = l;
+  try { localStorage.setItem('wp8concept_lang', l); } catch (e) {}
+  syncSegs('#langSeg', l);
+  applyLang();
+  refreshAll(true);
+}
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+  const ph = $('searchInput');
+  if (ph) ph.placeholder = t('placeholder');
+  updatePivot();
+}
 const etaText = (ts) => ts ? minsFromNow(ts) : '—';
 const etaCls = (ts) => ts ? etaColorClass(ts) : '';
 const parseHK = parseHKTime;
 
 /* ---------- Pivot（横滑窗格） ---------- */
-const PIVOT_TITLES = { home: '森友出行', favs: '收藏', sushi: '壽司郎', map: '路線圖', settings: '設定' };
+function pivotTitles() {
+  return { home: t('home'), favs: t('favs'), sushi: t('sushi'), map: t('map'), settings: t('settings') };
+}
 const pivot = $('pivot');
 let curPane = '';
 function updatePivot() {
@@ -29,7 +75,7 @@ function updatePivot() {
     const t = $('pivotTitle');
     t.classList.add('switch');
     setTimeout(() => {
-      t.textContent = PIVOT_TITLES[cur] || '';
+      t.textContent = pivotTitles()[cur] || '';
       t.classList.remove('switch');
     }, 160);
   }
@@ -126,7 +172,7 @@ function renderRecents() {
     const list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
     if (!list.length) { box.innerHTML = ''; return; }
     box.innerHTML = '<div class="recent-chips">' + list.map(q =>
-      '<button class="recent-chip" onclick="recentSearch(\'' + escapeHtml(q).replace(/'/g, '&#39;') + '\')">' + escapeHtml(q) + '</button>').join('') + '</div>';
+      '<button class="recent-chip" data-q="' + safeAttr(q) + '">' + escapeHtml(q) + '</button>').join('') + '</div>';
   } catch (e) { box.innerHTML = ''; }
 }
 function recentSearch(q) {
@@ -134,6 +180,13 @@ function recentSearch(q) {
   if (input) input.value = q;
   doSearch();
 }
+/* 最近搜尋 chip：事件委派（避免內聯注入） */
+document.addEventListener('click', (e) => {
+  const chip = e.target.closest ? e.target.closest('.recent-chip') : null;
+  if (!chip) return;
+  const q = chip.getAttribute('data-q');
+  if (q != null) recentSearch(q);
+});
 /* ---------- 搜索 ---------- */
 let currentTransport = 'bus';
 function setTransport(tp, btn) {
@@ -142,24 +195,30 @@ function setTransport(tp, btn) {
 }
 
 let lastResults = [];   /* 供「收藏首條結果」使用 */
+let searchGen = 0;      /* 搜尋請求代號：舊請求不得覆蓋新結果 */
 
 async function doSearch() {
   const q = $('searchInput').value.trim();
   const box = $('results');
   if (!q) return;
+  const gen = ++searchGen;
   box.innerHTML = '<div class="loading">搜尋中…</div>';
-  if (currentTransport === 'mtr') await searchMTRConcept(q, box);
-  else if (currentTransport === 'lrt') await searchLRTConcept(q, box);
-  else if (currentTransport === 'mtrbus') await searchMTRBusConcept(q, box);
-  else {
-    if (/[\u4e00-\u9fff]/.test(q)) await searchBusStopConcept(q, box);
-    else await searchBusRouteConcept(q, box);
+  try {
+    if (currentTransport === 'mtr') await searchMTRConcept(q, box, gen);
+    else if (currentTransport === 'lrt') await searchLRTConcept(q, box, gen);
+    else if (currentTransport === 'mtrbus') await searchMTRBusConcept(q, box, gen);
+    else {
+      if (/[\u4e00-\u9fff]/.test(q)) await searchBusStopConcept(q, box, gen);
+      else await searchBusRouteConcept(q, box, gen);
+    }
+    addRecentSearch(q);
+  } catch (e) {
+    if (gen === searchGen) box.innerHTML = '<div class="error-msg">' + t('errSearch') + '</div>';
   }
-  addRecentSearch(q);
 }
 
 /* 公交：路线号 */
-async function searchBusRouteConcept(q, container) {
+async function searchBusRouteConcept(q, container, gen) {
   const routeNum = q.toUpperCase().replace(/\s/g, '');
   const [kmbRoutes, ctbRoutes, nlbRoutes] = await Promise.all([
     searchKMBRoute(routeNum), searchCTBRoute(routeNum), searchNLBRoute(routeNum)
@@ -180,7 +239,10 @@ async function searchBusRouteConcept(q, container) {
       .map(e => ({ ts: parseHK(e.eta) / 1000, dest: e.dest_tc || '' }))
       .sort((a, b) => a.ts - b.ts).slice(0, 3);
     results.push({
-      no: r.route, name: '往 ' + (dir === 'outbound' ? r.dest_tc : r.orig_tc), sub: '由 ' + (dir === 'outbound' ? r.orig_tc : r.dest_tc) + ' 開出', group: '九巴',
+      no: r.route,
+      name: (uiLang === 'en' && r.dest_en) ? t('to') + ' ' + (dir === 'outbound' ? r.dest_en : r.orig_en) : t('to') + ' ' + (dir === 'outbound' ? r.dest_tc : r.orig_tc),
+      sub: (uiLang === 'en' && r.orig_en) ? t('from') + ' ' + (dir === 'outbound' ? r.orig_en : r.dest_en) + ' ' + t('depart') : t('from') + ' ' + (dir === 'outbound' ? r.orig_tc : r.dest_tc) + ' ' + t('depart'),
+      group: t('grpKMB'),
       etas: etas.map(e => ({ ts: e.ts, dest: '' })),
       detail: { type: 'bus', company: 'kmb', route: String(r.route), direction: dir, orig: dir === 'outbound' ? (r.orig_tc || '') : (r.dest_tc || ''), dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') },
       fav: { type: 'bus', company: 'kmb', route: r.route, stop_id: first.stop_id || first.stop, stop_name: first.name_tc || '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
@@ -197,7 +259,10 @@ async function searchBusRouteConcept(q, container) {
         .map(e => ({ ts: parseHK(e.eta) / 1000, dest: e.dest_tc || '' }))
         .sort((a, b) => a.ts - b.ts).slice(0, 3);
       results.push({
-        no: String(r.route), name: '往 ' + (dir === 'outbound' ? r.dest_tc : r.orig_tc), sub: '由 ' + (dir === 'outbound' ? r.orig_tc : r.dest_tc) + ' 開出', group: '城巴',
+        no: String(r.route),
+        name: (uiLang === 'en' && r.dest_en) ? t('to') + ' ' + (dir === 'outbound' ? r.dest_en : r.orig_en) : t('to') + ' ' + (dir === 'outbound' ? r.dest_tc : r.orig_tc),
+        sub: (uiLang === 'en' && r.orig_en) ? t('from') + ' ' + (dir === 'outbound' ? r.orig_en : r.dest_en) + ' ' + t('depart') : t('from') + ' ' + (dir === 'outbound' ? r.orig_tc : r.dest_tc) + ' ' + t('depart'),
+        group: t('grpCTB'),
         etas: etas.map(e => ({ ts: e.ts, dest: '' })),
         detail: { type: 'bus', company: 'ctb', route: String(r.route), direction: dir, orig: dir === 'outbound' ? (r.orig_tc || '') : (r.dest_tc || ''), dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') },
         fav: { type: 'bus', company: 'ctb', route: String(r.route), stop_id: first.stop || first.stop_id, stop_name: '', direction: dir, dest: dir === 'outbound' ? (r.dest_tc || '') : (r.orig_tc || '') }
@@ -209,17 +274,18 @@ async function searchBusRouteConcept(q, container) {
     if (!stops.length) continue;
     const etas = (await getNLBETA(r.routeId, stops[0].stopId)).map(e => ({ ts: e.etaTs, dest: '' })).sort((a, b) => a.ts - b.ts).slice(0, 3);
     results.push({
-      no: String(r.routeNo || r.routeId), name: r.routeName_c || '', sub: stops[0].stopName_c ? '由 ' + stops[0].stopName_c + ' 開出' : '', group: '新大嶼山巴士', etas,
+      no: String(r.routeNo || r.routeId), name: r.routeName_c || '', sub: stops[0].stopName_c ? t('from') + ' ' + stops[0].stopName_c + ' ' + t('depart') : '', group: t('grpNLB'), etas,
       detail: { type: 'bus', company: 'nlb', route: String(r.routeNo || r.routeId), routeId: r.routeId },
       fav: { type: 'bus', company: 'nlb', route: String(r.routeNo || r.routeId), routeId: r.routeId, stop_id: stops[0].stopId, stop_name: stops[0].stopName_c || '', dest: r.routeName_c || '' }
     });
   }
+  if (gen != null && gen !== searchGen) return;
   lastResults = results;
   renderResults(results, container);
 }
 
 /* 公交：站名（KMB） */
-async function searchBusStopConcept(q, container) {
+async function searchBusStopConcept(q, container, gen) {
   const stops = await searchKMBStopsByName(q);
   if (!stops.length) { container.innerHTML = '<div class="metro-empty">找不到巴士站「' + escapeHtml(q) + '」</div>'; return; }
   const items = [];
@@ -232,8 +298,9 @@ async function searchBusStopConcept(q, container) {
       .map(e => ({ route: e.route, dest: e.dest_tc || '', ts: parseHK(e.eta) / 1000 }));
     items.push({ no: '站', name: st.name_tc || st.name_en, stopRoutes: routes });
   }
+  if (gen != null && gen !== searchGen) return;
   lastResults = [];
-  container.innerHTML = '<div class="metro-group">巴士站</div>' + items.map(it =>
+  container.innerHTML = '<div class="metro-group">' + t('grpBusStop') + '</div>' + items.map(it =>
     '<div class="metro-row stop-row">'
     + '<span class="row-no">站</span>'
     + '<span class="row-main"><span class="row-name">' + escapeHtml(it.name) + '</span>'
@@ -246,7 +313,7 @@ async function searchBusStopConcept(q, container) {
 }
 
 /* 港铁：车站/线路 */
-async function searchMTRConcept(q, container) {
+async function searchMTRConcept(q, container, gen) {
   const qList = [...new Set([q, toTrad(q), toSimp(q)].filter(Boolean))];
   const upperQ = q.toUpperCase();
   const results = [];
@@ -267,12 +334,13 @@ async function searchMTRConcept(q, container) {
       }
       etas.sort((a, b) => a.ts - b.ts);
       results.push({
-        no: 'MTR', name: s.name, group: '港鐵', etas,
+        no: 'MTR', name: s.name, group: t('grpMTR'), etas,
         detail: { type: 'mtr', station_id: s.code, station_name: s.name, line: Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code)), lineName: MTR_LINES[Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code))] || '' },
         fav: { type: 'mtr', line: Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code)), lineName: MTR_LINES[Object.keys(MTR_LINE_STOPS).find(lc => MTR_LINE_STOPS[lc].some(x => x.code === s.code))] || '', station_id: s.code, station_name: s.name }
       });
     }
   }
+  if (gen != null && gen !== searchGen) return;
   lastResults = results;
   renderResults(results, container);
 }
@@ -287,7 +355,7 @@ function lrtRowHTML(e) {
 }
 
 /* 轻铁：按站分组，站名头 + 每路线一行（路线号/目的地/月台/到站时间） */
-async function searchLRTConcept(q, container) {
+async function searchLRTConcept(q, container, gen) {
   const ids = Object.keys(LRT_STATIONS).filter(id => LRT_STATIONS[id].includes(q));
   if (!ids.length) { container.innerHTML = '<div class="metro-empty">找不到輕鐵車站「' + escapeHtml(q) + '」</div>'; lastResults = []; return; }
   let html = '';
@@ -299,7 +367,7 @@ async function searchLRTConcept(q, container) {
     firstFavs.push({ fav });
     html += '<div class="lrt-station">'
       + '<span class="lrt-head">' + escapeHtml(LRT_STATIONS[id]) + '</span>'
-      + '<button class="row-star lrt-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(fav).replace(/'/g, '&#39;') + '\'>' + (isFavorited(fav) ? '★' : '☆') + '</button>'
+      + '<button class="row-star lrt-star" onclick="toggleRowFav(event, this)" data-fav=\'' + safeAttr(JSON.stringify(fav)) + '\'>' + (isFavorited(fav) ? '★' : '☆') + '</button>'
       + '</div>';
     const seen = new Set();
     let rows = 0;
@@ -312,22 +380,24 @@ async function searchLRTConcept(q, container) {
     }
     if (!rows) html += '<div class="metro-empty">暫無到站資料</div>';
   }
+  if (gen != null && gen !== searchGen) return;
   container.innerHTML = html;
   lastResults = firstFavs;
 }
 
 /* 港铁巴士 */
-async function searchMTRBusConcept(q, container) {
+async function searchMTRBusConcept(q, container, gen) {
   const routeNum = q.toUpperCase().replace(/\s/g, '');
   const data = await getMTRBusETA(routeNum);
   const parsed = parseMTRBusETAData(data);
   const info = MTR_BUS_ROUTES[routeNum];
   const etas = parsed.map(p => ({ ts: parseHK(p.eta) / 1000, dest: p.stop_name })).sort((a, b) => a.ts - b.ts).slice(0, 4);
   const results = [{
-    no: routeNum, name: info ? info.orig + ' → ' + info.dest : routeNum, group: '港鐵巴士', etas,
+    no: routeNum, name: info ? info.orig + ' → ' + info.dest : routeNum, group: t('grpMTRBus'), etas,
     detail: { type: 'mtrbus', route: routeNum, orig: info ? info.orig : '', dest: info ? info.dest : '' },
     fav: { type: 'mtrbus', route: routeNum, orig: info ? info.orig : '', dest: info ? info.dest : '' }
   }];
+  if (gen != null && gen !== searchGen) return;
   lastResults = results;
   renderResults(results, container);
 }
@@ -335,7 +405,7 @@ async function searchMTRBusConcept(q, container) {
 /* ---------- 渲染：扁平 Metro 行（含 Metro 分隔標題；與輕鐵同構：路線號 / 目的地 / 副資訊 / 右側班次） ---------- */
 function renderResults(items, container) {
   if (nightOnly) items = items.filter(it => /^N\d/i.test(String(it.no || '')));
-  if (!items.length) { container.innerHTML = '<div class="metro-empty">沒有結果</div>'; return; }
+  if (!items.length) { container.innerHTML = '<div class="metro-empty">' + t('noResult') + '</div>'; return; }
   let lastGroup = null;
   const labels = ['次班', '三班'];
   container.innerHTML = items.map(it => {
@@ -347,10 +417,10 @@ function renderResults(items, container) {
     const sub = (it.etas || []).slice(1, 3).map((e, idx) =>
       '<span class="row-eta-detail">' + (e.dest ? escapeHtml(e.dest) + ' · ' : labels[idx] + ' ') + etaText(e.ts) + '</span>').join('');
     const star = it.fav
-      ? '<button class="row-star" onclick="toggleRowFav(event, this)" data-fav=\'' + JSON.stringify(it.fav).replace(/'/g, '&#39;') + '\'>' + (isFavorited(it.fav) ? '★' : '☆') + '</button>'
+      ? '<button class="row-star" onclick="toggleRowFav(event, this)" data-fav=\'' + safeAttr(JSON.stringify(it.fav)) + '\'>' + (isFavorited(it.fav) ? '★' : '☆') + '</button>'
       : '';
     const click = it.detail
-      ? ' class="metro-row row-clickable" data-detail=\'' + JSON.stringify(it.detail).replace(/'/g, '&#39;') + '\' onclick="openRouteDetail(this)"'
+      ? ' class="metro-row row-clickable" data-detail=\'' + safeAttr(JSON.stringify(it.detail)) + '\' onclick="openRouteDetail(this)"'
       : ' class="metro-row"';
     return head + '<div' + click + '>'
       + '<span class="row-no">' + escapeHtml(String(it.no)) + '</span>'
@@ -604,50 +674,66 @@ function favDetailFor(f) {
   return null;
 }
 
-/* ---------- 收藏（滾動列表 + 釘選磁貼 + 長按拖動排序） ---------- */
+/* ---------- 收藏（滾動列表 + 釘選磁貼 + 長按拖動排序 + 舊數據回退） ---------- */
 function pinnedFavKey() {
   try { return localStorage.getItem('wp8concept_pinned_fav') || ''; } catch (e) { return ''; }
+}
+const favEtaCache = {};   /* favKey → { t, etas }：失敗時回退舊數據 */
+async function renderFavItem(f, i, pinKey) {
+  /* 輕鐵收藏：與搜索結果顯示完全一致（站名頭 + 各路線行） */
+  if (f.type === 'lrt' && f.station_id != null) {
+    let entries = [];
+    try { entries = await getLRTEta(f.station_id); } catch (e) {}
+    let staleAt = 0;
+    let etasTs = entries.slice(0, 2).map(e => ({ ts: Math.floor(Date.now() / 1000) + e.mins * 60 }));
+    if (!etasTs.length && favEtaCache[favKey(f)] && favEtaCache[favKey(f)].etas.length) {
+      etasTs = favEtaCache[favKey(f)].etas;
+      staleAt = favEtaCache[favKey(f)].t;
+    } else if (etasTs.length) {
+      favEtaCache[favKey(f)] = { t: Date.now(), etas: etasTs };
+    }
+    let html = '<div class="lrt-station">'
+      + '<span class="lrt-head">' + escapeHtml(f.stop_name || f.route || '') + '</span>'
+      + '<button class="fav-pick" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (favKey(f) === pinKey ? '✓ 釘選' : '釘選') + '</button>'
+      + '<button class="row-remove" data-i="' + i + '" onclick="removeFav(event, this)">✕</button>'
+      + '</div>';
+    const seen = new Set();
+    let rows = 0;
+    for (const e of entries) {
+      const key = e.routeNo + '|' + e.dest + '|' + e.dep;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (rows++ >= 4) break;
+      html += lrtRowHTML(e);
+    }
+    if (!rows) html += '<div class="metro-empty">暫無到站資料</div>';
+    if (staleAt) html += '<div class="fav-stale">舊數據 · ' + formatTime(Math.floor(staleAt / 1000)) + '</div>';
+    return { html, etas: etasTs };
+  }
+  const key = favKey(f);
+  let etas = await favETAs(f);
+  let staleAt = 0;
+  if (!etas.length && favEtaCache[key] && favEtaCache[key].etas.length) {
+    etas = favEtaCache[key].etas;
+    staleAt = favEtaCache[key].t;
+  } else if (etas.length) {
+    favEtaCache[key] = { t: Date.now(), etas };
+  }
+  return { html: favCardHTML(f, i, etas, key === pinKey, staleAt), etas };
 }
 async function renderFavs() {
   const box = $('favs');
   const favs = getFavorites();
   if (!favs.length) { box.innerHTML = '<div class="metro-empty">暫無收藏，在搜尋結果按 ☆ 加入</div>'; updateFavTile(null); return; }
-  let html = '';
-  let pinnedEtas = null;
-  let firstEtas = null;
   const pinKey = pinnedFavKey();
-  for (let i = 0; i < favs.length; i++) {
-    const f = favs[i];
-    /* 輕鐵收藏：與搜索結果顯示完全一致（站名頭 + 各路線行） */
-    if (f.type === 'lrt' && f.station_id != null) {
-      let entries = [];
-      try { entries = await getLRTEta(f.station_id); } catch (e) {}
-      const etasTs = entries.slice(0, 2).map(e => ({ ts: Math.floor(Date.now() / 1000) + e.mins * 60 }));
-      if (i === 0) firstEtas = etasTs;
-      if (favKey(f) === pinKey) pinnedEtas = etasTs;
-      html += '<div class="lrt-station">'
-        + '<span class="lrt-head">' + escapeHtml(f.stop_name || f.route || '') + '</span>'
-        + '<button class="fav-pick" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (favKey(f) === pinKey ? '✓ 釘選' : '釘選') + '</button>'
-        + '<button class="row-remove" data-i="' + i + '" onclick="removeFav(event, this)">✕</button>'
-        + '</div>';
-      const seen = new Set();
-      let rows = 0;
-      for (const e of entries) {
-        const key = e.routeNo + '|' + e.dest + '|' + e.dep;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        if (rows++ >= 4) break;
-        html += lrtRowHTML(e);
-      }
-      if (!rows) html += '<div class="metro-empty">暫無到站資料</div>';
-      continue;
-    }
-    const etas = await favETAs(f);
-    if (i === 0) firstEtas = etas;
-    if (favKey(f) === pinKey) pinnedEtas = etas;
-    html += favCardHTML(f, i, etas, favKey(f) === pinKey);
-  }
-  box.innerHTML = html;
+  const results = await Promise.all(favs.map((f, i) => renderFavItem(f, i, pinKey)));
+  let firstEtas = null, pinnedEtas = null;
+  const parts = results.map((r, i) => {
+    if (i === 0) firstEtas = r.etas;
+    if (favKey(favs[i]) === pinKey) pinnedEtas = r.etas;
+    return r.html;
+  });
+  box.innerHTML = parts.join('');
   updateFavTile(favs.find(f => favKey(f) === pinKey) || favs[0], pinnedEtas || firstEtas);
 }
 function togglePinFav(i) {
@@ -720,22 +806,23 @@ function updateFavTile(f, etas) {
   else v.textContent = '—';
   s.textContent = favNo(f) + ' · ' + favTitle(f);
 }
-/* 收藏卡片（滾動列表 + 釘選） */
-function favCardHTML(f, i, etas, pinned) {
+/* 收藏卡片（滾動列表 + 釘選 + 舊數據回退） */
+function favCardHTML(f, i, etas, pinned, staleAt) {
   const tag = f.type === 'mtr' ? '港鐵' : f.type === 'mtrbus' ? '港鐵巴士' : f.type === 'lrt' ? '輕鐵' : '公交';
   const first = etas && etas[0];
   const det = (etas || []).slice(0, 3).map(e =>
     '<div class="fav-line"><span class="fav-line-label">' + (e.dest ? escapeHtml(e.dest) : '下一班') + '</span>'
     + '<span class="fav-line-time ' + etaCls(e.ts) + '">' + etaText(e.ts) + '</span></div>').join('');
-  const sub = favSubLine(f);
+  const sub = favSubLine(f) + (staleAt ? ' · 舊數據 ' + formatTime(Math.floor(staleAt / 1000)) : '');
   const d = favDetailFor(f);
-  const click = d ? ' data-detail=\'' + JSON.stringify(d).replace(/'/g, '&#39;') + '\' onclick="openRouteDetail(this)"' : '';
+  const click = d ? ' data-detail=\'' + safeAttr(JSON.stringify(d)) + '\' onclick="openRouteDetail(this)"' : '';
   return '<div class="fav-card' + (d ? ' row-clickable' : '') + '" data-fi="' + i + '"' + click + '>'
     + '<div class="fav-head"><span class="fav-no">' + escapeHtml(favNo(f)) + '</span>'
     + '<span class="fav-tag">' + tag + '</span>'
     + '<span class="fav-actions">'
     + (f.type === 'bus' ? '<button class="fav-pick" onclick="event.stopPropagation();openFavStopPicker(' + i + ')">換站</button>' : '')
     + '<button class="fav-pick" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (pinned ? '✓ 釘選' : '釘選') + '</button>'
+    + (staleAt ? '<button class="fav-pick" onclick="event.stopPropagation();renderFavs()">重試</button>' : '')
     + '<button class="fav-remove" onclick="event.stopPropagation();removeFav(event, this)" data-i="' + i + '">✕</button>'
     + '</span></div>'
     + '<div class="fav-name">' + escapeHtml(favTitle(f)) + '</div>'
@@ -1085,7 +1172,7 @@ async function initBusMap() {
 async function refreshBusMap() {
   if (!busMap || !busLayer) return;
   try {
-    const data = await getMTRBusETA('K75P');
+    const data = await getK75PData();
     busLayer.clearLayers();
     if (!data || !Array.isArray(data.busStop)) return;
     const seen = new Set();
@@ -1103,7 +1190,18 @@ async function refreshBusMap() {
   } catch (e) {}
 }
 
-/* ---------- K75P（首屏天瑞磁貼 + 全線實時） ---------- */
+/* ---------- K75P（單請求共享：磁貼 / 全線 / 地圖去重） ---------- */
+let k75pCache = null, k75pPromise = null, k75pAt = 0;
+async function getK75PData() {
+  const now = Date.now();
+  if (k75pCache && now - k75pAt < 20000) return k75pCache;
+  if (k75pPromise) return k75pPromise;
+  k75pPromise = getMTRBusETA('K75P').then(d => {
+    if (d && Array.isArray(d.busStop)) { k75pCache = d; k75pAt = Date.now(); }
+    return d;
+  }).finally(() => { k75pPromise = null; });
+  return k75pPromise;
+}
 function goBusMap() {
   goPane('map');
   setTimeout(() => {
@@ -1115,7 +1213,7 @@ async function loadK75PNow() {
   const v = $('k75pTileV'), s = $('k75pTileSub');
   if (!v) return;
   try {
-    const data = await getMTRBusETA('K75P');
+    const data = await getK75PData();
     if (!data || !Array.isArray(data.busStop)) { v.textContent = '--'; s.textContent = '暫無資料'; return; }
     /* 路上班次統計（按 busId 去重：同一班車會出現在多個站的列表） */
     const liveIds = new Set(), schedIds = new Set();
@@ -1151,7 +1249,7 @@ function toggleK75PFold() {
 async function loadK75P() {
   const el = $('k75p');
   try {
-    const data = await getMTRBusETA('K75P');
+    const data = await getK75PData();
     if (!data || !Array.isArray(data.busStop)) { el.innerHTML = '<div class="metro-empty">暫無資料</div>'; return; }
     const stopMap = {};
     for (const stop of data.busStop) stopMap[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
@@ -1194,7 +1292,7 @@ async function loadK75P() {
 /* ---------- 设定 ---------- */
 function syncSegs(sel, val) {
   const v = String(val);
-  document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('active', [b.dataset.th, b.dataset.ac, b.dataset.rv, b.dataset.ui, b.dataset.ct].includes(v)));
+  document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('active', [b.dataset.th, b.dataset.ac, b.dataset.rv, b.dataset.ui, b.dataset.ct, b.dataset.lg].includes(v)));
 }
 function setTheme(th) {
   document.body.dataset.theme = th;
@@ -1460,6 +1558,9 @@ document.addEventListener('DOMContentLoaded', () => {
   syncSegs('#refreshSeg', rv);
   syncSegs('#uiSeg', ui);
   syncSegs('#contrastSeg', localStorage.getItem('wp8concept_contrast') === '1' ? '1' : '0');
+  uiLang = localStorage.getItem('wp8concept_lang') || 'zh';
+  syncSegs('#langSeg', uiLang);
+  applyLang();
 
   /* 版本（Beta 0.1 build N，由構建腳本自動疊加） */
   const APP_VERSION = (typeof window !== 'undefined' && window.APP_VERSION) ? window.APP_VERSION : 'Beta 0.1';

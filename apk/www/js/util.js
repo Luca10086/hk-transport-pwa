@@ -4,25 +4,33 @@
    Utility Functions
    ========================================================================== */
 
-/** Fetch with CORS proxy race（直連與全部代理並行競速，最先成功者勝；全部失敗才報錯） */
+/** Fetch：先僅直連（隱私優先，不觸碰第三方代理）；失敗才競速全部代理，
+    最先成功者勝並中止其餘（AbortController）；全敗才報錯。 */
 async function fetchWithProxy(originalUrl, proxyIndex = 0) {
-  const attempts = [originalUrl, ...CORS_PROXIES.map(p => p(originalUrl))];
+  try {
+    const resp = await fetch(originalUrl, { signal: AbortSignal.timeout(15000) });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (e) {}
+  const attempts = CORS_PROXIES.map(p => p(originalUrl));
+  const ctrl = new AbortController();
+  let settled = false;
   return await new Promise((resolve, reject) => {
     let pending = attempts.length;
-    let settled = false;
     attempts.forEach(url => {
-      fetch(url, { signal: AbortSignal.timeout(15000) })
+      fetch(url, { signal: ctrl.signal })
         .then(async resp => {
           if (settled) return;
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           const data = await resp.json();
-          if (!settled) { settled = true; resolve(data); }
+          if (!settled) { settled = true; ctrl.abort(); resolve(data); }
         })
         .catch(() => {
           pending -= 1;
           if (pending <= 0 && !settled) { settled = true; reject(new Error('所有來源均無法連線')); }
         });
     });
+    setTimeout(() => { if (!settled) { settled = true; ctrl.abort(); reject(new Error('請求超時')); } }, 15000);
   });
 }
 

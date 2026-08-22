@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#1F1F1F">
 <title>森友出行 · WP8 概念版</title>
 <link rel="stylesheet" href="css/wp8-strict.css">
+<link rel="stylesheet" href="css/skin-wp7.css">
+<link rel="stylesheet" href="css/skin-wp8.css">
+<link rel="stylesheet" href="css/skin-uwp.css">
 </head>
 <body>
 
@@ -72,13 +75,13 @@
             <input id="searchInput" class="metro-input" placeholder="輸入巴士路線、站名或港鐵車站" aria-label="搜尋"
                    onkeydown="if(event.key==='Enter') doSearch()">
             <div class="chips" id="chips">
-              <button class="chip active" data-tp="bus" onclick="setTransport('bus', this)">公交</button>
-              <button class="chip" data-tp="mtrbus" onclick="setTransport('mtrbus', this)">港鐵巴士</button>
-              <button class="chip" data-tp="mtr" onclick="setTransport('mtr', this)">港鐵</button>
-              <button class="chip" data-tp="lrt" onclick="setTransport('lrt', this)">輕鐵</button>
-              <button class="chip" data-night="1" onclick="toggleNight(this)" title="只顯示通宵 N 線">通宵</button>
+              <button class="chip active" data-tp="bus" data-i18n="bus" onclick="setTransport('bus', this)">公交</button>
+              <button class="chip" data-tp="mtrbus" data-i18n="mtrbus" onclick="setTransport('mtrbus', this)">港鐵巴士</button>
+              <button class="chip" data-tp="mtr" data-i18n="mtr" onclick="setTransport('mtr', this)">港鐵</button>
+              <button class="chip" data-tp="lrt" data-i18n="lrt" onclick="setTransport('lrt', this)">輕鐵</button>
+              <button class="chip" data-night="1" data-i18n="night" onclick="toggleNight(this)" title="只顯示通宵 N 線">通宵</button>
             </div>
-            <button class="search-btn" onclick="doSearch()">搜尋</button>
+            <button class="search-btn" data-i18n="searchBtn" onclick="doSearch()">搜尋</button>
           </div>
           <!-- 最近搜尋 -->
           <div id="recentBox" class="recent-box"></div>
@@ -87,10 +90,10 @@
 
         <!-- 面板 3：天气 + K75P -->
         <div class="pano-panel">
-          <h3 class="pane-title">天氣</h3>
+          <h3 class="pane-title" data-i18n="weather">天氣</h3>
           <div id="warningBar" class="warning-bar" hidden></div>
           <div id="weather" class="weather-bar">載入中…</div>
-          <h3 class="pane-title">k75p 全線實時</h3>
+          <h3 class="pane-title" data-i18n="k75pTitle">k75p 全線實時</h3>
           <div id="k75p" class="flat-list"></div>
         </div>
       </div>
@@ -101,7 +104,7 @@
   <!-- 收藏 -->
   <section class="pane" data-pane="favs">
     <div class="pane-inner">
-      <h2 class="pane-title">收藏</h2>
+      <h2 class="pane-title" data-i18n="favs">收藏</h2>
       <div id="favs" class="flat-list"><div class="metro-empty">暫無收藏，在搜尋結果按 ☆ 加入</div></div>
     </div>
   </section>
@@ -109,7 +112,7 @@
   <!-- 寿司郎 -->
   <section class="pane" data-pane="sushi">
     <div class="pane-inner">
-      <h2 class="pane-title">壽司郎</h2>
+      <h2 class="pane-title" data-i18n="sushi">壽司郎</h2>
       <div id="sushi" class="flat-list"><div class="metro-empty">載入中…</div></div>
     </div>
   </section>
@@ -117,7 +120,7 @@
   <!-- 路线图 -->
   <section class="pane" data-pane="map">
     <div class="pane-inner">
-      <h2 class="pane-title">路線圖</h2>
+      <h2 class="pane-title" data-i18n="map">路線圖</h2>
       <div class="map-lines" id="mapLines"></div>
       <div class="map-body" id="mapBody"></div>
       <div id="busMap" class="bus-map" hidden></div>
@@ -127,15 +130,15 @@
   <!-- 设定 -->
   <section class="pane" data-pane="settings">
     <div class="pane-inner">
-      <h2 class="pane-title">設定</h2>
+      <h2 class="pane-title" data-i18n="settings">設定</h2>
       <div class="settings-list">
-        <div class="setting-row"><span class="label">主題</span>
+        <div class="setting-row"><span class="label" data-i18n="theme">主題</span>
           <div class="seg" id="themeSeg">
             <button data-th="dark" onclick="setTheme('dark')">深色</button>
             <button data-th="light" onclick="setTheme('light')">淺色</button>
           </div>
         </div>
-        <div class="setting-row"><span class="label">強調色</span>
+        <div class="setting-row"><span class="label" data-i18n="accent">強調色</span>
           <div class="seg" id="accentSeg">
             <button data-ac="#AA00FF" style="color:#AA00FF" onclick="setAccent('#AA00FF')">紫</button>
             <button data-ac="#6A00FF" style="color:#6A00FF" onclick="setAccent('#6A00FF')">靛</button>
@@ -143,20 +146,26 @@
             <button data-ac="#00ABA9" style="color:#00ABA9" onclick="setAccent('#00ABA9')">青綠</button>
           </div>
         </div>
-        <div class="setting-row"><span class="label">介面風格</span>
+        <div class="setting-row"><span class="label" data-i18n="uiStyle">介面風格</span>
           <div class="seg" id="uiSeg">
             <button data-ui="wp7" onclick="setUIMode('wp7')">WP7</button>
             <button data-ui="wp8" onclick="setUIMode('wp8')">WP8</button>
             <button data-ui="uwp" onclick="setUIMode('uwp')">UWP</button>
           </div>
         </div>
-        <div class="setting-row"><span class="label">高對比</span>
+        <div class="setting-row"><span class="label" data-i18n="contrast">高對比</span>
           <div class="seg" id="contrastSeg">
             <button data-ct="1" onclick="setContrast(1)">開</button>
             <button data-ct="0" onclick="setContrast(0)">關</button>
           </div>
         </div>
-        <div class="setting-row"><span class="label">自動重新整理</span>
+        <div class="setting-row"><span class="label" data-i18n="langLabel">語言</span>
+          <div class="seg" id="langSeg">
+            <button data-lg="zh" onclick="setLang('zh')">中文</button>
+            <button data-lg="en" onclick="setLang('en')">EN</button>
+          </div>
+        </div>
+        <div class="setting-row"><span class="label" data-i18n="autoRefresh">自動重新整理</span>
           <div class="seg" id="refreshSeg">
             <button data-rv="15" onclick="setRefresh(15)">15s</button>
             <button data-rv="30" onclick="setRefresh(30)">30s</button>
@@ -164,8 +173,8 @@
             <button data-rv="0" onclick="setRefresh(0)">關</button>
           </div>
         </div>
-        <div class="setting-row"><span class="label">資料來源</span><span class="val">data.gov.hk</span></div>
-        <div class="setting-row"><span class="label">版本</span><span class="val" id="appVersion">Beta 0.1</span></div>
+        <div class="setting-row"><span class="label" data-i18n="dataSource">資料來源</span><span class="val">data.gov.hk</span></div>
+        <div class="setting-row"><span class="label" data-i18n="version">版本</span><span class="val" id="appVersion">Beta 0.1</span></div>
       </div>
     </div>
   </section>
@@ -174,22 +183,22 @@
 <!-- ================= App Bar ================= -->
 <nav class="appbar">
   <button class="ab-btn active" data-pane="home" onclick="goPane('home')" aria-label="首頁">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5V21a1 1 0 01-1 1h-5.5v-6h-5v6H4a1 1 0 01-1-1z"/></svg><span class="ab-label">首頁</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5V21a1 1 0 01-1 1h-5.5v-6h-5v6H4a1 1 0 01-1-1z"/></svg><span class="ab-label" data-i18n="home">首頁</span>
   </button>
   <button class="ab-btn" data-pane="favs" onclick="goPane('favs')" aria-label="收藏">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span class="ab-label">收藏</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span class="ab-label" data-i18n="favs">收藏</span>
   </button>
   <button class="ab-btn" data-pane="sushi" onclick="goPane('sushi')" aria-label="壽司郎">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 2.5L6.7 21M14.8 2.5l2.5 18.5M5 17.5c0 1.93 3.13 3.5 7 3.5s7-1.57 7-3.5S16.13 14 12 14s-7 1.57-7 3.5z"/></svg><span class="ab-label">壽司郎</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 2.5L6.7 21M14.8 2.5l2.5 18.5M5 17.5c0 1.93 3.13 3.5 7 3.5s7-1.57 7-3.5S16.13 14 12 14s-7 1.57-7 3.5z"/></svg><span class="ab-label" data-i18n="sushi">壽司郎</span>
   </button>
   <button class="ab-btn" data-pane="settings" onclick="goPane('settings')" aria-label="設定">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.3"/><path d="M19.4 13.5a7.9 7.9 0 000-3l2-1.5-2-3.4-2.3.9a7.9 7.9 0 00-2.6-1.5L14.2 2h-4l-.3 2.5a7.9 7.9 0 00-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.9 7.9 0 000 3l-2 1.5 2 3.4 2.3-.9a7.9 7.9 0 002.6 1.5l.3 2.5h4l.3-2.5a7.9 7.9 0 002.6-1.5l2.3.9 2-3.4-2-1.5z"/></svg><span class="ab-label">設定</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.3"/><path d="M19.4 13.5a7.9 7.9 0 000-3l2-1.5-2-3.4-2.3.9a7.9 7.9 0 00-2.6-1.5L14.2 2h-4l-.3 2.5a7.9 7.9 0 00-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.9 7.9 0 000 3l-2 1.5 2 3.4 2.3-.9a7.9 7.9 0 002.6 1.5l.3 2.5h4l.3-2.5a7.9 7.9 0 002.6-1.5l2.3.9 2-3.4-2-1.5z"/></svg><span class="ab-label" data-i18n="settings">設定</span>
   </button>
   <button class="ab-more" onclick="toggleMore()" aria-label="更多選項">⋯</button>
   <div class="more-menu" id="moreMenu" hidden>
-    <button onclick="moreAction('refresh')">重新整理</button>
-    <button onclick="moreAction('fav')">收藏首條結果</button>
-    <button onclick="moreAction('map')">路線圖</button>
+    <button data-i18n="refresh" onclick="moreAction('refresh')">重新整理</button>
+    <button data-i18n="favFirst" onclick="moreAction('fav')">收藏首條結果</button>
+    <button data-i18n="map" onclick="moreAction('map')">路線圖</button>
   </div>
 </nav>
 
