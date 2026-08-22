@@ -109,6 +109,11 @@
   <span>primary #6750A4</span><span>corner 16 / 28</span><span>elev-1/2/3</span><span>state layer 按壓</span>
   <span>ripple 回饋</span><span>Roboto</span><span>NavigationBar pill</span><span>FAB 主操作</span>
 </div>
+<div class="principles" style="border-top:1px solid #222;padding-top:14px;margin-top:0">
+  <span>動效：BottomSheet 3D 上滑 + scrim 淡入</span><span>FAB 按壓抬起(translateY-3px+elev)</span>
+  <span>卡片按壓 elev-1→3（非縮放）</span><span>列表 state layer 8–12%（2D）</span>
+  <span>NavigationBar pill 指示器滑動</span><span>3D 僅一次性互動時刻</span>
+</div>
 
 <div class="grid">
 
@@ -301,9 +306,12 @@
 
 <div class="note">
   MD 皮膚（若開發）：以 <code>body[data-ui="md"]</code> 獨立 skin-md.css（16px 圓角、Roboto、primary #6750A4、
-  elev-1/3、state layer 按壓替代縮放、NavigationBar pill 替代 App Bar、詳情改 Bottom Sheet、首頁加 FAB）。
-  前置：皮膚架構已拆檔就緒；與 WP7/WP8/UWP 並存於設定切換。<br>
-  動畫概念見 <code>design-motion-board.html</code>（8 個可互動演示 + 規格卡；明確「2D only / 禁 3D / 180–450ms / reduced-motion」）。
+  elev-1/3、state layer 按壓替代縮放、NavigationBar pill 替代 App Bar、詳情改 Bottom Sheet、首頁加 FAB）。<br>
+  <b>動效對應（3D 已開放，依防護原則）：</b>詳情 BottomSheet 以 <code>translateY(100%)→0</code> 配合 <code>rotateX` 輕微
+  透視上滑 + scrim 淡入；FAB 按壓 <code>translateY(-3px) scale(1.06)</code> + elev 加深；卡片按壓 <b>elevation 變化</b>
+  （MD 語法，非縮放）；列表行 state layer 2D 疊色（一次性互動）；NavigationBar 選中 pill 位置平滑滑動；
+  ripple 僅按下瞬間；reduced-motion 全停。3D 只作「瞬間演出」，滾動/背景維持 2D。<br>
+  前置：皮膚架構已拆檔就緒。動畫概念見 <code>design-motion-board.html</code>（9 個 3D 增強演示 + 防護三原則）。
 </div>
 
 </body>
