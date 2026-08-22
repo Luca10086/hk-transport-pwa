@@ -3,116 +3,151 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>森友出行 · MD3 概念圖板（Material Concept Board）</title>
+<title>森友出行 · MD3 概念圖板 v2（Material You 淺色）</title>
 <style>
   :root {
-    --mp: #6750A4;          /* md-primary */
-    --onp: #FFFFFF;
-    --surface: #1C1B1F;     /* 深色 surface */
-    --sc: #211F26;          /* surface-container */
-    --sc-h: #2B2930;        /* surface-container-high */
-    --outline: #938F99;
-    --on-surface: #FFFFFF;
-    --on-surfacev: #CAC4D0;
-    --elev1: 0 2px 4px rgba(0,0,0,.30), 0 1px 2px rgba(0,0,0,.20);
-    --elev3: 0 6px 14px rgba(0,0,0,.35), 0 2px 4px rgba(0,0,0,.25);
+    /* Material You 淺色 Token */
+    --primary: #6750A4;
+    --on-primary: #FFFFFF;
+    --primary-container: #EADDFF;
+    --on-primary-container: #21005D;
+    --secondary-container: #E8DEF8;
+    --on-secondary-container: #1D192B;
+    --surface: #FEF7FF;
+    --surface-dim: #DED8E1;
+    --surface-container: #F3EDF7;
+    --surface-container-high: #ECE6F0;
+    --on-surface: #1D1B20;
+    --on-surface-v: #49454F;
+    --outline: #79747E;
+    --outline-v: #CAC4D0;
+    --error: #B3261E;
+    /* 深色 Token（示範幕用） */
+    --d-surface: #141218;
+    --d-container: #211F26;
+    --d-on: #E6E0E9;
+    --d-onv: #CAC4D0;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #101014; color: #E8E8E8; font-family: 'Roboto','Segoe UI','Noto Sans TC',sans-serif; padding: 40px 28px 80px; }
-  h1 { font-weight: 400; font-size: 30px; margin-bottom: 6px; }
-  h1 b { color: var(--mp); font-weight: 500; }
-  .sub { color: #8B8B8B; font-size: 14px; margin-bottom: 8px; }
+  body { background: #EFE9F3; color: #1D1B20; font-family: 'Roboto','Noto Sans TC','Segoe UI',sans-serif; padding: 40px 28px 80px; }
+  h1 { font-weight: 400; font-size: 30px; margin-bottom: 6px; color:#21005D; }
+  h1 b { color: var(--primary); font-weight: 600; }
+  .sub { color: #6E6875; font-size: 14px; margin-bottom: 8px; }
   .principles { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 34px; }
-  .principles span { border:1px solid #333; color:#AAA; padding:6px 12px; font-size:12px; }
+  .principles span { border:1px solid var(--outline-v); color:#6E6875; padding:6px 12px; font-size:12px; background:#FFF; }
+  .principles span.p { background: var(--primary-container); border-color: transparent; color: var(--on-primary-container); }
   .grid { display:flex; flex-wrap:wrap; gap:34px; }
-  .shot { width: 320px; }
-  .shot h3 { font-weight:500; font-size:15px; margin:10px 2px 4px; color:#FFF; }
-  .shot h3 small { color:#777; font-weight:400; font-size:12px; margin-left:6px; }
-  .shot p { color:#888; font-size:12px; line-height:1.6; margin:0 2px; max-width:320px; }
-  .phone { width:300px; height:620px; background:var(--surface); overflow:hidden; position:relative; border-radius:24px; border:1px solid #2E2B33; box-shadow: var(--elev3); }
-  .tbar { display:flex; align-items:center; justify-content:space-between; padding:20px 16px 10px; }
-  .tbar .t { font-size:22px; font-weight:500; }
-  .tbar .ic { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--on-surfacev); }
-  .tbar .ic:active { background: var(--sc-h); }
-  .cards { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:12px 16px 0; }
-  .card { background:var(--sc); border-radius:16px; padding:14px; min-height:104px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow:var(--elev1); position:relative; }
-  .card.w { grid-column:span 2; min-height:84px; }
-  .card .lab { font-size:12px; color:var(--on-surfacev); }
-  .card b { font-size:26px; font-weight:300; }
-  .card.accent { background:var(--mp); color:var(--onp); }
-  .card.accent .lab { color: rgba(255,255,255,.85); }
-  .card .chip-s { position:absolute; top:10px; right:10px; font-size:11px; background:rgba(255,255,255,.12); border-radius:8px; padding:2px 8px; }
-  .searchbar { display:flex; align-items:center; gap:10px; margin:14px 16px 0; background:var(--sc-h); border-radius:28px; padding:10px 16px; color:var(--on-surfacev); font-size:14px; }
+  .shot { width: 322px; }
+  .shot h3 { font-weight:500; font-size:15px; margin:10px 2px 4px; color:#21005D; }
+  .shot h3 small { color:#8B8494; font-weight:400; font-size:12px; margin-left:6px; }
+  .shot p { color:#6E6875; font-size:12px; line-height:1.6; margin:0 2px; max-width:322px; }
+  .phone { width:300px; height:620px; background:var(--surface); overflow:hidden; position:relative; border-radius:26px; box-shadow: 0 10px 30px rgba(33,0,93,.18); }
+  .phone.dark { background: var(--d-surface); }
+  /* 圖標（Material Symbols outline 風格） */
+  .mi { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; flex:0 0 auto; }
+  .tbar { display:flex; align-items:center; gap:10px; padding:16px 10px 8px 6px; }
+  .tbar .sp { flex:1; }
+  .tbar .t { font-size:22px; font-weight:400; letter-spacing:.1px; }
+  .icbtn { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--on-surface-v); }
+  .icbtn:active { background: var(--surface-container-high); }
+  /* Search bar */
+  .searchbar { display:flex; align-items:center; gap:12px; margin:10px 16px 0; background:var(--surface-container-high); border-radius:28px; padding:8px 16px 8px 14px; min-height:52px; color:var(--on-surface-v); font-size:15px; }
+  .searchbar .mi { color:var(--on-surface-v); }
+  /* chips */
   .chips { display:flex; gap:8px; padding:12px 16px 0; flex-wrap:wrap; }
-  .chip { border-radius:8px; padding:6px 14px; font-size:12px; background:var(--sc-h); color:var(--on-surfacev); }
-  .chip.on { background:var(--mp); color:var(--onp); }
+  .chip { border-radius:8px; padding:6px 14px; font-size:12px; font-weight:500; background:var(--surface-container); color:var(--on-surface-v); }
+  .chip.on { background:var(--secondary-container); color:var(--on-secondary-container); }
+  /* cards：tonal */
+  .cards { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:12px 16px 0; }
+  .card { background:var(--surface-container-low, #F7F2FA); border-radius:16px; padding:14px; min-height:104px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow: 0 1px 2px rgba(33,0,93,.10), 0 1px 3px 1px rgba(33,0,93,.08); position:relative; }
+  .card.w { grid-column:span 2; min-height:84px; }
+  .card.prim { background:var(--primary-container); }
+  .card.prim .lab { color: var(--on-primary-container); }
+  .card.sec { background:var(--secondary-container); }
+  .card .lab { font-size:12px; color:var(--on-surface-v); }
+  .card b { font-size:24px; font-weight:300; color:var(--on-surface); }
+  .card.prim b { color:var(--on-primary-container); }
+  .card .cap { font-size:12px; color:var(--on-surface-v); margin-top:2px; }
+  .card .tag { position:absolute; top:10px; right:10px; font-size:11px; border-radius:8px; padding:2px 8px; background:var(--surface-container-high); color:var(--on-surface-v); }
+  /* list */
   .list { padding:4px 16px 0; }
-  .group { font-size:13px; font-weight:500; color:var(--on-surfacev); padding:14px 16px 4px; }
-  .lrow { display:flex; align-items:center; gap:14px; padding:12px 10px; border-radius:12px; }
-  .lrow:active { background: rgba(255,255,255,.08); }
-  .lrow.sel { box-shadow: inset 3px 0 0 var(--mp); background: rgba(255,255,255,.05); }
-  .lrow .no { width:64px; font-size:24px; font-weight:300; color:var(--mp); }
-  .lrow .no.sm { font-size:18px; }
+  .group { font-size:13px; font-weight:500; color:var(--primary); padding:14px 16px 4px; }
+  .lrow { display:flex; align-items:center; gap:12px; padding:10px 8px; border-radius:12px; min-height:56px; }
+  .lrow:active { background: rgba(103,80,164,.08); }
+  .lrow.sel { background: rgba(103,80,164,.06); }
+  .avatar { width:40px; height:40px; border-radius:20px; background:var(--primary-container); color:var(--on-primary-container); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; flex:0 0 auto; }
+  .avatar.grey { background:var(--surface-container-high); color:var(--on-surface-v); }
   .lrow .main { flex:1; min-width:0; }
-  .lrow .name { font-size:15px; }
-  .lrow .cap { font-size:12px; color:var(--on-surfacev); margin-top:2px; }
-  .lrow .eta { font-size:20px; font-variant-numeric:tabular-nums; }
-  .lrow .eta.soon { color:#F2B8B5; }
-  .lrow .eta.medium { color:#FFD8E4; }
+  .lrow .name { font-size:15px; color:var(--on-surface); }
+  .lrow .cap { font-size:12px; color:var(--on-surface-v); margin-top:2px; }
+  .lrow .eta { font-size:20px; font-weight:500; color:var(--primary); font-variant-numeric:tabular-nums; }
+  .lrow .eta.soon { color: var(--error); }
+  .lrow .eta.medium { color:#8E4585; }
+  .lrow .trail { color:var(--on-surface-v); }
+  /* fav cards */
   .fav { padding:6px 8px 0; }
-  .fcard { border-radius:16px; background:var(--sc); padding:14px; margin:6px 8px 0; box-shadow:var(--elev1); }
-  .fcard.sel { box-shadow: inset 3px 0 0 var(--mp), var(--elev1); }
-  .fcard .head { display:flex; align-items:baseline; gap:10px; }
-  .fcard .no { font-size:24px; font-weight:300; color:var(--mp); }
-  .fcard .type { font-size:11px; color:var(--on-surfacev); }
+  .fcard { border-radius:16px; background:var(--surface-container); padding:14px; margin:6px 8px 0; box-shadow: 0 1px 2px rgba(33,0,93,.10); }
+  .fcard .head { display:flex; align-items:center; gap:10px; }
+  .fcard .no { font-size:22px; font-weight:500; color:var(--primary); }
+  .fcard .type { font-size:11px; color:var(--on-surface-v); border:1px solid var(--outline-v); border-radius:6px; padding:1px 8px; }
   .fcard .dest { font-size:16px; margin-top:8px; }
-  .fcard .cap { font-size:12px; color:var(--on-surfacev); margin-top:2px; }
-  .fcard .big { font-size:42px; font-weight:300; line-height:1.1; margin-top:6px; font-variant-numeric:tabular-nums; }
-  .fcard .big small { font-size:14px; color:var(--on-surfacev); }
-  .fcard .bar { height:4px; border-radius:2px; background:rgba(255,255,255,.12); margin-top:10px; }
-  .fcard .bar i { display:block; height:100%; width:76%; background:var(--mp); border-radius:2px; }
-  .frow { display:flex; gap:8px; margin-top:10px; }
-  .mdbtn { border-radius:20px; background:var(--sc-h); color:var(--on-surfacev); padding:8px 16px; font-size:12px; }
-  .mdbtn.p { background:var(--mp); color:var(--onp); }
-  .fab { position:absolute; right:18px; bottom:96px; width:56px; height:56px; border-radius:16px; background:var(--mp); color:var(--onp); display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:var(--elev3); }
-  .nbar { position:absolute; left:16px; right:16px; bottom:14px; background:var(--sc); border-radius:16px; box-shadow:var(--elev3); display:flex; justify-content:space-around; padding:6px 4px; }
-  .nbar .item { display:flex; flex-direction:column; align-items:center; gap:2px; width:56px; padding:6px 0; border-radius:16px; color:var(--on-surfacev); font-size:11px; }
-  .nbar .item.on { background:var(--mp); color:var(--onp); }
-  .nbar .item .g { font-size:20px; }
-  .sheet { position:absolute; left:0; right:0; bottom:0; top:36%; background:var(--sc); border-radius:28px 28px 0 0; box-shadow:var(--elev3); padding:8px 16px 0; }
-  .sheet .handle { width:32px; height:4px; border-radius:2px; background:var(--on-surfacev); margin:6px auto 10px; }
-  .tabs { display:flex; gap:6px; padding:12px 16px 4px; }
-  .tab { border-radius:8px; padding:6px 16px; font-size:13px; color:var(--on-surfacev); background:var(--sc-h); }
-  .tab.on { background:var(--mp); color:var(--onp); }
-  .mk { height:150px; border-radius:16px; margin:10px 16px 0; width:calc(100% - 32px); background:#23222A; position:relative; overflow:hidden; border:1px solid #312F3A; }
-  .mk .dot { position:absolute; width:12px; height:12px; border-radius:50%; background:var(--mp); box-shadow:0 0 0 4px rgba(103,80,164,.3); }
-  .mk .road { position:absolute; left:0; right:0; top:46%; height:14px; background:rgba(255,255,255,.1); }
+  .fcard .cap { font-size:12px; color:var(--on-surface-v); margin-top:2px; }
+  .fcard .big { font-size:40px; font-weight:300; line-height:1.1; margin-top:6px; color:var(--on-surface); font-variant-numeric:tabular-nums; }
+  .fcard .big small { font-size:14px; color:var(--on-surface-v); }
+  .fcard .bar { height:4px; border-radius:2px; background:var(--outline-v); margin-top:10px; overflow:hidden; }
+  .fcard .bar i { display:block; height:100%; width:76%; background:var(--primary); border-radius:2px; }
+  .frow { display:flex; gap:8px; margin-top:12px; }
+  .mdbtn { border-radius:20px; padding:8px 16px; font-size:12px; font-weight:500; border:none; font-family:inherit; }
+  .mdbtn.fill { background:var(--primary); color:var(--on-primary); }
+  .mdbtn.tonal { background:var(--secondary-container); color:var(--on-secondary-container); }
+  .mdbtn.out { background:transparent; color:var(--primary); border:1px solid var(--outline); }
+  /* navbar */
+  .nbar { position:absolute; left:0; right:0; bottom:0; background:var(--surface-container); display:flex; justify-content:space-around; padding:8px 4px 12px; }
+  .nitem { display:flex; flex-direction:column; align-items:center; gap:4px; width:64px; color:var(--on-surface-v); font-size:12px; }
+  .nitem .pill { width:64px; height:32px; border-radius:16px; display:flex; align-items:center; justify-content:center; }
+  .nitem.on { color: var(--on-surface); font-weight:500; }
+  .nitem.on .pill { background: var(--secondary-container); }
+  .nitem.on .pill { color: var(--on-secondary-container); }
+  /* fab */
+  .fab { position:absolute; right:16px; bottom:96px; width:56px; height:56px; border-radius:16px; background:var(--primary-container); color:var(--on-primary-container); display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 8px rgba(33,0,93,.3), 0 4px 12px 4px rgba(33,0,93,.2); }
+  .fab .mi { width:28px; height:28px; stroke-width:1.6; }
+  /* sheet */
+  .sheet { position:absolute; left:0; right:0; bottom:0; top:34%; background:var(--surface-container); border-radius:28px 28px 0 0; box-shadow: 0 -4px 16px rgba(33,0,93,.16); padding:8px 16px 0; }
+  .sheet .handle { width:32px; height:4px; border-radius:2px; background:var(--outline-v); margin:6px auto 10px; }
+  .tabs { display:flex; gap:8px; padding:4px 0 4px; }
+  .tab { border-radius:8px; padding:6px 16px; font-size:13px; font-weight:500; background:var(--surface-container-high); color:var(--on-surface-v); border:none; font-family:inherit; }
+  .tab.on { background:var(--secondary-container); color:var(--on-secondary-container); }
+  .mk { height:150px; border-radius:16px; margin:10px 16px 0; width:calc(100% - 32px); background:#DFE8DC; position:relative; overflow:hidden; border:1px solid var(--outline-v); }
+  .mk .dot { position:absolute; width:12px; height:12px; border-radius:50%; background:var(--primary); box-shadow:0 0 0 4px rgba(103,80,164,.25); }
+  .mk .road { position:absolute; left:0; right:0; top:46%; height:14px; background:rgba(0,0,0,.08); }
   .settings { padding:2px 16px 0; }
-  .srow { display:flex; justify-content:space-between; align-items:center; padding:14px 0; }
+  .srow { display:flex; justify-content:space-between; align-items:center; min-height:52px; }
   .srow .l { font-size:15px; }
-  .srow .cap { font-size:12px; color:var(--on-surfacev); }
-  .sw { width:52px; height:32px; border-radius:16px; background:rgba(255,255,255,.16); position:relative; }
-  .sw::after { content:''; position:absolute; width:24px; height:24px; border-radius:50%; left:4px; top:4px; background:#FFF; }
-  .sw.on { background:var(--mp); }
-  .sw.on::after { left:24px; }
-  .segb { display:flex; gap:0; border:1px solid var(--outline); border-radius:8px; overflow:hidden; }
-  .segb b { padding:6px 12px; font-size:12px; font-weight:500; color:var(--on-surfacev); }
-  .segb b.on { background:var(--mp); color:var(--onp); }
-  .note { margin-top:46px; border-top:1px solid #222; padding-top:20px; color:#888; font-size:13px; line-height:1.8; }
+  .srow .cap { font-size:12px; color:var(--on-surface-v); }
+  .sw { width:52px; height:32px; border-radius:16px; background:var(--surface-container-high); position:relative; }
+  .sw::after { content:''; position:absolute; width:24px; height:24px; border-radius:50%; left:4px; top:4px; background:var(--outline-v); }
+  .sw.on { background:var(--primary); }
+  .sw.on::after { background:#FFF; left:24px; }
+  .segb { display:flex; border:1px solid var(--outline); border-radius:8px; overflow:hidden; background:var(--surface); }
+  .segb b { padding:6px 12px; font-size:12px; font-weight:500; color:var(--on-surface-v); }
+  .segb b.on { background:var(--secondary-container); color:var(--on-secondary-container); }
+  .dark .tbar .t, .dark .lrow .name, .dark .fcard .dest, .dark .fcard .big, .dark .srow .l { color: var(--d-on); }
+  .dark .lrow .cap, .dark .fcard .cap, .dark .group { color: var(--d-onv); }
+  .dark .card { background: var(--d-container); }
+  .dark .card b { color: var(--d-on); }
+  .dark .card.prim, .dark .card.sec { background:#4F378B; }
+  .note { margin-top:46px; border-top:2px solid var(--outline-v); padding-top:20px; color:#5F5968; font-size:13px; line-height:1.9; }
+  .note b { color:#21005D; }
 </style>
 </head>
 <body>
 
-<h1>森友出行 · <b>Material Design 3 概念圖板</b></h1>
-<div class="sub">MD 皮膚概念（14 屏全覆蓋的濃縮版）— Material 組件對應：TopAppBar / Card / List / NavigationBar / FAB / BottomSheet / Switch / SegmentedButton</div>
+<h1>森友出行 · <b>Material Design 3 概念圖板 v2</b></h1>
+<div class="sub">Material You 淺色 Token 為主（一眼即安卓）+ 一個深色對比幕 — 圖標為 Material Symbols 實線風格</div>
 <div class="principles">
-  <span>primary #6750A4</span><span>corner 16 / 28</span><span>elev-1/2/3</span><span>state layer 按壓</span>
-  <span>ripple 回饋</span><span>Roboto</span><span>NavigationBar pill</span><span>FAB 主操作</span>
-</div>
-<div class="principles" style="border-top:1px solid #222;padding-top:14px;margin-top:0">
-  <span>動效：BottomSheet 3D 上滑 + scrim 淡入</span><span>FAB 按壓抬起(translateY-3px+elev)</span>
-  <span>卡片按壓 elev-1→3（非縮放）</span><span>列表 state layer 8–12%（2D）</span>
-  <span>NavigationBar pill 指示器滑動</span><span>3D 僅一次性互動時刻</span>
+  <span class="p">primary #6750A4</span><span class="p">surface #FEF7FF</span><span>corner 16 / 28</span><span>elev-1/2/3</span>
+  <span>tonal card</span><span>avatar 圓形徽標</span><span>NavigationBar pill</span><span>FAB primary-container</span>
+  <span>Roboto 15/16sp</span><span>state layer 8–12%</span>
 </div>
 
 <div class="grid">
@@ -120,68 +155,79 @@
 <!-- 01 首頁 -->
 <div class="shot">
   <div class="phone">
-    <div class="tbar"><div class="t">森友出行</div><div class="ic">⌕</div></div>
-    <div class="cards">
-      <div class="card accent"><span class="lab">收藏</span><b>68X</b></div>
-      <div class="card"><span class="lab">壽司郎</span><b style="font-size:18px;font-weight:500;color:var(--mp)">元朗 6 組</b></div>
-      <div class="card w"><span class="lab">天氣</span><b>14°</b><span class="cap" style="font-size:12px;color:var(--on-surfacev)">明天 多云 18–23°</span></div>
-      <div class="card w"><span class="lab">K75P · 天瑞</span><b>8 分鐘</b><span class="cap" style="font-size:12px;color:var(--on-surfacev)">實時 3 班 · 定時 1 班</span><span class="chip-s">實時</span></div>
-      <div class="card w"><span class="lab">收藏①</span><b>3 分鐘</b><span class="cap" style="font-size:12px;color:var(--on-surfacev)">68X 往 佐敦西</span></div>
+    <div class="tbar">
+      <span class="icbtn"><svg class="mi" viewBox="0 0 24 24"><path d="M4 10l8-7 8 7v9a1 1 0 01-1 1h-5v-6h-4v6H5a1 1 0 01-1-1z"/></svg></span>
+      <div class="t">森友出行</div><span class="sp"></span>
+      <span class="icbtn"><svg class="mi" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></span>
+      <span class="icbtn"><svg class="mi" viewBox="0 0 24 24"><path d="M17 5l1.5-1.5M17 5l-11 11-2 4 4-2 11-11M17 5l3 3M14.5 7.5l3 3"/></svg></span>
     </div>
-    <div class="fab">＋</div>
-    <div class="nbar"><span class="item on"><span class="g">⌂</span>首頁</span><span class="item"><span class="g">♥</span>收藏</span><span class="item"><span class="g">♨</span>壽司郎</span><span class="item"><span class="g">▦</span>路線</span><span class="item"><span class="g">⚙</span>設定</span></div>
+    <div class="cards">
+      <div class="card prim"><span class="lab">我的收藏</span><b>68X</b><span class="cap">往 佐敦西 · 3 分鐘</span></div>
+      <div class="card sec"><span class="lab">壽司郎</span><b style="font-size:18px;font-weight:500">元朗 6 組</b><span class="cap">約 25 分鐘</span></div>
+      <div class="card w"><span class="lab">天氣</span><b>14°</b><span class="cap">明天 多云 18–23°</span></div>
+      <div class="card w"><span class="lab">K75P · 天瑞</span><b>8 分鐘</b><span class="cap">實時 3 班 · 定時 1 班</span><span class="tag">實時</span></div>
+      <div class="card w"><span class="lab">收藏① 68X</span><b>3 分鐘</b><span class="cap">往 佐敦西</span></div>
+    </div>
+    <div class="fab"><svg class="mi" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+    <div class="nbar">
+      <span class="nitem on"><span class="pill"><svg class="mi" viewBox="0 0 24 24"><path d="M4 10l8-7 8 7v9a1 1 0 01-1 1h-5v-6h-4v6H5a1 1 0 01-1-1z"/></svg></span>首頁</span>
+      <span class="nitem"><span class="pill"><svg class="mi" viewBox="0 0 24 24"><path d="M12 20.5S3 15.5 3 8.9A4.9 4.9 0 0112 6a4.9 4.9 0 019 2.9c0 6.6-9 11.6-9 11.6z"/></svg></span>收藏</span>
+      <span class="nitem"><span class="pill"><svg class="mi" viewBox="0 0 24 24"><path d="M7 3l-2.5 18M17 3l2.5 18"/></svg></span>壽司郎</span>
+      <span class="nitem"><span class="pill"><svg class="mi" viewBox="0 0 24 24"><path d="M9 3L4 21M15 3l5 18M6 3m12 0M5 17.5C5 19.5 8 21 12 21s7-1.5 7-3.5S19 14 12 14s-7 1.5-7 3.5z"/></svg></span>路線</span>
+      <span class="nitem"><span class="pill"><svg class="mi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7 7 0 000-3l2-1.5-2-3.4-2.3.9a7 7 0 00-2.6-1.5L14 2h-4l-.5 2.5a7 7 0 00-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7 7 0 000 3l-2 1.5 2 3.4 2.3-.9a7 7 0 002.6 1.5L10 22h4l.5-2.5a7 7 0 002.6-1.5l2.3.9 2-3.4-2-1.5z"/></svg></span>設定</span>
+    </div>
   </div>
-  <h3>01 首頁 <small>Card + FAB + NavigationBar</small></h3>
-  <p>磁貼→ MD Card（16px 圓角、elev-1、surface-container 底色＋accent 卡）；FAB（＋＝搜尋主操作）；NavigationBar 圓形 pill 選中態。</p>
+  <h3>01 首頁 <small>Material You 淺色</small></h3>
+  <p>TopAppBar（Material 圖標）＋ Tonal Card（primary-container 收藏卡 / secondary-container 壽司郎卡）＋ FAB（primary-container 圓角 16）＋ NavigationBar（選中 pill＝secondary-container 墊底）。</p>
 </div>
 
 <!-- 02 搜尋 -->
 <div class="shot">
   <div class="phone">
-    <div class="tbar"><div class="t">搜尋</div><div class="ic">⌕</div></div>
-    <div class="searchbar">🔍 輸入路線、站名或港鐵車站…</div>
+    <div class="tbar"><div class="t">搜尋</div><span class="sp"></span><span class="icbtn"><svg class="mi" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></span></div>
+    <div class="searchbar"><svg class="mi" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span>輸入路線、站名或港鐵車站</span></div>
     <div class="chips"><span class="chip on">公交</span><span class="chip">港鐵巴士</span><span class="chip">港鐵</span><span class="chip">輕鐵</span><span class="chip">通宵</span></div>
     <div class="group">最近搜尋</div>
     <div class="chips" style="padding-top:0"><span class="chip">68X</span><span class="chip">K75P</span><span class="chip">天水圍</span></div>
     <div class="list">
-      <div class="lrow"><span class="no sm">K75P</span><div class="main"><div class="name">港鐵巴士 · 天水圍</div><div class="cap">天瑞 → 天恆</div></div><span class="eta">8 分</span></div>
-      <div class="lrow"><span class="no sm">68X</span><div class="main"><div class="name">九巴 · 元朗—佐敦</div><div class="cap">去程</div></div><span class="eta">3 分</span></div>
+      <div class="lrow"><span class="avatar">K</span><div class="main"><div class="name">K75P 港鐵巴士</div><div class="cap">天瑞 → 天恆</div></div><span class="eta">8 分</span></div>
+      <div class="lrow"><span class="avatar">68</span><div class="main"><div class="name">68X 九巴</div><div class="cap">元朗—佐敦 · 去程</div></div><span class="eta">3 分</span></div>
     </div>
   </div>
-  <h3>02 搜尋 <small>Search bar 28px</small></h3>
-  <p>MD Search bar（高 52px、圓角 28px、surface-container-high）；Filters chips；最近搜尋 chips。</p>
+  <h3>02 搜尋 <small>Search bar + 圓形 avatars</small></h3>
+  <p>MD Search bar（52dp、28dp 圓角、leading 圖標）；列表 leading = 圓形路線號 Avatar（Material 習慣），名稱「路線號 + 營辦商」。</p>
 </div>
 
 <!-- 03 結果 -->
 <div class="shot">
   <div class="phone">
-    <div class="tbar"><div class="t">搜尋結果</div></div>
-    <div class="group">九巴</div>
+    <div class="tbar"><div class="t">搜尋結果</div><span class="sp"></span></div>
+    <div class="group">九巴 KMB</div>
     <div class="list">
-      <div class="lrow sel"><span class="no">68X</span><div class="main"><div class="name">往 佐敦西</div><div class="cap">由 洪水橋 開出</div></div><span class="eta">3 分</span></div>
-      <div class="lrow"><span class="no">68</span><div class="main"><div class="name">往 深水埗</div><div class="cap">由 元朗 開出</div></div><span class="eta medium">12 分</span></div>
-      <div class="lrow"><span class="no">N8X</span><div class="main"><div class="name">往 銅鑼灣</div><div class="cap">通宵 · 由 尖沙咀 開出</div></div><span class="eta soon">即將</span></div>
+      <div class="lrow sel"><span class="avatar">68X</span><div class="main"><div class="name">走去 佐敦西</div><div class="cap">由 洪水橋 開出</div></div><span class="eta">3 分</span></div>
+      <div class="lrow"><span class="avatar">68</span><div class="main"><div class="name">往 深水埗</div><div class="cap">由 元朗 開出</div></div><span class="eta medium">12 分</span></div>
+      <div class="lrow"><span class="avatar">N8X</span><div class="main"><div class="name">往 銅鑼灣 · 通宵</div><div class="cap">由 尖沙咀 開出</div></div><span class="eta soon">即將</span></div>
     </div>
     <div class="group">輕鐵</div>
     <div class="list">
-      <div class="lrow"><span class="no sm">610</span><div class="main"><div class="name">往 屯門碼頭</div><div class="cap">月台 2</div></div><span class="eta">2 分</span></div>
+      <div class="lrow"><span class="avatar grey">610</span><div class="main"><div class="name">往 屯門碼頭</div><div class="cap">月台 2</div></div><span class="eta">2 分</span></div>
     </div>
   </div>
-  <h3>03 搜尋結果 <small>List + 狀態層按壓</small></h3>
-  <p>ListView 行：選中 left accent 條＋表面層；按壓 ripple（state layer）；狀態色柔和化（soon=深紅字）。</p>
+  <h3>03 搜尋結果 <small>List + 狀態層</small></h3>
+  <p>分組標題 primary 色；選中行 6% primary 疊色；ETA primary 色強讀；狀態色（soon=error 紅）。</p>
 </div>
 
 <!-- 04 收藏 -->
 <div class="shot">
   <div class="phone">
-    <div class="tbar"><div class="t">收藏</div><div class="ic">＋</div></div>
+    <div class="tbar"><div class="t">收藏</div><span class="sp"></span><span class="icbtn"><svg class="mi" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></div>
     <div class="fav">
-      <div class="fcard sel">
+      <div class="fcard">
         <div class="head"><span class="no">68X</span><span class="type">公交</span></div>
         <div class="dest">往 佐敦西</div><div class="cap">站：洪水橋 · 去程</div>
         <div class="big">3<small> 分鐘</small></div>
         <div class="bar"><i></i></div>
-        <div class="frow"><span class="mdbtn">換站</span><span class="mdbtn p">✓ 釘選</span><span class="mdbtn">重試</span></div>
+        <div class="frow"><button class="mdbtn tonal">換站</button><button class="mdbtn fill">✓ 釘選</button><button class="mdbtn out">重試</button></div>
       </div>
       <div class="fcard">
         <div class="head"><span class="no">K75P</span><span class="type">港鐵巴士</span></div>
@@ -191,100 +237,99 @@
       </div>
     </div>
   </div>
-  <h3>04 收藏 <small>Card + 進度條</small></h3>
-  <p>MD Card（16px 圓角、elev-1）+ 車程位置 progress；操作=M3 按鈕（換站/釘選/重試）；舊數據灰字標記。</p>
+  <h3>04 收藏 <small>Card + MD 按鈕</small></h3>
+  <p>M3 按鈕三態：Tonal（換站）/ Filled（釘選）/ Outlined（重試）；車程進度條 primary；舊數據灰字標記。</p>
 </div>
 
 <!-- 05 詳情 BottomSheet -->
 <div class="shot">
   <div class="phone">
-    <div style="position:absolute;inset:0;background:rgba(0,0,0,.45)"></div>
-    <div style="position:absolute;left:14px;top:14px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2)"></div>
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,.40)"></div>
     <div class="sheet">
       <div class="handle"></div>
-      <div class="tabs"><span class="tab on">去程</span><span class="tab">回程</span></div>
+      <div class="tabs"><button class="tab on">去程</button><button class="tab">回程</button></div>
       <div class="list">
-        <div class="lrow"><span class="no sm">1</span><div class="main"><div class="name">洪水橋</div></div><span class="eta">3 分</span></div>
-        <div class="lrow"><span class="no sm">2</span><div class="main"><div class="name">洪福邨</div></div><span class="eta">4 分</span></div>
-        <div class="lrow sel"><span class="no sm">3</span><div class="main"><div class="name">石埗路</div></div><span class="eta medium">6 分</span></div>
-        <div class="lrow"><span class="no sm">4</span><div class="main"><div class="name">天水圍公園</div></div><span class="eta">11 分</span></div>
+        <div class="lrow"><span class="avatar grey">1</span><div class="main"><div class="name">洪水橋</div></div><span class="eta">3 分</span></div>
+        <div class="lrow"><span class="avatar grey">2</span><div class="main"><div class="name">洪福邨</div></div><span class="eta">4 分</span></div>
+        <div class="lrow sel"><span class="avatar grey">3</span><div class="main"><div class="name">石埗路</div><div class="cap">當前站</div></div><span class="eta medium">6 分</span></div>
+        <div class="lrow"><span class="avatar grey">4</span><div class="main"><div class="name">天水圍公園</div></div><span class="eta">11 分</span></div>
       </div>
     </div>
   </div>
-  <h3>05 路線詳情 <small>Bottom Sheet 28px</small></h3>
-  <p>詳情改為 Modal Bottom Sheet：頂圓角 28px + drag handle + scrim 半透明遮罩（替代全屏推入）。</p>
+  <h3>05 路線詳情 <small>Modal Bottom Sheet</small></h3>
+  <p>Bottom Sheet（28dp 頂圓角 + drag handle + scrim）；去程/回程 Segmented 切換；「當前站」行灰 avatar + 標記。</p>
 </div>
 
 <!-- 06 K75P -->
 <div class="shot">
   <div class="phone">
-    <div class="tbar"><div class="t">K75P 全線</div><div class="ic">📍</div></div>
-    <div class="group">天水圍市 ▾ <span style="color:var(--mp)">實時 3 班</span></div>
+    <div class="tbar"><div class="t">K75P 全線</div><span class="sp"></span><span class="icbtn"><svg class="mi" viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10a6 6 0 1112 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg></span></div>
+    <div class="group">天水圍市 ▾ · 實時 3 班</div>
     <div class="list">
-      <div class="lrow"><span class="no sm">1</span><div class="main"><div class="name">天瑞<span class="chip-s" style="position:static;margin-left:8px">實時</span></div><div class="cap">次班 12 分鐘</div></div><span class="eta">8 分</span></div>
-      <div class="lrow"><span class="no sm">2</span><div class="main"><div class="name">天水圍公園</div></div><span class="eta">9 分</span></div>
-      <div class="lrow"><span class="no sm">3</span><div class="main"><div class="name">天耀邨<span class="chip-s" style="position:static;margin-left:8px">定時</span></div></div><span class="eta">15 分</span></div>
+      <div class="lrow"><span class="avatar grey">1</span><div class="main"><div class="name">天瑞 <span class="chip on" style="padding:1px 8px">實時</span></div><div class="cap">次班 12 分鐘</div></div><span class="eta">8 分</span></div>
+      <div class="lrow"><span class="avatar grey">2</span><div class="main"><div class="name">天水圍公園</div></div><span class="eta">9 分</span></div>
+      <div class="lrow"><span class="avatar grey">3</span><div class="main"><div class="name">天耀邨 <span class="chip" style="padding:1px 8px">定時</span></div></div><span class="eta">15 分</span></div>
     </div>
-    <div class="fab">📍</div>
+    <div class="fab"><svg class="mi" viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10a6 6 0 1112 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg></div>
   </div>
   <h3>06 K75P 全線 <small>FAB=地圖</small></h3>
-  <p>各路線狀態 chip（實時/定時）；FAB 主操作＝跳巴士位置地圖。</p>
+  <p>狀態 chip（實時/定時）；FAB 位置圖標＝跳巴士地圖；列表 avatar 為站序。</p>
 </div>
 
 <!-- 07 天氣 -->
 <div class="shot">
   <div class="phone">
-    <div class="tbar"><div class="t">天氣</div><div class="ic">↻</div></div>
-    <div style="margin:8px 16px 0;border-radius:12px;background:#3B2E45;padding:10px 12px;font-size:13px;color:#FFD8D8">⚠ 暴雨警告信號現正生效</div>
-    <div class="card w" style="margin:12px 16px 0">
-      <span class="lab">現在</span><b>24°</b><span class="cap" style="font-size:12px;color:var(--on-surfacev)">多雲有雨 · 濕度 88%</span>
-    </div>
-    <div class="cards" style="grid-template-columns:repeat(3,1fr)">
-      <div class="card" style="min-height:72px"><span class="lab">今</span><b style="font-size:16px">24°</b></div>
-      <div class="card" style="min-height:72px"><span class="lab">明</span><b style="font-size:16px">21°</b></div>
-      <div class="card" style="min-height:72px"><span class="lab">後</span><b style="font-size:16px">23°</b></div>
+    <div class="tbar"><div class="t">天氣</div><span class="sp"></span><span class="icbtn"><svg class="mi" viewBox="0 0 24 24"><path d="M20 11A8 8 0 1012 19M12 19v3M12 3V2M5.6 5.6L4.2 4.2M18.4 5.6l1.4-1.4"/><path d="M12 19a8 8 0 018-8"/></svg></span></div>
+    <div style="margin:8px 16px 0;border-radius:12px;background:#F9DEDC;padding:10px 12px;font-size:13px;color:#93000A"><b>⚠</b> 暴雨警告信號現正生效</div>
+    <div class="cards" style="grid-template-columns:1fr;gap:0">
+      <div class="card w" style="box-shadow:none"><span class="lab">現在</span><b>24°</b><span class="cap">多雲有雨 · 濕度 88%</span></div>
+      <div class="cards" style="grid-template-columns:repeat(3,1fr);padding:0">
+        <div class="card" style="min-height:72px"><span class="lab">今</span><b style="font-size:16px">24°</b></div>
+        <div class="card" style="min-height:72px"><span class="lab">明</span><b style="font-size:16px">21°</b></div>
+        <div class="card" style="min-height:72px"><span class="lab">後</span><b style="font-size:16px">23°</b></div>
+      </div>
     </div>
   </div>
-  <h3>07 天氣 <small>警示 + 卡片</small></h3>
-  <p>警示用 error-container 色；今日卡 + 三日 mini 卡（MD 卡片橫向節奏）。</p>
+  <h3>07 天氣 <small>error-container 警示 + 卡片</small></h3>
+  <p>警示用 error-container（#F9DEDC/#93000A 文本，Material 語法）；今日卡 + 三日 mini 卡（tonal）。</p>
 </div>
 
 <!-- 08 壽司郎 -->
 <div class="shot">
   <div class="phone">
-    <div class="tbar"><div class="t">壽司郎</div><div class="ic">↻</div></div>
+    <div class="tbar"><div class="t">壽司郎</div><span class="sp"></span><span class="icbtn"><svg class="mi" viewBox="0 0 24 24"><path d="M20 11A8 8 0 1012 19M12 19v3"/></svg></span></div>
     <div class="group">元朗 · 屯門 · 天水圍</div>
     <div class="list">
-      <div class="lrow"><span class="no sm" style="color:var(--mp)">元朗</span><div class="main"><div class="name">元朗千色匯店</div><div class="cap">約 25 分鐘</div></div><span class="eta medium">8 組</span></div>
-      <div class="lrow"><span class="no sm" style="color:var(--mp)">屯門</span><div class="main"><div class="name">屯門市廣場店</div><div class="cap">約 15 分鐘</div></div><span class="eta">4 組</span></div>
-      <div class="lrow"><span class="no sm" style="color:var(--mp)">天水圍</span><div class="main"><div class="name">天水圍店</div><div class="cap">直入無需等候</div></div><span class="eta">0 組</span></div>
+      <div class="lrow"><span class="avatar grey">元</span><div class="main"><div class="name">元朗千色匯店</div><div class="cap">約 25 分鐘</div></div><span class="eta medium">8 組</span></div>
+      <div class="lrow"><span class="avatar grey">屯</span><div class="main"><div class="name">屯門市廣場店</div><div class="cap">約 15 分鐘</div></div><span class="eta">4 組</span></div>
+      <div class="lrow"><span class="avatar grey">天</span><div class="main"><div class="name">天水圍店</div><div class="cap">直入無需等候</div></div><span class="eta">0 組</span></div>
     </div>
   </div>
   <h3>08 壽司郎</h3>
-  <p>區域分組 + List；組數為強讀數，等候時間 Caption。</p>
+  <p>分區 avatar + 名稱/等候 Caption；組數為 primary 強讀數。</p>
 </div>
 
 <!-- 09 路線圖 -->
 <div class="shot">
   <div class="phone">
-    <div class="tbar"><div class="t">路線圖</div></div>
+    <div class="tbar"><div class="t">路線圖</div><span class="sp"></span></div>
     <div class="chips"><span class="chip on">港鐵</span><span class="chip">輕鐵</span><span class="chip">巴士位置</span></div>
-    <div class="mk"><div class="road"></div><span class="lbl" style="position:absolute;top:6px;left:8px;font-size:10px;color:#9AA">地圖示意</span>
+    <div class="mk"><div class="road"></div><span style="position:absolute;top:6px;left:8px;font-size:10px;color:#5C5F52">地圖示意</span>
       <span class="dot" style="left:20%;top:40%"></span><span class="dot" style="left:56%;top:58%"></span></div>
     <div class="list">
-      <div class="lrow"><span class="no sm" style="color:var(--mp)">屯馬綫</span></div>
-      <div class="lrow"><span class="no sm">3</span><div class="main"><div class="name">天水圍</div><div class="cap">轉乘 輕鐵</div></div></div>
-      <div class="lrow"><span class="no sm">4</span><div class="main"><div class="name">朗屏</div></div></div>
+      <div class="lrow"><span class="avatar">屯</span><div class="main"><div class="name">屯馬綫</div><div class="cap">全線 27 站</div></div></div>
+      <div class="lrow"><span class="avatar grey">3</span><div class="main"><div class="name">天水圍</div><div class="cap">轉乘 輕鐵</div></div></div>
+      <div class="lrow"><span class="avatar grey">4</span><div class="main"><div class="name">朗屏</div></div></div>
     </div>
   </div>
-  <h3>09 路線圖 <small>地圖 + 走馬燈</small></h3>
-  <p>上圖下列表；站行點按看 ETA；換乘站 Caption 標記。</p>
+  <h3>09 路線圖</h3>
+  <p>地圖上列表下；換乘站 Caption；站行點按看 ETA。</p>
 </div>
 
-<!-- 10 設定 -->
+<!-- 10 設定（淺色） -->
 <div class="shot">
   <div class="phone">
-    <div class="tbar"><div class="t">設定</div></div>
+    <div class="tbar"><div class="t">設定</div><span class="sp"></span></div>
     <div class="settings">
       <div class="group">外觀</div>
       <div class="srow"><span class="l">主題</span><div class="segb"><b class="on">深色</b><b>淺色</b></div></div>
@@ -298,20 +343,40 @@
       <div class="srow"><span class="l">版本</span><span class="cap">Beta 0.1 build 18</span></div>
     </div>
   </div>
-  <h3>10 設定 <small>Switch + SegmentedButton</small></h3>
-  <p>M3 Switch（圓形滑子、primary 填充）、SegmentedButton 分組、分組標題（外觀/出行）；皮膚切換含 MD 檔位。</p>
+  <h3>10 設定 <small>M3 Switch · SegmentedButton</small></h3>
+  <p>Switch（primary 軌＋白滑子）；SegmentedButton（secondary-container 選中）；分組標題（外觀/出行）。</p>
+</div>
+
+<!-- 11 深色示範 -->
+<div class="shot">
+  <div class="phone dark">
+    <div class="tbar"><div class="t" style="color:#E6E0E9">森友出行</div><span class="sp"></span><span class="icbtn" style="color:#CAC4D0"><svg class="mi" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></span></div>
+    <div class="cards">
+      <div class="card prim" style="background:#4F378B"><span class="lab" style="color:#EADDFF">我的收藏</span><b style="color:#EADDFF">68X</b></div>
+      <div class="card"><span class="lab">壽司郎</span><b style="font-size:18px;font-weight:500;color:#D0BCFF">元朗 6 組</b></div>
+      <div class="card w"><span class="lab">天氣</span><b>14°</b><span class="cap" style="color:#CAC4D0">明天 多云 18–23°</span></div>
+      <div class="card w"><span class="lab">K75P · 天瑞</span><b>8 分鐘</b><span class="cap" style="color:#CAC4D0">實時 3 班</span></div>
+    </div>
+    <div class="nbar" style="background:#211F26">
+      <span class="nitem on" style="color:#E6E0E9"><span class="pill" style="background:#4F378B"><svg class="mi" viewBox="0 0 24 24"><path d="M4 10l8-7 8 7v9a1 1 0 01-1 1h-5v-6h-4v6H5a1 1 0 01-1-1z"/></svg></span>首頁</span>
+      <span class="nitem" style="color:#CAC4D0"><span class="pill"><svg class="mi" viewBox="0 0 24 24"><path d="M12 20.5S3 15.5 3 8.9A4.9 4.9 0 0112 6a4.9 4.9 0 019 2.9c0 6.6-9 11.6-9 11.6z"/></svg></span>收藏</span>
+      <span class="nitem" style="color:#CAC4D0"><span class="pill"><svg class="mi" viewBox="0 0 24 24"><path d="M7 3l-2.5 18M17 3l2.5 18"/></svg></span>壽司郎</span>
+      <span class="nitem" style="color:#CAC4D0"><span class="pill"><svg class="mi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7 7 0 000-3l2-1.5-2-3.4-2.3.9a7 7 0 00-2.6-1.5L14 2h-4l-.5 2.5a7 7 0 00-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7 7 0 000 3l-2 1.5 2 3.4 2.3-.9a7 7 0 002.6 1.5L10 22h4l.5-2.5a7 7 0 002.6-1.5l2.3.9 2-3.4-2-1.5z"/></svg></span>設定</span>
+    </div>
+  </div>
+  <h3>11 深色示範 <small>Material 深色</small></h3>
+  <p>深色 Token：surface #141218、container #211F26、primary-container #4F378B、primary 變淡 #D0BCFF（Material 深色規則：提亮 primary）。</p>
 </div>
 
 </div>
 
 <div class="note">
-  MD 皮膚（若開發）：以 <code>body[data-ui="md"]</code> 獨立 skin-md.css（16px 圓角、Roboto、primary #6750A4、
-  elev-1/3、state layer 按壓替代縮放、NavigationBar pill 替代 App Bar、詳情改 Bottom Sheet、首頁加 FAB）。<br>
-  <b>動效對應（3D 已開放，依防護原則）：</b>詳情 BottomSheet 以 <code>translateY(100%)→0</code> 配合 <code>rotateX` 輕微
-  透視上滑 + scrim 淡入；FAB 按壓 <code>translateY(-3px) scale(1.06)</code> + elev 加深；卡片按壓 <b>elevation 變化</b>
-  （MD 語法，非縮放）；列表行 state layer 2D 疊色（一次性互動）；NavigationBar 選中 pill 位置平滑滑動；
-  ripple 僅按下瞬間；reduced-motion 全停。3D 只作「瞬間演出」，滾動/背景維持 2D。<br>
-  前置：皮膚架構已拆檔就緒。動畫概念見 <code>design-motion-board.html</code>（9 個 3D 增強演示 + 防護三原則）。
+  <b>v2 主要改動（更「像安卓」）：</b> ①淺色 Material You 為主（淺 surface + tonal 卡 – 一眼即安卓）②全部圖標換
+  Material Symbols 實線 SVG（非文字字符）③NavigationBar 選中＝<b>secondary-container 圓形 pill 墊底</b>＋label 加粗
+  ④對齊 Material 習慣：列表 leading 圓形<b>路線號 avatar</b>、分組標題 primary、警告用 error-container、按鈕三態
+  （Filled/Tonal/Outlined）、FAB=primary-container ⑤保留深色對比幕（深色下 primary 提亮為 #D0BCFF）。<br>
+  動效版本見 <code>design-motion-board.html</code>（3D 增強 + 防護原則）；實作時以 <code>body[data-ui="md"]</code>
+  獨立 <code>skin-md.css</code> 落地。
 </div>
 
 </body>
