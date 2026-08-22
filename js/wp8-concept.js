@@ -1171,7 +1171,12 @@ function initPullToRefresh() {
 
 /* ---------- 磁貼長按：換色 / 隱藏 / 還原 ---------- */
 const TILE_STORAGE = 'wp8concept_tiles';
-const TILE_COLORS = ['#5B21B6', '#7C3AED', '#6D28D9', '#4C1D95'];
+/* 磁貼換色：WP8 用原生 accent 色板，WP7 保留暗紫系 */
+function tilePalette() {
+  return document.body.dataset.ui === 'wp7'
+    ? ['#5B21B6', '#7C3AED', '#6D28D9', '#4C1D95']
+    : ['#AA00FF', '#6A00FF', '#0050EF', '#00ABA9'];
+}
 function initTileMenu() {
   const menu = $('tileMenu');
   if (!menu) return;
@@ -1210,10 +1215,11 @@ function showTileMenu(tile) {
   menu.style.top = Math.max(8, r.top - menu.offsetHeight - 6) + 'px';
 }
 function cycleTileColor(tile) {
+  const pal = tilePalette();
   let ci = parseInt(tile.dataset.ci || '0', 10);
-  ci = (ci + 1) % TILE_COLORS.length;
+  ci = (ci + 1) % pal.length;
   tile.dataset.ci = String(ci);
-  tile.style.background = TILE_COLORS[ci];
+  tile.style.background = pal[ci];
   saveTilePrefs();
 }
 function loadTilePrefs() {
@@ -1223,7 +1229,7 @@ function loadTilePrefs() {
   document.querySelectorAll('.tile[data-tile], .tile-small[data-tile]').forEach(t => {
     const c = p[t.dataset.tile];
     if (!c) return;
-    if (c.bg) { t.style.background = c.bg; t.dataset.ci = String(TILE_COLORS.indexOf(c.bg)); }
+    if (c.bg) { t.style.background = c.bg; t.dataset.ci = String(tilePalette().indexOf(c.bg)); }
     if (c.hidden) t.style.display = 'none';
   });
 }
@@ -1313,9 +1319,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.visualViewport.addEventListener('scroll', applySysbarInset);
   }
   const th = localStorage.getItem('wp8concept_theme') || 'dark';
-  const ac = localStorage.getItem('wp8concept_accent') || '#8B5CF6';
-  const rv = localStorage.getItem('wp8concept_refresh') || '30';
   const ui = localStorage.getItem('wp8concept_ui') || 'wp8';
+  const ac = localStorage.getItem('wp8concept_accent') || (ui === 'wp7' ? '#8B5CF6' : '#AA00FF');
+  const rv = localStorage.getItem('wp8concept_refresh') || '30';
   if (th === 'light') document.body.dataset.theme = 'light';
   document.body.dataset.ui = ui;
   document.documentElement.style.setProperty('--accent', ac);
