@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>森友出行 · WP8 概念圖板（Design Concept Board）</title>
+<style>
+  :root {
+    --frame-bg: #1F1F1F;
+    --accent: #AA00FF;      /* WP8 Violet */
+    --accent2: #6A00FF;     /* WP8 Indigo */
+    --accent3: #0050EF;     /* WP8 Cobalt */
+    --accent4: #00ABA9;     /* WP8 Teal */
+    --text: #FFFFFF;
+    --text2: #B0B0B0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0D0D0D; color: #E8E8E8;
+    font-family: Segoe UI, 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    padding: 40px 28px 80px;
+  }
+  h1 { font-weight: 300; font-size: 34px; letter-spacing: -0.5px; margin-bottom: 6px; }
+  h1 b { font-weight: 300; color: var(--accent); }
+  .sub { color: #8B8B8B; margin-bottom: 8px; font-size: 14px; }
+  .principles { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 34px; }
+  .principles span {
+    border: 1px solid #333; color: #AAA; padding: 6px 12px; font-size: 12px;
+  }
+  .grid { display: flex; flex-wrap: wrap; gap: 34px; }
+  .shot { width: 320px; }
+  .shot h3 { font-weight: 400; font-size: 15px; margin: 10px 2px 4px; color: #FFF; }
+  .shot h3 small { color: #777; font-weight: 300; font-size: 12px; margin-left: 6px; }
+  .shot p { color: #888; font-size: 12px; line-height: 1.6; margin: 0 2px; max-width: 320px; }
+
+  .phone {
+    width: 300px; height: 620px; background: var(--frame-bg);
+    overflow: hidden; position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  }
+  /* 頂欄 */
+  .topbar {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 26px 20px 10px;
+  }
+  .topbar .t { font-size: 42px; font-weight: 300; letter-spacing: -0.5px; line-height: 1; }
+  .topbar .acts { display: flex; gap: 16px; align-items: center; padding-bottom: 4px; }
+  .glyph { color: #CFCFCF; font-size: 20px; line-height: 1; font-family: 'Segoe UI Symbol', sans-serif; }
+  .glyph.on { color: #FFF; }
+
+  /* 磁貼牆 */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 20px; }
+  .tile {
+    grid-column: span 2; height: 92px; padding: 10px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    color: #FFF; font-size: 13px; position: relative;
+  }
+  .tile.w { grid-column: span 4; height: 72px; }
+  .tile b { font-size: 26px; font-weight: 300; }
+  .tile .sub { font-size: 11px; opacity: .85; color: #FFF; }
+  .t-a { background: var(--accent); }
+  .t-b { background: var(--accent2); }
+  .t-c { background: var(--accent3); }
+  .t-d { background: var(--accent4); }
+  .t-dims { color: #888; background: transparent; }
+  .tag { position: absolute; top: 10px; right: 10px; font-size: 10px; border: 1px solid rgba(255,255,255,.6); padding: 0 5px; }
+
+  /* 列表（無分隔線） */
+  .list { padding: 4px 20px 0; }
+  .row { display: flex; align-items: center; gap: 14px; padding: 13px 0; }
+  .row .no { width: 74px; font-size: 30px; font-weight: 300; color: var(--accent); }
+  .row .main { flex: 1; min-width: 0; }
+  .row .name { font-size: 20px; }
+  .row .sub2 { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .row .eta { font-size: 42px; font-weight: 300; font-variant-numeric: tabular-nums; }
+  .row .eta small { font-size: 13px; color: var(--text2); font-weight: 300; }
+  .row .eta.soon { color: #E51400; }
+  .row .eta.medium { color: #F0A30A; }
+  .group { font-size: 20px; font-weight: 300; color: #FFF; padding: 18px 20px 4px; }
+
+  /* 收藏 */
+  .favcard { padding: 18px 20px 0; }
+  .favcard .head { display: flex; align-items: baseline; gap: 12px; }
+  .favcard .no { font-size: 32px; font-weight: 300; color: var(--accent); }
+  .favcard .type { font-size: 11px; color: var(--text2); }
+  .favcard .act { margin-left: auto; display: flex; gap: 10px; }
+  .favcard .act span { font-size: 16px; color: var(--text2); }
+  .favcard .dest { font-size: 22px; margin-top: 10px; }
+  .favcard .stop { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .favcard .big { font-size: 60px; font-weight: 300; margin-top: 8px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .favcard .big small { font-size: 20px; color: var(--text2); }
+  .favcard .lines { font-size: 14px; color: var(--text2); margin-top: 6px; }
+  .pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 22px; }
+  .pager .arw { color: #FFF; font-size: 18px; }
+  .pager .dots { display: flex; gap: 7px; }
+  .pager .dots i { width: 7px; height: 7px; border-radius: 50%; background: #555; }
+  .pager .dots i.on { background: var(--accent); }
+  .pager .page { color: var(--text2); font-size: 12px; }
+
+  /* 詳情 */
+  .tabs { display: flex; gap: 8px; padding: 12px 20px; }
+  .tab { border: 1px solid #444; color: #BBB; padding: 5px 16px; font-size: 13px; }
+  .tab.on { background: var(--accent); border-color: var(--accent); color: #FFF; }
+  .detail .row .eta { font-size: 28px; }
+  .detail .row .no-sm { width: 30px; color: var(--text2); font-size: 14px; }
+
+  /* 設定 */
+  .settings { padding: 6px 20px 0; }
+  .srow { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 0; }
+  .srow .l { font-size: 16px; }
+  .duplex { display: inline-block; width: 54px; height: 28px; background: var(--accent); position: relative; }
+  .duplex::after { content: ''; position: absolute; right: 3px; top: 3px; width: 22px; height: 22px; background: #FFF; }
+  .duplex.off { background: #444; }
+  .duplex.off::after { left: 3px; right: auto; }
+  .seg { display: flex; gap: 8px; }
+  .seg b { border: 1px solid #444; color: #BBB; padding: 4px 12px; font-size: 12px; font-weight: 400; }
+  .seg b.on { background: var(--accent); border-color: var(--accent); color: #FFF; }
+
+  /* App Bar */
+  .appbar {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 62px;
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 0 14px; background: #262626; border-top: 1px solid #333;
+  }
+  .appbar .g { font-size: 22px; color: #CFCFCF; font-family: 'Segoe UI Symbol', sans-serif; }
+  .appbar .g.on { color: var(--accent); }
+
+  .note { margin-top: 46px; border-top: 1px solid #222; padding-top: 20px; color: #888; font-size: 13px; line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<h1>森友出行 · <b>WP8 概念圖板</b></h1>
+<div class="sub">基於 Metro / Microsoft Design Language 2 重新歸納的改進方案 — 6 屏概念稿（設計意向）</div>
+<div class="principles">
+  <span>內容重於裝飾</span><span>純色無陰影</span><span>Segoe UI Light 大字排版</span>
+  <span>單一 accent</span><span>裸字形圖標</span><span>42px 標題／60px 強讀數</span><span>12px 網格</span>
+</div>
+
+<div class="grid">
+
+<!-- 1. 首頁 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar">
+      <div class="t">森友出行</div>
+      <div class="acts"><span class="glyph">⌕</span><span class="glyph">↻</span></div>
+    </div>
+    <div class="tiles">
+      <div class="tile t-a">我的收藏<span class="tag">accent</span></div>
+      <div class="tile t-b">壽司郎</div>
+      <div class="tile w t-c">天氣<b>14°</b><span class="sub">明天 多云 18–23°</span></div>
+      <div class="tile w t-a">K75P · 天瑞<b>8 分鐘</b><span class="sub">實時 3 班· 定時 1 班</span></div>
+      <div class="tile w t-d">收藏①<b>68X</b><span class="sub">次班 12 分鐘</span></div>
+      <div class="tile w t-b">要聞 ▪ 路線圖 ▪ 設定 — 全為純色磁貼</div>
+    </div>
+    <div class="appbar"><span class="g on">⌂</span><span class="g">♥</span><span class="g">♨</span><span class="g">⚙</span><span class="g">⋯</span></div>
+  </div>
+  <h3>01 首頁 <small>改進</small></h3>
+  <p>中性深色 #1F1F1F 襯托 WP8 原生 accent（Violet #AA00FF）；磁貼牆純色無邊框；頂欄 42px Light 標題 + 裸字形（無圓圈）；App Bar 裸字形。</p>
+</div>
+
+<!-- 2. 搜尋結果 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">結果</div><div class="acts"><span class="glyph">⌕</span></div></div>
+    <div class="group">九巴</div>
+    <div class="list">
+      <div class="row"><span class="no">68X</span><div class="main"><div class="name">往 佐敦西</div><div class="sub2">由 洪水橋 開出</div></div><span class="eta">3<small>分</small></span></div>
+      <div class="row"><span class="no">68</span><div class="main"><div class="name">往 深水埗</div><div class="sub2">由 元朗 開出</div></div><span class="eta medium">12<small>分</small></span></div>
+      <div class="row"><span class="no">68M</span><div class="main"><div class="name">往 荃灣</div><div class="sub2">由 元朗 開出</div></div><span class="eta soon">即將<small></small></span></div>
+    </div>
+    <div class="group">香港鐵路</div>
+    <div class="list">
+      <div class="row"><span class="no-sm" style="width:74px;font-size:24px;font-weight:300;color:var(--accent)">屯門</span><div class="main"><div class="name">港鐵 · 屯馬綫</div></div><span class="eta">5<small>分</small></span></div>
+    </div>
+  </div>
+  <h3>02 搜尋結果 <small>改進：去線、大數字</small></h3>
+  <p>移除分隔線改用留白分組；分組標題改 Light 白字 20px；ETA 強讀數 42px Light（即將=紅、中等=琥珀、準點=白）。</p>
+</div>
+
+<!-- 3. 收藏分頁 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">收藏</div><div class="acts"></div></div>
+    <div class="favcard">
+      <div class="head"><span class="no">68X</span><span class="type">公交</span>
+        <span class="act"><span>換站</span><span>✕</span></span></div>
+      <div class="dest">往 佐敦西</div><div class="stop">站：洪水橋 · 去程</div>
+      <div class="big">3<small> 分鐘</small></div>
+      <div class="lines">佐敦西 · 11分鐘</div>
+    </div>
+    <div class="favcard">
+      <div class="head"><span class="no">K75P</span><span class="type">港鐵巴士</span>
+        <span class="act"><span>換站</span><span>✕</span></span></div>
+      <div class="dest">天水圍 → 天恆</div><div class="stop">天瑞 · 去程</div>
+      <div class="big">8<small> 分鐘</small></div>
+    </div>
+    <div class="pager"><span class="arw">‹</span><div class="dots"><i class="on"></i><i></i><i></i></div><span class="page">1 / 3</span><span class="arw">›</span></div>
+  </div>
+  <h3>03 收藏 <small>改進：2 條/頁 + 強讀數</small></h3>
+  <p>每頁 2 條；剩餘時間升到 60px Light；分頁器改「箭頭 + 頁點 + 頁碼」組合；卡片去框線純留白。</p>
+</div>
+
+<!-- 4. 路線詳情 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t" style="font-size:32px">68X · 往佐敦西</div><div class="acts"><span class="glyph">‹</span></div></div>
+    <div class="tabs"><span class="tab on">去程</span><span class="tab">回程</span></div>
+    <div class="list detail">
+      <div class="row"><span class="no-sm">1</span><div class="main"><div class="name">洪水橋</div></div><span class="eta">3<small>分</small></span></div>
+      <div class="row"><span class="no-sm">2</span><div class="main"><div class="name">洪福邨</div></div><span class="eta">4<small>分</small></span></div>
+      <div class="row"><span class="no-sm">3</span><div class="main"><div class="name">石埗路</div></div><span class="eta">6<small>分</small></span></div>
+      <div class="row"><span class="no-sm">4</span><div class="main"><div class="name">天水圍公園</div></div><span class="eta medium">11<small>分</small></span></div>
+      <div class="row"><span class="no-sm">5</span><div class="main"><div class="name">天瑞</div></div><span class="eta">—</span></div>
+    </div>
+  </div>
+  <h3>04 路線詳情 <small>保留</small></h3>
+  <p>去程/回程橫滑 + 分頁按鈕確認；站表大數字隨到站時間遞增，節奏清晰。</p>
+</div>
+
+<!-- 5. 磁貼牆特寫 -->
+<div class="shot">
+  <div class="phone" style="background:#000">
+    <div style="padding:24px 20px 0;color:#888;font-size:12px">WP8 開始畫面 · 12px 網格抽象</div>
+    <div class="tiles" style="padding-top:14px">
+      <div class="tile t-a" style="height:120px"><b>68X</b><span class="sub">佐敦西</span><span class="sub">3 分鐘</span></div>
+      <div class="tile t-b" style="height:120px">收藏</div>
+      <div class="tile w t-c" style="height:120px;grid-column:span 4"><b>K75P 8 分鐘</b><span class="sub">天瑞 · 實時 3 班</span></div>
+      <div class="tile w t-d" style="grid-column:span 4">天氣 · 14°</div>
+    </div>
+    <div style="padding:0 20px;color:#999;font-size:12px;line-height:1.7">
+      磁貼比例：小 1×1 ／ 中 2×2 ／ 寬 4×2（本圖近似）；<br>
+      數字即內容：路線/班次直接上牆（Live Tile 精神）。
+    </div>
+  </div>
+  <h3>05 磁貼牆 <small>Live Tile 特寫</small></h3>
+  <p>把「下一班」直接做成磁貼內容：大字 26px Light + 小字輔助；定時翻轉更新。</p>
+</div>
+
+<!-- 6. 設定 -->
+<div class="shot">
+  <div class="phone">
+    <div class="topbar"><div class="t">設定</div><div class="acts"></div></div>
+    <div class="settings">
+      <div class="srow"><span class="l">主題</span><div class="seg"><b class="on">深色</b><b>淺色</b></div></div>
+      <div class="srow"><span class="l">強調色</span><div class="seg"><b class="on">紫</b><b>靛</b><b>鈷</b><b>青綠</b></div></div>
+      <div class="srow"><span class="l">自動刷新</span><div class="seg"><b>15s</b><b class="on">30s</b><b>關</b></div></div>
+      <div class="srow"><span class="l">高對比</span><span class="duplex off"></span></div>
+      <div class="srow"><span class="l">介面風格</span><div class="seg"><b>WP7</b><b class="on">WP8</b></div></div>
+      <div class="srow"><span class="l">版本</span><span class="glyph" style="font-size:14px;color:#AAA">Beta 0.1 build 12</span></div>
+    </div>
+  </div>
+  <h3>06 設定 <small>改進：Duplex 開關</small></h3>
+  <p>開關改用 WP8 Duplex 樣式（矩形滑子、accent 填充）；分段選擇器同風格；保留 WP7/WP8 切換。</p>
+</div>
+
+</div>
+
+<div class="note">
+  對照診斷：① 當前頂欄按鈕為圓圈框 → 概念稿改<b>裸字形</b>；② 當前磁貼/背景為暗紫系 → 概念稿回歸
+  <b>中性深色 + WP8 原生 accent 色板</b>；③ 列表分隔線 → <b>留白分組</b>；④ ETA 強讀數 → <b>42–60px Light</b>。
+  保留：Pivot 橫滑、Panorama、App Bar ⋯、分頁收藏（2 條/頁）、狀態列已移除的決定。
+</div>
+
+</body>
+</html>
