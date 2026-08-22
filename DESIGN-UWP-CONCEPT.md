@@ -7,6 +7,8 @@
   https://mrl.cs.vsb.cz/people/fabian/uro/UWPguidelines.pdf
 - Wikipedia「Universal Windows Platform apps」：
   https://en.wikipedia.org/api/rest_v1/page/pdf/Universal_Windows_Platform_apps
+- 微軟官方 UWP 樣本庫（本報告附錄的實證來源）：
+  https://github.com/microsoft/Windows-universal-samples
 
 ---
 
@@ -92,3 +94,40 @@ UWP 把它變成「真實光線下的材料」：同一個「內容優先」內�
 
 概念圖見 `design-concept-board-uwp.html`（6 屏）。若確認方向，可做成
 **第三套皮膚** `body[data-ui="uwp"]`（與 WP7/WP8 並存於設定切換）。
+
+---
+
+## 四、附錄：微軟官方樣本庫實證（Windows-universal-samples）
+
+來源：https://github.com/microsoft/Windows-universal-samples （248 個樣本）
+
+筆者直接檢索了樣本庫索引與原始碼，以下推論均有官方樣本代碼佐證：
+
+### 4.1 XamlListView（列表與詳情模式）
+`Samples/XamlListView` 官方場景即包含我們概念圖的所有關鍵模式：
+- **Scenario3_MasterDetail** —— Master-Detail（主列表 + 詳情）是官方一級場景；
+  對應我們「收藏列表 → 換站/全線候車」的構思。
+  - `Page.Transitions → EntranceThemeTransition`：**入場動畫是官方標準頁面轉場**。
+  - `Page.BottomAppBar → CommandBar`，按鈕寫法：
+    `AppBarButton Label="Add Item" Icon="Add"` 與
+    `FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xe762;"` ——
+    證實 **CommandBar = 圖標（MDL2 字形）+ 文字標籤**，非 WP8 裸字形。
+  - ListView 行模板：32px 圓形頭像 + `BaseTextBlockStyle`（主題文字樣式）兩行文本；
+    並用 `x:Phase="1"` **分段渲染**優化長列表。
+- **Scenario4_EdgeTappedListView、GroupInfoList、RestoreScrollPosition** ——
+  列表還具備：邊緣點按、**分組**（對應我們「九巴/城巴」分組標題）、滾動位置還原。
+
+### 4.2 XamlNavigation（導航）
+樣本 `README.md` 明確寫道：
+> This sample has been superseded by the NavigationView section of the
+> UI Basics sample. （fwlink 619902）
+
+即導航標準答案 = **NavigationView**，由 UI Basics 樣本持續維護；
+與本報告第一節的「NavigationView 取代 Pivot」結論一致。
+
+### 4.3 對我們應用直接可取的官方細節
+1. 詳情頁加入場動畫（等價 EntranceThemeTransition 的淡入上移；我們已有 rowIn，保留）。
+2. CommandBar 按鈕 = 圖標 + 標籤（我們底部列可加標籤文字）。
+3. 列表行模板用「頭像/徽標 + 兩行文本」（我們是「路線號 + 名稱 + 輔助」）。
+4. 分段渲染 x:Phase 思想 → 我們長列表分批渲染（詳情頁已按 5 站一批，同理念）。
+5. NavigationView 僅在「多區塊資訊架構」時使用；本 App 仍以 Pivot 為骨幹是合理的。
