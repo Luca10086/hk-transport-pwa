@@ -494,12 +494,16 @@ function detailTitle(d) {
   if (d.type === 'mtr') return d.station_name || '';
   return '';
 }
+let detailReturn = null;   /* { title, html }：全綫視圖 → 車站視圖 */
+let detailStationCode = '';  /* 詳情當前的港鐵站 code（全綫視圖標註本站用） */
 function openRouteDetail(btn) {
   const raw = btn ? btn.getAttribute('data-detail') : null;
   if (!raw) return;
   let detail;
   try { detail = JSON.parse(raw); } catch (e) { return; }
   const sheet = $('detailSheet');
+  detailReturn = null;
+  detailStationCode = detail.type === 'mtr' ? String(detail.station_id || '') : '';
   if (!sheet) return;
   $('detailTitle').textContent = detailTitle(detail);
   sheet.hidden = false;
@@ -521,24 +525,55 @@ function closeRouteDetail() {
     try { history.back(); } catch (e) { consumingBack = false; }
   }
 }
-/* 安卓返回鍵：先關詳情頁，再回上一分頁，最後才退出 */
+/* 詳情頁返回：若在全綫視圖，先退回車站視圖；否則關閉詳情 */
+function restoreDetailReturn() {
+  const body = $('detailBody'), title = $('detailTitle');
+  if (body && detailReturn) body.innerHTML = detailReturn.html;
+  if (title && detailReturn) title.textContent = detailReturn.title;
+  detailReturn = null;
+}
+function detailBack() {
+  const sheet = $('detailSheet');
+  if (!sheet || sheet.hidden) return;
+  if (detailReturn) { restoreDetailReturn(); return; }
+  closeRouteDetail();
+}
+/* 安卓返回鍵：全綫 → 車站視圖 → 上一分頁 → 首頁 → 退出 */
+function onAndroidBack() {
+  const sheet = $('detailSheet');
+  if (sheet && !sheet.hidden) { detailBack(); return; }
+  paneHistory.pop();
+  const prev = paneHistory[paneHistory.length - 1];
+  if (prev) { goPaneBack(prev); return; }
+  if (curPane && curPane !== 'home') { try { goPane('home'); } catch (e) {} return; }
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    try { window.Capacitor.Plugins.App.exitApp(); } catch (e) {}
+  }
+}
 window.addEventListener('popstate', () => {
   if (consumingBack) { consumingBack = false; return; }
   const sheet = $('detailSheet');
   if (sheet && !sheet.hidden) {
-    sheet.classList.remove('open');
-    document.body.classList.remove('detail-open');
-    setTimeout(() => { sheet.hidden = true; }, 360);
+    if (detailReturn) {
+      restoreDetailReturn();
+      try { history.pushState({ wp8Sheet: true }, ''); } catch (e) {}
+    } else {
+      sheet.classList.remove('open');
+      document.body.classList.remove('detail-open');
+      setTimeout(() => { sheet.hidden = true; }, 360);
+    }
     return;
   }
   paneHistory.pop();
   const prev = paneHistory[paneHistory.length - 1];
-  if (prev) goPaneBack(prev);
+  if (prev) { goPaneBack(prev); return; }
+  if (curPane && curPane !== 'home') goPane('home');
 });
+document.addEventListener('backbutton', onAndroidBack);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const sheet = $('detailSheet');
-    if (sheet && !sheet.hidden) closeRouteDetail();
+    if (sheet && !sheet.hidden) detailBack();
   }
 });
 async function renderRouteDetail(detail, body) {
@@ -638,7 +673,7 @@ async function renderMTRStationDetail(detail, body) {
     const d = (sched && sched[lc + '-' + detail.station_id]) || {};
     const ts = [...(d.UP || []), ...(d.DOWN || [])]
       .map(t => (t && t.time ? parseHK(t.time) / 1000 : null)).filter(Boolean).sort((a, b) => a - b);
-    lines.push({ line: MTR_LINES[lc] || lc, ts });
+    lines.push({ lc, line: MTR_LINES[lc] || lc, ts });
   }
   /* 首班 / 尾班（由全日班表推算） */
   let first = null, last = null;
@@ -650,11 +685,29 @@ async function renderMTRStationDetail(detail, body) {
     ? '<div class="metro-group">首班 ' + formatTime(first) + ' · 尾班 ' + formatTime(last) + '</div>'
     : '';
   body.innerHTML = head + (lines.map(l =>
-    '<div class="ds-stop">'
+    '<div class="ds-stop ds-line" onclick="showMTRLineStops(\'' + l.lc + '\')">'
     + '<span class="ds-seq" style="width:auto;min-width:56px">' + escapeHtml(l.line) + '</span>'
     + '<span class="ds-name">下一班</span>'
     + '<span class="ds-eta ' + etaCls(l.ts[0]) + '">' + (l.ts[0] ? etaText(l.ts[0]) : '—') + '</span>'
+    + '<span class="ds-more">全綫 ›</span>'
     + '</div>').join('') || '<div class="metro-empty">暫無班次資料</div>');
+}
+/* 全綫視圖：整條路綫所有車站（本站藍點高亮），返回鍵退回車站視圖 */
+function showMTRLineStops(lc) {
+  const body = $('detailBody'), title = $('detailTitle');
+  if (!body || !MTR_LINE_STOPS[lc]) return;
+  if (!detailReturn) detailReturn = { title: title ? title.textContent : '', html: body.innerHTML };
+  const stops = MTR_LINE_STOPS[lc] || [];
+  body.innerHTML = '<div class="metro-group">' + escapeHtml(MTR_LINES[lc] || lc) + ' 全綫 · 共 ' + stops.length + ' 站</div>'
+    + stops.map((st, i) =>
+      '<div class="ds-stop' + (st.code === detailStationCode ? ' ds-cur' : '') + '">'
+      + '<span class="ds-seq">' + (i + 1) + '</span>'
+      + '<span class="ds-name">' + escapeHtml(st.name) + '</span>'
+      + (st.code === detailStationCode ? '<span class="ds-cur-tag">本站</span>' : '')
+      + '<span class="ds-eta"></span>'
+      + '</div>').join('');
+  if (title) title.textContent = (MTR_LINES[lc] || lc) + ' 全綫';
+  body.scrollTop = 0;
 }
 async function renderMTRBusDetail(detail, body) {
   const data = await getMTRBusETA(detail.route);
