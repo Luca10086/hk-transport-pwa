@@ -16,6 +16,7 @@
 <!-- ================= 顶栏：Pivot 大标题 ================= -->
 <header class="topbar">
   <h1 class="pivot-title" id="pivotTitle">森友出行</h1>
+  <div class="pivot-peek" id="pivotPeek"></div>
   <div class="topbar-actions">
     <button class="topbar-search" onclick="goPane('home');setTimeout(function(){goPanoPanel(1);var i=document.getElementById('searchInput');if(i)i.focus();},400)" aria-label="搜尋路線">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
@@ -32,6 +33,9 @@
 
 <!-- ================= 數據新鮮度 ================= -->
 <span class="last-update" id="lastUpdate"></span>
+
+<!-- ================= WP8 狀態欄時鐘（規範 24px 透明欄） ================= -->
+<div class="sysbar-clock" id="sysbarClock">14:32</div>
 
 <!-- ================= FAB（MD 皮膚主操作＝搜尋） ================= -->
 <button class="fab-senyou" onclick="goPane('home');setTimeout(function(){goPanoPanel(1);var i=document.getElementById('searchInput');if(i)i.focus();},400)" aria-label="搜尋路線">
@@ -60,7 +64,7 @@
               <span class="tile-face"><span>天氣</span><b id="tileWeatherV">--°</b><span class="tile-sub" id="tileWeatherSub">載入中</span></span>
               <span class="tile-face tile-face-back" id="tileWeatherD">明天 --</span>
             </button>
-            <button class="tile tile-wide tile-cobalt" id="tileK75P" data-tile="k75p" onclick="goBusMap()">
+            <button class="tile tile-wide tile-cyan" id="tileK75P" data-tile="k75p" onclick="goBusMap()">
               <span>K75P · 天瑞</span>
               <b id="k75pTileV">--</b>
               <span class="tile-sub" id="k75pTileSub">載入中</span>
@@ -148,7 +152,7 @@
           <div class="seg" id="accentSeg">
             <button data-ac="#AA00FF" style="color:#AA00FF" onclick="setAccent('#AA00FF')">紫</button>
             <button data-ac="#6A00FF" style="color:#6A00FF" onclick="setAccent('#6A00FF')">靛</button>
-            <button data-ac="#0050EF" style="color:#0050EF" onclick="setAccent('#0050EF')">鈷</button>
+            <button data-ac="#0078D7" style="color:#0078D7" onclick="setAccent('#0078D7')">藍</button>
             <button data-ac="#00ABA9" style="color:#00ABA9" onclick="setAccent('#00ABA9')">青綠</button>
           </div>
         </div>

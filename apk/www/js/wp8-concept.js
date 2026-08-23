@@ -80,6 +80,13 @@ function updatePivot() {
     }, 160);
   }
   document.querySelectorAll('.ab-btn[data-pane]').forEach(b => b.classList.toggle('active', b.dataset.pane === cur));
+  /* Pivot 相鄰頁標題預告（WP8 規範：60% 亮度貼右緣） */
+  const peek = $('pivotPeek');
+  if (peek) {
+    const panes = [...pivot.querySelectorAll('.pane')].map(p => p.dataset.pane);
+    const idx = panes.indexOf(cur);
+    peek.textContent = idx >= 0 && idx < panes.length - 1 ? (pivotTitles()[panes[idx + 1]] || '') : '';
+  }
 }
 pivot.addEventListener('scroll', () => requestAnimationFrame(updatePivot), { passive: true });
 let paneHistory = [];
@@ -1004,8 +1011,9 @@ async function refreshWeather() {
     el.textContent = '天氣載入失敗';
   }
 }
-/* 天氣磁貼背景隨天氣變化（紫色系） */
+/* 天氣磁貼背景隨天氣變化（WP8 規範：磁貼黑底不變色） */
 function weatherTileColor(icon) {
+  if (document.body.dataset.ui === 'wp8') return '#0A0A0A';
   const i = Number(icon);
   if (i === 65) return '#4C1D95';                 /* 雷暴 → 深紫 */
   if (i >= 62 && i <= 64) return '#6D28D9';       /* 雨 → 紫 */
@@ -1333,6 +1341,7 @@ function initTilt() {
   const reset = () => { if (tiltedEl) { tiltedEl.style.transform = ''; tiltedEl = null; } };
   document.addEventListener('touchstart', (e) => {
     if (document.body.classList.contains('no-motion')) return;
+    if (document.body.dataset.ui === 'wp8') return;   /* WP8 規範：行按壓=整行藍，非 tilt */
     const el = e.target && e.target.closest ? e.target.closest(SEL) : null;
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -1431,6 +1440,7 @@ function tilePalette() {
   if (ui === 'wp7') return ['#5B21B6', '#7C3AED', '#6D28D9', '#4C1D95'];
   if (ui === 'uwp') return ['#7B68EE', '#4F6BED', '#33B2C9', '#3DBB8F'];
   if (ui === 'md') return ['#4F378B', '#7D5260', '#633B48', '#6750A4'];
+  if (ui === 'wp8') return ['#0078D7', '#0A0A0A'];
   return ['#AA00FF', '#6A00FF', '#0050EF', '#00ABA9'];
 }
 function initTileMenu() {
@@ -1576,7 +1586,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const th = localStorage.getItem('wp8concept_theme') || 'dark';
   const ui = localStorage.getItem('wp8concept_ui') || 'wp8';
-  const ac = localStorage.getItem('wp8concept_accent') || (ui === 'wp7' ? '#8B5CF6' : (ui === 'uwp' ? '#7B68EE' : (ui === 'md' ? '#6750A4' : '#AA00FF')));
+  const ac = localStorage.getItem('wp8concept_accent') || (ui === 'wp7' ? '#8B5CF6' : (ui === 'uwp' ? '#7B68EE' : (ui === 'md' ? '#6750A4' : '#0078D7')));
   const rv = localStorage.getItem('wp8concept_refresh') || '30';
   if (th === 'light') document.body.dataset.theme = 'light';
   document.body.dataset.ui = ui;
@@ -1612,12 +1622,21 @@ document.addEventListener('DOMContentLoaded', () => {
     onPanoScroll();
   }
 
+  /* 狀態欄時鐘（WP8 規範 24px 透明欄；僅 WP8 顯示） */
+  const sysClock = $('sysbarClock');
+  if (sysClock) {
+    const tick = () => { sysClock.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' }); };
+    tick();
+    setInterval(tick, 30000);
+  }
+
   /* 磁贴翻转（Live Tile 3D 翻面：10 秒間隔，尊重減少動畫與手動開關） */
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reduceMotion) {
     let flipOn = false;
     setInterval(() => {
       if (document.body.classList.contains('no-motion')) return;
+      if (document.body.dataset.ui === 'wp8') return;  /* WP8 規範：App 內磁貼不翻轉 */
       flipOn = !flipOn;
       const w = $('tileWeather');
       if (w) w.classList.toggle('flip', flipOn);

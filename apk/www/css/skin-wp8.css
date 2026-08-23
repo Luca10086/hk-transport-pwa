@@ -1,55 +1,146 @@
-/* WP8 皮膚（由 wp8-strict.css 拆出；中性深色 + WP8 accent 色板 + 裸字形 + 留白分組 + 強讀數） */
-/* ==========================================================================
-   WP8 原生重製（依概念圖板 01–06：中性深色 + WP8 accent 色板 +
-   裸字形頂欄 + 留白分組 + 強讀數；WP7 皮膚不受影響）
-   ========================================================================== */
+/* WP8 皮膚 · 依 WP8-Metro-Spec v1.0 全面對齊：
+   純黑背景 · 單一強調色 #0078D7(+按壓 #005A9E) · 字級 42/72/32/28/24/22/17/13
+   全直角 · 1px 分割線 · 行按壓整行藍 · 磁貼主=accent 餘黑底 · 應用欄 72/Ø48
+   無翻轉無縮放 · 頁面轉場 320ms 平移淡入 · 狀態欄 24px · Pivot 相鄰頁預告 */
 body[data-ui="wp8"] {
-  --bg: #1F1F1F;
-  --surface: #262626;
-  --surface2: #333333;
+  --bg: #000000;
+  --surface: #1F1F1F;
+  --surface2: #1A1A1A;
   --text: #FFFFFF;
-  --text2: #B0B0B0;
-  --line: #3A3A3A;
+  --text2: #A6A6A6;
+  --line: rgba(255, 255, 255, .15);
+  --accent: #0078D7;
+  --accent-dark: #005A9E;
+  --topbar-h: 128px;          /* 104 + 24 狀態欄 */
+  --appbar-h: 72px;
 }
 body[data-ui="wp8"][data-theme="light"] {
   --bg: #FFFFFF;
-  --surface: #F4F4F4;
-  --surface2: #E8E8E8;
+  --surface: #E6E6E6;
+  --surface2: #F4F4F4;
   --text: #000000;
-  --text2: #666666;
-  --line: #CCCCCC;
+  --text2: #767676;
+  --line: rgba(0, 0, 0, .15);
 }
-/* 磁貼：WP8 原生 accent 色板（純色、鮮艷） */
-body[data-ui="wp8"] .tile-cobalt { background: #AA00FF; }
-body[data-ui="wp8"] .tile-cyan   { background: #6A00FF; }
-body[data-ui="wp8"] .tile-magenta{ background: #0050EF; }
-body[data-ui="wp8"] .tile-teal   { background: #00ABA9; }
-/* 頂欄：裸字形按鈕（無圓圈） */
+body[data-ui="wp8"] { font-family: 'Segoe UI Light', 'Segoe UI', 'Microsoft YaHei UI Light', 'Microsoft YaHei', 'Noto Sans TC', sans-serif; }
+
+/* ===== 狀態欄 24px（透明浮於內容上） ===== */
+.sysbar-clock { display: none; }
+body[data-ui="wp8"] .sysbar-clock {
+  display: block; position: fixed; top: calc(6px + var(--sysbar-h)); left: 24px; z-index: 60;
+  font-size: 15px; font-weight: 400; color: #FFFFFF; pointer-events: none;
+}
+
+/* ===== 磁貼政策：主磁貼=accent，其餘黑底白字 + 1px 邊 ===== */
+body[data-ui="wp8"] .tile {
+  background: #0A0A0A; border: 1px solid #1F1F1F;
+  color: #FFFFFF; font-weight: 300;
+}
+body[data-ui="wp8"] .tile-cobalt { background: var(--accent); border: none; }
+body[data-ui="wp8"] .tile-cyan, body[data-ui="wp8"] .tile-magenta, body[data-ui="wp8"] .tile-teal {
+  background: #0A0A0A; border: 1px solid #1F1F1F;
+}
+body[data-ui="wp8"] .tile .tile-sub { color: #A6A6A6; }
+body[data-ui="wp8"] .tile-cobalt .tile-sub { color: rgba(255, 255, 255, .8); }
+/* 磁貼按壓：30% 白色疊加，無位移無縮放 */
+body[data-ui="wp8"] .tile:active, body[data-ui="wp8"] .tile-small:active {
+  transform: none;
+  box-shadow: inset 0 0 0 999px rgba(255, 255, 255, .3);
+}
+body[data-ui="wp8"] .tile-flip.flip .tile-face,
+body[data-ui="wp8"] .tile-flip.flip .tile-face-back { transform: none; }
+
+/* ===== 頂欄：裸字形 + Pivot 相鄰頁標題預告 ===== */
+body[data-ui="wp8"] .topbar { background: #000000; position: relative; }
 body[data-ui="wp8"] .topbar-search,
 body[data-ui="wp8"] .topbar-refresh {
-  border: none; border-radius: 0; width: auto; min-width: 44px; height: 44px;
-  background: transparent; color: #CFCFCF; font-size: 1.5rem; cursor: pointer;
+  border: none; border-radius: 0; width: 48px; height: 48px;
+  background: transparent; color: #FFFFFF; font-size: 1.5rem; cursor: pointer;
 }
-body[data-ui="wp8"] .topbar-search svg { width: 22px; height: 22px; stroke-width: 1.6; }
+body[data-ui="wp8"] .topbar-search svg { width: 22px; height: 22px; stroke-width: 1.8; }
 body[data-ui="wp8"] .topbar-refresh { font-size: 1.35rem; }
-/* Pivot 標題 42px Light */
-body[data-ui="wp8"] .pivot-title { font-size: 2.625rem; letter-spacing: 0; }
-/* 列表：留白分組（無分隔線）+ 強讀數 */
-body[data-ui="wp8"] .metro-row { border-bottom: none; padding: 15px 0; }
-body[data-ui="wp8"] .metro-row .row-no { font-size: 1.875rem; }
-body[data-ui="wp8"] .metro-row .row-eta { font-size: 2.625rem; font-weight: 300; }
-body[data-ui="wp8"] .metro-row .row-eta-detail { font-size: 0.82rem; }
-body[data-ui="wp8"] .metro-group { font-size: 1.25rem; font-weight: 300; color: var(--text); letter-spacing: 0; }
-/* 收藏卡片：去線 + 60px 強讀數 */
-body[data-ui="wp8"] .fav-card { border-bottom: none; }
-body[data-ui="wp8"] .fav-no { font-size: 1.875rem; }
-body[data-ui="wp8"] .fav-name { font-size: 1.25rem; }
-body[data-ui="wp8"] .fav-eta-main { font-size: 3.75rem; }
-/* 輕鐵分組 / 路線詳情：去線 + 大數字 */
-body[data-ui="wp8"] .lrt-station { border-bottom: none; }
-body[data-ui="wp8"] .ds-stop { border-bottom: none; }
-body[data-ui="wp8"] .ds-stop .ds-name { font-size: 1.05rem; }
-body[data-ui="wp8"] .ds-stop .ds-eta { font-size: 1.75rem; font-weight: 300; }
-/* 設定：去線留白 */
-body[data-ui="wp8"] .setting-row { border-bottom: none; padding: 17px 0; }
+body[data-ui="wp8"] .topbar-search:active, body[data-ui="wp8"] .topbar-refresh:active { color: var(--accent); }
+.pivot-peek { display: none; }
+body[data-ui="wp8"] .pivot-peek {
+  display: block; position: absolute; right: 24px; bottom: 14px;
+  font-size: 42px; font-weight: 300; color: #FFFFFF; opacity: .45;
+  pointer-events: none; text-anchor: end;
+}
+body[data-ui="wp8"] .pivot-title { font-size: 42px; font-weight: 300; letter-spacing: 0; }
 
+/* ===== 列表：文字 + 1px 分割線；行按壓 = 整行藍 ===== */
+body[data-ui="wp8"] .metro-row { border-bottom: 1px solid var(--line); padding: 12px 0; }
+body[data-ui="wp8"] .metro-row .row-no { font-size: 1.0625rem; font-weight: 400; color: var(--text); }
+body[data-ui="wp8"] .metro-row .row-name { font-size: 1.375rem; font-weight: 400; }
+body[data-ui="wp8"] .metro-row .row-sub, body[data-ui="wp8"] .metro-row .row-eta-detail { font-size: 1.0625rem; }
+body[data-ui="wp8"] .metro-row .row-eta { font-size: 1.375rem; font-weight: 300; }
+body[data-ui="wp8"] .metro-row .row-eta.soon { color: var(--accent); }
+body[data-ui="wp8"] .metro-row .row-eta.medium { color: #F7630C; }
+body[data-ui="wp8"] .metro-row:active {
+  background: var(--accent);
+}
+body[data-ui="wp8"] .metro-row:active .row-no,
+body[data-ui="wp8"] .metro-row:active .row-name,
+body[data-ui="wp8"] .metro-row:active .row-sub,
+body[data-ui="wp8"] .metro-row:active .row-eta,
+body[data-ui="wp8"] .metro-row:active .row-eta-detail,
+body[data-ui="wp8"] .metro-row:active .row-star, body[data-ui="wp8"] .metro-row:active .row-remove { color: #FFFFFF; }
+body[data-ui="wp8"] .metro-row:active { transform: none; }
+body[data-ui="wp8"] .metro-group { font-size: 1.75rem; font-weight: 300; color: var(--text); letter-spacing: 0; }
+body[data-ui="wp8"] .lrt-station { border-bottom: 1px solid var(--line); }
+body[data-ui="wp8"] .lrt-head { font-size: 1.5rem; font-weight: 300; }
+body[data-ui="wp8"] .lrt-row .row-no { font-size: 1.375rem; }
+body[data-ui="wp8"] .lrt-row .row-eta { font-size: 1.375rem; }
+
+/* ===== 收藏：無卡片化，hero 72px 倒計時 + 32px 站名 + 分割線 ===== */
+body[data-ui="wp8"] .fav-card {
+  background: transparent; border: none; border-bottom: 1px solid var(--line);
+  box-shadow: none; padding: 16px 0;
+}
+body[data-ui="wp8"] .fav-no { font-size: 1.375rem; font-weight: 400; color: var(--text); }
+body[data-ui="wp8"] .fav-name { font-size: 2rem; font-weight: 300; }
+body[data-ui="wp8"] .fav-sub, body[data-ui="wp8"] .fav-line { font-size: 1.0625rem; }
+body[data-ui="wp8"] .fav-eta-main { font-size: 4.5rem; font-weight: 300; }
+body[data-ui="wp8"] .fav-card:active { background: var(--accent); transform: none; }
+body[data-ui="wp8"] .fav-card:active .fav-no, body[data-ui="wp8"] .fav-card:active .fav-name,
+body[data-ui="wp8"] .fav-card:active .fav-sub, body[data-ui="wp8"] .fav-card:active .fav-eta-main,
+body[data-ui="wp8"] .fav-card:active .fav-line { color: #FFFFFF; }
+body[data-ui="wp8"] .fav-pick, body[data-ui="wp8"] .fav-remove { border-radius: 0; }
+
+/* ===== 路線詳情：分割線 + 節點字級；頁面轉場 320ms 平移（無 3D） ===== */
+body[data-ui="wp8"] .ds-stop { border-bottom: 1px solid var(--line); }
+body[data-ui="wp8"] .ds-stop .ds-name { font-size: 1.375rem; }
+body[data-ui="wp8"] .ds-stop .ds-eta { font-size: 1.375rem; font-weight: 300; }
+body[data-ui="wp8"] .detail-sheet {
+  transform: translateX(100%);
+  transition: transform .32s ease-out, opacity .32s ease-out;
+}
+body[data-ui="wp8"] .detail-sheet.open { transform: translateX(0); }
+body[data-ui="wp8"] .back-btn { display: none; }       /* 無頁面返回按鈕：硬件返回鍵 */
+body[data-ui="wp8"] .detail-title { padding-left: 24px; }
+
+/* ===== 應用欄：72px · 圓鈕 Ø48 · 按壓圓內填藍 ===== */
+body[data-ui="wp8"] .appbar { background: #1F1F1F; }
+body[data-ui="wp8"] .ab-btn, body[data-ui="wp8"] .ab-more {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: transparent; color: #FFFFFF;
+}
+body[data-ui="wp8"] .ab-btn svg { width: 22px; height: 22px; stroke-width: 1.8; }
+body[data-ui="wp8"] .ab-btn.active { color: var(--accent); }
+body[data-ui="wp8"] .ab-btn:active, body[data-ui="wp8"] .ab-more:active { background: var(--accent); color: #FFFFFF; transform: none; }
+body[data-ui="wp8"] .ab-label { display: none; }       /* WP8 裸字形無標籤 */
+
+/* ===== 進度指示 4px ===== */
+body[data-ui="wp8"] .progressbar { height: 4px; }
+
+/* ===== 設定：1px 分割線 + 全直角 + 禁粗體 ===== */
+body[data-ui="wp8"] .setting-row { border-bottom: 1px solid var(--line); padding: 17px 0; }
+body[data-ui="wp8"] .seg button { border-radius: 0; font-weight: 400; }
+body[data-ui="wp8"] .seg button.active { background: var(--accent); border-color: var(--accent); color: #FFFFFF; font-weight: 400; }
+body[data-ui="wp8"] .chip { border-radius: 0; font-weight: 400; }
+body[data-ui="wp8"] .chip.active { background: var(--accent); border-color: var(--accent); color: #FFFFFF; font-weight: 400; }
+body[data-ui="wp8"] .search-btn { border-radius: 0; font-weight: 400; }
+body[data-ui="wp8"] .search-btn:active { background: var(--accent-dark); transform: none; }
+body[data-ui="wp8"] .chip:active, body[data-ui="wp8"] .seg button:active, body[data-ui="wp8"] .dir-tab:active, body[data-ui="wp8"] .map-line-btn:active { transform: none; }
+body[data-ui="wp8"] .recent-chip { border-radius: 0; }
+body[data-ui="wp8"] .row-star:active, body[data-ui="wp8"] .row-remove:active { transform: none; }
