@@ -316,7 +316,7 @@ body {
 .recent-chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .recent-chip {
   border: 1px solid var(--line); background: transparent; color: var(--text2);
-  border-radius: 12px; padding: 4px 12px; font-size: 0.78rem; cursor: pointer;
+  border-radius: 0; padding: 4px 12px; font-size: 0.78rem; cursor: pointer;
   font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
 }
 .recent-chip:active { color: var(--accent); border-color: var(--accent); }
@@ -550,7 +550,7 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after {
   position: fixed; z-index: 49; right: 12px;
   top: calc(var(--topbar-h) + var(--sysbar-h) + 4px);
   font-size: 10px; color: var(--text2); pointer-events: none;
-  background: rgba(0,0,0,.35); padding: 1px 8px; border-radius: 8px;
+  background: transparent; padding: 1px 0; border-radius: 0;
 }
 
 ：詳情頁推入時背景微縮 ================= */
@@ -657,3 +657,24 @@ body.high-contrast {
 }
 body.high-contrast .metro-row { border-bottom-width: 2px; }
 body.high-contrast .chip, body.high-contrast .seg button, body.high-contrast .dir-tab, body.high-contrast .map-line-btn { border-width: 2px; }
+
+/* ================= 全域字體大小控件（WP8：方角無圓角） ================= */
+.fs-row { display: flex; align-items: center; gap: 10px; }
+.fs-btn {
+  width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 0;
+  background: transparent; color: var(--text); font-size: 1.125rem; cursor: pointer;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; line-height: 1;
+}
+.fs-btn:active { background: var(--accent); color: #FFFFFF; border-color: var(--accent); }
+.fs-dots { display: flex; align-items: center; gap: 6px; }
+.fs-dots i { width: 10px; height: 10px; border: 1px solid var(--text2); border-radius: 0; background: transparent; }
+.fs-dots i.on { background: var(--accent); border-color: var(--accent); }
+
+/* ================= 單色線性圖標（Segoe MDL2 風格） ================= */
+.w-ico { width: 22px; height: 22px; vertical-align: -4px; flex: none; }
+.k75p-ico { width: 16px; height: 16px; vertical-align: -2px; }
+
+/* ================= 收藏長按拖動（按住 450ms · 即時預覽） ================= */
+.fav-card.dragging, .lrt-station.dragging {
+  background: transparent !important; box-shadow: none !important; opacity: .5;
+}

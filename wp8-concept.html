@@ -16,7 +16,6 @@
 <!-- ================= 顶栏：Pivot 大标题 ================= -->
 <header class="topbar">
   <h1 class="pivot-title" id="pivotTitle">森友出行</h1>
-  <div class="pivot-peek" id="pivotPeek"></div>
   <div class="topbar-actions">
     <button class="topbar-search" onclick="goPane('home');setTimeout(function(){goPanoPanel(1);var i=document.getElementById('searchInput');if(i)i.focus();},400)" aria-label="搜尋路線">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
@@ -34,8 +33,6 @@
 <!-- ================= 數據新鮮度 ================= -->
 <span class="last-update" id="lastUpdate"></span>
 
-<!-- ================= WP8 狀態欄時鐘（規範 24px 透明欄） ================= -->
-<div class="sysbar-clock" id="sysbarClock">14:32</div>
 
 <!-- ================= FAB（MD 皮膚主操作＝搜尋） ================= -->
 <button class="fab-senyou" onclick="goPane('home');setTimeout(function(){goPanoPanel(1);var i=document.getElementById('searchInput');if(i)i.focus();},400)" aria-label="搜尋路線">
@@ -174,6 +171,13 @@
           <div class="seg" id="langSeg">
             <button data-lg="zh" onclick="setLang('zh')">中文</button>
             <button data-lg="en" onclick="setLang('en')">EN</button>
+          </div>
+        </div>
+        <div class="setting-row"><span class="label" data-i18n="fontSize">字體大小</span>
+          <div class="fs-row">
+            <button class="fs-btn" onclick="setFontSize(-1)" aria-label="A−">A−</button>
+            <div class="fs-dots" id="fsDots"></div>
+            <button class="fs-btn" onclick="setFontSize(1)" aria-label="A＋">A＋</button>
           </div>
         </div>
         <div class="setting-row"><span class="label" data-i18n="noMotion">減少動畫</span>

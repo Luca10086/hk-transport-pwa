@@ -29,7 +29,7 @@ const UI_STRINGS = {
     to: '往', from: '由', depart: '開出',
     theme: '主題', accent: '強調色', uiStyle: '介面風格', contrast: '高對比', autoRefresh: '自動重新整理',
     dataSource: '資料來源', version: '版本', langLabel: '語言', weather: '天氣', k75pTitle: 'K75P 全線實時',
-    favFirst: '收藏首條結果', noMotion: '減少動畫' },
+    favFirst: '收藏首條結果', noMotion: '減少動畫', fontSize: '字體大小' },
   en: { home: 'Senyou Transit', favs: 'Favourites', sushi: 'Sushiro', map: 'Route Map', settings: 'Settings',
     bus: 'Bus', mtrbus: 'MTR Bus', mtr: 'MTR', lrt: 'Light Rail', night: 'Night', searchBtn: 'Search',
     refresh: 'Refresh', placeholder: 'Enter route, stop or MTR station',
@@ -38,7 +38,7 @@ const UI_STRINGS = {
     to: 'To', from: 'From', depart: '',
     theme: 'Theme', accent: 'Accent colour', uiStyle: 'UI style', contrast: 'High contrast', autoRefresh: 'Auto refresh',
     dataSource: 'Data source', version: 'Version', langLabel: 'Language', weather: 'Weather', k75pTitle: 'K75P Live Board',
-    favFirst: 'Favourite first', noMotion: 'Reduce motion' }
+    favFirst: 'Favourite first', noMotion: 'Reduce motion', fontSize: 'Font size' }
 };
 let uiLang = 'zh';
 function t(key) { return (UI_STRINGS[uiLang] && UI_STRINGS[uiLang][key]) || UI_STRINGS.zh[key] || key; }
@@ -54,6 +54,23 @@ function applyLang() {
   const ph = $('searchInput');
   if (ph) ph.placeholder = t('placeholder');
   updatePivot();
+}
+/* ---------- 全局字體大小（8 級，默認第 4 級 = 15px，比原 16px 低一檔） ---------- */
+const FONT_LEVELS = [13, 13.7, 14.4, 15, 15.7, 16.4, 17.2, 18];
+let fontLevel = 3;
+function applyFontSize() {
+  document.documentElement.style.fontSize = FONT_LEVELS[fontLevel] + 'px';
+  renderFsDots();
+}
+function renderFsDots() {
+  const box = $('fsDots');
+  if (!box) return;
+  box.innerHTML = FONT_LEVELS.map((_, i) => '<i class="' + (i === fontLevel ? 'on' : '') + '"></i>').join('');
+}
+function setFontSize(delta) {
+  fontLevel = Math.max(0, Math.min(FONT_LEVELS.length - 1, fontLevel + delta));
+  try { localStorage.setItem('wp8concept_fontlevel', String(fontLevel)); } catch (e) {}
+  applyFontSize();
 }
 const etaText = (ts) => ts ? minsFromNow(ts) : '—';
 const etaCls = (ts) => ts ? etaColorClass(ts) : '';
@@ -80,13 +97,6 @@ function updatePivot() {
     }, 160);
   }
   document.querySelectorAll('.ab-btn[data-pane]').forEach(b => b.classList.toggle('active', b.dataset.pane === cur));
-  /* Pivot 相鄰頁標題預告（WP8 規範：60% 亮度貼右緣） */
-  const peek = $('pivotPeek');
-  if (peek) {
-    const panes = [...pivot.querySelectorAll('.pane')].map(p => p.dataset.pane);
-    const idx = panes.indexOf(cur);
-    peek.textContent = idx >= 0 && idx < panes.length - 1 ? (pivotTitles()[panes[idx + 1]] || '') : '';
-  }
 }
 pivot.addEventListener('scroll', () => requestAnimationFrame(updatePivot), { passive: true });
 let paneHistory = [];
@@ -703,7 +713,7 @@ async function renderFavItem(f, i, pinKey) {
     } else if (etasTs.length) {
       favEtaCache[favKey(f)] = { t: Date.now(), etas: etasTs };
     }
-    let html = '<div class="lrt-station">'
+    let html = '<div class="lrt-station" data-fi="' + i + '">'
       + '<span class="lrt-head">' + escapeHtml(f.stop_name || f.route || '') + '</span>'
       + '<button class="fav-pick" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (favKey(f) === pinKey ? '✓ 釘選' : '釘選') + '</button>'
       + '<button class="row-remove" data-i="' + i + '" onclick="removeFav(event, this)">✕</button>'
@@ -756,56 +766,115 @@ function togglePinFav(i) {
   else localStorage.setItem('wp8concept_pinned_fav', key);
   renderFavs();
 }
-/* 長按拖動排序（收藏列表） */
+/* 長按拖動排序（收藏列表）：按住 450ms 進入拖動，即時預覽，鬆開保存 */
 function initFavDrag() {
-  let dragEl = null, startY = 0, timer = null, moved = false;
   const box = $('favs');
   if (!box) return;
-  box.addEventListener('touchstart', (e) => {
-    const card = e.target.closest ? e.target.closest('.fav-card, .lrt-station') : null;
-    if (!card || e.target.closest('.fav-pick, .row-remove, .fav-remove')) return;
-    startY = e.touches[0].clientY;
-    moved = false;
-    timer = setTimeout(() => { window.__favDrag = true; dragEl = card; card.classList.add('dragging'); }, 520);
-  }, { passive: true });
-  box.addEventListener('touchmove', (e) => {
+  const CARD = '.fav-card, .lrt-station';
+  const HOLD = 450;
+  let dragEl = null, from = -1, startY = 0, timer = null, active = false, moved = false, raf = 0, lastEnd = 0;
+
+  const cards = () => [...box.querySelectorAll(CARD)];
+
+  /* 按下：命中卡片且非操作按鈕時，開始 450ms 長按計時 */
+  const begin = (t) => {
+    const card = t.closest ? t.closest(CARD) : null;
+    if (!card || (t.closest && t.closest('.fav-pick, .row-remove, .fav-remove'))) return false;
+    dragEl = card;
+    active = false; moved = false; from = -1;
+    timer = setTimeout(() => {
+      timer = null;
+      if (!dragEl) return;
+      active = true; moved = false;
+      window.__favDrag = true;
+      from = cards().indexOf(dragEl);
+      dragEl.classList.add('dragging');
+      dragEl.style.position = 'relative';
+      dragEl.style.zIndex = '99';
+      dragEl.style.transform = 'translateY(0)';
+    }, HOLD);
+    return true;
+  };
+  const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+
+  /* 即時預覽：以卡片中心找插入點，直接移動 DOM 節點 */
+  const preview = (y) => {
+    let anchor = null;
+    for (const c of cards()) {
+      if (c === dragEl) continue;
+      const r = c.getBoundingClientRect();
+      if (y < r.top + r.height / 2) { anchor = c; break; }
+    }
+    if (anchor) box.insertBefore(dragEl, anchor);
+    else box.appendChild(dragEl);
+  };
+
+  const move = (y, ev) => {
     if (!dragEl) return;
-    const dy = e.touches[0].clientY - startY;
-    if (Math.abs(dy) < 10) return;
+    const dy = y - startY;
+    if (!active) {
+      if (Math.abs(dy) > 12) { cancel(); dragEl = null; } /* 滾動：取消長按 */
+      return;
+    }
     moved = true;
+    if (ev && ev.cancelable) ev.preventDefault();
     dragEl.style.transform = 'translateY(' + dy + 'px)';
-    dragEl.style.zIndex = '99';
-    dragEl.style.position = 'relative';
-    if (e.cancelable) e.preventDefault();
-  }, { passive: false });
-  const endDrag = (e) => {
-    if (timer) { clearTimeout(timer); timer = null; }
+    if (!raf) raf = requestAnimationFrame(() => {
+      raf = 0;
+      if (!dragEl) return;
+      const r = dragEl.getBoundingClientRect();
+      preview(r.top + r.height / 2);
+    });
+  };
+
+  const finish = () => {
+    cancel();
+    if (active) lastEnd = Date.now();
     if (!dragEl) { window.__favDrag = false; return; }
-    const y = e.changedTouches ? e.changedTouches[0].clientY : 0;
-    const over = document.elementFromPoint(window.innerWidth / 2, y);
-    const target = over && over.closest ? over.closest('.fav-card, .lrt-station') : null;
-    if (target && target !== dragEl && moved) {
-      const favs = getFavorites();
-      const from = parseInt(dragEl.getAttribute('data-i') || dragEl.getAttribute('data-fi') || '-1', 10);
-      const to = parseInt(target.getAttribute('data-i') || target.getAttribute('data-fi') || '-1', 10);
-      if (from >= 0 && to >= 0 && from !== to) {
-        const item = favs.splice(from, 1)[0];
-        favs.splice(to, 0, item);
-        saveFavorites(favs);
+    if (active && moved && from >= 0) {
+      const to = cards().indexOf(dragEl);
+      if (to >= 0 && from !== to) {
+        const favs = getFavorites();
+        if (favs[from]) {
+          const item = favs.splice(from, 1)[0];
+          favs.splice(to, 0, item);
+          saveFavorites(favs);
+        }
       }
     }
-    dragEl.classList.remove('dragging');
-    dragEl.style.transform = '';
-    dragEl.style.zIndex = '';
-    dragEl.style.position = '';
-    dragEl = null;
+    const was = active && moved;
+    if (dragEl) {
+      dragEl.classList.remove('dragging');
+      dragEl.style.transform = ''; dragEl.style.position = ''; dragEl.style.zIndex = '';
+    }
+    dragEl = null; active = false; moved = false; from = -1;
     window.__favDrag = false;
-    if (moved) renderFavs();
+    if (was) renderFavs(); /* 鬆開即保存並重繪，索引一致 */
   };
-  box.addEventListener('touchend', endDrag, { passive: true });
-  box.addEventListener('touchcancel', endDrag, { passive: true });
+
+  /* 觸控（真機：Android / Windows Phone） */
+  box.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1 || !begin(e.target)) return;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  box.addEventListener('touchmove', (e) => {
+    if (e.touches.length !== 1 || !dragEl) return;
+    move(e.touches[0].clientY, e);
+  }, { passive: false });
+  box.addEventListener('touchend', () => finish());
+  box.addEventListener('touchcancel', () => finish());
+  /* 鼠標（桌面預覽 / 桌面網頁） */
+  box.addEventListener('mousedown', (e) => {
+    if (e.button !== 0 || !begin(e.target)) return;
+    startY = e.clientY;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => { if (dragEl) move(e.clientY, e); });
+  window.addEventListener('mouseup', () => finish());
+  /* 拖動後 600ms 內攔截 click，避免誤觸開啟詳情 */
   document.addEventListener('click', (e) => {
-    if (window.__favDrag) { e.preventDefault(); e.stopPropagation(); window.__favDrag = false; }
+    if (window.__favDrag || Date.now() - lastEnd < 600) { e.preventDefault(); e.stopPropagation(); }
+    window.__favDrag = false;
   }, true);
 }
 /* 首頁「收藏①」智能磁貼：顯示第一條收藏的下一班 */
@@ -998,7 +1067,7 @@ async function refreshWeather() {
     const hko = temps.find(t => t.place === '元朗公園') || temps.find(t => t.place === '香港天文台') || temps[0];
     const icon = Array.isArray(data.icon) ? data.icon[0] : data.icon;
     const upd = data.updateTime ? '更新 ' + data.updateTime.slice(11, 16) : '';
-    el.innerHTML = '<span class="w-desc">' + (HKO_ICON_EMOJI[icon] || '') + ' ' + (HKO_ICONS[icon] || '') + '</span>'
+    el.innerHTML = '<span class="w-desc">' + weatherSVG(icon) + ' ' + (HKO_ICONS[icon] || '') + '</span>'
       + (hko ? '<span class="w-item"><b>' + hko.value + '°C</b></span>' : '')
       + '<span class="w-upd">' + upd + '</span>';
     if (hko) $('tileWeatherV').textContent = hko.value + '°';
@@ -1010,6 +1079,18 @@ async function refreshWeather() {
   } catch (e) {
     el.textContent = '天氣載入失敗';
   }
+}
+/* WP8 單色線性天氣圖標（Segoe MDL2 風格，無填充） */
+function weatherSVG(icon) {
+  const i = Number(icon);
+  if (i >= 50 && i <= 57) {
+    return '<svg viewBox="0 0 24 24" class="w-ico" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="11" r="4.2"/><path d="M12 3.4v2M12 16.6v2M4.4 11h2M17.6 11h2M6.6 5.6l1.4 1.4M16 14.8l1.4 1.4M17.4 5.6l-1.4 1.4M8 14.8l-1.4 1.4"/></svg>';
+  }
+  const cloud = '<path d="M7 16a4.5 4.5 0 0 1-.6-8.95A6 6 0 0 1 18 8.6 4 4 0 0 1 17 16Z"/>';
+  let extra = '';
+  if (i >= 62 && i <= 64) extra = '<path d="M8.5 19h.01M11.9 20h.01M15.4 19h.01"/>';
+  else if (i === 65) extra = '<path d="M11.6 11.4l-2.7 4.3 2.3.6-1.7 3.7 3.5-4.7-2.3-.5 2.5-3.4z"/>';
+  return '<svg viewBox="0 0 24 24" class="w-ico" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">' + cloud + extra + '</svg>';
 }
 /* 天氣磁貼背景隨天氣變化（WP8 規範：磁貼黑底不變色） */
 function weatherTileColor(icon) {
@@ -1266,9 +1347,10 @@ async function loadK75P() {
     const stopMap = {};
     for (const stop of data.busStop) stopMap[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
     const fmt = x => x <= 60 ? '即將到站' : Math.max(1, Math.ceil(x / 60)) + ' 分鐘';
-    const rows = ['<div class="k75p-map-link" onclick="goBusMap()">📍 實時位置地圖（點按查看巴士在哪）<span>›</span></div>'];
+    const rows = ['<div class="k75p-map-link" onclick="goBusMap()"><svg class="k75p-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.2"/></svg> 實時位置地圖（點按查看巴士在哪）<span>›</span></div>'];
     let foldInserted = false;
     for (const st of K75P_STOPS) {
+      if (st.id === 'U140') continue; /* 循環綫終點「天瑞」不納入實時報站 */
       if (st.fold && !foldInserted) {
         foldInserted = true;
         rows.push('<button class="k75p-fold-btn" onclick="toggleK75PFold()" aria-expanded="' + (k75pFoldOpen ? 'true' : 'false') + '">天水圍市 ' + (k75pFoldOpen ? '▴' : '▾') + '</button>');
@@ -1601,6 +1683,8 @@ document.addEventListener('DOMContentLoaded', () => {
   uiLang = localStorage.getItem('wp8concept_lang') || 'zh';
   syncSegs('#langSeg', uiLang);
   applyLang();
+  fontLevel = Math.max(0, Math.min(FONT_LEVELS.length - 1, parseInt(localStorage.getItem('wp8concept_fontlevel') || '3', 10) || 3));
+  applyFontSize();
   if (localStorage.getItem('wp8concept_nomotion') === '1') document.body.classList.add('no-motion');
   syncSegs('#motionSeg', localStorage.getItem('wp8concept_nomotion') === '1' ? '1' : '0');
 
@@ -1622,13 +1706,6 @@ document.addEventListener('DOMContentLoaded', () => {
     onPanoScroll();
   }
 
-  /* 狀態欄時鐘（WP8 規範 24px 透明欄；僅 WP8 顯示） */
-  const sysClock = $('sysbarClock');
-  if (sysClock) {
-    const tick = () => { sysClock.textContent = new Date().toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' }); };
-    tick();
-    setInterval(tick, 30000);
-  }
 
   /* 磁贴翻转（Live Tile 3D 翻面：10 秒間隔，尊重減少動畫與手動開關） */
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
