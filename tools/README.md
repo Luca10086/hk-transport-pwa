@@ -55,3 +55,40 @@ node mimo-call.mjs "解释 light rail 实时到站的数据结构" --stream
 ### 与 DSH 的关系
 
 脚本复用 DSH 已配置的 `XIAOMI_API_KEY`，无独立密钥、无环境变量注入、无配置落盘——删除 `~/.dsh/.credentials.yaml` 后脚本即不可用。仓库内不提交任何真实密钥。
+
+## uiux-review.mjs — 每次更新后的设计一致性审查（MiMo v2.5 子代理）
+
+**规则**（DSH 技能 `uiux-review`，仓库副本见 `tools/uiux-review/SKILL.md`）：项目每次更新（尤其 UI/UX 改动）后，必须由**子代理**运行本脚本，对照权威设计文档检查新增/修改代码有没有偏离设计原意。
+
+### 主代理执行流程
+
+```powershell
+# 1. 生成 diff（基线 = 上一次 UI/UX 相关提交）
+git log --oneline -5            # 确认基线
+git diff <base>..HEAD -- css js wp8-concept.html > .tmp-diff.txt
+
+# 2. 启动子代理（后台）运行审查
+node tools/uiux-review.mjs --diff .tmp-diff.txt --out tools/reviews/uiux-<yyyymmdd-hhmm>.md
+
+# 3. 子代理带回：总体结论 / 逐项判定表 / 必须修复清单 / 优点；主代理向用户汇报
+```
+
+### 参数一览
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `--diff <文件>` | 必填 | `git diff` 输出文件（重定向生成，避免管道与命令行长度限制） |
+| `--design <文件>` | 可重复 | 追加设计文档；默认自动包含 `DESIGN.md`、`DESIGN-UIUX.md`、`DESIGN-WP8-CONCEPT.md`、`DESIGN-SPEC-UPDATE.md`、`DESIGN-WP8.md`、`E:\DAFYU GZQ\WP8-Metro-Spec\设计规范.md` |
+| `--model` | `mimo-v2.5` | 按规则固定用 MiMo 2.5 |
+| `--max-tokens` | `20000` | 报告较长时调大 |
+| `--out <文件>` | 无 | 同时把报告存档到 `tools/reviews/` |
+| `--lang` | `zh` | 报告语言 |
+
+### 审查红线（脚本内置 + SKILL.md）
+
+纯黑背景 · 单一强调色 #0078D7 · 字级 42/72/32/28/24/22/17/13 · 全直角 · 无阴影/渐变/圆角 · 磁贴政策 · 应用栏 72px · 禁 3D/flip · 单色线性图标。功能正确但视觉/交互偏离同样判为偏离。
+
+### 约束
+
+- 审查阶段子代理**只读，禁止改代码**；修复由主代理经用户确认后执行。
+- MiMo 不可用时如实报告工具失败，不得跳过规则或编造结论。
