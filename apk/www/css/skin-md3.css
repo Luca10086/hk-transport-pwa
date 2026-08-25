@@ -1,191 +1,484 @@
 /* ==========================================================================
-   森友出行（概念版）· Material Design 3 皮膚（body[data-ui="md"]）
-   Material You Token：淺色（surface #FEF7FF）與深色（#141218）雙主題；
-   組件語法：TopAppBar / Tonal Card / 圓形 Avatar / NavigationBar pill /
-   FAB / Bottom Sheet / Switch / SegmentedButton；Roboto。
+   森友出行 · Material Design 3 皮膚（body[data-ui="md"]）— 完全重寫版 v3
+   ─────────────────────────────────────────────────────────────────────────
+   依據（權威）：
+     1. DESIGN.md（M3 設計令牌 / 組件規範 / 使用邊界 / 深色雙通道）
+     2. design-concept-board-md.html v2（Material You 概念圖板：tonal 卡、
+        圓形路線號 avatar、NavigationBar pill、FAB primary-container、
+        Bottom Sheet 28px、M3 按鈕三態、error-container 警示）
+   核心：Material You Token（seed #6750A4）· 狀態層反饋（不用位移縮放）·
+         Roboto + Roboto Mono tabular ETA · 深/淺雙通道 · 直角僅限按規範
    ========================================================================== */
 
+/* ---------- 基底：字族 / 佈局變量 / 狀態層 ---------- */
 body[data-ui="md"] {
   font-family: 'Roboto', 'Segoe UI', 'Noto Sans TC', sans-serif;
+  --topbar-h: 104px;      /* Large Top App Bar（kicker + 26px 標題） */
+  --appbar-h: 80px;       /* M3 NavigationBar 規範高度 */
+  --md-mono: 'Roboto Mono', 'Cascadia Mono', 'Consolas', 'Courier New', monospace;
+  --md-corner-s: 8px; --md-corner-m: 12px; --md-corner-l: 16px;
+  --md-corner-xl: 28px; --md-corner-full: 999px;
 }
 
-/* ---------- MD Token ---------- */
-body[data-ui="md"][data-theme="light"] {
-  --bg: #FEF7FF;
-  --surface: #FEF7FF;
-  --surface2: #F3EDF7;
-  --text: #1D1B20;
-  --text2: #49454F;
-  --line: #CAC4D0;
-  --accent: #6750A4;
-  --accent-dark: #4F378B;
-  --md-primary-container: #EADDFF;
-  --md-on-primary-container: #21005D;
-  --md-secondary-container: #E8DEF8;
-  --md-on-secondary-container: #1D192B;
-  --md-tertiary-container: #FFD8E4;
-  --md-on-tertiary-container: #31111D;
-  --md-surface-container: #F3EDF7;
-  --md-surface-hi: #ECE6F0;
-  --md-outline: #79747E;
-  --md-shadow: 0 1px 2px rgba(33,0,93,.12), 0 1px 3px 1px rgba(33,0,93,.10);
-  --md-shadow3: 0 4px 8px rgba(33,0,93,.25), 0 4px 12px 4px rgba(33,0,93,.16);
-}
+/* ---------- 深色 Token（Material 深色：surface #141218 · primary 提亮 #D0BCFF） ---------- */
 body[data-ui="md"] {
-  --bg: #141218;
-  --surface: #141218;
-  --surface2: #211F26;
-  --text: #E6E0E9;
-  --text2: #CAC4D0;
-  --line: #49454F;
-  --accent: #D0BCFF;
-  --accent-dark: #4F378B;
-  --md-primary-container: #4F378B;
-  --md-on-primary-container: #EADDFF;
-  --md-secondary-container: #4A4458;
-  --md-on-secondary-container: #E8DEF8;
-  --md-tertiary-container: #633B48;
-  --md-on-tertiary-container: #FFD8E4;
-  --md-surface-container: #211F26;
-  --md-surface-hi: #2B2930;
-  --md-outline: #938F99;
-  --md-shadow: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.20);
-  --md-shadow3: 0 4px 8px rgba(0,0,0,.35), 0 4px 12px 4px rgba(0,0,0,.25);
+  --bg: #141218; --surface: #141218; --surface2: #211F26;
+  --text: #E6E0E9; --text2: #CAC4D0; --line: #49454F;
+  --accent: #D0BCFF; --accent-dark: #4F378B;
+  --md-primary: #D0BCFF; --md-on-primary: #381E72;
+  --md-primary-container: #4F378B; --md-on-primary-container: #EADDFF;
+  --md-secondary-container: #4A4458; --md-on-secondary-container: #E8DEF8;
+  --md-tertiary-container: #633B48; --md-on-tertiary-container: #FFD8E4;
+  --md-error: #F2B8B5; --md-error-container: #8C1D18; --md-on-error-container: #F9DEDC;
+  --md-medium: #9A6700;                                   /* medium 僅大號 ETA 使用（≥3:1） */
+  --md-surface-container: #211F26; --md-surface-container-high: #2B2930;
+  --md-surface-container-highest: #36343B; --md-surface-variant: #49454F;
+  --md-outline: #938F99; --md-outline-variant: #49454F;
+  --md-elev-1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
+  --md-elev-2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
+  --md-elev-3: 0 4px 8px 3px rgba(0,0,0,.15), 0 1px 3px rgba(0,0,0,.30);
+  --md-state: rgba(230,224,233,.08); --md-state-pressed: rgba(230,224,233,.12);
+}
+/* ---------- 淺色 Token（Material You 淺色：surface #FEF7FF · primary #6750A4） ---------- */
+body[data-ui="md"][data-theme="light"] {
+  --bg: #FEF7FF; --surface: #FEF7FF; --surface2: #F3EDF7;
+  --text: #1D1B20; --text2: #49454F; --line: #CAC4D0;
+  --accent: #6750A4; --accent-dark: #4F378B;
+  --md-primary: #6750A4; --md-on-primary: #FFFFFF;
+  --md-primary-container: #EADDFF; --md-on-primary-container: #21005D;
+  --md-secondary-container: #E8DEF8; --md-on-secondary-container: #1D192B;
+  --md-tertiary-container: #FFD8E4; --md-on-tertiary-container: #31111D;
+  --md-error: #B3261E; --md-error-container: #F9DEDC; --md-on-error-container: #410E0B;
+  --md-medium: #9A6700;
+  --md-surface-container: #F3EDF7; --md-surface-container-high: #ECE6F0;
+  --md-surface-container-highest: #E6E0E9; --md-surface-variant: #E7E0EC;
+  --md-outline: #79747E; --md-outline-variant: #CAC4D0;
+  --md-elev-1: 0 1px 2px rgba(29,27,32,.30), 0 1px 3px 1px rgba(29,27,32,.15);
+  --md-elev-2: 0 1px 2px rgba(29,27,32,.30), 0 2px 6px 2px rgba(29,27,32,.15);
+  --md-elev-3: 0 4px 8px 3px rgba(29,27,32,.15), 0 1px 3px rgba(29,27,32,.30);
+  --md-state: rgba(103,80,164,.08); --md-state-pressed: rgba(103,80,164,.12);
+}
+/* 系統通道：未手動指定主題時跟隨系統（DESIGN.md §5） */
+@media (prefers-color-scheme: light) {
+  body[data-ui="md"]:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg: #FEF7FF; --surface: #FEF7FF; --surface2: #F3EDF7;
+    --text: #1D1B20; --text2: #49454F; --line: #CAC4D0;
+    --accent: #6750A4; --accent-dark: #4F378B;
+    --md-primary: #6750A4; --md-on-primary: #FFFFFF;
+    --md-primary-container: #EADDFF; --md-on-primary-container: #21005D;
+    --md-secondary-container: #E8DEF8; --md-on-secondary-container: #1D192B;
+    --md-tertiary-container: #FFD8E4; --md-on-tertiary-container: #31111D;
+    --md-error: #B3261E; --md-error-container: #F9DEDC; --md-on-error-container: #410E0B;
+    --md-medium: #9A6700;
+    --md-surface-container: #F3EDF7; --md-surface-container-high: #ECE6F0;
+    --md-surface-container-highest: #E6E0E9; --md-surface-variant: #E7E0EC;
+    --md-outline: #79747E; --md-outline-variant: #CAC4D0;
+    --md-elev-1: 0 1px 2px rgba(29,27,32,.30), 0 1px 3px 1px rgba(29,27,32,.15);
+    --md-elev-2: 0 1px 2px rgba(29,27,32,.30), 0 2px 6px 2px rgba(29,27,32,.15);
+    --md-elev-3: 0 4px 8px 3px rgba(29,27,32,.15), 0 1px 3px rgba(29,27,32,.30);
+    --md-state: rgba(103,80,164,.08); --md-state-pressed: rgba(103,80,164,.12);
+  }
 }
 
-/* ---------- 磁貼 → Tonal Card（16px 圓角 + elev） ---------- */
-body[data-ui="md"] .tile {
-  border-radius: 16px;
-  background: var(--md-surface-container);
-  color: var(--text);
-  box-shadow: var(--md-shadow);
-  min-height: 5.6rem;
-  font-weight: 400;
+/* ============ 1. Large Top App Bar：kicker + 26px/700 + 圓形圖標鈕 ============ */
+body[data-ui="md"] .topbar {
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--md-outline-variant);   /* 底部 1px 細分隔線 */
+  padding: calc(14px + var(--sysbar-h)) 24px 12px;
+  align-items: flex-end;
 }
-body[data-ui="md"] .tile b { color: var(--text); }
-body[data-ui="md"] .tile-cobalt { background: var(--md-primary-container); color: var(--md-on-primary-container); }
-body[data-ui="md"] .tile-cobalt b, body[data-ui="md"] .tile-cobalt .tile-sub { color: var(--md-on-primary-container); }
-body[data-ui="md"] .tile-cyan { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
-body[data-ui="md"] .tile-cyan b, body[data-ui="md"] .tile-cyan .tile-sub { color: var(--md-on-secondary-container); }
-body[data-ui="md"] .tile-magenta { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
-body[data-ui="md"] .tile-magenta b, body[data-ui="md"] .tile-magenta .tile-sub { color: var(--md-on-tertiary-container); }
-body[data-ui="md"] .tile-teal { background: var(--md-surface-hi); color: var(--text); }
-body[data-ui="md"] .tile-wide { min-height: 4.6rem; }
-body[data-ui="md"] .tile .tile-sub { opacity: .9; }
-
-/* ---------- 頂欄 TopAppBar：無邊圓形 Icon Button ---------- */
-body[data-ui="md"] .topbar { border-bottom: none; }
+body[data-ui="md"] .topbar::before {
+  content: 'HONG KONG TRANSPORT';
+  position: absolute; left: 24px; top: calc(8px + var(--sysbar-h));
+  font-size: 10px; font-weight: 500; letter-spacing: 2.4px;
+  color: var(--text2); text-transform: uppercase;
+}
+body[data-ui="md"] .pivot-title {
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  font-size: 26px; font-weight: 700; letter-spacing: 0;
+  text-transform: none; line-height: 1.1; padding-top: 16px;
+}
 body[data-ui="md"] .topbar-search,
 body[data-ui="md"] .topbar-refresh {
-  width: 48px; height: 48px; border: none; border-radius: 50%;
-  background: transparent; color: var(--text2); font-size: 1.4rem;
+  width: 40px; height: 40px; border: none; border-radius: 50%;
+  background: transparent; color: var(--text2); font-size: 1.2rem;
 }
-body[data-ui="md"] .topbar-search:active, body[data-ui="md"] .topbar-refresh:active { background: var(--md-surface-hi); }
-body[data-ui="md"] .topbar-search svg { width: 22px; height: 22px; stroke-width: 1.6; }
-body[data-ui="md"] .pivot-title { font-size: 1.4rem; font-weight: 400; letter-spacing: .1px; }
-body[data-ui="md"] .pane-title { font-size: 1.25rem; font-weight: 400; }
+body[data-ui="md"] .topbar-search svg { width: 22px; height: 22px; stroke-width: 1.8; }
+body[data-ui="md"] .topbar-search:active,
+body[data-ui="md"] .topbar-refresh:active { background: var(--md-state); color: var(--text); }
+body[data-ui="md"] .topbar-search:active,
+body[data-ui="md"] .topbar-refresh:active { transform: none; }
 
-/* ---------- 列表：圓形 Avatar 路線號 + primary 分組 ---------- */
+/* ============ 2. 磁貼牆 → Tonal Card（16px 圓角 + elev-1，2 列網格） ============ */
+body[data-ui="md"] .tiles { grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 18px 0 8px; }
+body[data-ui="md"] .tile {
+  grid-column: span 1;
+  min-height: 104px; padding: 14px;
+  border-radius: var(--md-corner-l);
+  background: var(--md-surface-container); color: var(--text);
+  box-shadow: var(--md-elev-1);
+  font-size: 18px; font-weight: 500; gap: 4px;
+}
+body[data-ui="md"] .tile-wide { grid-column: span 2; min-height: 84px; }
+body[data-ui="md"] .tile b {
+  font-size: 24px; font-weight: 300; font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  color: inherit;
+}
+body[data-ui="md"] .tile .tile-sub { font-size: 12px; color: inherit; opacity: .8; margin-top: 2px; }
+/* 卡片 lab（首個 span）：小字弱化，與大數字形成 M3 層級 */
+body[data-ui="md"] .tile > span:first-child:not(.tile-face),
+body[data-ui="md"] .tile .tile-face > span:first-child {
+  font-size: 12px; font-weight: 400; color: inherit; opacity: .75;
+}
+/* Tonal 變體（依概念圖板：收藏=primary-container，壽司郎=secondary-container，其餘 tonal） */
+body[data-ui="md"] .tile-cobalt { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+body[data-ui="md"] .tile-magenta { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+body[data-ui="md"] .tile-cyan { background: var(--md-surface-container); color: var(--text); }
+body[data-ui="md"] .tile-teal { background: var(--md-surface-container-high); color: var(--text); }
+/* 按壓：M3 狀態層，無位移無縮放 */
+body[data-ui="md"] .tile:active { transform: none; }
+body[data-ui="md"] .tile::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: transparent; pointer-events: none;
+}
+body[data-ui="md"] .tile:active::after { background: var(--md-state-pressed); }
+/* MD 無磁貼翻轉（3D flip 屬 WP 語言，非 M3） */
+body[data-ui="md"] .tile-flip { perspective: none; }
+body[data-ui="md"] .tile-face { position: static; transform: none !important; backface-visibility: visible; }
+body[data-ui="md"] .tile-flip .tile-face-back { display: none; }
+body[data-ui="md"] #tileWeather .tile-face { align-items: flex-start; text-align: left; }
+
+/* ============ 3. 標題層級：title-medium 16/500 ============ */
+body[data-ui="md"] .pane-title {
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  font-size: 16px; font-weight: 500; color: var(--text);
+  text-transform: none; margin: 18px 0 10px;
+}
+
+/* ============ 4. Search Bar（28px 膠囊）+ Filter Chips + 按鈕 ============ */
+body[data-ui="md"] .metro-input {
+  border: none; border-radius: var(--md-corner-xl);
+  background: var(--md-surface-container-high);
+  padding: 15px 18px; min-height: 52px;
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif; font-size: 15px;
+}
+body[data-ui="md"] .metro-input:focus { outline: 1px solid var(--md-primary); outline-offset: 0; border-bottom: none; }
+body[data-ui="md"] .chip {
+  border: none; border-radius: var(--md-corner-s);
+  background: var(--md-surface-container); color: var(--text2);
+  padding: 8px 14px; min-height: 32px;
+  font-size: 12px; font-weight: 500; font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+}
+body[data-ui="md"] .chip.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+body[data-ui="md"] .chip:active { transform: none; background: var(--md-state-pressed); }
+body[data-ui="md"] .recent-chip {
+  border: none; border-radius: var(--md-corner-s);
+  background: var(--md-surface-container-high); color: var(--text2);
+}
+body[data-ui="md"] .search-btn {
+  border-radius: var(--md-corner-full);
+  background: var(--md-primary); color: var(--md-on-primary);
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  font-size: 14px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  padding: 14px;
+}
+body[data-ui="md"] .search-btn:active { transform: none; box-shadow: inset 0 0 0 999px rgba(255,255,255,.12); }
+
+/* ============ 5. 列表：圓形路線號 Avatar + 狀態層行 + Mono ETA ============ */
+body[data-ui="md"] .metro-group {
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  font-size: 13px; font-weight: 500; letter-spacing: 0;
+  color: var(--md-primary); margin: 18px 0 4px; padding: 0 4px;
+}
+body[data-ui="md"] .metro-row {
+  border-bottom: none; border-radius: var(--md-corner-m);
+  padding: 10px 8px; min-height: 56px; gap: 12px;
+}
+body[data-ui="md"] .metro-row:active { transform: none; background: var(--md-state); }
 body[data-ui="md"] .metro-row .row-no,
 body[data-ui="md"] .lrt-row .row-no {
   width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
   background: var(--md-primary-container); color: var(--md-on-primary-container);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.75rem; font-weight: 600;
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  font-size: 12px; font-weight: 600;
 }
-body[data-ui="md"] .metro-row .row-eta { color: var(--accent); font-weight: 500; font-size: 1.25rem; }
-body[data-ui="md"] .metro-row .row-eta.soon { color: #B3261E; }
-body[data-ui="md"] .metro-group { font-size: 0.81rem; font-weight: 500; color: var(--accent); letter-spacing: 0; }
-body[data-ui="md"] .metro-row .row-name { font-weight: 400; }
-body[data-ui="md"] .metro-row .row-sub { color: var(--text2); }
-/* 收藏卡 */
+body[data-ui="md"] .stop-row .row-no { background: var(--md-surface-container-high); color: var(--text2); }
+body[data-ui="md"] .metro-row .row-name { font-size: 15px; font-weight: 400; color: var(--text); }
+body[data-ui="md"] .metro-row .row-sub { font-size: 12px; color: var(--text2); }
+body[data-ui="md"] .row-eta-detail { font-size: 12px; color: var(--text2); }
+body[data-ui="md"] .metro-row .row-eta {
+  font-family: var(--md-mono); font-size: 21.6px; font-weight: 700;
+  color: var(--md-primary); font-variant-numeric: tabular-nums;
+}
+body[data-ui="md"] .metro-row .row-eta.soon { color: var(--md-error); }
+body[data-ui="md"] .metro-row .row-eta.medium { color: var(--md-medium); }
+body[data-ui="md"] .row-star { color: var(--md-primary); border-radius: 50%; }
+body[data-ui="md"] .row-star:active, body[data-ui="md"] .row-remove:active { transform: none; background: var(--md-state); }
+body[data-ui="md"] .row-remove { color: var(--text2); border-radius: 50%; }
+body[data-ui="md"] .badge-nite {
+  background: var(--md-tertiary-container); color: var(--md-on-tertiary-container);
+  border: none; border-radius: 6px; padding: 1px 8px; font-size: 11px;
+}
+body[data-ui="md"] .stop-route {
+  background: var(--md-surface-container); border-radius: var(--md-corner-s);
+  padding: 6px 10px; gap: 10px;
+}
+body[data-ui="md"] .stop-route .sr-no { color: var(--md-primary); }
+
+/* ============ 6. 收藏卡片：Tonal Card + M3 按鈕三態 ============ */
 body[data-ui="md"] .fav-card {
-  border: none; border-radius: 16px;
-  background: var(--md-surface-container); box-shadow: var(--md-shadow);
-  padding: 14px;
+  position: relative;
+  border: none; border-radius: var(--md-corner-l);
+  background: var(--md-surface-container); box-shadow: var(--md-elev-1);
+  padding: 14px; margin: 8px 0;
 }
-body[data-ui="md"] .fav-no { color: var(--accent); font-weight: 500; font-size: 1.35rem; }
-body[data-ui="md"] .fav-eta-main { font-size: 2.5rem; color: var(--text); }
-body[data-ui="md"] .fav-card:active { background: var(--md-surface-hi); }
-/* 輕鐵 / 詳情站行：同 Avatar 語法 */
-body[data-ui="md"] .lrt-station { border-bottom: none; }
-body[data-ui="md"] .lrt-head { font-weight: 500; color: var(--text); }
+body[data-ui="md"] .fav-card::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: transparent; pointer-events: none;
+}
+body[data-ui="md"] .fav-card:active::after { background: var(--md-state-pressed); }
+body[data-ui="md"] .fav-head { gap: 10px; }
+body[data-ui="md"] .fav-no {
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  font-size: 22px; font-weight: 500; color: var(--md-primary);
+}
+body[data-ui="md"] .fav-tag {
+  font-size: 11px; color: var(--text2);
+  border: 1px solid var(--md-outline-variant); border-radius: 6px; padding: 1px 8px;
+}
+body[data-ui="md"] .fav-name { font-size: 16px; font-weight: 400; color: var(--text); }
+body[data-ui="md"] .fav-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+body[data-ui="md"] .fav-eta-main {
+  font-family: var(--md-mono); font-size: 40px; font-weight: 300;
+  color: var(--text); font-variant-numeric: tabular-nums; margin-top: 6px; line-height: 1.1;
+}
+body[data-ui="md"] .fav-line { font-size: 12px; }
+body[data-ui="md"] .fav-line-label { color: var(--text2); }
+body[data-ui="md"] .fav-line-time { color: var(--md-primary); font-family: var(--md-mono); }
+body[data-ui="md"] .fav-line-time.soon { color: var(--md-error); }
+body[data-ui="md"] .fav-line-time.medium { color: var(--md-medium); }
+body[data-ui="md"] .fav-more, body[data-ui="md"] .fav-stale { font-size: 12px; color: var(--text2); }
+/* M3 按鈕三態：Tonal（換站）/ Filled（釘選）/ Outlined（重試） */
+body[data-ui="md"] .fav-pick {
+  border: none; border-radius: var(--md-corner-full);
+  padding: 8px 16px; min-height: 40px;
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  font-size: 12px; font-weight: 500;
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+body[data-ui="md"] .fav-pick-pin { background: var(--md-primary); color: var(--md-on-primary); }
+body[data-ui="md"] .fav-pick-retry { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
+body[data-ui="md"] .fav-pick:active { transform: none; box-shadow: inset 0 0 0 999px var(--md-state-pressed); }
+body[data-ui="md"] .fav-remove {
+  width: 32px; height: 32px; min-height: 32px; padding: 0;
+  border: none; border-radius: 50%;
+  background: transparent; color: var(--text2); font-size: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+body[data-ui="md"] .fav-remove:active { background: var(--md-state); transform: none; }
+body[data-ui="md"] .fav-actions { gap: 8px; flex-wrap: wrap; }
+
+/* ============ 7. 輕鐵收藏站塊 ============ */
+body[data-ui="md"] .lrt-station { border-bottom: none; padding: 14px 4px 6px; }
+body[data-ui="md"] .lrt-head { font-family: 'Roboto', 'Noto Sans TC', sans-serif; font-size: 16px; font-weight: 500; }
+body[data-ui="md"] .lrt-star { color: var(--md-primary); }
+
+/* ============ 8. K75P 全線：站序 avatar + 狀態 chip ============ */
+body[data-ui="md"] .k75p-fold-btn {
+  border: none; border-radius: var(--md-corner-s);
+  background: var(--md-surface-container-high); color: var(--text2);
+  padding: 10px 14px; margin: 8px 0; width: 100%; text-align: left;
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  font-size: 13px; font-weight: 500;
+}
+body[data-ui="md"] .k75p-fold-btn:active { background: var(--md-state); }
+body[data-ui="md"] .k75p-tag {
+  border: none; border-radius: 6px; padding: 1px 8px;
+  font-size: 11px; background: var(--md-surface-container-high); color: var(--text2);
+}
+body[data-ui="md"] .k75p-tag.live { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+body[data-ui="md"] .k75p-tag.sched { background: var(--md-surface-container-high); color: var(--text2); }
+body[data-ui="md"] .k75p-map-link {
+  border-radius: var(--md-corner-m); padding: 12px 8px;
+  color: var(--text2); font-size: 13px;
+}
+body[data-ui="md"] .k75p-map-link:active { opacity: 1; background: var(--md-state); }
+
+/* ============ 9. 路線詳情 → Modal Bottom Sheet（28px 頂圓角 + scrim + handle） ============ */
+body[data-ui="md"] .detail-sheet {
+  top: 56px;
+  transform: translateY(102%);
+  border-radius: var(--md-corner-xl) var(--md-corner-xl) 0 0;
+  box-shadow: var(--md-elev-3);
+}
+body[data-ui="md"] .detail-sheet.open { transform: translateY(0); }
+body[data-ui="md"].detail-open::before {
+  content: ''; position: fixed; inset: 0;
+  background: rgba(0,0,0,.4); z-index: 94;
+}
+body[data-ui="md"].detail-open .pivot { transform: none; opacity: 1; }
+body[data-ui="md"] .detail-bar {
+  position: relative; justify-content: center;
+  border-bottom: 1px solid var(--md-outline-variant);
+  background: var(--surface); padding: 16px 16px 10px;
+}
+body[data-ui="md"] .detail-bar::before {
+  content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  width: 32px; height: 4px; border-radius: 2px; background: var(--md-outline);
+}
+body[data-ui="md"] .back-btn {
+  position: absolute; left: 12px; top: 12px;
+  width: 40px; height: 40px; border: none; border-radius: 50%;
+  background: transparent; color: var(--text);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+body[data-ui="md"] .back-btn:active { transform: none; background: var(--md-state); }
+body[data-ui="md"] .detail-title {
+  font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+  font-size: 16px; font-weight: 500; text-align: center; padding-top: 8px;
+}
+body[data-ui="md"] .detail-body { padding: 8px 16px 40px; }
+body[data-ui="md"] .ds-stop {
+  border-bottom: none; border-radius: var(--md-corner-m);
+  padding: 10px 8px; min-height: 56px; gap: 12px;
+}
 body[data-ui="md"] .ds-stop .ds-seq {
   width: 34px; height: 34px; min-width: 34px; border-radius: 50%;
-  background: var(--md-surface-hi); color: var(--text2);
-  display: flex; align-items: center; justify-content: center; font-size: 0.72rem;
+  background: var(--md-surface-container-high); color: var(--text2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-family: 'Roboto', 'Noto Sans TC', sans-serif;
 }
-body[data-ui="md"] .ds-stop .ds-eta { color: var(--accent); font-weight: 500; }
+body[data-ui="md"] .ds-stop .ds-name { font-size: 15px; color: var(--text); }
+body[data-ui="md"] .ds-stop .ds-eta {
+  font-family: var(--md-mono); font-size: 18px; font-weight: 500;
+  color: var(--md-primary); font-variant-numeric: tabular-nums;
+}
+body[data-ui="md"] .ds-stop .ds-eta.soon { color: var(--md-error); }
+body[data-ui="md"] .ds-stop .ds-eta.medium { color: var(--md-medium); }
+body[data-ui="md"] .ds-line { cursor: pointer; }
+body[data-ui="md"] .ds-line:active { background: var(--md-state); }
+body[data-ui="md"] .ds-cur { background: var(--md-state); }
+body[data-ui="md"] .ds-cur-tag { color: var(--text2); font-size: 12px; }
+body[data-ui="md"] .ds-more { color: var(--text2); font-size: 12px; }
+body[data-ui="md"] .dir-tabs { padding: 4px 0; }
+body[data-ui="md"] .dir-tab, body[data-ui="md"] .map-line-btn {
+  border: none; border-radius: var(--md-corner-s);
+  background: var(--md-surface-container-high); color: var(--text2);
+  padding: 8px 16px; font-size: 13px; font-weight: 500;
+}
+body[data-ui="md"] .dir-tab.active, body[data-ui="md"] .map-line-btn.active {
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+body[data-ui="md"] .dir-tab:active, body[data-ui="md"] .map-line-btn:active { transform: none; }
 
-/* ---------- 輸入/按鈕/chips：MD 形狀 ---------- */
-body[data-ui="md"] .metro-input {
-  border: none; border-radius: 28px; background: var(--md-surface-hi);
-  padding: 10px 16px; color: var(--text);
-}
-body[data-ui="md"] .metro-input:focus { outline: 2px solid var(--accent); }
-body[data-ui="md"] .chip { border-radius: 8px; border: none; background: var(--md-surface-hi); color: var(--text2); }
-body[data-ui="md"] .chip.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); font-weight: 500; }
-body[data-ui="md"] .search-btn {
-  border-radius: 20px; background: var(--accent-dark); color: var(--md-on-primary-container);
-  font-weight: 500; letter-spacing: 0; text-transform: none;
-}
-body[data-ui="md"] .seg { border: 1px solid var(--md-outline); border-radius: 8px; overflow: hidden; gap: 0; }
-body[data-ui="md"] .seg button { border: none; border-radius: 0; background: transparent; color: var(--text2); }
-body[data-ui="md"] .seg button.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); font-weight: 500; }
-body[data-ui="md"] .dir-tab, body[data-ui="md"] .map-line-btn { border-radius: 8px; border: none; background: var(--md-surface-hi); color: var(--text2); }
-body[data-ui="md"] .dir-tab.active, body[data-ui="md"] .map-line-btn.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
-body[data-ui="md"] .recent-chip { border-radius: 8px; border: none; background: var(--md-surface-hi); color: var(--text2); }
-body[data-ui="md"] .weather-bar, body[data-ui="md"] .warning-bar, body[data-ui="md"] .error-msg { border-radius: 12px; }
-body[data-ui="md"] .warning-bar.warn-severe { background: #F9DEDC; color: #93000A; }
-body[data-ui="md"] .warning-bar.warn-mild { background: #FFF4E5; color: #7D3A00; }
-body[data-ui="md"] .more-menu { border-radius: 12px; box-shadow: var(--md-shadow3); }
+/* ============ 10. 路線圖：時間軸（節點圓形屬 M3 例外許可） ============ */
+body[data-ui="md"] .map-station { border-left-color: var(--md-outline-variant); }
+body[data-ui="md"] .map-station::before { background: var(--md-primary); }
+body[data-ui="md"] .map-station .ms-name { font-size: 15px; color: var(--text); }
+body[data-ui="md"] .map-station .ms-code, body[data-ui="md"] .map-station .ms-lines { color: var(--text2); font-size: 12px; }
 
-/* ---------- App Bar → NavigationBar（pill 指示器 + label） ---------- */
+/* ============ 11. App Bar → NavigationBar（80px · 64×32 pill 指示） ============ */
+/* 「路線」按鈕僅 MD 顯示；⋯ 更多選單僅其他皮膚顯示 */
+.ab-btn[data-pane="map"] { display: none; }
+body[data-ui="md"] .ab-btn[data-pane="map"] { display: inline-flex; }
+body[data-ui="md"] .ab-more, body[data-ui="md"] .more-menu { display: none; }
 body[data-ui="md"] .appbar {
-  background: var(--md-surface-container); border-top: 1px solid var(--line);
+  height: 80px;
+  padding: 8px 4px calc(12px + env(safe-area-inset-bottom));
+  background: var(--md-surface-container);
+  border-top: 1px solid var(--md-outline-variant);
+  box-shadow: var(--md-elev-2);
 }
-body[data-ui="md"] .ab-btn, body[data-ui="md"] .ab-more {
-  position: relative; flex-direction: column; gap: 2px;
+body[data-ui="md"] .ab-btn {
+  position: relative; flex-direction: column; gap: 4px;
   width: 64px; height: 52px; color: var(--text2);
 }
-body[data-ui="md"] .ab-label { display: block; font-size: 12px; line-height: 1; color: inherit; }
 body[data-ui="md"] .ab-btn::before {
   content: ''; position: absolute; left: 50%; top: 2px; transform: translateX(-50%);
   width: 64px; height: 32px; border-radius: 16px;
   background: var(--md-secondary-container);
   opacity: 0; transition: opacity .2s ease;
 }
+body[data-ui="md"] .ab-btn svg {
+  width: 24px; height: 24px; stroke-width: 1.8;
+  position: relative; z-index: 1;
+}
+body[data-ui="md"] .ab-label { display: block; position: relative; z-index: 1; font-size: 12px; line-height: 1; color: inherit; }
 body[data-ui="md"] .ab-btn.active { color: var(--text); }
 body[data-ui="md"] .ab-btn.active::before { opacity: 1; }
-body[data-ui="md"] .ab-btn svg, body[data-ui="md"] .ab-glyph { position: relative; z-index: 1; }
+body[data-ui="md"] .ab-btn:active { transform: none; }
 
-/* ---------- FAB（主操作＝搜尋；僅 MD 顯示） ---------- */
+/* ============ 12. FAB：primary-container · 16px 圓角 · elev-3（狀態層按壓） ============ */
 .fab-senyou { display: none; }
 body[data-ui="md"] .fab-senyou {
   display: flex; align-items: center; justify-content: center;
   position: fixed; right: 16px; bottom: calc(var(--appbar-h) + 20px); z-index: 58;
-  width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer;
+  width: 56px; height: 56px; border: none; border-radius: var(--md-corner-l);
   background: var(--md-primary-container); color: var(--md-on-primary-container);
-  box-shadow: var(--md-shadow3);
-  transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s ease;
+  box-shadow: var(--md-elev-3);
 }
-body[data-ui="md"] .fab-senyou:active { transform: translateY(-3px) scale(1.06); box-shadow: 0 8px 18px rgba(0,0,0,.35); }
+body[data-ui="md"] .fab-senyou:active {
+  transform: none;
+  box-shadow: inset 0 0 0 999px var(--md-state-pressed), var(--md-elev-3);
+}
 
-/* ---------- 詳情 → Modal Bottom Sheet（28px 頂圓角 + 從下方滑入） ---------- */
-body[data-ui="md"] .detail-sheet {
-  top: 44px;
-  transform: translateY(102%);
-  border-radius: 28px 28px 0 0;
-  box-shadow: var(--md-shadow3);
+/* ============ 13. 設定：M3 Switch 風格行 + SegmentedButton ============ */
+body[data-ui="md"] .setting-row { border-bottom: none; min-height: 52px; padding: 8px 0; }
+body[data-ui="md"] .setting-row .label { color: var(--text); font-size: 15px; }
+body[data-ui="md"] .setting-row .val { color: var(--text2); font-size: 12px; }
+body[data-ui="md"] .seg {
+  border: 1px solid var(--md-outline); border-radius: var(--md-corner-s);
+  overflow: hidden;
 }
-body[data-ui="md"] .detail-sheet.open { transform: translateY(0); }
-body[data-ui="md"] .detail-bar { border-bottom: none; justify-content: center; position: relative; padding-top: 8px; }
-body[data-ui="md"] .detail-bar::before {
-  content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-  width: 32px; height: 4px; border-radius: 2px; background: var(--md-outline);
+body[data-ui="md"] .seg button {
+  border: none; border-radius: 0; background: transparent; color: var(--text2);
+  padding: 8px 14px; font-size: 12px; font-weight: 500;
 }
-body[data-ui="md"] .back-btn { position: absolute; left: 12px; top: 2px; color: var(--text); }
-body[data-ui="md"] .detail-title { font-size: 1.1rem; font-weight: 500; text-align: center; padding-top: 10px; }
+body[data-ui="md"] .seg button.active {
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+body[data-ui="md"] .seg button:active { transform: none; }
+body[data-ui="md"] .fs-btn {
+  width: 44px; height: 44px; border: none; border-radius: var(--md-corner-m);
+  background: var(--md-surface-container-high); color: var(--text); font-size: 16px;
+}
+body[data-ui="md"] .fs-btn:active { transform: none; background: var(--md-state); }
+body[data-ui="md"] .fs-dots i {
+  width: 8px; height: 8px; border: none; border-radius: 50%;
+  background: var(--md-outline-variant);
+}
+body[data-ui="md"] .fs-dots i.on { background: var(--md-primary); }
 
-/* ---------- 設定行：MD 節奏 ---------- */
-body[data-ui="md"] .setting-row { min-height: 52px; }
+/* ============ 14. 天氣卡 + 警告條（error-container / secondary-container） ============ */
+body[data-ui="md"] .weather-bar {
+  border-radius: var(--md-corner-l);
+  background: var(--md-surface-container);
+  box-shadow: var(--md-elev-1);
+  padding: 14px; color: var(--text);
+  align-items: flex-start; text-align: left;
+}
+body[data-ui="md"] .weather-bar .w-ico { color: var(--text2); }
+body[data-ui="md"] .weather-bar .w-desc { font-size: 15px; font-weight: 400; color: var(--text); }
+body[data-ui="md"] .weather-bar .w-item b { font-size: 24px; font-weight: 300; color: var(--text); }
+body[data-ui="md"] .weather-bar .w-upd { font-size: 12px; color: var(--text2); }
+body[data-ui="md"] .warning-bar {
+  border: none; border-radius: var(--md-corner-m);
+  font-size: 13px;
+}
+body[data-ui="md"] .warning-bar.warn-severe { background: var(--md-error-container); color: var(--md-on-error-container); }
+body[data-ui="md"] .warning-bar.warn-mild { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+
+/* ============ 15. 錯誤 / 空態 / 雜項 ============ */
+body[data-ui="md"] .error-msg {
+  border: none; border-radius: var(--md-corner-m);
+  background: var(--md-error-container); color: var(--md-on-error-container);
+  font-size: 13px;
+}
+body[data-ui="md"] .metro-empty, body[data-ui="md"] .loading { color: var(--text2); }
+body[data-ui="md"] .tile-menu {
+  border: none; border-radius: var(--md-corner-m);
+  background: var(--md-surface-container-high); box-shadow: var(--md-elev-3);
+}
+body[data-ui="md"] .pano-bg { display: none; }   /* MD 首頁無全景漸變背景（M3 平面語法） */
+body[data-ui="md"] .more-menu { border-radius: var(--md-corner-m); }

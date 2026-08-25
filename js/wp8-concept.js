@@ -29,7 +29,7 @@ const UI_STRINGS = {
     to: '往', from: '由', depart: '開出',
     theme: '主題', accent: '強調色', uiStyle: '介面風格', contrast: '高對比', autoRefresh: '自動重新整理',
     dataSource: '資料來源', version: '版本', langLabel: '語言', weather: '天氣', k75pTitle: 'K75P 全線實時',
-    favFirst: '收藏首條結果', noMotion: '減少動畫', fontSize: '字體大小' },
+    favFirst: '收藏首條結果', noMotion: '減少動畫', fontSize: '字體大小', navMap: '路線' },
   en: { home: 'Senyou Transit', favs: 'Favourites', sushi: 'Sushiro', map: 'Route Map', settings: 'Settings',
     bus: 'Bus', mtrbus: 'MTR Bus', mtr: 'MTR', lrt: 'Light Rail', night: 'Night', searchBtn: 'Search',
     refresh: 'Refresh', placeholder: 'Enter route, stop or MTR station',
@@ -38,7 +38,7 @@ const UI_STRINGS = {
     to: 'To', from: 'From', depart: '',
     theme: 'Theme', accent: 'Accent colour', uiStyle: 'UI style', contrast: 'High contrast', autoRefresh: 'Auto refresh',
     dataSource: 'Data source', version: 'Version', langLabel: 'Language', weather: 'Weather', k75pTitle: 'K75P Live Board',
-    favFirst: 'Favourite first', noMotion: 'Reduce motion', fontSize: 'Font size' }
+    favFirst: 'Favourite first', noMotion: 'Reduce motion', fontSize: 'Font size', navMap: 'Map' }
 };
 let uiLang = 'zh';
 function t(key) { return (UI_STRINGS[uiLang] && UI_STRINGS[uiLang][key]) || UI_STRINGS.zh[key] || key; }
@@ -768,7 +768,7 @@ async function renderFavItem(f, i, pinKey) {
     }
     let html = '<div class="lrt-station" data-fi="' + i + '">'
       + '<span class="lrt-head">' + escapeHtml(f.stop_name || f.route || '') + '</span>'
-      + '<button class="fav-pick" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (favKey(f) === pinKey ? '✓ 釘選' : '釘選') + '</button>'
+      + '<button class="fav-pick fav-pick-pin" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (favKey(f) === pinKey ? '✓ 釘選' : '釘選') + '</button>'
       + '<button class="row-remove" data-i="' + i + '" onclick="removeFav(event, this)">✕</button>'
       + '</div>';
     const seen = new Set();
@@ -953,9 +953,9 @@ function favCardHTML(f, i, etas, pinned, staleAt) {
     + '<div class="fav-head"><span class="fav-no">' + escapeHtml(favNo(f)) + '</span>'
     + '<span class="fav-tag">' + tag + '</span>'
     + '<span class="fav-actions">'
-    + (f.type === 'bus' ? '<button class="fav-pick" onclick="event.stopPropagation();openFavStopPicker(' + i + ')">換站</button>' : '')
-    + '<button class="fav-pick" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (pinned ? '✓ 釘選' : '釘選') + '</button>'
-    + (staleAt ? '<button class="fav-pick" onclick="event.stopPropagation();renderFavs()">重試</button>' : '')
+    + (f.type === 'bus' ? '<button class="fav-pick fav-pick-stop" onclick="event.stopPropagation();openFavStopPicker(' + i + ')">換站</button>' : '')
+    + '<button class="fav-pick fav-pick-pin" onclick="event.stopPropagation();togglePinFav(' + i + ')">' + (pinned ? '✓ 釘選' : '釘選') + '</button>'
+    + (staleAt ? '<button class="fav-pick fav-pick-retry" onclick="event.stopPropagation();renderFavs()">重試</button>' : '')
     + '<button class="fav-remove" onclick="event.stopPropagation();removeFav(event, this)" data-i="' + i + '">✕</button>'
     + '</span></div>'
     + '<div class="fav-name">' + escapeHtml(favTitle(f)) + '</div>'
