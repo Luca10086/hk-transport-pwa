@@ -735,6 +735,7 @@ body[data-ui="wp8"] .ds-line:active .ds-more { color: #FFFFFF; }
   font-variant-numeric: tabular-nums; font-family: 'Roboto Mono', 'Segoe UI', sans-serif;
 }
 .kt-chip-more { color: var(--text2); }
+.kt-chip-sched { color: var(--text2); border-style: dashed; }
 .kt-bus {
   position: absolute; left: 83px; width: 22px; height: 10px;
   border-radius: 5px; background: var(--accent);

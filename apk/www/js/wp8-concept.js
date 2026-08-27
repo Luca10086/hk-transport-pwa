@@ -1348,8 +1348,14 @@ async function getK75PData() {
   }).finally(() => { k75pPromise = null; });
   return k75pPromise;
 }
-/* ---------- K75P 班次實時路線圖（循環綫垂直示意圖） ---------- */
+/* ---------- K75P 班次實時路線圖（循環綫垂直示意圖） ----------
+   時間語義（真實 API 核實）：
+   - arrivalTimeInSecond = 抵達該站的剩餘秒（同班車在每站各有一條）；
+   - 已到站 = 0 秒（顯示 00:00 / 即將），不可過濾；
+   - 站點無座標 → 用「已到站班車的 GPS」即時學習本站座標，
+     班次位置優先按 GPS 在路線多段線上投影（可用時），否則按到站秒數插值。 */
 let k75pLiveTimer = null;
+const k75pStopCoords = {};   /* 運行期學習：stopId → {lat,lng}（輪到車 sec=0 時取 GPS） */
 function openK75PLive() {
   const el = $('k75pLive');
   if (!el) return;
@@ -1364,37 +1370,70 @@ function closeK75PLive() {
   if (k75pLiveTimer) { clearInterval(k75pLiveTimer); k75pLiveTimer = null; }
 }
 const mmss = (sec) => {
+  if (sec <= 0) return '00:00';
   const m = Math.floor(sec / 60), s2 = Math.floor(sec % 60);
   return (m < 10 ? '0' : '') + m + ':' + (s2 < 10 ? '0' : '') + s2;
 };
-/* 純模型：停靠點順序 + stopMap(停點 id→bus[]) → { markers, chips }
-   同一班車會同時出現在多個站：其「最小到站秒」所在站＝下一站；
-   用「下一站與再下一站」的到站秒差估算站間車程 gap，插值出班車當前位置。 */
-function buildK75PLiveModel(stops, stopMap) {
+/* 點 → 線段（a→b）最近點的插值 t（平面近似，1km 級精度足夠） */
+function segPointFrac(a, b, p) {
+  const kx = 111320 * Math.cos(a.lat * Math.PI / 180), ky = 110540;
+  const ax = 0, ay = 0;
+  const bx = (b.lng - a.lng) * kx, by = (b.lat - a.lat) * ky;
+  const px = (p.lng - a.lng) * kx, py = (p.lat - a.lat) * ky;
+  const len2 = bx * bx + by * by;
+  if (len2 < 1e-6) return { d2: px * px + py * py, f: 0 };
+  let t = (px * bx + py * by) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const cx = bx * t, cy = by * t;
+  return { d2: (px - cx) * (px - cx) + (py - cy) * (py - cy), f: t };
+}
+/* GPS → 循環綫上的位置（返回 浮點站序 或 null＝不可靠）
+   refPos＝秒數插值估算：多段線投影撞線（環形迴路前後段）時，取貼近估算的候選 */
+function gpsLoopPosition(coords, stops, p, refPos) {
+  let best = null;
+  for (let i = 0; i < stops.length; i++) {
+    const a = coords[stops[i].id], b = coords[stops[(i + 1) % stops.length].id];
+    if (!a || !b) continue;
+    const r = segPointFrac(a, b, p);
+    const score = r.d2 + 4000 * Math.abs((i + r.f) - refPos);
+    if (!best || score < best.score) best = { score, d2: r.d2, pos: i + r.f };
+  }
+  return (best && Math.sqrt(best.d2) < 300) ? best.pos : null;
+}
+/* 純模型：停靠點順序 + stopMap(停點 id→bus[]) + 已學習座標 → { markers, chips } */
+function buildK75PLiveModel(stops, stopMap, coords) {
   const byBus = {};
   for (let i = 0; i < stops.length; i++) {
     for (const b of (stopMap[stops[i].id] || [])) {
-      const sec = parseInt(b.arrivalTimeInSecond) || 0;
-      if (sec <= 0 || sec >= 108000) continue;
-      const live = !!(b.busLocation && Number(b.busLocation.latitude) && Number(b.busLocation.longitude));
+      const sec = parseInt(b.arrivalTimeInSecond);
+      if (isNaN(sec) || sec < 0 || sec >= 108000) continue;   /* 0 = 已到站（保留） */
+      const loc = b.busLocation;
+      const live = !!(loc && Number(loc.latitude) && Number(loc.longitude));
+      if (live && sec === 0) {
+        coords[stops[i].id] = { lat: Number(loc.latitude), lng: Number(loc.longitude) };  /* 學習本站座標 */
+      }
       const id = String(b.busId || '?');
       if (!byBus[id]) byBus[id] = { live: false, entries: [] };
       if (live) byBus[id].live = true;
-      byBus[id].entries.push({ idx: i, sec });
+      byBus[id].entries.push({ idx: i, sec, loc: live ? { lat: Number(loc.latitude), lng: Number(loc.longitude) } : null });
     }
   }
   const markers = [], chips = [];
   for (const id of Object.keys(byBus)) {
     const bus = byBus[id];
-    if (!bus.live || !bus.entries.length) continue;   /* 只有帶 GPS 的班次有位置 */
+    if (!bus.entries.length) continue;
     const es = bus.entries.slice().sort((a, b) => a.sec - b.sec);
     const next = es[0];
-    const next2 = es.find(e => e.idx > next.idx);
+    chips.push({ idx: next.idx, sec: next.sec, live: bus.live });
+    if (!bus.live || !next.loc) continue;
+    /* 首選：GPS 投影（用戶要求，配合秒數估算防串線）；後備：到站秒數插值 */
+    const next2 = es.find(e => e.idx !== next.idx && e.sec > next.sec);
     const gap = next2 ? Math.max(30, next2.sec - next.sec) : 120;
-    const f = Math.max(0, Math.min(1, (gap - next.sec) / gap));
-    const pos = next.idx === 0 ? 0 : next.idx - 1 + f;
+    const f = next.sec === 0 ? 1 : Math.max(0, Math.min(1, (gap - next.sec) / gap));
+    const refPos = next.idx === 0 ? 0 : next.idx - 1 + f;
+    let pos = gpsLoopPosition(coords, stops, next.loc, refPos);
+    if (pos == null) pos = refPos;
     markers.push({ id, pos, nextIdx: next.idx, nextName: stops[next.idx].name, nextSec: next.sec });
-    chips.push({ idx: next.idx, sec: next.sec, id });
   }
   return { markers, chips };
 }
@@ -1405,17 +1444,17 @@ async function renderK75PLive() {
     const data = await getK75PData();
     const stopMap = {};
     for (const stop of ((data && data.busStop) || [])) stopMap[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
-    const { markers, chips } = buildK75PLiveModel(K75P_STOPS, stopMap);
+    const { markers, chips } = buildK75PLiveModel(K75P_STOPS, stopMap, k75pStopCoords);
     const byStop = {};
     for (const c of chips) { (byStop[c.idx] = byStop[c.idx] || []).push(c); }
     const ROW = 52;
-    let html = '<div class="kt-legend">● 每條橫標＝一班車當前位置 · 膠囊＝該班車到站倒數（分:秒）</div>'
+    let html = '<div class="kt-legend">● 每條橫標＝一班車當前位置（GPS 推算）· 膠囊＝該班車到站倒數 · 00:00＝即將到站</div>'
       + '<div class="kt-track">';
     K75P_STOPS.forEach((st, i) => {
       const cs = (byStop[i] || []).slice(0, 2);
       const more = (byStop[i] || []).length - cs.length;
       html += '<div class="kt-stop">'
-        + (cs.length ? '<span class="kt-chips">' + cs.map(c => '<span class="kt-chip">' + mmss(c.sec) + '</span>').join('')
+        + (cs.length ? '<span class="kt-chips">' + cs.map(c => '<span class="kt-chip' + (c.live ? '' : ' kt-chip-sched') + '">' + mmss(c.sec) + '</span>').join('')
           + (more > 0 ? '<span class="kt-chip kt-chip-more">+' + more + '</span>' : '') + '</span>' : '')
         + '<span class="kt-dot"></span>'
         + '<span class="kt-name">' + escapeHtml(st.name)
@@ -1424,10 +1463,10 @@ async function renderK75PLive() {
     });
     const posOcc = {};
     for (const m of markers) {
-      const occ = posOcc[m.pos] = (posOcc[m.pos] || 0) + 1;
+      const occ = posOcc[m.pos.toFixed(1)] = (posOcc[m.pos.toFixed(1)] || 0) + 1;
       const y = (m.pos * ROW + 26 - 5).toFixed(1);
       const xOff = (occ - 1) * 5;
-      html += '<span class="kt-bus" style="top:' + y + 'px;transform:translateX(-' + xOff + 'px)" title="班次 ' + escapeHtml(m.id) + ' · 下一站 ' + escapeHtml(m.nextName) + ' · ' + mmss(m.nextSec) + ' 後到達"></span>';
+      html += '<span class="kt-bus" style="top:' + y + 'px;transform:translateX(-' + xOff + 'px)" title="班次 ' + escapeHtml(m.id) + ' · 下一站 ' + escapeHtml(m.nextName) + ' · ' + (m.nextSec === 0 ? '即將到達' : mmss(m.nextSec) + ' 後到達') + '"></span>';
     }
     html += '</div>';
     if (!markers.length) html += '<div class="kt-empty">暫無實時班次位置（可能未開行）</div>';
