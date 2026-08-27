@@ -1348,6 +1348,94 @@ async function getK75PData() {
   }).finally(() => { k75pPromise = null; });
   return k75pPromise;
 }
+/* ---------- K75P 班次實時路線圖（循環綫垂直示意圖） ---------- */
+let k75pLiveTimer = null;
+function openK75PLive() {
+  const el = $('k75pLive');
+  if (!el) return;
+  el.hidden = false;
+  renderK75PLive();
+  if (k75pLiveTimer) clearInterval(k75pLiveTimer);
+  k75pLiveTimer = setInterval(renderK75PLive, 20000);
+}
+function closeK75PLive() {
+  const el = $('k75pLive');
+  if (el) el.hidden = true;
+  if (k75pLiveTimer) { clearInterval(k75pLiveTimer); k75pLiveTimer = null; }
+}
+const mmss = (sec) => {
+  const m = Math.floor(sec / 60), s2 = Math.floor(sec % 60);
+  return (m < 10 ? '0' : '') + m + ':' + (s2 < 10 ? '0' : '') + s2;
+};
+/* 純模型：停靠點順序 + stopMap(停點 id→bus[]) → { markers, chips }
+   同一班車會同時出現在多個站：其「最小到站秒」所在站＝下一站；
+   用「下一站與再下一站」的到站秒差估算站間車程 gap，插值出班車當前位置。 */
+function buildK75PLiveModel(stops, stopMap) {
+  const byBus = {};
+  for (let i = 0; i < stops.length; i++) {
+    for (const b of (stopMap[stops[i].id] || [])) {
+      const sec = parseInt(b.arrivalTimeInSecond) || 0;
+      if (sec <= 0 || sec >= 108000) continue;
+      const live = !!(b.busLocation && Number(b.busLocation.latitude) && Number(b.busLocation.longitude));
+      const id = String(b.busId || '?');
+      if (!byBus[id]) byBus[id] = { live: false, entries: [] };
+      if (live) byBus[id].live = true;
+      byBus[id].entries.push({ idx: i, sec });
+    }
+  }
+  const markers = [], chips = [];
+  for (const id of Object.keys(byBus)) {
+    const bus = byBus[id];
+    if (!bus.live || !bus.entries.length) continue;   /* 只有帶 GPS 的班次有位置 */
+    const es = bus.entries.slice().sort((a, b) => a.sec - b.sec);
+    const next = es[0];
+    const next2 = es.find(e => e.idx > next.idx);
+    const gap = next2 ? Math.max(30, next2.sec - next.sec) : 120;
+    const f = Math.max(0, Math.min(1, (gap - next.sec) / gap));
+    const pos = next.idx === 0 ? 0 : next.idx - 1 + f;
+    markers.push({ id, pos, nextIdx: next.idx, nextName: stops[next.idx].name, nextSec: next.sec });
+    chips.push({ idx: next.idx, sec: next.sec, id });
+  }
+  return { markers, chips };
+}
+async function renderK75PLive() {
+  const body = $('k75pLiveBody');
+  if (!body) return;
+  try {
+    const data = await getK75PData();
+    const stopMap = {};
+    for (const stop of ((data && data.busStop) || [])) stopMap[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
+    const { markers, chips } = buildK75PLiveModel(K75P_STOPS, stopMap);
+    const byStop = {};
+    for (const c of chips) { (byStop[c.idx] = byStop[c.idx] || []).push(c); }
+    const ROW = 52;
+    let html = '<div class="kt-legend">● 每條橫標＝一班車當前位置 · 膠囊＝該班車到站倒數（分:秒）</div>'
+      + '<div class="kt-track">';
+    K75P_STOPS.forEach((st, i) => {
+      const cs = (byStop[i] || []).slice(0, 2);
+      const more = (byStop[i] || []).length - cs.length;
+      html += '<div class="kt-stop">'
+        + (cs.length ? '<span class="kt-chips">' + cs.map(c => '<span class="kt-chip">' + mmss(c.sec) + '</span>').join('')
+          + (more > 0 ? '<span class="kt-chip kt-chip-more">+' + more + '</span>' : '') + '</span>' : '')
+        + '<span class="kt-dot"></span>'
+        + '<span class="kt-name">' + escapeHtml(st.name)
+        + (i === 0 ? '<span class="kt-end">起點</span>' : i === K75P_STOPS.length - 1 ? '<span class="kt-end">終點</span>' : '')
+        + '</span></div>';
+    });
+    const posOcc = {};
+    for (const m of markers) {
+      const occ = posOcc[m.pos] = (posOcc[m.pos] || 0) + 1;
+      const y = (m.pos * ROW + 26 - 5).toFixed(1);
+      const xOff = (occ - 1) * 5;
+      html += '<span class="kt-bus" style="top:' + y + 'px;transform:translateX(-' + xOff + 'px)" title="班次 ' + escapeHtml(m.id) + ' · 下一站 ' + escapeHtml(m.nextName) + ' · ' + mmss(m.nextSec) + ' 後到達"></span>';
+    }
+    html += '</div>';
+    if (!markers.length) html += '<div class="kt-empty">暫無實時班次位置（可能未開行）</div>';
+    body.innerHTML = html;
+  } catch (e) {
+    body.innerHTML = '<div class="error-msg">路線圖載入失敗</div>';
+  }
+}
 function goBusMap() {
   goPane('map');
   setTimeout(() => {
@@ -1400,7 +1488,8 @@ async function loadK75P() {
     const stopMap = {};
     for (const stop of data.busStop) stopMap[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
     const fmt = x => x <= 60 ? '即將到站' : Math.max(1, Math.ceil(x / 60)) + ' 分鐘';
-    const rows = ['<div class="k75p-map-link" onclick="goBusMap()"><svg class="k75p-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.2"/></svg> 實時位置地圖（點按查看巴士在哪）<span>›</span></div>'];
+    const rows = ['<div class="k75p-map-link" onclick="openK75PLive()"><svg class="k75p-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-6 5 12 2.5-6H21"/></svg> 班次實時路線圖（每班車到咗邊個站）<span>›</span></div>'
+      , '<div class="k75p-map-link" onclick="goBusMap()"><svg class="k75p-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.2"/></svg> 實時位置地圖（點按查看巴士在哪）<span>›</span></div>'];
     let foldInserted = false;
     for (const st of K75P_STOPS) {
       if (st.id === 'U140') continue; /* 循環綫終點「天瑞」不納入實時報站 */

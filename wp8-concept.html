@@ -226,6 +226,16 @@
   </div>
 </nav>
 
+<!-- ================= K75P 班次實時路線圖（全屏） ================= -->
+<div class="k75p-live" id="k75pLive" hidden>
+  <header class="k75p-live-bar">
+    <button class="k75p-live-close" onclick="closeK75PLive()" aria-label="返回">✕</button>
+    <div class="k75p-live-title">K75P 全綫 · 班次實時位置</div>
+    <button class="k75p-live-refresh" onclick="renderK75PLive()" aria-label="重新整理">↻</button>
+  </header>
+  <div class="k75p-live-body" id="k75pLiveBody"></div>
+</div>
+
 <!-- ================= 路線詳情（點擊路線後右側滑入） ================= -->
 <div class="detail-sheet" id="detailSheet" hidden>
   <header class="detail-bar">
