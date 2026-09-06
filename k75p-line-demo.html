@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K75P 全綫 · 班次實時位置（線路圖 Demo）</title>
+<style>
+  /* ===== K75P 垂直線路圖 Demo（WP8-Metro 語法：純黑 · 單一強調色 · 全直角） ===== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #000; color: #fff; min-height: 100vh;
+    font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+    display: flex; justify-content: center; padding: 20px 0 48px;
+  }
+  .wrap { width: 360px; padding: 0 24px; }
+  /* ---- 標題欄 ---- */
+  .bar { display: flex; align-items: center; gap: 10px; padding: 6px 0 2px; }
+  .bar .t { flex: 1; font-size: 22px; font-weight: 300; }
+  .bar button {
+    width: 44px; height: 44px; border: 1px solid rgba(255,255,255,.25);
+    background: transparent; color: #fff; font-size: 20px; cursor: pointer;
+  }
+  .bar button:active { background: #0078D7; }
+  .badge { font-size: 13px; color: rgba(255,255,255,.5); }
+  /* ---- 方向提示 ---- */
+  .dir { height: 26px; padding-left: 66px; font-size: 13px; color: rgba(255,255,255,.5); line-height: 26px; }
+  .dir b { color: #0078D7; font-weight: 400; font-size: 17px; margin-right: 4px; }
+  /* ---- 起終點標籤 ---- */
+  .term-label { font-size: 22px; color: #0078D7; padding-left: 94px; height: 34px; line-height: 34px; }
+  .term-label.bottom { height: 40px; line-height: 40px; }
+  /* ---- 站線區 ---- */
+  .stops { position: relative; margin-top: 4px; }
+  .stops::before {
+    content: ''; position: absolute; left: 80px; top: 0; bottom: 0; width: 4px;
+    background: #0078D7;
+  }
+  .stop { position: relative; height: 52px; }
+  .dot {
+    position: absolute; left: 73px; top: 50%; width: 18px; height: 18px;
+    transform: translateY(-50%); background: #0078D7;
+  }
+  .dot.term { width: 24px; height: 24px; left: 70px; border: 3px solid #005A9E; }
+  .name {
+    position: absolute; left: 94px; top: 50%; transform: translateY(-50%);
+    font-size: 17px; white-space: nowrap;
+  }
+  .chips {
+    position: absolute; right: calc(100% - 72px); top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  }
+  .chip {
+    border: 1px solid rgba(255,255,255,.25); color: #fff;
+    padding: 4px 8px; font-size: 13px; white-space: nowrap;
+    font-variant-numeric: tabular-nums; font-family: 'Consolas', 'Segoe UI', monospace;
+  }
+  .chip.live { color: #0078D7; border-color: #0078D7; }
+  .chip.sched { color: rgba(255,255,255,.5); border-style: dashed; }
+  .chip.more { color: rgba(255,255,255,.5); }
+  /* ---- 班次位置橫標（隨刷新平滑移動） ---- */
+  .bus {
+    position: absolute; width: 22px; height: 10px; background: #0078D7;
+    transition: top 1.2s cubic-bezier(.16,1,.3,1);
+  }
+  /* ---- 圖例 ---- */
+  .legend {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
+    margin-top: 18px; font-size: 13px; color: rgba(255,255,255,.5);
+  }
+  .legend i { font-style: normal; }
+  .lg-dot, .lg-term { display: inline-block; width: 10px; height: 10px; background: #0078D7; margin-right: 4px; }
+  .lg-term { width: 14px; height: 14px; border: 2px solid #005A9E; vertical-align: -1px; }
+  .lg-bus { display: inline-block; width: 16px; height: 8px; background: #0078D7; margin-right: 4px; }
+  .lg-chip { border: 1px solid #0078D7; color: #0078D7; padding: 1px 5px; margin: 0 4px; font-variant-numeric: tabular-nums; }
+  .note { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,.5); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <div class="t">K75P 全綫 · 班次實時位置</div>
+    <button id="refreshBtn" aria-label="重新整理" title="重新整理">↻</button>
+  </header>
+  <div class="badge" id="badge">載入中…</div>
+
+  <div class="dir"><b>▼</b>循環方向</div>
+  <div class="term-label">天瑞（起點）</div>
+
+  <div class="stops" id="stops"></div>
+
+  <div class="term-label bottom">天瑞（終點）</div>
+  <div class="dir"><b>▼</b>返回天瑞</div>
+
+  <div class="legend">
+    <span><i class="lg-term"></i>起/終點</span>
+    <span><i class="lg-dot"></i>中途站</span>
+    <span><i class="lg-bus"></i>班次位置</span>
+    <span><i class="lg-chip">13:14</i>預計到達（分:秒）</span>
+  </div>
+  <div class="note" id="note">Demo：以快照數據演示動態班次位置；APK 集成版走原生通道實時刷新</div>
+</div>
+
+<script src="k75p-demo-snapshot.js"></script>
+<script>
+(function () {
+  'use strict';
+  const STOPS = window.DEMO_K75P_STOPS || [];
+  let snapshot = window.DEMO_K75P_SNAPSHOT || { at: '', stops: [] };
+  const coords = {};          /* 運行期學習站點座標 */
+  const ROW = 52, RAIL_CENTER = 82;
+  const markerEls = {};
+  const $ = (id) => document.getElementById(id);
+
+  const mmss = (sec) => {
+    if (sec <= 0) return '00:00';
+    const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  };
+  function segPointFrac(a, b, p) {
+    const kx = 111320 * Math.cos(a.lat * Math.PI / 180), ky = 110540;
+    const bx = (b.lng - a.lng) * kx, by = (b.lat - a.lat) * ky;
+    const px = (p.lng - a.lng) * kx, py = (p.lat - a.lat) * ky;
+    const len2 = bx * bx + by * by;
+    if (len2 < 1e-6) return { d2: px * px + py * py, f: 0 };
+    let t = (px * bx + py * by) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const cx = bx * t, cy = by * t;
+    return { d2: (px - cx) * (px - cx) + (py - cy) * (py - cy), f: t };
+  }
+  function gpsLoopPosition(p, refPos) {
+    let best = null;
+    for (let i = 0; i < STOPS.length; i++) {
+      const a = coords[STOPS[i].id], b = coords[STOPS[(i + 1) % STOPS.length].id];
+      if (!a || !b) continue;
+      const r = segPointFrac(a, b, p);
+      const score = r.d2 + 4000 * Math.abs((i + r.f) - refPos);
+      if (!best || score < best.score) best = { score, d2: r.d2, pos: i + r.f };
+    }
+    return (best && Math.sqrt(best.d2) < 300) ? best.pos : null;
+  }
+  /* 與 App 同源模型：班次位置 = GPS 投影（站點座標由「已到站班車 GPS」即時學習），
+     座標不足時用「到站秒數差」插值兜底 */
+  function buildModel(data) {
+    const stopMap = {};
+    (data.stops || []).forEach(st => { stopMap[st.id] = st.bus || []; });
+    const byBus = {};
+    for (let i = 0; i < STOPS.length; i++) {
+      for (const b of (stopMap[STOPS[i].id] || [])) {
+        const sec = parseInt(b.sec, 10);
+        if (isNaN(sec) || sec < 0 || sec >= 108000) continue;
+        const live = !!(Number(b.la) && Number(b.ln));
+        if (live && sec === 0) coords[STOPS[i].id] = { lat: Number(b.la), lng: Number(b.ln) };
+        const id = String(b.id || '?');
+        if (!byBus[id]) byBus[id] = { live: false, entries: [] };
+        if (live) byBus[id].live = true;
+        byBus[id].entries.push({ idx: i, sec, loc: live ? { lat: Number(b.la), lng: Number(b.ln) } : null });
+      }
+    }
+    const markers = [], chips = [];
+    for (const id of Object.keys(byBus)) {
+      const bus = byBus[id];
+      if (!bus.entries.length) continue;
+      const es = bus.entries.slice().sort((a, b) => a.sec - b.sec);
+      const next = es[0];
+      chips.push({ idx: next.idx, sec: next.sec, live: bus.live });
+      if (!bus.live || !next.loc) continue;
+      const next2 = es.find(e => e.idx !== next.idx && e.sec > next.sec);
+      const gap = next2 ? Math.max(30, next2.sec - next.sec) : 120;
+      const f = next.sec === 0 ? 1 : Math.max(0, Math.min(1, (gap - next.sec) / gap));
+      const refPos = next.idx === 0 ? 0 : next.idx - 1 + f;
+      let pos = gpsLoopPosition(next.loc, refPos);
+      if (pos == null) pos = refPos;
+      markers.push({ id, pos, nextIdx: next.idx, nextName: STOPS[next.idx].name, nextSec: next.sec });
+    }
+    return { markers, chips };
+  }
+
+  let lastRender = 0, tick = null;
+  function render() {
+    const box = $('stops');
+    const { markers, chips } = buildModel(snapshot);
+    const byStop = {};
+    chips.forEach(c => { (byStop[c.idx] = byStop[c.idx] || []).push(c); });
+    let html = '';
+    STOPS.forEach((st, i) => {
+      const cs = (byStop[i] || []).slice(0, 2);
+      const more = (byStop[i] || []).length - 2;
+      html += '<div class="stop">'
+        + (cs.length ? '<span class="chips">' + cs.map(c => '<span class="chip' + (c.live ? ' live' : ' sched') + '" data-sec="' + c.sec + '">' + mmss(c.sec) + '</span>').join('')
+          + (more > 0 ? '<span class="chip more">+' + more + '</span>' : '') + '</span>' : '')
+        + '<span class="dot' + (i === 0 || i === STOPS.length - 1 ? ' term' : '') + '"></span>'
+        + '<span class="name">' + st.name + '</span>'
+        + '</div>';
+    });
+    box.innerHTML = html;
+    lastRender = Date.now();
+    /* 班次橫標：按班次 id 保持元素身份 → CSS transition 平滑移動 */
+    const occ = {};
+    markers.forEach(m => {
+      const key = 'b' + m.id;
+      const k = m.pos.toFixed(1);
+      occ[k] = (occ[k] || 0) + 1;
+      const off = (occ[k] - 1) * 6;
+      let el = markerEls[key];
+      if (!el) { el = document.createElement('span'); el.className = 'bus'; box.appendChild(el); markerEls[key] = el; }
+      el.style.top = (m.pos * ROW + 26 - 5).toFixed(1) + 'px';
+      el.style.left = (RAIL_CENTER - 11 + off) + 'px';
+      el.title = '班次 ' + m.id + ' · 下一站 ' + m.nextName + ' · ' + (m.nextSec === 0 ? '即將到達' : mmss(m.nextSec) + ' 後到達');
+    });
+    const keep = new Set(markers.map(m => 'b' + m.id));
+    Object.keys(markerEls).forEach(k => { if (!keep.has(k)) { markerEls[k].remove(); delete markerEls[k]; } });
+    /* 每秒膠囊倒數 */
+    clearInterval(tick);
+    tick = setInterval(() => {
+      const el = Math.floor((Date.now() - lastRender) / 1000);
+      box.querySelectorAll('.chip[data-sec]').forEach(ch => {
+        ch.textContent = mmss(Math.max(0, parseInt(ch.dataset.sec, 10) - el));
+      });
+    }, 1000);
+  }
+
+  function badge(text) { $('badge').textContent = text; }
+  async function refreshLive() {
+    const url = 'https://rt.data.gov.hk/v1/transport/mtr/bus/getSchedule';
+    const tries = ['https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
+      'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)];
+    for (const u of tries) {
+      try {
+        const r = await fetch(u, { signal: AbortSignal.timeout(8000) });
+        if (!r.ok) continue;
+        const j = await r.json();
+        if (j && Array.isArray(j.busStop) && j.busStop.length) {
+          snapshot = { at: new Date().toISOString().slice(0, 16).replace('T', ' '), stops: j.busStop.map(st => ({
+            id: (st.busStopId || '').replace(/^K75P-/, ''),
+            bus: (st.bus || []).map(b => ({
+              id: String(b.busId || '?'), sec: parseInt(b.arrivalTimeInSecond, 10) || 0,
+              sched: b.isScheduled === '1' || b.isScheduled === 1,
+              la: (b.busLocation && Number(b.busLocation.latitude)) || 0,
+              ln: (b.busLocation && Number(b.busLocation.longitude)) || 0,
+            })),
+          })) };
+          badge('實時更新 · ' + snapshot.at);
+          render();
+          return;
+        }
+      } catch (e) {}
+    }
+    badge('快照 ' + snapshot.at.slice(5, 16) + ' · 接口離線（demo 模式）');
+  }
+
+  render();
+  if (snapshot.at) badge('快照 ' + snapshot.at.slice(5, 16) + ' · 每秒倒數中');
+  $('refreshBtn').addEventListener('click', refreshLive);
+  setInterval(refreshLive, 30000);
+})();
+</script>
+</body>
+</html>
