@@ -1177,24 +1177,39 @@ async function fetchForecast() {
 /* ---------- 寿司郎（只顯示元朗/屯門/天水圍 · 顯示排隊組數） ---------- */
 async function fetchSushiroData() {
   const url = SUSHIRO_STORE_API;
-  const tries = [url, SUSHIRO_PROXY(url), CORS_PROXIES[0](url)];
+  /* 通道一：APK 原生 CapacitorHttp（無 CORS 限制，Capacitor 5+ 內建） */
+  try {
+    const CH = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorHttp;
+    if (CH) {
+      const r = await CH.get({ url, headers: { Accept: 'application/json' }, connectTimeout: 10000, readTimeout: 10000 });
+      const d = r && r.data;
+      if (r && r.status >= 200 && r.status < 300 && Array.isArray(d) && d.length) return { list: d, live: true };
+    }
+  } catch (e) {}
+  /* 通道二/三：直連（Node/部分環境可用）→ CORS 代理鏈（依次、短超時） */
+  const tries = [url, 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url), SUSHIRO_PROXY(url), CORS_PROXIES[0](url)];
   for (const u of tries) {
     try {
-      const resp = await fetch(u, { signal: AbortSignal.timeout(15000) });
-      if (resp.ok) return await resp.json();
+      const resp = await fetch(u, { signal: AbortSignal.timeout(8000) });
+      if (!resp.ok) continue;
+      const j = await resp.json();
+      if (Array.isArray(j) && j.length) return { list: j, live: true };
     } catch (e) {}
   }
-  throw new Error('unreachable');
+  /* 兜底：內建快照（永不離線；UI 會標註快取時間） */
+  return { list: (typeof SUSHIRO_SNAPSHOT !== 'undefined' ? SUSHIRO_SNAPSHOT : []), live: false };
 }
 async function refreshSushiro() {
   const el = $('sushi');
   try {
-    const all = await fetchSushiroData();
+    const src = await fetchSushiroData();
+    const all = src.list, live = src.live;
     /* 天水圍的分店歸屬「元朗區」，故按 元朗區 + 屯門區 過濾 */
     const areas = ['元朗區', '屯門區'];
     const stores = (Array.isArray(all) ? all : []).filter(s => areas.includes(s.area))
       .sort((a, b) => ((a.waitingGroup || 0) - (b.waitingGroup || 0)) || ((a.wait || 0) - (b.wait || 0)));
-    el.innerHTML = stores.map(s => {
+    const note = live ? '' : '<div class="sushiro-note">實時接口離線，顯示快取數據（' + (typeof SUSHIRO_SNAPSHOT_AT !== 'undefined' ? SUSHIRO_SNAPSHOT_AT : '') + ' 抓取）</div>';
+    const rows = stores.map(s => {
       const closed = s.storeStatus !== 'OPEN';
       const groups = parseInt(s.waitingGroup, 10) || 0;
       const mins = parseInt(s.wait, 10) || 0;
@@ -1205,7 +1220,8 @@ async function refreshSushiro() {
         + '<span class="row-main"><span class="row-name">' + escapeHtml(s.name || '') + '</span>'
         + '<span class="row-sub">' + sub + '</span></span>'
         + '<span class="row-eta ' + (closed ? 'soon' : ((groups > 0 || mins > 0) ? 'medium' : '')) + '">' + right + '</span></div>';
-    }).join('') || '<div class="metro-empty">元朗、屯門、天水圍暫無分店資料</div>';
+    }).join('');
+    el.innerHTML = note + (rows || '<div class="metro-empty">元朗、屯門、天水圍暫無分店資料</div>');
   } catch (e) {
     el.innerHTML = '<div class="error-msg">壽司郎暫時無法連線，請稍後再試</div>';
   }
