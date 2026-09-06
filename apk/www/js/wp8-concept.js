@@ -1442,12 +1442,14 @@ function buildK75PLiveModel(stops, stopMap, coords) {
     const next = es[0];
     chips.push({ idx: next.idx, sec: next.sec, live: bus.live });
     if (!bus.live || !next.loc) continue;
-    /* 首選：GPS 投影（用戶要求，配合秒數估算防串線）；後備：到站秒數插值 */
+    /* 標準：GPS 投影（用戶要求；站點座標 = 靜態基準 + 進站學習），
+       班表秒數插值僅作交叉校驗與兜底 */
     const next2 = es.find(e => e.idx !== next.idx && e.sec > next.sec);
     const gap = next2 ? Math.max(30, next2.sec - next.sec) : 120;
     const f = next.sec === 0 ? 1 : Math.max(0, Math.min(1, (gap - next.sec) / gap));
     const refPos = next.idx === 0 ? 0 : next.idx - 1 + f;
     let pos = gpsLoopPosition(coords, stops, next.loc, refPos);
+    if (pos != null && Math.abs(pos - refPos) > 2) pos = null;   /* GPS 與班表矛盾（>2 站）＝定位失效 */
     if (pos == null) pos = refPos;
     markers.push({ id, pos, nextIdx: next.idx, nextName: stops[next.idx].name, nextSec: next.sec });
   }
@@ -1460,6 +1462,14 @@ async function renderK75PLive() {
     const data = await getK75PData();
     const stopMap = {};
     for (const stop of ((data && data.busStop) || [])) stopMap[(stop.busStopId || '').replace(/^K75P-/, '')] = stop.bus || [];
+    /* GPS 定位標準：靜態座標表補齊未學習的站（運行時進站學習可覆寫精修） */
+    if (typeof K75P_STOP_COORDS !== 'undefined') {
+      for (const k of Object.keys(K75P_STOP_COORDS)) {
+        if (!k75pStopCoords[k] && K75P_STOP_COORDS[k] && K75P_STOP_COORDS[k].lat) {
+          k75pStopCoords[k] = { lat: K75P_STOP_COORDS[k].lat, lng: K75P_STOP_COORDS[k].lng };
+        }
+      }
+    }
     const { markers, chips } = buildK75PLiveModel(K75P_STOPS, stopMap, k75pStopCoords);
     const byStop = {};
     for (const c of chips) { (byStop[c.idx] = byStop[c.idx] || []).push(c); }

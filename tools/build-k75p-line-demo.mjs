@@ -33,13 +33,23 @@ const slim = stops.map(st => ({
   })),
 }));
 const at = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 19).replace('T', ' ');
+/* 3. 內嵌站點座標基準（GPS 定位標準） */
+const cm = dataSrc.match(/const K75P_STOP_COORDS = (\{[\s\S]*?\});\n/);
+let coordsJson = 'null';
+if (cm) { try { const o = JSON.parse(cm[1]); const slim2 = {}; for (const k of Object.keys(o)) { if (o[k]) slim2[k] = { lat: o[k].lat, lng: o[k].lng }; } coordsJson = JSON.stringify(slim2); } catch (e) {} }
 const dataScript = 'window.DEMO_K75P_STOPS = ' + JSON.stringify(stopsDef) + ';\n'
+  + 'window.DEMO_K75P_COORDS = ' + coordsJson + ';\n'
   + 'window.DEMO_K75P_SNAPSHOT = ' + JSON.stringify({ at, stops: slim }) + ';';
-/* 3. 嵌入 demo html 的佔位符 */
+/* 4. 嵌入 demo html（佔位符或既有數據塊，二選一替換 → 可重複生成） */
 const p = 'E:/DAFYU GZQ/hk-transport-pwa/k75p-line-demo.html';
 let html = readFileSync(p, 'utf8');
 const token = '/*__K75P_DEMO_DATA__*/';
-if (!html.includes(token)) { console.error('佔位符缺失：請確認 demo html 有 /*__K75P_DEMO_DATA__*/'); process.exit(1); }
-html = html.replace(token, dataScript);
+if (html.includes(token)) {
+  html = html.replace(token, dataScript);
+} else {
+  const re = /<script>window\.DEMO_K75P_STOPS = [\s\S]*?window\.DEMO_K75P_SNAPSHOT = \{[^]*?\};<\/script>/;
+  if (!re.test(html)) { console.error('找不到可替換的數據塊：請確認 demo html 有 /*__K75P_DEMO_DATA__*/ 或已內嵌 DEMO_K75P_STOPS'); process.exit(1); }
+  html = html.replace(re, '<script>' + dataScript + '</script>');
+}
 writeFileSync(p, html, 'utf8');
 console.log('OK 已嵌入 demo：' + slim.length + ' 站 · 抓取 ' + at);
