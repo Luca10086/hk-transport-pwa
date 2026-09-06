@@ -1254,21 +1254,93 @@ function setMapMode(m, btn) {
     else renderLRTMap();
   }
 }
-function renderMTRLine(lc, btn) {
+/* 港鐵列車位置（班表推算）——港鐵無公開實時位置 API，僅有各站未來 4 班時刻：
+   同一班車在相鄰站的時間差 40s–5min 視為同一班（鏈式配對），
+   以「已過站/未到站」插值出列車目前所在區間；UI 標註「班表推算」。 */
+const mtrSchedCache = {};
+let mtrTickTimer = null;
+async function mtrSchedulesFor(stops, lc) {
+  const out = {};
+  await Promise.all(stops.map(async st => {
+    const ck = lc + ':' + st.code;
+    if (!mtrSchedCache[ck] || Date.now() - mtrSchedCache[ck].t > 600000) {
+      try {
+        const sched = await getMTRSchedule(lc, st.code);
+        const d = (sched && sched[lc + '-' + st.code]) || {};
+        const map = dir => (d[dir] || []).map(t => parseHK(t && t.time)).filter(Boolean).sort((a, b) => a - b);
+        mtrSchedCache[ck] = { t: Date.now(), v: { UP: map('UP'), DOWN: map('DOWN') } };
+      } catch (e) { mtrSchedCache[ck] = { t: Date.now(), v: { UP: [], DOWN: [] } }; }
+    }
+    out[st.code] = mtrSchedCache[ck].v;
+  }));
+  return out;
+}
+/* 純模型：stops（{code,name} 順序）+ schedMap（每站 UP/DOWN 升序時間 ms）→ chips/markers */
+/* 純模型（API 只回各站未來 4 班，無法還原全線列車）：
+   chips＝每站每方向下一班倒數（真實）；markers＝每方向「下一班列車最近站」（班表推算） */
+function buildMTRLineModel(stops, schedMap, nowMs) {
+  const chips = [], markers = [];
+  for (const dir of ['UP', 'DOWN']) {
+    const per = stops.map(st => (schedMap[st.code] && schedMap[st.code][dir]) || []);
+    let lead = null;
+    stops.forEach((st, i) => {
+      const next = per[i].find(t => t > nowMs);
+      if (next) {
+        chips.push({ idx: i, dir, sec: Math.max(0, Math.round((next - nowMs) / 1000)) });
+        if (!lead || next < lead.t) lead = { t: next, idx: i };
+      }
+    });
+    if (lead) markers.push({ dir, pos: Math.max(0, lead.idx - 0.25), nextName: stops[lead.idx].name });
+  }
+  return { chips, markers };
+}
+async function renderMTRLine(lc, btn) {
   const body = $('mapBody');
   if (!body) return;
   document.querySelectorAll('#mapLines .map-line-btn').forEach(b => b.classList.toggle('active', b === btn));
   const stops = MTR_LINE_STOPS[lc] || [];
   const all = Object.keys(MTR_LINE_STOPS);
-  body.innerHTML = '<div class="map-timeline">' + stops.map(s => {
-    const serving = all.filter(x => MTR_LINE_STOPS[x].some(y => y.code === s.code));
-    const inter = serving.length > 1;
-    return '<div class="map-station' + (inter ? ' interchange' : '') + '">'
-      + '<span class="ms-name">' + escapeHtml(s.name) + '</span>'
-      + '<span class="ms-code">' + escapeHtml(s.code || '') + '</span>'
-      + (inter ? '<span class="ms-lines">轉乘 ' + escapeHtml(serving.map(x => MTR_LINES[x]).join(' / ')) + '</span>' : '')
-      + '</div>';
-  }).join('') + '</div>';
+  body.innerHTML = '<div class="ms-note">班表推算 · 橫標＝各方向下一班列車最近的站 · 膠囊＝下一班倒數</div>'
+    + '<div class="map-timeline" id="mtrTimeline">' + stops.map(s => {
+      const serving = all.filter(x => MTR_LINE_STOPS[x].some(y => y.code === s.code));
+      const inter = serving.length > 1;
+      return '<div class="map-station' + (inter ? ' interchange' : '') + '">'
+        + '<span class="ms-name">' + escapeHtml(s.name) + '</span>'
+        + '<span class="ms-code">' + escapeHtml(s.code || '') + '</span>'
+        + (inter ? '<span class="ms-lines">轉乘 ' + escapeHtml(serving.map(x => MTR_LINES[x]).join(' / ')) + '</span>' : '')
+        + '<span class="ms-chips"></span>'
+        + '</div>';
+    }).join('') + '</div>';
+  renderMTRLive(lc, stops);
+}
+async function renderMTRLive(lc, stops) {
+  const tl = $('mtrTimeline');
+  if (!tl) return;
+  try {
+    const schedMap = await mtrSchedulesFor(stops, lc);
+    const nowMs = Date.now();
+    const { chips, markers } = buildMTRLineModel(stops, schedMap, nowMs);
+    chips.forEach(c => {
+      const row = tl.children[c.idx];
+      const box = row && row.querySelector('.ms-chips');
+      if (!box) return;
+      box.insertAdjacentHTML('beforeend', '<span class="ms-chip ' + (c.dir === 'UP' ? 'up' : 'dn') + '" data-sec="' + c.sec + '" title="' + (c.dir === 'UP' ? '上行' : '下行') + ' · 下一班">' + mmss(c.sec) + '</span>');
+    });
+    markers.forEach(m => {
+      const el = document.createElement('span');
+      el.className = 'ms-bus ' + (m.dir === 'UP' ? 'up' : 'dn');
+      el.title = '下一班列車最近站：' + (m.nextName || '') + '（' + (m.dir === 'UP' ? '上行' : '下行') + ' · 班表推算）';
+      el.style.top = (m.pos * 42 + 21 - 4).toFixed(1) + 'px';
+      tl.appendChild(el);
+    });
+    clearInterval(mtrTickTimer);
+    mtrTickTimer = setInterval(() => {
+      const el0 = Math.floor((Date.now() - nowMs) / 1000);
+      tl.querySelectorAll('.ms-chip[data-sec]').forEach(ch => {
+        ch.textContent = mmss(Math.max(0, parseInt(ch.dataset.sec, 10) - el0));
+      });
+    }, 1000);
+  } catch (e) {}
 }
 function renderLRTMap() {
   const body = $('mapBody');
@@ -1384,6 +1456,7 @@ function closeK75PLive() {
   const el = $('k75pLive');
   if (el) el.hidden = true;
   if (k75pLiveTimer) { clearInterval(k75pLiveTimer); k75pLiveTimer = null; }
+  if (k75pChipTick) { clearInterval(k75pChipTick); k75pChipTick = null; }
 }
 const mmss = (sec) => {
   if (sec <= 0) return '00:00';
@@ -1455,6 +1528,8 @@ function buildK75PLiveModel(stops, stopMap, coords) {
   }
   return { markers, chips };
 }
+const k75pMarkerEls = {};   /* 按班次 id 保持元素身份 → top 過渡平滑移動 */
+let k75pChipTick = null, k75pLastRender = 0;
 async function renderK75PLive() {
   const body = $('k75pLiveBody');
   if (!body) return;
@@ -1474,29 +1549,55 @@ async function renderK75PLive() {
     const byStop = {};
     for (const c of chips) { (byStop[c.idx] = byStop[c.idx] || []).push(c); }
     const ROW = 52;
-    let html = '<div class="kt-legend">● 每條橫標＝一班車當前位置（GPS 推算）· 膠囊＝該班車到站倒數 · 00:00＝即將到站</div>'
+    let html = '<div class="kt-legend"><span><i class="g-term"></i>起/終點</span>'
+      + '<span><i class="g-dot"></i>中途站</span>'
+      + '<span><i class="g-bus"></i>班次位置（GPS）</span>'
+      + '<span><i class="g-chip">13:14</i>預計到達</span></div>'
+      + '<div class="kt-dir"><b>▼</b>循環方向</div>'
+      + '<div class="kt-term-label">天瑞（起點）</div>'
       + '<div class="kt-track">';
     K75P_STOPS.forEach((st, i) => {
       const cs = (byStop[i] || []).slice(0, 2);
-      const more = (byStop[i] || []).length - cs.length;
+      const more = (byStop[i] || []).length - 2;
       html += '<div class="kt-stop">'
-        + (cs.length ? '<span class="kt-chips">' + cs.map(c => '<span class="kt-chip' + (c.live ? '' : ' kt-chip-sched') + '">' + mmss(c.sec) + '</span>').join('')
+        + (cs.length ? '<span class="kt-chips">' + cs.map(c => '<span class="kt-chip' + (c.live ? '' : ' kt-chip-sched') + '" data-sec="' + c.sec + '">' + mmss(c.sec) + '</span>').join('')
           + (more > 0 ? '<span class="kt-chip kt-chip-more">+' + more + '</span>' : '') + '</span>' : '')
-        + '<span class="kt-dot"></span>'
+        + '<span class="kt-dot' + (i === 0 || i === K75P_STOPS.length - 1 ? ' term' : '') + '"></span>'
         + '<span class="kt-name">' + escapeHtml(st.name)
         + (i === 0 ? '<span class="kt-end">起點</span>' : i === K75P_STOPS.length - 1 ? '<span class="kt-end">終點</span>' : '')
         + '</span></div>';
     });
-    const posOcc = {};
-    for (const m of markers) {
-      const occ = posOcc[m.pos.toFixed(1)] = (posOcc[m.pos.toFixed(1)] || 0) + 1;
-      const y = (m.pos * ROW + 26 - 5).toFixed(1);
-      const xOff = (occ - 1) * 5;
-      html += '<span class="kt-bus" style="top:' + y + 'px;transform:translateX(-' + xOff + 'px)" title="班次 ' + escapeHtml(m.id) + ' · 下一站 ' + escapeHtml(m.nextName) + ' · ' + (m.nextSec === 0 ? '即將到達' : mmss(m.nextSec) + ' 後到達') + '"></span>';
-    }
-    html += '</div>';
-    if (!markers.length) html += '<div class="kt-empty">暫無實時班次位置（可能未開行）</div>';
+    html += '</div>'
+      + '<div class="kt-term-label bottom">天瑞（終點）</div>'
+      + '<div class="kt-dir"><b>▼</b>返回天瑞</div>';
     body.innerHTML = html;
+    k75pLastRender = Date.now();
+    const track = body.querySelector('.kt-track');
+    const posOcc = {};
+    markers.forEach(m => {
+      const key = 'b' + m.id;
+      const occ = posOcc[m.pos.toFixed(1)] = (posOcc[m.pos.toFixed(1)] || 0) + 1;
+      let el = k75pMarkerEls[key];
+      if (!el) { el = document.createElement('span'); el.className = 'kt-bus'; track.appendChild(el); k75pMarkerEls[key] = el; }
+      el.style.top = (m.pos * ROW + 26 - 5).toFixed(1) + 'px';
+      el.style.left = (83 - (occ - 1) * 5) + 'px';
+      el.title = '班次 ' + escapeHtml(m.id) + ' · 下一站 ' + escapeHtml(m.nextName) + ' · ' + (m.nextSec === 0 ? '即將到達' : mmss(m.nextSec) + ' 後到達');
+    });
+    const keep = new Set(markers.map(m => 'b' + m.id));
+    Object.keys(k75pMarkerEls).forEach(k => { if (!keep.has(k)) { k75pMarkerEls[k].remove(); delete k75pMarkerEls[k]; } });
+    clearInterval(k75pChipTick);
+    k75pChipTick = setInterval(() => {
+      const el0 = Math.floor((Date.now() - k75pLastRender) / 1000);
+      body.querySelectorAll('.kt-chip[data-sec]').forEach(ch => {
+        ch.textContent = mmss(Math.max(0, parseInt(ch.dataset.sec, 10) - el0));
+      });
+    }, 1000);
+    if (!markers.length) {
+      const empty = document.createElement('div');
+      empty.className = 'kt-empty';
+      empty.textContent = '暫無實時班次位置（可能未開行）';
+      body.appendChild(empty);
+    }
   } catch (e) {
     body.innerHTML = '<div class="error-msg">路線圖載入失敗</div>';
   }
