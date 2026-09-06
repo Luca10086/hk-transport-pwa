@@ -1,4 +1,5 @@
-/* 抓取 K75P 當前實時數據 + 站名表 → k75p-demo-snapshot.js（供 demo 離線載入） */
+/* 抓取 K75P 當前實時數據 + 站名表 → 直接嵌入 k75p-line-demo.html（完全自包含，
+   單文件可在 file://、預覽面板、拷貝分享等任何環境直接打開） */
 import { readFileSync, writeFileSync } from 'node:fs';
 /* 1. 從 js/data.js 解析 K75P_STOPS 站名表（單文件源，避免漂移） */
 const dataSrc = readFileSync('E:/DAFYU GZQ/hk-transport-pwa/js/data.js', 'utf8');
@@ -32,8 +33,13 @@ const slim = stops.map(st => ({
   })),
 }));
 const at = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 19).replace('T', ' ');
-const out = '/* K75P demo 快照（tools/build-k75p-line-demo.mjs 生成，抓取 ' + at + ' HKT） */\n'
-  + 'const DEMO_K75P_STOPS = ' + JSON.stringify(stopsDef) + ';\n'
-  + 'const DEMO_K75P_SNAPSHOT = ' + JSON.stringify({ at, stops: slim }) + ';\n';
-writeFileSync('E:/DAFYU GZQ/hk-transport-pwa/k75p-demo-snapshot.js', out, 'utf8');
-console.log('OK stops=' + slim.length + ' defs=' + stopsDef.length + ' at ' + at);
+const dataScript = 'window.DEMO_K75P_STOPS = ' + JSON.stringify(stopsDef) + ';\n'
+  + 'window.DEMO_K75P_SNAPSHOT = ' + JSON.stringify({ at, stops: slim }) + ';';
+/* 3. 嵌入 demo html 的佔位符 */
+const p = 'E:/DAFYU GZQ/hk-transport-pwa/k75p-line-demo.html';
+let html = readFileSync(p, 'utf8');
+const token = '/*__K75P_DEMO_DATA__*/';
+if (!html.includes(token)) { console.error('佔位符缺失：請確認 demo html 有 /*__K75P_DEMO_DATA__*/'); process.exit(1); }
+html = html.replace(token, dataScript);
+writeFileSync(p, html, 'utf8');
+console.log('OK 已嵌入 demo：' + slim.length + ' 站 · 抓取 ' + at);
