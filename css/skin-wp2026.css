@@ -87,8 +87,8 @@ body[data-ui="wp2026"] .tile {
   transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
 }
 body[data-ui="wp2026"] .tile-cobalt { background: rgba(0,120,215,.28); border-color: rgba(0,120,215,.45); }
-body[data-ui="wp2026"] .tile-cyan { background: rgba(0,180,216,.16); border-color: rgba(0,180,216,.35); }
-body[data-ui="wp2026"] .tile-magenta { background: rgba(0,120,215,.14); }
+body[data-ui="wp2026"] .tile-cyan { background: rgba(0,120,215,.14); border-color: rgba(0,120,215,.30); }
+body[data-ui="wp2026"] .tile-magenta { background: rgba(0,120,215,.20); border-color: rgba(0,120,215,.38); }
 body[data-ui="wp2026"] .tile-teal { background: rgba(255,255,255,.07); }
 body[data-ui="wp2026"] .tile:active { transform: scale(.96); filter: brightness(1.08); }
 body[data-ui="wp2026"] .tile b { color: var(--text); text-shadow: 0 0 18px rgba(0,120,215,.35); }
