@@ -11,20 +11,30 @@
 
   /* ---------- 配置 ---------- */
   let cfg = Object.assign(
-    { theme: 'dark', accent: '#0078D7', font: 15, fx: true, refresh: 30 },
+    { theme: 'dark', accent: '#0078D7', font: 15, fx: true, refresh: 30, glass: 2, fxm: 'full', shine: 12, big: false, deep: false, night: 'auto', breathe: true },
     (() => { try { return JSON.parse(localStorage.getItem('wp2026_cfg') || '{}'); } catch (e) { return {}; } })()
   );
+  if (!cfg.fxm) cfg.fxm = cfg.fx === false ? 'off' : 'full';
   function saveCfg() { try { localStorage.setItem('wp2026_cfg', JSON.stringify(cfg)); } catch (e) {} }
   function applyCfg() {
     document.body.dataset.theme = cfg.theme;
     document.documentElement.style.setProperty('--accent', cfg.accent);
     document.documentElement.style.setProperty('--accent-dark', cfg.accent);
     document.documentElement.style.fontSize = cfg.font + 'px';
-    document.body.classList.toggle('no-fx', !cfg.fx);
+    document.body.dataset.glass = String(cfg.glass);
+    document.body.dataset.fx = cfg.fxm;
+    document.documentElement.style.setProperty('--shine-dur', (cfg.shine || 12) + 's');
+    document.body.classList.toggle('bigtext', !!cfg.big);
+    document.body.classList.toggle('deepnight', !!cfg.deep);
+    document.body.classList.toggle('no-fx', cfg.fxm === 'off');
     document.body.classList.toggle('high-contrast', !!cfg.hc);
     document.body.dataset.mood = nightMood();
   }
-  function nightMood() { const h = new Date().getHours(); return (h >= 19 || h < 6) ? 'night' : 'day'; }
+  function nightMood() {
+    if (cfg.night === 'manual') return 'night';
+    if (cfg.night === 'system') return (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'night' : 'day';
+    const h = new Date().getHours(); return (h >= 19 || h < 6) ? 'night' : 'day';
+  }
   setInterval(() => { document.body.dataset.mood = nightMood(); }, 5 * 60 * 1000);
   applyCfg();
 
@@ -57,12 +67,13 @@
     if (name === 'favs') renderFavs();
     if (name === 'sushi' && !sushiDone) renderSushi();
     if (name === 'map') initMapPane();
+    setTimeout(() => document.body.classList.toggle('tbcol', !matchMedia('(min-width:700px)').matches && !!pane && pane.scrollTop > 80), 380);
   }
   document.querySelectorAll('.ab').forEach(b => b.addEventListener('click', () => enterPane(b.dataset.pane)));
   /* ---------- Pivot 玻璃視差（離場 blur 12→0 · 內容 ±24px · 光條跟手） ---------- */
   let pvRaf = 0;
   function applyParallax() {
-    if (!cfg.fx || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    if (cfg.fxm === 'off' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
       pivot.querySelectorAll('.pane').forEach(p => { p.style.transform = ''; p.style.filter = ''; });
       const lt0 = $('pivotLight'); if (lt0) lt0.style.opacity = '0';
       return;
@@ -105,7 +116,7 @@
   /* ---------- 動效：流光暫停 / 波紋 / ETA 滾動換值 ---------- */
   let fxTimer = 0;
   function pauseFx(ms) {
-    if (!cfg.fx) return;
+    if (cfg.fxm === 'off') return;
     document.body.classList.add('fx-paused');
     clearTimeout(fxTimer);
     fxTimer = setTimeout(() => document.body.classList.remove('fx-paused'), ms || 1500);
@@ -113,7 +124,7 @@
   document.addEventListener('scroll', pauseFx, { passive: true });
   document.addEventListener('touchstart', pauseFx, { passive: true });
   document.addEventListener('pointerdown', (e) => {
-    if (!cfg.fx || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    if (cfg.fxm === 'off' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
     const el = e.target && e.target.closest ? e.target.closest('.tile, .row, .chip, .seg button, .ab, .fcard button, .sw, .fs button') : null;
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -127,7 +138,7 @@
   }, { passive: true });
   const etaMap = new WeakMap();
   setInterval(() => {
-    if (!cfg.fx || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    if (cfg.fxm === 'off' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
     const now = Date.now();
     document.querySelectorAll('.row .eta, .fcard .big, .kcard .big, .dstop .dtm, .krow .eta').forEach(el => {
       const txt = (el.textContent || '').trim();
@@ -171,7 +182,7 @@
   const orbs = [...document.querySelectorAll('.orb')];
   let orbTimer = 0, orbRaf = 0;
   document.addEventListener('pointermove', (e) => {
-    if (!cfg.fx) return;
+    if (cfg.fxm === 'off') return;
     cancelAnimationFrame(orbRaf);
     orbRaf = requestAnimationFrame(() => {
       let best = null, bd = Infinity;
@@ -256,7 +267,7 @@
   input.addEventListener('input', () => { clearTimeout(input._t); input._t = setTimeout(doSearch, 380); });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
 
-  function etaSecCls(sec) { if (sec == null) return ''; if (sec <= 120) return 'soon'; if (sec < 600) return 'med'; return ''; }
+  function etaSecCls(sec) { if (sec == null) return ''; if (sec <= 120) return 'soon'; if (sec < 600) return 'med'; return 'ok'; }
   function etaHtml(sec) {
     if (sec == null) return '<span class="eta">—</span>';
     if (sec <= 60) return '<span class="eta soon">即將</span>';
@@ -361,6 +372,23 @@
       return e ? (parseHKTime(e.eta) - Date.now()) / 1000 : null;
     } catch (e) { return null; }
   }
+  /* v3 語義色：路線公司色 */
+  const CO_COLORS = { kmb: 'var(--co-kmb)', ctb: 'var(--co-ctb)', nlb: 'var(--co-nlb)', mtr: 'var(--co-mtr)', lrt: 'var(--co-lrt)', mtrbus: 'var(--co-mtrbus)' };
+  const CO_NAMES = { kmb: '九巴', ctb: '城巴', nlb: '嶼巴', mtrbus: '港鐵巴士', mtr: '港鐵', lrt: '輕鐵', other: '其他' };
+  function coKeyOf(f) {
+    if (f.type === 'bus') return f.company || 'kmb';
+    if (f.type === 'mtrbus') return 'mtrbus';
+    if (f.type === 'mtr') return 'mtr';
+    if (f.type === 'lrt') return 'lrt';
+    return 'other';
+  }
+  function coColorOf(it) {
+    if (it.kind === 'bus') return CO_COLORS[it.co || (it.fav && it.fav.company)] || 'var(--accent)';
+    if (it.kind === 'mtr') return CO_COLORS.mtr;
+    if (it.kind === 'lrt') return CO_COLORS.lrt;
+    if (it.kind === 'mtrbus') return CO_COLORS.mtrbus;
+    return 'var(--accent)';
+  }
   async function renderSearch(items) {
     const box = $('results');
     if (!items.length) { box.innerHTML = '<div class="empty">沒有結果</div>'; return; }
@@ -371,7 +399,8 @@
       if (it.kind === 'bus') eta = await kmbFirstSec(it.data.route, it.data.dir, it.data.stop);
       if (it.kind === 'busstop') capExtra = await stopRoutesText(it.data.stop);
       html += '<div class="row" data-i="' + items.indexOf(it) + '">'
-        + '<span class="badge">' + esc(String(it.no).slice(0, 4)) + '</span>'
+        + '<span class="bleed"></span>'
+        + '<span class="badge" style="background:' + coColorOf(it) + '">' + esc(String(it.no).slice(0, 4)) + '</span>'
         + '<span class="main"><span class="nm">' + esc(it.name) + '</span>'
         + (capExtra ? '<span class="cap">' + esc(capExtra) + '</span>' : (it.cap ? '<span class="cap">' + esc(it.cap) + '</span>' : ''))
         + '</span>' + etaHtml(eta) + starBtn(it.fav) + '</div>';
@@ -406,7 +435,7 @@
     lastResults = out;
     const box = $('results');
     box.innerHTML = out.map((it, i) => '<div class="row" data-i="' + i + '">'
-      + '<span class="badge">MTR</span><span class="main"><span class="nm">' + esc(it.name) + '</span></span>'
+      + '<span class="bleed"></span><span class="badge" style="background:var(--co-mtr)">MTR</span><span class="main"><span class="nm">' + esc(it.name) + '</span></span>'
       + etaHtml(it.eta) + starBtn(it.fav) + '</div>').join('') || '<div class="empty">沒有結果</div>';
     bindStars(box);
     box.querySelectorAll('.row').forEach(r => r.addEventListener('click', () => openRow(r)));
@@ -424,7 +453,7 @@
       let n = 0;
       for (const e of es) {
         if (n++ >= 4) break;
-        html += '<div class="row" style="cursor:default"><span class="badge">' + esc(e.routeNo) + '</span>'
+        html += '<div class="row" style="cursor:default"><span class="bleed"></span><span class="badge" style="background:var(--co-lrt)">' + esc(e.routeNo) + '</span>'
           + '<span class="main"><span class="nm">往 ' + esc(e.dest) + '</span><span class="cap">' + esc(e.platformId) + ' 號月台</span></span>'
           + (e.mins === 0 ? '<span class="eta soon">即將</span>' : '<span class="eta">' + e.mins + ' <small>分</small></span>') + '</div>';
       }
@@ -450,7 +479,7 @@
       }
       if (gen !== searchGen) return;
       const ids = Object.keys(byId).sort((a, b) => byId[a] - byId[b]).slice(0, 6);
-      box.innerHTML = ids.map(bid => '<div class="row" style="cursor:default"><span class="badge">' + esc(q.toUpperCase().slice(0, 4)) + '</span>'
+      box.innerHTML = ids.map(bid => '<div class="row" style="cursor:default"><span class="bleed"></span><span class="badge" style="background:var(--co-mtrbus)">' + esc(q.toUpperCase().slice(0, 4)) + '</span>'
         + '<span class="main"><span class="nm">班次 ' + esc(bid) + '</span></span>' + etaHtml(byId[bid]) + starBtn({ type: 'mtrbus', company: 'mtr', route: q.toUpperCase(), stop_id: null }) + '</div>').join('') || '<div class="empty">沒有結果</div>';
       bindStars(box);
     } catch (e) { if (gen === searchGen) box.innerHTML = '<div class="empty">搜尋出錯</div>'; }
@@ -607,12 +636,15 @@
     }
     tiles.innerHTML =
       '<button class="tile blue wide shine" data-open="k75p">'
-      + '<div class="mini-map"><div class="road"></div><span class="st" style="left:10%;top:56%"></span><span class="st" style="left:38%;top:44%"></span><span class="st" style="left:68%;top:36%"></span><span class="bus"></span><span class="no">K75P</span><span class="eta">' + esc(k75pEta) + '</span></div>'
-      + '<span class="lab">天瑞 ↺ 洪水橋 · ' + esc(k75pSub) + '</span></button>'
-      + '<button class="tile cyan shine" data-open="favs"><span class="lab">我的收藏</span><b>' + esc(favNoTxt || '★') + '</b><span class="cap">' + esc(favCapTxt) + '</span></button>'
-      + '<button class="tile warn shine" data-open="weather"><span class="lab">天氣</span><b id="wTemp">--°</b><span class="cap">載入中</span></button>'
-      + '<button class="tile cyan shine" data-open="sushi"><span class="lab">壽司郎</span><b id="sushiMini">—</b></button>'
-      + '<button class="tile shine" data-open="map"><span class="lab">路線圖</span><b>屯馬綫</b><span class="cap">全線候車</span></button>';
+      + '<span class="bleed"></span><i class="pulse"></i>'
+      + '<span class="ku" id="kuMini"></span>'
+      + '<span class="lab">K75P 天瑞 ↺ 洪水橋 · ' + esc(k75pSub) + '</span>'
+      + '<b>' + esc(k75pEta) + '</b></button>'
+      + '<button class="tile cyan shine" data-open="favs"><span class="bleed"></span><i class="pulse"></i><span class="lab">我的收藏</span><b>' + esc(favNoTxt || '★') + '</b><span class="cap">' + esc(favCapTxt) + '</span></button>'
+      + '<button class="tile warn shine" data-open="weather"><span class="bleed"></span><i class="pulse"></i><span class="lab">天氣</span><b id="wTemp">--°</b><span class="cap">載入中</span></button>'
+      + '<button class="tile cyan shine" data-open="sushi"><span class="bleed"></span><span class="lab">壽司郎</span><b id="sushiMini">—</b></button>'
+      + '<button class="tile shine" data-open="map"><span class="bleed"></span><span class="lab">路線圖</span><b>屯馬綫</b><span class="cap">全線候車</span></button>';
+    buildKuMini();
     tiles.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.open;
       if (k === 'k75p') openK75P();
@@ -632,6 +664,32 @@
     const stores = SUSHIRO_SNAPSHOT.filter(s => s.area === '元朗區' || s.area === '屯門區');
     if (stores.length) sm.textContent = Math.max(...stores.map(s => parseInt(s.waitingGroup, 10) || 0)) + ' 組';
   }
+  /* K75P 迷你 U 形磁貼圖（v3：實時小巴沿線滑動） */
+  let kuBus = null, kuT = 0;
+  function buildKuMini() {
+    const box = $('kuMini'); if (!box) return;
+    const xL = 30, xR = 358, yT = 16, yB = 48;
+    let s = '<svg viewBox="0 0 388 64" style="width:100%;height:100%;display:block">';
+    s += '<path d="M' + xL + ',' + yT + ' L' + xL + ',' + yB + ' Q194,60 ' + xR + ',' + yB + ' L' + xR + ',' + yT + '" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="5" stroke-linecap="round"/>';
+    s += '<path d="M' + xL + ',' + yT + ' L' + xL + ',' + yB + ' Q194,60 ' + xR + ',' + yB + ' L' + xR + ',' + yT + '" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>';
+    [0, 1, 2, 3, 4, 5].forEach(i => {
+      const cy = [16, 32, 48, 48, 32, 16][i], cxI = i < 3 ? xL : xR;
+      s += '<circle cx="' + cxI + '" cy="' + cy + '" r="2.4" fill="#fff" stroke="var(--accent)" stroke-width="1.2"/>';
+    });
+    s += '<g id="kuBusG"><circle r="6" fill="var(--accent)" opacity=".25"/><rect x="-8" y="-5" width="16" height="7" rx="2" fill="#F4F6F8" stroke="#33537B"/><rect x="-8" y="-2.2" width="16" height="1.6" fill="var(--accent)"/></g></svg>';
+    box.innerHTML = s;
+    kuBus = box.querySelector('#kuBusG');
+  }
+  (function kuLoop() {
+    requestAnimationFrame(kuLoop);
+    if (!kuBus || document.body.dataset.fx === 'off') return;
+    kuT = (kuT + 0.0020) % 1;
+    const t = kuT;
+    let px, py;
+    if (t < .5) { const u = t * 2; px = 30; py = 16 + u * 32; } else { const u = (t - .5) * 2; px = 358; py = 48 - u * 32; }
+    kuBus.setAttribute('transform', 'translate(' + px + ',' + py + ')');
+  })();
+
   /* ---------- 天氣（完整：警告/描述/濕度/雨量/紫外線/三天溫差） ---------- */
   const WEATHER_UV_API = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=uvindex&lang=tc';
   const SEVERE_RE = /雨|颱風|風暴|雷暴|山泥|酷熱|寒冷|霜凍|海嘯|水浸/;
@@ -833,23 +891,29 @@
       return;
     }
     let html = '';
-    for (let i = 0; i < list.length; i++) {
-      const f = list[i];
-      const sec = await favEta(f);
-      const pinned = getFavShowKey() === favKey(f);
-      const name = f.stop_name || f.station_name || f.name || f.dest || f.orig || f.route || f.lineName || '';
-      const lines = await favLines(f);
-      html += '<div class="fcard shine" data-i="' + i + '"><div class="fh"><span class="no">' + esc(favNoStr(f)) + '</span><span class="tag">' + esc(favMeta(f)) + '</span>'
-        + '<span class="actions"><button class="bt' + (pinned ? ' pin' : '') + '" data-a="pin" data-i="' + i + '">' + (pinned ? '✓ 釘選' : '釘選') + '</button>'
-        + (f.type === 'bus' && f.route ? '<button class="bt" data-a="pick" data-i="' + i + '">換站</button>' : '')
-        + (sec == null ? '<button class="bt" data-a="retry" data-i="' + i + '">重試</button>' : '')
-        + '<button class="bt x" data-a="del" data-i="' + i + '">✕</button></span></div>'
-        + '<div class="dest">' + esc(name) + '</div>'
-        + '<div class="sub">' + esc(f.direction === 'inbound' ? '回程' : '去程') + '</div>'
-        + '<div class="big"' + (sec ? ' data-sec="' + Math.ceil(sec / 60) + '"' : '') + '>' + (sec ? Math.max(1, Math.ceil(sec / 60)) + '<small> 分鐘</small>' : '—') + '</div>'
-        + (lines ? '<div class="flines">' + lines + '</div>' : '')
-        + '<div class="bar"><i style="width:' + Math.min(100, (sec || 0) / 6) + '%"></i></div></div>';
-      if (gen !== favsGen) return;   /* 有更新的渲染在進行，放棄本次寫入 */
+    /* v3 收藏按公司分組 */
+    const order = ['kmb', 'ctb', 'mtrbus', 'mtr', 'lrt', 'other'];
+    const groups = order.map(k => ({ k, items: list.filter(f => coKeyOf(f) === k) })).filter(g => g.items.length);
+    for (const g of groups) {
+      html += '<div class="fgrp"><span class="fgd" style="background:' + (CO_COLORS[g.k] || 'var(--accent)') + '"></span><span class="fgt">' + esc(CO_NAMES[g.k] || g.k) + '</span></div>';
+      for (const f of g.items) {
+        const i = list.indexOf(f);
+        const sec = await favEta(f);
+        const pinned = getFavShowKey() === favKey(f);
+        const name = f.stop_name || f.station_name || f.name || f.dest || f.orig || f.route || f.lineName || '';
+        const lines = await favLines(f);
+        html += '<div class="fcard shine" data-i="' + i + '"><span class="bleed"></span><div class="fh"><span class="no" style="background:' + (CO_COLORS[coKeyOf(f)] || 'var(--accent)') + '">' + esc(favNoStr(f)) + '</span><span class="tag">' + esc(favMeta(f)) + '</span>'
+          + '<span class="actions"><button class="bt' + (pinned ? ' pin' : '') + '" data-a="pin" data-i="' + i + '">' + (pinned ? '✓ 釘選' : '釘選') + '</button>'
+          + (f.type === 'bus' && f.route ? '<button class="bt" data-a="pick" data-i="' + i + '">換站</button>' : '')
+          + (sec == null ? '<button class="bt" data-a="retry" data-i="' + i + '">重試</button>' : '')
+          + '<button class="bt x" data-a="del" data-i="' + i + '">✕</button></span></div>'
+          + '<div class="dest">' + esc(name) + '</div>'
+          + '<div class="sub">' + esc(f.direction === 'inbound' ? '回程' : '去程') + '</div>'
+          + '<div class="big"' + (sec ? ' data-sec="' + Math.ceil(sec / 60) + '"' : '') + '>' + (sec ? Math.max(1, Math.ceil(sec / 60)) + '<small> 分鐘</small>' : '—') + '</div>'
+          + (lines ? '<div class="flines">' + lines + '</div>' : '')
+          + '<div class="bar"><i style="width:' + Math.min(100, (sec || 0) / 6) + '%"></i></div></div>';
+        if (gen !== favsGen) return;   /* 有更新的渲染在進行，放棄本次寫入 */
+      }
     }
     if (gen !== favsGen) return;
     box.innerHTML = html;
@@ -1255,16 +1319,26 @@
     box.innerHTML =
       '<div class="grp">外觀</div>'
       + '<div class="setrow"><span class="l">主題<small class="cap">深色 / 淺色</small></span>' + seg('theme', [['dark', '深色'], ['light', '淺色']], cfg.theme) + '</div>'
+      + '<div class="setrow"><span class="l">玻璃強度<small class="cap">0 無玻璃 → 4 濃郁</small></span>' + seg('glass', [['0', '無'], ['1', '淡'], ['2', '標準'], ['3', '深'], ['4', '濃']], String(cfg.glass)) + '</div>'
+      + '<div class="setrow"><span class="l">動效模式<small class="cap">完整 / 簡約 / 關閉</small></span>' + seg('fxm', [['full', '完整'], ['simple', '簡約'], ['off', '關閉']], cfg.fxm) + '</div>'
+      + '<div class="setrow"><span class="l">流光週期<small class="cap">液態高光掃過間隔</small></span>' + seg('shine', [['9', '9s'], ['12', '12s'], ['14', '14s']], String(cfg.shine)) + '</div>'
+      + '<div class="setrow"><span class="l">大字模式<small class="cap">第 9 級字體 · 磁貼 56px</small></span><button class="sw ' + (cfg.big ? 'on' : '') + '" data-big></button></div>'
+      + '<div class="setrow"><span class="l">深夜模式<small class="cap">冷色溫 · 停光斑流光</small></span><button class="sw ' + (cfg.deep ? 'on' : '') + '" data-deep></button></div>'
+      + '<div class="setrow"><span class="l">夜間情境<small class="cap">跟隨系統 / 手動 / 定時</small></span>' + seg('night', [['system', '系統'], ['manual', '手動'], ['auto', '定時']], cfg.night) + '</div>'
+      + '<div class="setrow"><span class="l">磁貼呼吸<small class="cap">實時磁貼每 5s 微亮</small></span><button class="sw ' + (cfg.breathe ? 'on' : '') + '" data-breathe></button></div>'
       + '<div class="setrow"><span class="l">強調色<small class="cap">藍 · 青綠 · 紫 · 靛</small></span>' + seg('accent', ACCENTS.map(a => [a[0], a[1]]), cfg.accent) + '</div>'
       + '<div class="setrow"><span class="l">字體大小<small class="cap">8 級 · 全局</small></span><span class="fs"><button data-fs="-1">A−</button><span class="dots">' + FONT_LEVELS.map((_, i) => '<i class="' + (i === fontLevel ? 'on' : '') + '"></i>').join('') + '</span><button data-fs="1">A＋</button></span></div>'
       + '<div class="setrow"><span class="l">高對比<small class="cap">純黑白 · 2px 描邊</small></span><button class="sw ' + (cfg.hc ? 'on' : '') + '" data-hc></button></div>'
-      + '<div class="setrow"><span class="l">減少動效<small class="cap">流光 · 波紋 · 光斑 · 脈衝</small></span><button class="sw ' + (cfg.fx ? 'on' : '') + '" data-fx></button></div>'
       + '<div class="grp">出行</div>'
       + '<div class="setrow"><span class="l">自動重新整理<small class="cap">首頁磁貼</small></span>' + seg('refresh', [['30', '30s'], ['60', '60s'], ['0', '關']], String(cfg.refresh)) + '</div>'
-      + '<div class="setrow"><span class="l">版本<small class="cap">WP2026 全新界面</small></span><span style="font-size:13px;color:var(--text2)">Beta 0.2</span></div>';
+      + '<div class="setrow"><span class="l">版本<small class="cap">WP2026 v3 液態玻璃</small></span><span style="font-size:13px;color:var(--text2)">Beta 0.30</span></div>';
     box.querySelectorAll('button[data-k]').forEach(b => b.addEventListener('click', () => {
       if (b.dataset.k === 'theme') cfg.theme = b.dataset.v;
       if (b.dataset.k === 'accent') cfg.accent = b.dataset.v;
+      if (b.dataset.k === 'glass') cfg.glass = Number(b.dataset.v);
+      if (b.dataset.k === 'fxm') cfg.fxm = b.dataset.v;
+      if (b.dataset.k === 'shine') cfg.shine = Number(b.dataset.v);
+      if (b.dataset.k === 'night') cfg.night = b.dataset.v;
       if (b.dataset.k === 'refresh') { cfg.refresh = Number(b.dataset.v); restartAutoTick(); }
       saveCfg(); applyCfg(); renderSettings();
     }));
@@ -1273,8 +1347,14 @@
       cfg.font = FONT_LEVELS[fontLevel];
       saveCfg(); applyCfg(); renderSettings();
     }));
-    box.querySelectorAll('[data-fx]').forEach(b => b.addEventListener('click', () => {
-      cfg.fx = !cfg.fx; saveCfg(); applyCfg(); renderSettings();
+    box.querySelectorAll('[data-big]').forEach(b => b.addEventListener('click', () => {
+      cfg.big = !cfg.big; saveCfg(); applyCfg(); renderSettings();
+    }));
+    box.querySelectorAll('[data-deep]').forEach(b => b.addEventListener('click', () => {
+      cfg.deep = !cfg.deep; saveCfg(); applyCfg(); renderSettings();
+    }));
+    box.querySelectorAll('[data-breathe]').forEach(b => b.addEventListener('click', () => {
+      cfg.breathe = !cfg.breathe; saveCfg(); applyCfg(); renderSettings();
     }));
     box.querySelectorAll('[data-hc]').forEach(b => b.addEventListener('click', () => {
       cfg.hc = !cfg.hc; saveCfg(); applyCfg(); renderSettings();
@@ -1293,6 +1373,91 @@
     stampSub();
   }
   $('tbRefresh').addEventListener('click', refreshNow);
+
+  /* ============================================================
+     v3 引擎：液體背景 · 姿態反光 · 按壓微光暈 · 呼吸 · 氣泡 Toolbar
+     ============================================================ */
+  /* ----- 液體背景 Canvas ----- */
+  (function initBg() {
+    const cv = $('bgL'); if (!cv) return;
+    const ctx = cv.getContext('2d');
+    let W = 0, H = 0, raf = 0, lastT = performance.now();
+    const blobs = [];
+    for (let i = 0; i < 6; i++) blobs.push({ x: Math.random(), y: Math.random(), r: .22 + Math.random() * .28, s: .10 + Math.random() * .10, hue: i % 3, ph: Math.random() * 6.28 });
+    const stars = []; for (let i = 0; i < 40; i++) stars.push({ x: Math.random(), y: Math.random(), r: .5 + Math.random() * 1.3, ph: Math.random() * 6.28 });
+    const tints = ['rgba(0,120,215,', 'rgba(0,180,216,', 'rgba(106,0,255,'];
+    function size() { const d = Math.min(1.5, window.devicePixelRatio || 1); W = cv.width = innerWidth * d; H = cv.height = innerHeight * d; }
+    size(); addEventListener('resize', size);
+    function loop() { if (!raf) raf = requestAnimationFrame(frame); }
+    function frame(t) {
+      raf = 0;
+      if (document.body.dataset.fx === 'off') return;   /* 關閉模式：定格最後一幀 */
+      const sec = (t - lastT) / 1000; lastT = t;
+      const deep = document.body.classList.contains('deepnight');
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = deep ? '#020409' : '#04060C'; ctx.fillRect(0, 0, W, H);
+      for (const b of blobs) {
+        const x = (b.x + Math.sin(sec * b.s + b.ph) * .18) * W;
+        const y = (b.y + Math.cos(sec * b.s * .9 + b.ph) * .15) * H;
+        const r = b.r * W * .6;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, tints[b.hue] + (deep ? .16 : (b.hue === 0 ? .30 : .24)) + ')');
+        g.addColorStop(1, tints[b.hue] + '0)');
+        ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+      }
+      const sa = deep ? .22 : .6;
+      for (const s of stars) { ctx.globalAlpha = sa * (0.4 + 0.6 * Math.abs(Math.sin(sec * .8 + s.ph))); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r * (H / 900), 0, 6.29); ctx.fill(); }
+      ctx.globalAlpha = 1;
+      loop();
+    }
+    window.__bgLoop = loop;
+    loop();
+  })();
+  if (document.body.dataset.fx === 'full' && window.__bgLoop) window.__bgLoop();
+  const bgWatch = setInterval(() => { if (document.body.dataset.fx === 'full') window.__bgLoop && window.__bgLoop(); }, 4000);
+  /* ----- 姿態反光（裝置傾斜 / 滑鼠） ----- */
+  let tiltOn = true;
+  window.addEventListener('pointermove', e => {
+    if (!tiltOn) return;
+    document.documentElement.style.setProperty('--tx', ((e.clientX / innerWidth) - .5) * 2);
+    document.documentElement.style.setProperty('--ty', ((e.clientY / innerHeight) - .5) * 2);
+  }, { passive: true });
+  try {
+    if (navigator.deviceorientation && navigator.deviceorientation.addEventListener) {
+      navigator.deviceorientation.addEventListener('deviceorientation', ev => {
+        if (!tiltOn) return;
+        document.documentElement.style.setProperty('--tx', Math.max(-1, Math.min(1, (ev.gamma || 0) / 30)));
+        document.documentElement.style.setProperty('--ty', Math.max(-1, Math.min(1, ((ev.beta || 0) - 45) / 30)));
+      });
+    }
+  } catch (e) {}
+  /* ----- 按壓微光暈 + overshoot ----- */
+  document.addEventListener('pointerdown', e => {
+    const g = e.target.closest('.tile,.row,.fcard,.chip,.ab,.setrow');
+    if (!g || document.body.dataset.fx === 'off') return;
+    const r = g.getBoundingClientRect(), d = document.createElement('i');
+    d.style.cssText = 'position:absolute;left:' + (e.clientX - r.left - 44) + 'px;top:' + (e.clientY - r.top - 44) + 'px;width:88px;height:88px;border-radius:50%;background:radial-gradient(circle,rgba(0,120,215,.30),transparent 70%);transform:scale(0);opacity:1;pointer-events:none;z-index:4;animation:wp26PressGlow .5s var(--ease-subtle) forwards;';
+    g.appendChild(d); setTimeout(() => d.remove(), 520);
+    g.classList.add('up'); setTimeout(() => g.classList.remove('up'), 240);
+  }, { passive: true });
+  /* ----- 磁貼呼吸（±1.5s 隨機錯開） ----- */
+  function breatheTick() {
+    if (!cfg.breathe || document.body.dataset.fx === 'off') return;
+    [...document.querySelectorAll('#homeTiles .tile')].forEach((t, i) => setTimeout(() => {
+      if (curPane === 'home') { t.classList.remove('breathe'); void t.offsetWidth; t.classList.add('breathe'); setTimeout(() => t.classList.remove('breathe'), 520); }
+    }, (i * 5000 + Math.random() * 4000) % 15000));
+  }
+  setInterval(breatheTick, 15000);
+  /* ----- 氣泡 Toolbar：pane 滾動 >80px 收縮（≥700px 摺疊屏展開態不縮） ----- */
+  pivot.querySelectorAll('.pane').forEach(p => {
+    p.addEventListener('scroll', () => {
+      if (matchMedia('(min-width:700px)').matches) { document.body.classList.remove('tbcol'); return; }
+      const dir = p.scrollTop - (p._sy || 0);
+      if (dir !== 0) document.body.classList.toggle('sd-up', dir < 0);
+      p._sy = p.scrollTop;
+      document.body.classList.toggle('tbcol', p.scrollTop > 80);
+    }, { passive: true });
+  });
 
   /* ---------- 自動重新整理（設定變更即時生效：重建 interval） ---------- */
   let autoTick = null;

@@ -4,14 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>森友出行 · WP2026</title>
-<link rel="stylesheet" href="css/wp2026.css?v=29">
+<link rel="stylesheet" href="css/wp2026.css?v=30">
 </head>
 <body>
+<canvas id="bgL" aria-hidden="true"></canvas>
+<svg class="ddefs" aria-hidden="true">
+  <defs>
+    <filter id="warpE" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="turbulence" baseFrequency="0.016 0.03" numOctaves="2" seed="4" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="20" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="warpS" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="turbulence" baseFrequency="0.02 0.05" numOctaves="2" seed="11" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="14" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
 <div id="app">
   <div class="orb" style="width:320px;height:320px;top:-90px;left:-110px"></div>
   <div class="orb" style="width:280px;height:280px;bottom:-80px;right:-100px;animation-duration:19s,4s;animation-delay:-7s,0s"></div>
 
   <header class="toolbar">
+    <span class="bleed" aria-hidden="true"></span>
     <div class="kicker">Senyou · HK Transport</div>
     <div class="title" id="tbTitle">森友<b>出行</b></div>
     <div class="sub" id="tbSub">實時巴士 · 港鐵 · 輕鐵</div>
@@ -25,6 +39,7 @@
     <section class="pane" data-pane="home">
       <div class="tiles" id="homeTiles"></div>
       <div class="searchbar">
+        <span class="bleed" aria-hidden="true"></span>
         <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>
         <input id="searchInput" placeholder="輸入路線、站名或港鐵車站" aria-label="搜尋">
       </div>
@@ -61,6 +76,7 @@
   </main>
 
   <nav class="appbar" id="appbar">
+    <span class="bleed" aria-hidden="true"></span>
     <button class="ab on" data-pane="home"></button>
     <button class="ab" data-pane="favs"></button>
     <button class="ab" data-pane="sushi"></button>
@@ -70,6 +86,7 @@
 
   <div class="sheet-mask" id="sheetMask"></div>
   <div class="sheet" id="sheet">
+    <span class="bleed" aria-hidden="true"></span>
     <div class="handle"></div>
     <div class="shead"><span class="t" id="shTitle">詳情</span><button class="x" id="shClose">✕</button></div>
     <div class="stabs" id="shTabs" hidden></div>
@@ -85,9 +102,9 @@
   </div>
 </div>
 
-<script src="js/data.js?v=29"></script>
-<script src="js/util.js?v=29"></script>
-<script src="js/api.js?v=29"></script>
-<script src="js/wp2026-app.js?v=29"></script>
+<script src="js/data.js?v=30"></script>
+<script src="js/util.js?v=30"></script>
+<script src="js/api.js?v=30"></script>
+<script src="js/wp2026-app.js?v=30"></script>
 </body>
 </html>
