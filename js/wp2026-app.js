@@ -635,7 +635,7 @@
       catch (e) { favCapTxt = '暫無班次'; }
     }
     tiles.innerHTML =
-      '<button class="tile blue wide shine" data-open="k75p">'
+      '<button class="tile blue wide shine has-ku" data-open="k75p">'
       + '<span class="bleed"></span><i class="pulse"></i>'
       + '<span class="ku" id="kuMini"></span>'
       + '<span class="lab">K75P 天瑞 ↺ 洪水橋 · ' + esc(k75pSub) + '</span>'
@@ -902,7 +902,7 @@
         const pinned = getFavShowKey() === favKey(f);
         const name = f.stop_name || f.station_name || f.name || f.dest || f.orig || f.route || f.lineName || '';
         const lines = await favLines(f);
-        html += '<div class="fcard shine" data-i="' + i + '"><span class="bleed"></span><div class="fh"><span class="no" style="background:' + (CO_COLORS[coKeyOf(f)] || 'var(--accent)') + '">' + esc(favNoStr(f)) + '</span><span class="tag">' + esc(favMeta(f)) + '</span>'
+        html += '<div class="fcard shine" data-i="' + i + '"><span class="bleed"></span><div class="fh"><span class="no">' + esc(favNoStr(f)) + '</span><span class="tag">' + esc(favMeta(f)) + '</span>'
           + '<span class="actions"><button class="bt' + (pinned ? ' pin' : '') + '" data-a="pin" data-i="' + i + '">' + (pinned ? '✓ 釘選' : '釘選') + '</button>'
           + (f.type === 'bus' && f.route ? '<button class="bt" data-a="pick" data-i="' + i + '">換站</button>' : '')
           + (sec == null ? '<button class="bt" data-a="retry" data-i="' + i + '">重試</button>' : '')
@@ -1399,34 +1399,36 @@
   (function initBg() {
     const cv = $('bgL'); if (!cv) return;
     const ctx = cv.getContext('2d');
-    let W = 0, H = 0, raf = 0, lastT = performance.now();
+    let W = 0, H = 0, raf = 0, lastT = performance.now(), lastDraw = 0;
     const blobs = [];
-    for (let i = 0; i < 6; i++) blobs.push({ x: Math.random(), y: Math.random(), r: .22 + Math.random() * .28, s: .10 + Math.random() * .10, hue: i % 3, ph: Math.random() * 6.28 });
-    const stars = []; for (let i = 0; i < 40; i++) stars.push({ x: Math.random(), y: Math.random(), r: .5 + Math.random() * 1.3, ph: Math.random() * 6.28 });
-    const tints = ['rgba(0,120,215,', 'rgba(0,180,216,', 'rgba(106,0,255,'];
+    for (let i = 0; i < 7; i++) blobs.push({ x: Math.random(), y: Math.random(), r: .24 + Math.random() * .34, s: .08 + Math.random() * .09, hue: i % 3, ph: Math.random() * 6.28 });
+    const stars = []; for (let i = 0; i < 54; i++) stars.push({ x: Math.random(), y: Math.random(), r: .6 + Math.random() * 1.6, ph: Math.random() * 6.28 });
+    const tints = ['rgba(0,120,215,', 'rgba(0,180,216,', 'rgba(0,120,215,'];
     function size() { const d = Math.min(1.5, window.devicePixelRatio || 1); W = cv.width = innerWidth * d; H = cv.height = innerHeight * d; }
     size(); addEventListener('resize', size);
     function loop() { if (!raf) raf = requestAnimationFrame(frame); }
     function frame(t) {
       raf = 0;
       if (document.body.dataset.fx === 'off') return;   /* 關閉模式：定格最後一幀 */
+      loop();
+      if (t - lastDraw < 33) return;   /* ~30fps：動效與省電平衡 */
+      lastDraw = t;
       const sec = (t - lastT) / 1000; lastT = t;
       const deep = document.body.classList.contains('deepnight');
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = deep ? '#020409' : '#04060C'; ctx.fillRect(0, 0, W, H);
       for (const b of blobs) {
-        const x = (b.x + Math.sin(sec * b.s + b.ph) * .18) * W;
-        const y = (b.y + Math.cos(sec * b.s * .9 + b.ph) * .15) * H;
-        const r = b.r * W * .6;
+        const x = (b.x + Math.sin(sec * b.s + b.ph) * .20) * W;
+        const y = (b.y + Math.cos(sec * b.s * .9 + b.ph) * .17) * H;
+        const r = b.r * W * .62;
         const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-        g.addColorStop(0, tints[b.hue] + (deep ? .16 : (b.hue === 0 ? .30 : .24)) + ')');
+        g.addColorStop(0, tints[b.hue] + (deep ? .20 : (b.hue === 0 ? .40 : .33)) + ')');
         g.addColorStop(1, tints[b.hue] + '0)');
         ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
       }
-      const sa = deep ? .22 : .6;
+      const sa = deep ? .28 : .78;
       for (const s of stars) { ctx.globalAlpha = sa * (0.4 + 0.6 * Math.abs(Math.sin(sec * .8 + s.ph))); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r * (H / 900), 0, 6.29); ctx.fill(); }
       ctx.globalAlpha = 1;
-      loop();
     }
     window.__bgLoop = loop;
     loop();
