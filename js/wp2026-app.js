@@ -1125,15 +1125,23 @@
   const KN = K75P_STOPS.length;
   const kTurn = K75P_STOPS.findIndex(s => /洪水橋站/.test(s.name));   /* 折返點 */
   const busSm = {}, busAt = {};   /* 每車平滑位置：GPS 抖動不再來回亂跑 */
-  /* U 形幾何：左臂=去程（天瑞→洪水橋）· 右臂=回程（洪水橋→天瑞）· 底部圓弧折返 */
-  const U = { W: 380, H: 300, xL: 56, xR: 324, xM: 190, yTop: 24, yBot: 246, yCurve: 280 };
-  const kTA = (kTurn - 1) / (KN - 1), kTB = (kTurn + 1) / (KN - 1);
-  function kUXY(t) {
-    t = Math.max(0, Math.min(1, t));
-    if (t <= kTA) { const u = t / kTA; return [U.xL, U.yTop + u * (U.yBot - U.yTop)]; }
-    if (t >= kTB) { const u = (t - kTB) / (1 - kTB); return [U.xR, U.yBot - u * (U.yBot - U.yTop)]; }
-    const u = (t - kTA) / (kTB - kTA), q = 1 - u;
-    return [q * q * U.xL + 2 * q * u * U.xM + u * u * U.xR, q * q * U.yBot + 2 * q * u * U.yCurve + u * u * U.yBot];
+  /* U 形幾何：左臂=去程（天瑞→洪水橋）· 底邊=折返 · 右臂=回程（洪水橋→天瑞）
+     站點精確落臂（yTop→yArm），底部直角路徑 + stroke-linejoin:round 圓潤化 */
+  const U = { W: 404, H: 330, xL: 74, xR: 330, xM: 202, yTop: 32, yArm: 208, yC: 240 };
+  const kPts = K75P_STOPS.map((st, i) => {
+    if (i === kTurn) return [U.xM, U.yC];
+    if (i < kTurn) return [U.xL, U.yTop + (i / (kTurn - 1)) * (U.yArm - U.yTop)];
+    return [U.xR, U.yArm - ((i - kTurn - 1) / (KN - 1 - kTurn - 1)) * (U.yArm - U.yTop)];
+  });
+  function lerp2(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
+  /* 巴士位置（stop-index 空間 [0, KN-1]）：連續插值，底部經直角過渡點跟隨路線 */
+  function kXYat(pos) {
+    const i = Math.max(0, Math.min(KN - 2, Math.floor(pos)));
+    const f = pos - i;
+    const A = kPts[i], B = kPts[i + 1];
+    if (i === kTurn - 1) { const c = [U.xL, U.yC]; return f < .5 ? lerp2(A, c, f * 2) : lerp2(c, B, f * 2 - 1); }
+    if (i === kTurn) { const c = [U.xR, U.yC]; return f < .5 ? lerp2(A, c, f * 2) : lerp2(c, B, f * 2 - 1); }
+    return lerp2(A, B, f);
   }
   function segFrac(a, b, p) {
     const kx = 111320 * Math.cos(a.lat * Math.PI / 180), ky = 110540;
@@ -1199,7 +1207,7 @@
       }
       pos = Math.max(0, Math.min(KN - 1, pos));
       busSm[id] = pos; busAt[id] = now;
-      markers.push({ id, pos, nextIdx: next.idx, nextName: K75P_STOPS[next.idx].name, nextSec: next.sec, gap: Math.max(10, gap) });
+      markers.push({ id, pos, nextIdx: next.idx, nextName: K75P_STOPS[next.idx].name, nextSec: next.sec, gap: Math.max(10, gap), gps: !!b.live });
     }
     return { markers, chips, stopBuses };
   }
@@ -1207,24 +1215,29 @@
   let kRouteSVG = null, kBusLayer = null, kStDots = [], busEls = {};
   function buildKRoute() {
     const box = $('kroute');
-    const P = (t) => { const p = kUXY(t); return p[0].toFixed(1) + ',' + p[1].toFixed(1); };
-    const d = 'M' + P(0) + ' L' + P(kTA) + ' Q' + U.xM + ',' + U.yCurve + ' ' + P(kTB) + ' L' + P(1);
-    let s = '<svg viewBox="0 0 380 300" preserveAspectRatio="xMidYMid meet">';
+    const dPts = [kPts[0]];
+    for (let i = 1; i <= kTurn - 1; i++) dPts.push(kPts[i]);
+    dPts.push([U.xL, U.yC], kPts[kTurn], [U.xR, U.yC]);
+    for (let i = kTurn + 1; i < KN; i++) dPts.push(kPts[i]);
+    const d = 'M' + dPts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L');
+    let s = '<svg viewBox="0 0 404 330" preserveAspectRatio="xMidYMid meet">';
     s += '<path class="kline2" d="' + d + '"/><path class="kline" d="' + d + '"/>';
-    s += '<text class="ktag" x="' + (U.xL - 10) + '" y="' + (U.yTop - 9) + '" text-anchor="end">起點</text>'
-      + '<text class="ktag" x="' + (U.xR + 10) + '" y="' + (U.yTop - 9) + '" text-anchor="start">終點</text>';
+    s += '<text class="ktag" x="' + (U.xL - 12) + '" y="' + (U.yTop - 10) + '" text-anchor="end">起點 天瑞</text>'
+      + '<text class="ktag" x="' + (U.xR + 12) + '" y="' + (U.yTop - 10) + '" text-anchor="start">終點 天瑞</text>';
+    /* 巴士層在站點之下：巴士沿線行駛，不遮站點 */
+    s += '<g id="kbuses"></g>';
     for (let i = 0; i < KN; i++) {
-      const p = kUXY(i / (KN - 1));
+      const p = kPts[i];
       const main = i === 0 || i === KN - 1 || i === kTurn;
-      const r = main ? (i === kTurn ? 7 : 6) : 5;
+      const r = main ? (i === kTurn ? 7.5 : 6.5) : 5;
       s += '<circle class="kst' + (main ? ' main' : '') + '" data-i="' + i + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + r + '"/>';
       let lx, ly, anchor;
-      if (i === kTurn) { lx = U.xM; ly = p[1] - 13; anchor = 'middle'; }
-      else if (i < kTurn) { lx = U.xL - 9; ly = p[1] + 3; anchor = 'end'; }
-      else { lx = U.xR + 9; ly = p[1] + 3; anchor = 'start'; }
+      if (i === kTurn) { lx = U.xM; ly = p[1] + 22; anchor = 'middle'; }
+      else if (i < kTurn) { lx = U.xL - 13; ly = p[1] + 3.5; anchor = 'end'; }
+      else { lx = U.xR + 13; ly = p[1] + 3.5; anchor = 'start'; }
       s += '<text class="kname' + (main ? ' main' : '') + '" x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '">' + esc(K75P_STOPS[i].name) + '</text>';
     }
-    s += '<g id="kbuses"></g></svg>';
+    s += '</svg>';
     box.innerHTML = s;
     kRouteSVG = box.querySelector('svg');
     kBusLayer = box.querySelector('#kbuses');
@@ -1234,21 +1247,26 @@
   function updateKBuses(markers) {
     if (!kBusLayer) return;
     const seen = new Set();
-    for (const m of markers) {
-      const p = kUXY(m.pos / (KN - 1));
+    const gps = markers.filter(m => m.gps).sort((a, b) => a.pos - b.pos);
+    for (let i = 0; i < gps.length; i++) {
+      const m = gps[i];
+      /* 重疊巴士：距前車 <0.6 站距時縱向 ±9px 錯開，防止堆疊誤讀 */
+      let dy = 0;
+      if (i > 0 && m.pos - gps[i - 1].pos < 0.6) dy = (i % 2 ? 9 : -9);
+      const p = kXYat(m.pos);
       const k = 'b' + m.id;
       seen.add(k);
       let el = busEls[k];
       if (!el) {
         el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         el.setAttribute('class', 'kbus');
-        el.innerHTML = '<circle class="kglow" r="11"/><rect x="-14" y="-8" width="28" height="10" rx="2" fill="#F4F6F8" stroke="#33537B"/><rect x="-14" y="-3.4" width="28" height="2.6" style="fill:var(--accent)"/><rect x="-11" y="2.5" width="5" height="3.5" fill="#1B1F27"/><rect x="6" y="2.5" width="5" height="3.5" fill="#1B1F27"/><rect x="-9" y="-6.8" width="9" height="2.4" fill="#33537B"/><rect x="2" y="-6.8" width="6" height="2.4" fill="#33537B"/><title>' + esc('巴士 ' + m.id) + '</title>';
+        el.innerHTML = '<circle class="kglow" r="9"/><rect x="-12" y="-7" width="24" height="9" rx="2" fill="#F4F6F8" stroke="#33537B"/><rect x="-12" y="-3" width="24" height="2.4" style="fill:var(--accent)"/><rect x="-9" y="2.2" width="4.5" height="3" fill="#1B1F27"/><rect x="5" y="2.2" width="4.5" height="3" fill="#1B1F27"/><rect x="-8" y="-5.8" width="8" height="2.2" fill="#33537B"/><rect x="2" y="-5.8" width="5" height="2.2" fill="#33537B"/><title>' + esc('巴士 ' + m.id) + '</title>';
         kBusLayer.appendChild(el);
         busEls[k] = el;
-        el.setAttribute('transform', 'translate(' + p[0].toFixed(1) + ',' + p[1].toFixed(1) + ')');
+        el.setAttribute('transform', 'translate(' + p[0].toFixed(1) + ',' + (p[1] + dy).toFixed(1) + ')');
         requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('on')));
       } else {
-        el.setAttribute('transform', 'translate(' + p[0].toFixed(1) + ',' + p[1].toFixed(1) + ')');
+        el.setAttribute('transform', 'translate(' + p[0].toFixed(1) + ',' + (p[1] + dy).toFixed(1) + ')');
       }
     }
     Object.keys(busEls).forEach(kk => { if (!seen.has(kk)) { busEls[kk].remove(); delete busEls[kk]; } });
@@ -1274,7 +1292,7 @@
       const { markers, chips } = kState;
       updateKBuses(markers);
       const ks = $('kStat');
-      if (ks) ks.textContent = '實時 ' + markers.length + ' 班';
+      if (ks) ks.textContent = '實時 ' + markers.filter(m => m.gps).length + ' 班';
       const gpsB = markers.slice().sort((a, b) => a.nextSec - b.nextSec);
       const sched = chips.filter(c => !c.live).sort((a, b) => a.sec - b.sec)[0];
       const lead = gpsB[0];
@@ -1304,7 +1322,7 @@
       || '<div class="krow"><span class="no">—</span><span class="bus">暫無班次</span></div>';
     kStDots.forEach((dt, kk) => {
       dt.classList.toggle('sel', kk === i);
-      dt.setAttribute('r', kk === i ? 8 : (kk === 0 || kk === KN - 1 ? 6 : kk === kTurn ? 7 : 5));
+      dt.setAttribute('r', kk === i ? 9 : (kk === 0 || kk === KN - 1 ? 6.5 : kk === kTurn ? 7.5 : 5));
     });
   }
 

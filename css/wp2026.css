@@ -299,7 +299,7 @@ body[data-theme="light"] .dstop { border-bottom-color: rgba(0,0,0,.06); }
 .dstop.cur .dseq { background: var(--accent); color: #fff; animation: wp26Pulse 1.6s infinite; }
 
 /* ---------- K75P U形路線圖頁 ---------- */
-.khead { display: flex; align-items: center; gap: 10px; height: 54px; flex: 0 0 auto; }
+.khead { display: flex; align-items: center; gap: 10px; min-height: 56px; flex: 0 0 auto; }
 .khead .kt { flex: 1; font-size: 20px; font-weight: 300; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .khead .kstat { font-size: 11px; padding: 4px 10px; border-radius: 999px; background: var(--accent); color: #fff; box-shadow: 0 0 12px rgba(0,120,215,.45); }
 .khead .kx { width: 40px; height: 40px; border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; cursor: pointer; font-size: 16px; }
@@ -312,8 +312,9 @@ body[data-theme="light"] #kroute { background: radial-gradient(220px 120px at 66
 #kroute .kst { fill: var(--accent); stroke: #FFF; stroke-width: 2; cursor: pointer; }
 #kroute .kst.main { fill: #FFF; stroke: var(--accent); stroke-width: 2.5; }
 #kroute .kst.sel { stroke: #FFD54F; stroke-width: 3.5; }
-#kroute .kname { fill: var(--text2); font-size: 9px; }
-#kroute .kname.main { fill: var(--text); font-size: 10px; font-weight: 600; }
+#k75pPage { padding-top: env(safe-area-inset-top); }
+#kroute .kname { fill: var(--text2); font-size: 10px; }
+#kroute .kname.main { fill: var(--text); font-size: 11.5px; font-weight: 600; }
 #kroute .ktag { fill: var(--accent); font-size: 9px; font-weight: 600; letter-spacing: 1px; }
 #kroute .kbus { transition: none; }
 #kroute .kbus.on { transition: transform 1s linear; }
