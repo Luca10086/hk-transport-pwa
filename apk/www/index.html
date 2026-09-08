@@ -3,274 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#1F1F1F">
-<title>森友出行 · WP8 概念版</title>
-<link rel="stylesheet" href="css/wp8-strict.css">
-<link rel="stylesheet" href="css/skin-wp7.css">
-<link rel="stylesheet" href="css/skin-wp8.css">
-<link rel="stylesheet" href="css/skin-uwp.css">
-<link rel="stylesheet" href="css/skin-md3.css">
-<link rel="stylesheet" href="css/skin-wp2026.css">
+<title>森友出行 · WP2026</title>
+<link rel="stylesheet" href="css/wp2026.css">
 </head>
 <body>
+<div id="app">
+  <div class="orb" style="width:320px;height:320px;top:-90px;left:-110px"></div>
+  <div class="orb" style="width:280px;height:280px;bottom:-80px;right:-100px;animation-duration:19s,4s;animation-delay:-7s,0s"></div>
 
-<!-- ================= 顶栏：Pivot 大标题 ================= -->
-<header class="topbar">
-  <h1 class="pivot-title" id="pivotTitle">森友出行</h1>
-  <div class="topbar-actions">
-    <button class="topbar-search" onclick="goPane('home');setTimeout(function(){goPanoPanel(1);var i=document.getElementById('searchInput');if(i)i.focus();},400)" aria-label="搜尋路線">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
-    </button>
-    <button class="topbar-refresh" id="topbarRefresh" onclick="refreshAll(true)" aria-label="重新整理">↻</button>
-  </div>
-</header>
-
-<!-- ================= 加载进度条 ================= -->
-<div class="progressbar" id="progressbar" hidden></div>
-
-<!-- ================= 下拉刷新提示 ================= -->
-<div class="ptr" id="ptr">放開以重新整理</div>
-
-<!-- ================= 數據新鮮度 ================= -->
-<span class="last-update" id="lastUpdate"></span>
-
-
-<!-- ================= FAB（MD 皮膚主操作＝搜尋） ================= -->
-<button class="fab-senyou" onclick="goPane('home');setTimeout(function(){goPanoPanel(1);var i=document.getElementById('searchInput');if(i)i.focus();},400)" aria-label="搜尋路線">
-  <svg viewBox="0 0 24 24" aria-hidden="true" style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
-</button>
-
-<!-- ================= 磁貼長按選單 ================= -->
-<div class="tile-menu" id="tileMenu" hidden></div>
-
-<!-- ================= Pivot（横滑窗格） ================= -->
-<main class="pivot" id="pivot">
-
-  <!-- 首页：全景 + 磁贴 + 搜索 + 天气 + K75P -->
-  <section class="pane" data-pane="home">
-    <!-- 首页全景 Panorama -->
-    <div class="pano">
-      <div class="pano-bg" id="panoBg" aria-hidden="true"></div>
-      <div class="pano-track" id="panoTrack">
-
-        <!-- 面板 1：磁贴（WP8 官方色板純色牆：小=1/4、中=1/2、寬=全寬） -->
-        <div class="pano-panel">
-          <div class="tiles">
-            <button class="tile tile-cobalt" data-tile="favs" onclick="goPane('favs')">我的收藏</button>
-            <button class="tile tile-magenta" data-tile="sushi" onclick="goPane('sushi')">壽司郎</button>
-            <button class="tile tile-wide tile-flip tile-teal" id="tileWeather" data-tile="weather" onclick="refreshWeather()">
-              <span class="tile-face"><span>天氣</span><b id="tileWeatherV">--°</b><span class="tile-sub" id="tileWeatherSub">載入中</span></span>
-              <span class="tile-face tile-face-back" id="tileWeatherD">明天 --</span>
-            </button>
-            <button class="tile tile-wide tile-cyan" id="tileK75P" data-tile="k75p" onclick="openK75PPage()">
-              <span>K75P · 天瑞</span>
-              <b id="k75pTileV">--</b>
-              <span class="tile-sub" id="k75pTileSub">載入中</span>
-            </button>
-            <button class="tile tile-wide tile-cyan" id="tileFav" data-tile="favlive" onclick="goPane('favs')">
-              <span>收藏 ①</span>
-              <b id="favTileV">—</b>
-              <span class="tile-sub" id="favTileS">暫無收藏</span>
-            </button>
-            <button class="tile tile-cyan" data-tile="map" onclick="goPane('map')">路線圖</button>
-            <button class="tile tile-teal" data-tile="settings" onclick="goPane('settings')">設定</button>
-          </div>
-        </div>
-
-        <!-- 面板 2：搜索 + 结果 -->
-        <div class="pano-panel">
-          <div class="search-block">
-            <input id="searchInput" class="metro-input" placeholder="輸入巴士路線、站名或港鐵車站" aria-label="搜尋"
-                   onkeydown="if(event.key==='Enter') doSearch()">
-            <div class="chips" id="chips">
-              <button class="chip active" data-tp="bus" data-i18n="bus" onclick="setTransport('bus', this)">公交</button>
-              <button class="chip" data-tp="mtrbus" data-i18n="mtrbus" onclick="setTransport('mtrbus', this)">港鐵巴士</button>
-              <button class="chip" data-tp="mtr" data-i18n="mtr" onclick="setTransport('mtr', this)">港鐵</button>
-              <button class="chip" data-tp="lrt" data-i18n="lrt" onclick="setTransport('lrt', this)">輕鐵</button>
-              <button class="chip" data-night="1" data-i18n="night" onclick="toggleNight(this)" title="只顯示通宵 N 線">通宵</button>
-            </div>
-            <button class="search-btn" data-i18n="searchBtn" onclick="doSearch()">搜尋</button>
-          </div>
-          <!-- 最近搜尋 -->
-          <div id="recentBox" class="recent-box"></div>
-          <div id="results" class="flat-list"></div>
-        </div>
-
-        <!-- 面板 3：天气 + K75P -->
-        <div class="pano-panel">
-          <h3 class="pane-title" data-i18n="weather">天氣</h3>
-          <div id="warningBar" class="warning-bar" hidden></div>
-          <div id="weather" class="weather-bar">載入中…</div>
-          <h3 class="pane-title" data-i18n="k75pTitle">k75p 全線實時</h3>
-          <div id="k75p" class="flat-list"><div class="k75p-map-link" onclick="openK75PPage()"><svg class="k75p-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-6 5 12 2.5-6H21"/></svg> 實時路線圖 · 每班車位置 · 點站查三班<span>›</span></div></div>
-        </div>
-      </div>
-      <div class="pano-hint" id="panoHint"><i class="on"></i><i></i><i></i></div>
-    </div>
-  </section>
-
-  <!-- 收藏 -->
-  <section class="pane" data-pane="favs">
-    <div class="pane-inner">
-      <h2 class="pane-title" data-i18n="favs">收藏</h2>
-      <div id="favs" class="flat-list"><div class="metro-empty">暫無收藏，在搜尋結果按 ☆ 加入</div></div>
-    </div>
-  </section>
-
-  <!-- 寿司郎 -->
-  <section class="pane" data-pane="sushi">
-    <div class="pane-inner">
-      <h2 class="pane-title" data-i18n="sushi">壽司郎</h2>
-      <div id="sushi" class="flat-list"><div class="metro-empty">載入中…</div></div>
-    </div>
-  </section>
-
-  <!-- 路线图 -->
-  <section class="pane" data-pane="map">
-    <div class="pane-inner">
-      <h2 class="pane-title" data-i18n="map">路線圖</h2>
-      <div class="map-lines" id="mapLines"></div>
-      <div class="map-body" id="mapBody"></div>
-    </div>
-  </section>
-
-  <!-- 设定 -->
-  <section class="pane" data-pane="settings">
-    <div class="pane-inner">
-      <h2 class="pane-title" data-i18n="settings">設定</h2>
-      <div class="settings-list">
-        <div class="setting-row"><span class="label" data-i18n="theme">主題</span>
-          <div class="seg" id="themeSeg">
-            <button data-th="dark" onclick="setTheme('dark')">深色</button>
-            <button data-th="light" onclick="setTheme('light')">淺色</button>
-          </div>
-        </div>
-        <div class="setting-row"><span class="label" data-i18n="accent">強調色</span>
-          <div class="seg" id="accentSeg">
-            <button data-ac="#AA00FF" style="color:#AA00FF" onclick="setAccent('#AA00FF')">紫</button>
-            <button data-ac="#6A00FF" style="color:#6A00FF" onclick="setAccent('#6A00FF')">靛</button>
-            <button data-ac="#0078D7" style="color:#0078D7" onclick="setAccent('#0078D7')">藍</button>
-            <button data-ac="#00ABA9" style="color:#00ABA9" onclick="setAccent('#00ABA9')">青綠</button>
-          </div>
-        </div>
-        <div class="setting-row"><span class="label" data-i18n="uiStyle">介面風格</span>
-          <div class="seg" id="uiSeg">
-            <button data-ui="wp7" onclick="setUIMode('wp7')">WP7</button>
-            <button data-ui="wp8" onclick="setUIMode('wp8')">WP8</button>
-            <button data-ui="uwp" onclick="setUIMode('uwp')">UWP</button>
-            <button data-ui="md" onclick="setUIMode('md')">MD</button>
-            <button data-ui="wp2026" onclick="setUIMode('wp2026')">WP26</button>
-          </div>
-        </div>
-        <div class="setting-row"><span class="label" data-i18n="contrast">高對比</span>
-          <div class="seg" id="contrastSeg">
-            <button data-ct="1" onclick="setContrast(1)">開</button>
-            <button data-ct="0" onclick="setContrast(0)">關</button>
-          </div>
-        </div>
-        <div class="setting-row"><span class="label" data-i18n="langLabel">語言</span>
-          <div class="seg" id="langSeg">
-            <button data-lg="zh" onclick="setLang('zh')">中文</button>
-            <button data-lg="en" onclick="setLang('en')">EN</button>
-          </div>
-        </div>
-        <div class="setting-row"><span class="label" data-i18n="fontSize">字體大小</span>
-          <div class="fs-row">
-            <button class="fs-btn" onclick="setFontSize(-1)" aria-label="A−">A−</button>
-            <div class="fs-dots" id="fsDots"></div>
-            <button class="fs-btn" onclick="setFontSize(1)" aria-label="A＋">A＋</button>
-          </div>
-        </div>
-        <div class="setting-row"><span class="label" data-i18n="noMotion">減少動畫</span>
-          <div class="seg" id="motionSeg">
-            <button data-mo="1" onclick="setNoMotion(1)">開</button>
-            <button data-mo="0" onclick="setNoMotion(0)">關</button>
-          </div>
-        </div>
-        <div class="setting-row"><span class="label" data-i18n="autoRefresh">自動重新整理</span>
-          <div class="seg" id="refreshSeg">
-            <button data-rv="15" onclick="setRefresh(15)">15s</button>
-            <button data-rv="30" onclick="setRefresh(30)">30s</button>
-            <button data-rv="60" onclick="setRefresh(60)">60s</button>
-            <button data-rv="0" onclick="setRefresh(0)">關</button>
-          </div>
-        </div>
-        <div class="setting-row"><span class="label" data-i18n="dataSource">資料來源</span><span class="val">data.gov.hk</span></div>
-        <div class="setting-row"><span class="label" data-i18n="version">版本</span><span class="val" id="appVersion">Beta 0.1</span></div>
-      </div>
-    </div>
-  </section>
-</main>
-
-<!-- ================= App Bar ================= -->
-<nav class="appbar">
-  <button class="ab-btn active" data-pane="home" onclick="goPane('home')" aria-label="首頁">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5V21a1 1 0 01-1 1h-5.5v-6h-5v6H4a1 1 0 01-1-1z"/></svg><span class="ab-label" data-i18n="home">首頁</span>
-  </button>
-  <button class="ab-btn" data-pane="favs" onclick="goPane('favs')" aria-label="收藏">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span class="ab-label" data-i18n="favs">收藏</span>
-  </button>
-  <button class="ab-btn" data-pane="sushi" onclick="goPane('sushi')" aria-label="壽司郎">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 2.5L6.7 21M14.8 2.5l2.5 18.5M5 17.5c0 1.93 3.13 3.5 7 3.5s7-1.57 7-3.5S16.13 14 12 14s-7 1.57-7 3.5z"/></svg><span class="ab-label" data-i18n="sushi">壽司郎</span>
-  </button>
-  <button class="ab-btn" data-pane="map" onclick="goPane('map')" aria-label="路線">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.2"/></svg><span class="ab-label" data-i18n="navMap">路線</span>
-  </button>
-  <button class="ab-btn" data-pane="settings" onclick="goPane('settings')" aria-label="設定">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.3"/><path d="M19.4 13.5a7.9 7.9 0 000-3l2-1.5-2-3.4-2.3.9a7.9 7.9 0 00-2.6-1.5L14.2 2h-4l-.3 2.5a7.9 7.9 0 00-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.9 7.9 0 000 3l-2 1.5 2 3.4 2.3-.9a7.9 7.9 0 002.6 1.5l.3 2.5h4l.3-2.5a7.9 7.9 0 002.6-1.5l2.3.9 2-3.4-2-1.5z"/></svg><span class="ab-label" data-i18n="settings">設定</span>
-  </button>
-  <button class="ab-more" onclick="toggleMore()" aria-label="更多選項">⋯</button>
-  <div class="more-menu" id="moreMenu" hidden>
-    <button data-i18n="refresh" onclick="moreAction('refresh')">重新整理</button>
-    <button data-i18n="favFirst" onclick="moreAction('fav')">收藏首條結果</button>
-    <button data-i18n="map" onclick="moreAction('map')">路線圖</button>
-  </div>
-</nav>
-
-<!-- ================= K75P 實時路線頁（澳泊式：地圖 + 預報卡 + 點站查三班） ================= -->
-<div class="k75p-page" id="k75pPage" hidden>
-  <header class="k75p-page-bar">
-    <button class="k75p-page-close" onclick="closeK75PPage()" aria-label="返回">✕</button>
-    <div class="k75p-page-title">K75P 實時路線</div>
-    <span class="k75p-page-live" id="k75pLiveBadge">● 實時</span>
+  <header class="toolbar">
+    <div class="kicker">Senyou · HK Transport</div>
+    <div class="title" id="tbTitle">森友<b>出行</b></div>
+    <div class="sub" id="tbSub">實時巴士 · 港鐵 · 輕鐵</div>
+    <button class="tb-refresh" id="tbRefresh" aria-label="重新整理">↻</button>
+    <span class="pivot-light" id="pivotLight" aria-hidden="true"></span>
   </header>
-  <div class="k75p-mapbox" id="k75pMapBox"></div>
-  <div class="k75p-station" id="k75pStationPanel" hidden>
-    <div class="ksp-head">
-      <span class="ksp-name" id="kspName">車站</span>
-      <button class="ksp-close" onclick="document.getElementById('k75pStationPanel').hidden = true" aria-label="關閉">✕</button>
-    </div>
-    <div id="kspRows"></div>
-  </div>
-  <div class="k75p-panel">
-    <div class="k75p-head">
-      <span class="k75p-no">K75P</span>
-      <span>
-        <div class="k75p-dest">往 天瑞（循環線）</div>
-        <div class="k75p-meta">港鐵巴士 · 全程 23 站 · 天水圍</div>
-      </span>
-    </div>
-    <div class="k75p-cards" id="k75pCards"></div>
-    <div class="k75p-status" id="k75pStatus"></div>
-  </div>
-  <nav class="k75p-tabs">
-    <span class="on">實時路線</span><span>站點</span><span>地圖</span><span>設定</span>
+
+  <div class="pivot-glass" aria-hidden="true"></div>
+
+  <main id="pivot">
+    <section class="pane" data-pane="home">
+      <div class="tiles" id="homeTiles"></div>
+      <div class="searchbar">
+        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>
+        <input id="searchInput" placeholder="輸入路線、站名或港鐵車站" aria-label="搜尋">
+      </div>
+      <div class="chips" id="tpChips">
+        <button class="chip active" data-tp="bus">公交</button>
+        <button class="chip" data-tp="mtrbus">港鐵巴士</button>
+        <button class="chip" data-tp="mtr">港鐵</button>
+        <button class="chip" data-tp="lrt">輕鐵</button>
+        <button class="chip" data-night="1">通宵</button>
+      </div>
+      <div id="results"></div>
+    </section>
+
+    <section class="pane" data-pane="favs">
+      <div id="favList" class="pane-inner"></div>
+    </section>
+
+    <section class="pane" data-pane="sushi">
+      <div id="sushiList" class="pane-inner"></div>
+    </section>
+
+    <section class="pane" data-pane="map">
+      <div class="chips" id="lineChips">
+        <button class="chip active" data-lm="mtr">港鐵</button>
+        <button class="chip" data-lm="lrt">輕鐵</button>
+      </div>
+      <div class="chips" id="mtrLineBtns"></div>
+      <div id="mapBody"></div>
+    </section>
+
+    <section class="pane" data-pane="settings">
+      <div id="settingsList"></div>
+    </section>
+  </main>
+
+  <nav class="appbar" id="appbar">
+    <button class="ab on" data-pane="home"></button>
+    <button class="ab" data-pane="favs"></button>
+    <button class="ab" data-pane="sushi"></button>
+    <button class="ab" data-pane="map"></button>
+    <button class="ab" data-pane="settings"></button>
   </nav>
-</div>
 
-<!-- ================= 路線詳情（點擊路線後右側滑入） ================= -->
-<div class="detail-sheet" id="detailSheet" hidden>
-  <header class="detail-bar">
-    <button class="back-btn" onclick="detailBack()" aria-label="返回">←</button>
-    <div class="detail-title" id="detailTitle">路線詳情</div>
-  </header>
-  <div class="detail-body" id="detailBody"></div>
+  <div class="sheet-mask" id="sheetMask"></div>
+  <div class="sheet" id="sheet">
+    <div class="handle"></div>
+    <div class="shead"><span class="t" id="shTitle">詳情</span><button class="x" id="shClose">✕</button></div>
+    <div class="stabs" id="shTabs" hidden></div>
+    <div class="sbody" id="shBody"></div>
+  </div>
+
+  <div class="sheet" id="k75pPage" style="height:100%;z-index:96">
+    <div class="sheath" style="padding:0 14px;display:flex;flex-direction:column;height:100%">
+      <div class="kmap" id="kmap"></div>
+      <div id="kbody" style="flex:1;overflow-y:auto;margin-top:12px"></div>
+    </div>
+  </div>
 </div>
 
 <script src="js/data.js"></script>
 <script src="js/util.js"></script>
 <script src="js/api.js"></script>
-<script src="js/version.js"></script>
-<script src="js/wp8-concept.js"></script>
+<script src="js/wp2026-app.js"></script>
 </body>
 </html>
