@@ -46,8 +46,8 @@
     animation: glassShimmer 9s ease-in-out infinite;
   }
   @keyframes glassShimmer {
-    0%, 55% { background-position: -160% 0, 0 0; }
-    70%     { background-position: 160% 0, 0 0; }
+    0%, 60% { background-position: -160% 0, 0 0; }
+    73%     { background-position: 160% 0, 0 0; }   /* 13% ≈ 1.2s 掃過 */
     100%    { background-position: 160% 0, 0 0; }
   }
 
@@ -55,8 +55,10 @@
   .orb {
     position: absolute; border-radius: 50%; z-index: 0;
     background: radial-gradient(circle at 30% 25%, rgba(0,120,215,.5), rgba(0,180,216,.16) 55%, transparent 75%);
-    filter: blur(2px); animation: orbFloat 22s ease-in-out infinite alternate;
+    filter: blur(2px);
+    animation: orbFloat 22s ease-in-out infinite alternate, orbBreath 4s ease-in-out infinite;
   }
+  @keyframes orbBreath { 0%,100% { scale: 1; } 50% { scale: 1.07; } }
   @keyframes orbFloat {
     0%   { transform: translate(0,0) scale(1); opacity: .9; }
     50%  { transform: translate(-30px,26px) scale(1.14); opacity: 1; }
@@ -111,7 +113,7 @@
   @keyframes breath { 0%,100% { scale: 1; } 50% { scale: 1.06; } }
   .press-demo { position: absolute; left: 14px; right: 14px; top: 14px; height: 46px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center; font-size: 15px; }
-  .pivot-demo { display: flex; position: absolute; top: 10px; left: 10px; right: 10px; gap: 0; animation: pivotCycle 6s ease-in-out infinite; }
+  .pivot-demo { display: flex; position: absolute; top: 10px; left: 10px; right: 10px; gap: 0; animation: pivotCycle 6s infinite; animation-timing-function: cubic-bezier(.16,1,.3,1); }
   .pivot-pg { width: 60px; height: 54px; border-radius: 8px; margin-right: 8px; flex: 0 0 auto; background: rgba(255,255,255,.14); }
   .pivot-pg.b { background: #0078D7; }
   .eta-demo { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -169,7 +171,7 @@
     display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 0 10px;
     border-radius: 14px; margin: 4px 0; transition: transform .12s ease;
   }
-  .row:active { transform: scale(.985) translateY(1px); }
+  .row:active { transform: scale(.985) translateY(1px); box-shadow: inset 3px 0 0 #0078D7; }
   .row .badge {
     width: 40px; height: 40px; border-radius: 50%; background: #0078D7; color: #fff;
     display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex: 0 0 auto;
@@ -231,7 +233,7 @@
   .gl-card .big { font-size: 20px; font-weight: 300; margin-top: 6px; }
   .gl-status { margin: 10px 12px 0; border-radius: 12px; padding: 9px 11px; font-size: 12px; line-height: 1.7; }
   .gl-status b { color: #0078D7; font-weight: 400; }
-  .gl-status .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #0078D7; animation: pulseRing 1.6s infinite; margin-right: 5px; }
+  .gl-status .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #0078D7; margin-right: 5px; }
 
   /* ===== 06 收藏 / 07 天氣 ===== */
   .fav-card { border-radius: 14px; padding: 13px; margin: 8px 2px 0; }
@@ -260,6 +262,13 @@
   .note { margin-top: 46px; border-top: 1px solid rgba(255,255,255,.15); padding-top: 20px; color: rgba(255,255,255,.6); font-size: 13px; line-height: 1.9; max-width: 980px; }
   .note b { color: #fff; }
   .tag { color: #00B4D8; font-weight: 600; }
+  /* 可訪問性：prefers-reduced-motion → 裝飾動畫歸零（規格降級清單） */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+      transition-duration: .01s !important;
+    }
+  }
 </style>
 </head>
 <body>
