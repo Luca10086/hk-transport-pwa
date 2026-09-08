@@ -607,7 +607,7 @@
       const k = b.dataset.open;
       if (k === 'k75p') openK75P();
       else if (k === 'weather') openWeatherPage();
-      else setPane(k);
+      else enterPane(k);
     }));
     /* 開場編舞：首次渲染才做 80ms 階梯（避免刷新重繪閃動） */
     if (!homeSeen) {
@@ -690,23 +690,37 @@
       ].filter(Boolean).join(' · ') || '—' + '</div></div>';
     const days = '<div class="grp">未來三天</div><div class="wdays">'
       + (w.days.length ? w.days.map((d, i) => {
-        const em = d.icon && HKO_ICON_EMOJI[d.icon] ? HKO_ICON_EMOJI[d.icon] : '';
+        const em = d.icon && HKO_ICON_EMOJI[d.icon] ? HKO_ICON_EMOJI[d.icon] : '🌡️';
         const ic = d.icon && HKO_ICONS[d.icon] ? HKO_ICONS[d.icon] : '';
         const label = (['今天', '明天', '後天'][i] || '') + (d.week ? ' · ' + d.week : '') + (d.date ? ' · ' + d.date : '');
         return '<div class="wday"><span class="n">' + esc(label) + '</span>'
+          + '<span class="e">' + em + '</span>'
           + '<div class="d">' + (d.max != null ? Math.round(d.max) + '°' : '--') + '<small>' + (d.min != null ? '/' + Math.round(d.min) + '°' : '') + '</small></div>'
-          + '<span class="n wx">' + esc(em + ' ' + (ic || d.desc)) + '</span>'
+          + '<span class="n wx">' + esc(ic || d.desc) + '</span>'
           + (d.rh ? '<span class="n">濕度 ' + d.rh.min + '–' + d.rh.max + '%</span>' : '')
           + '</div>';
       }).join('') : '<div class="wday"><span class="n">—</span></div>')
       + '</div>';
-    return wn + now + days + (w.at ? '<div class="empty" style="text-align:left;padding:10px 4px 4px;font-size:12px">更新 ' + esc(w.at) + '</div>' : '');
+    return wn + now + days + '<div class="empty" style="text-align:left;padding:10px 4px 4px;font-size:12px">數據：香港天文台' + (w.at ? ' · 更新 ' + esc(w.at) : '') + '</div>';
   }
   async function openWeatherPage() {
-    /* 秒開：先開 sheet 顯示載入中，再填充（配合 5 分鐘緩存，通常瞬間完成） */
+    /* 秒開：先開 sheet 顯示載入中，再填充（配合 5 分鐘緩存，通常瞬間完成）；
+       10 秒超時兜底 + 已關閉 sheet 不寫入 */
     openSheet('天氣', '<div class="empty">載入中…</div>');
     onTab = () => {};
-    const w = await fetchWeather();
+    const sheet = $('sheet');
+    const w = await Promise.race([
+      fetchWeather(),
+      new Promise(res => setTimeout(() => res(null), 10000)),
+    ]);
+    if (!sheet.classList.contains('open')) return;
+    if (!w) {
+      $('shBody').innerHTML = '<div class="empty">載入逾時，請重試</div>'
+        + '<div style="text-align:center;padding:0 0 20px"><button id="wRetry" style="border:1px solid var(--line);background:var(--accent);color:#fff;border-radius:999px;padding:10px 26px;font-size:14px;cursor:pointer;font-family:inherit">重試</button></div>';
+      const rb = $('wRetry');
+      if (rb) rb.addEventListener('click', openWeatherPage);
+      return;
+    }
     $('shBody').innerHTML = weatherSheetHtml(w);
   }
 
@@ -798,7 +812,9 @@
     } catch (e) {}
     return rows.map(r => '<div class="fline"><span class="l">' + esc(r.label) + '</span><span class="v' + etaSecCls(r.sec) + '">' + (r.sec == null ? '—' : Math.max(1, Math.ceil(r.sec / 60)) + ' 分') + '</span></div>').join('');
   }
+  let favsGen = 0;   /* renderFavs 代數守衛：防止慢網絡下舊渲染覆蓋新 DOM */
   async function renderFavs() {
+    const gen = ++favsGen;
     const list = getFavorites();
     const box = $('favList');
     if (!list.length) {
@@ -823,7 +839,9 @@
         + '<div class="big"' + (sec ? ' data-sec="' + Math.ceil(sec / 60) + '"' : '') + '>' + (sec ? Math.max(1, Math.ceil(sec / 60)) + '<small> 分鐘</small>' : '—') + '</div>'
         + (lines ? '<div class="flines">' + lines + '</div>' : '')
         + '<div class="bar"><i style="width:' + Math.min(100, (sec || 0) / 6) + '%"></i></div></div>';
+      if (gen !== favsGen) return;   /* 有更新的渲染在進行，放棄本次寫入 */
     }
+    if (gen !== favsGen) return;
     box.innerHTML = html;
     box.style.cursor = '';
     box.querySelectorAll('button[data-a]').forEach(b => b.addEventListener('click', (e) => {
@@ -1094,7 +1112,8 @@
       const n2 = es.find(x => x.idx !== next.idx && x.sec > next.sec);
       const gap = n2 ? Math.max(30, n2.sec - next.sec) : 120;
       const f = next.sec === 0 ? 1 : Math.max(0, Math.min(1, (gap - next.sec) / gap));
-      const ref = next.idx === 0 ? (KN - 1) + f : next.idx - 1 + f;
+      /* 循環線：巴士將抵達起點站(天瑞)時定位在左臂起點（物理同一位置，避免跳到右臂終點再彈回） */
+      const ref = next.idx === 0 ? f : next.idx - 1 + f;
       let pos = (b.live && next.loc) ? gpsPos(next.loc, ref) : null;
       if (pos == null) pos = ref;
       /* 平滑 + 只進不退：GPS 抖動不再讓班次來回亂跑 */
@@ -1123,7 +1142,7 @@
     for (let i = 0; i < KN; i++) {
       const p = kUXY(i / (KN - 1));
       const main = i === 0 || i === KN - 1 || i === kTurn;
-      const r = main ? (i === kTurn ? 7 : 6) : 4;
+      const r = main ? (i === kTurn ? 7 : 6) : 5;
       s += '<circle class="kst' + (main ? ' main' : '') + '" data-i="' + i + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + r + '"/>';
       let lx, ly, anchor;
       if (i === kTurn) { lx = U.xM; ly = p[1] - 13; anchor = 'middle'; }
@@ -1211,7 +1230,7 @@
       || '<div class="krow"><span class="no">—</span><span class="bus">暫無班次</span></div>';
     kStDots.forEach((dt, kk) => {
       dt.classList.toggle('sel', kk === i);
-      dt.setAttribute('r', kk === i ? 8 : (kk === 0 || kk === KN - 1 ? 6 : kk === kTurn ? 7 : 4));
+      dt.setAttribute('r', kk === i ? 8 : (kk === 0 || kk === KN - 1 ? 6 : kk === kTurn ? 7 : 5));
     });
   }
 
@@ -1236,7 +1255,7 @@
     box.querySelectorAll('button[data-k]').forEach(b => b.addEventListener('click', () => {
       if (b.dataset.k === 'theme') cfg.theme = b.dataset.v;
       if (b.dataset.k === 'accent') cfg.accent = b.dataset.v;
-      if (b.dataset.k === 'refresh') cfg.refresh = Number(b.dataset.v);
+      if (b.dataset.k === 'refresh') { cfg.refresh = Number(b.dataset.v); restartAutoTick(); }
       saveCfg(); applyCfg(); renderSettings();
     }));
     box.querySelectorAll('button[data-fs]').forEach(b => b.addEventListener('click', () => {
@@ -1265,10 +1284,29 @@
   }
   $('tbRefresh').addEventListener('click', refreshNow);
 
+  /* ---------- 自動重新整理（設定變更即時生效：重建 interval） ---------- */
+  let autoTick = null;
+  function restartAutoTick() {
+    clearInterval(autoTick);
+    autoTick = null;
+    if (!cfg.refresh || cfg.refresh <= 0) return;
+    autoTick = setInterval(() => { renderHome(); stampSub(); }, cfg.refresh * 1000);
+  }
+  /* ---------- 電量偵測（§7 降級：<15% 停光斑流光） ---------- */
+  try {
+    if (navigator.getBattery) {
+      const applyB = b => document.body.classList.toggle('battery-low', !!(b && b.level != null && b.level <= 0.15 && !b.charging));
+      navigator.getBattery().then(b => {
+        applyB(b);
+        b.addEventListener('levelchange', () => applyB(b));
+        b.addEventListener('chargingchange', () => applyB(b));
+      }).catch(() => {});
+    }
+  } catch (e) {}
+
   /* ---------- 啟動 ---------- */
   renderHome();
   renderSettings();
   stampSub();
-  const refreshSec = (cfg.refresh || 30) * 1000;
-  setInterval(() => { if (cfg.refresh > 0) { renderHome(); stampSub(); } }, refreshSec);
+  restartAutoTick();
 })();
