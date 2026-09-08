@@ -1,0 +1,264 @@
+/* ==========================================================================
+   森友出行 · WP × 2026「液態玻璃」皮膚（body[data-ui="wp2026"]）
+   定稿：DESIGN-WP2026.md（MiMo Pro 共創 × 主代理裁決）
+   深色主通道；材料：玻璃 blur26/填充 .07/1px 描邊/頂緣反光/對角反光；
+   華麗動效：光斑漂浮呼吸/三層按壓/微光脈衝；禁彩虹；reduced-motion 全局降級（wp8-strict 已有）。
+   ========================================================================== */
+
+/* ---------- 令牌（深色主通道 + 淺色基座） ---------- */
+body[data-ui="wp2026"] {
+  --bg: #05070D;
+  --surface: #0A1220;
+  --surface2: rgba(255,255,255,.05);
+  --text: #FFFFFF;
+  --text2: rgba(255,255,255,.55);
+  --line: rgba(255,255,255,.16);
+  --accent: #0078D7;
+  --accent-dark: #005A9E;
+  --aux: #00B4D8;
+  font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+}
+body[data-ui="wp2026"][data-theme="light"] {
+  --bg: #EDF1F7;
+  --surface: #FFFFFF;
+  --surface2: rgba(255,255,255,.6);
+  --text: #16243A;
+  --text2: rgba(22,36,58,.62);
+  --line: rgba(0,0,0,.12);
+}
+
+/* ---------- 液態玻璃原料 ---------- */
+body[data-ui="wp2026"] .topbar,
+body[data-ui="wp2026"] .appbar,
+body[data-ui="wp2026"] .detail-sheet,
+body[data-ui="wp2026"] .k75p-page-bar,
+body[data-ui="wp2026"] .k75p-station,
+body[data-ui="wp2026"] .k75p-card,
+body[data-ui="wp2026"] .k75p-status,
+body[data-ui="wp2026"] .tile,
+body[data-ui="wp2026"] .fav-card,
+body[data-ui="wp2026"] .metro-row,
+body[data-ui="wp2026"] .setting-row,
+body[data-ui="wp2026"] .warning-bar {
+  position: relative;
+}
+
+/* ========== 背景光斑（2 顆 · 漂浮 22s/19s + 呼吸 4s） ========== */
+body[data-ui="wp2026"]::before,
+body[data-ui="wp2026"]::after {
+  content: ''; position: fixed; border-radius: 50%; z-index: 0; pointer-events: none;
+  background: radial-gradient(circle at 30% 25%, rgba(0,120,215,.32), rgba(0,180,216,.10) 55%, transparent 72%);
+  filter: blur(3px);
+  animation: wp26Orb 22s ease-in-out infinite alternate, wp26Breath 4s ease-in-out infinite;
+}
+body[data-ui="wp2026"]::before { width: 340px; height: 340px; top: 6%; left: -120px; }
+body[data-ui="wp2026"]::after {
+  width: 300px; height: 300px; bottom: 8%; right: -110px;
+  animation-duration: 19s, 4s; animation-delay: -7s, 0s; opacity: .8;
+}
+@keyframes wp26Orb {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(30px,-26px) scale(1.12); }
+  100% { transform: translate(-22px,18px) scale(.96); }
+}
+@keyframes wp26Breath { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+
+/* ========== 頂欄：玻璃欄 ========== */
+body[data-ui="wp2026"] .topbar {
+  background: rgba(10,10,10,.6);
+  -webkit-backdrop-filter: blur(48px) saturate(1.6);
+  backdrop-filter: blur(48px) saturate(1.6);
+  border-bottom: 1px solid rgba(255,255,255,.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+}
+body[data-ui="wp2026"][data-theme="light"] .topbar { background: rgba(255,255,255,.55); }
+body[data-ui="wp2026"] .pivot-title { text-transform: none; }
+
+/* ========== 磁貼：玻璃化（blur + 填充 .07 + 1px 描邊 + 內凹頂反光 + 14px 圓角） ========== */
+body[data-ui="wp2026"] .tile {
+  background: rgba(255,255,255,.07);
+  -webkit-backdrop-filter: blur(26px) saturate(1.4);
+  backdrop-filter: blur(26px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25),
+    inset 0 -14px 18px -16px rgba(0,180,216,.18),
+    0 0 0 transparent;
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+}
+body[data-ui="wp2026"] .tile-cobalt { background: rgba(0,120,215,.28); border-color: rgba(0,120,215,.45); }
+body[data-ui="wp2026"] .tile-cyan { background: rgba(0,180,216,.16); border-color: rgba(0,180,216,.35); }
+body[data-ui="wp2026"] .tile-magenta { background: rgba(0,120,215,.14); }
+body[data-ui="wp2026"] .tile-teal { background: rgba(255,255,255,.07); }
+body[data-ui="wp2026"] .tile:active { transform: scale(.96); filter: brightness(1.08); }
+body[data-ui="wp2026"] .tile b { color: var(--text); text-shadow: 0 0 18px rgba(0,120,215,.35); }
+body[data-ui="wp2026"] .tile .tile-sub, body[data-ui="wp2026"] .tile .lab { color: var(--text2); }
+body[data-ui="wp2026"][data-theme="light"] .tile { background: rgba(255,255,255,.55); border-color: rgba(0,0,0,.1); }
+
+/* ========== 搜索欄：玻璃膠囊 ========== */
+body[data-ui="wp2026"] .metro-input {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px; padding: 14px 18px;
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  backdrop-filter: blur(40px) saturate(1.8);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2);
+}
+body[data-ui="wp2026"] .metro-input:focus { outline: 1px solid var(--accent); box-shadow: 0 0 18px rgba(0,120,215,.35), inset 0 1px 0 rgba(255,255,255,.25); }
+body[data-ui="wp2026"] .chip {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 999px;
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+}
+body[data-ui="wp2026"] .chip.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 16px rgba(0,120,215,.4); }
+body[data-ui="wp2026"] .chip:active { transform: scale(.96); }
+body[data-ui="wp2026"] .search-btn { border-radius: 999px; background: var(--accent); box-shadow: 0 0 20px rgba(0,120,215,.3); }
+body[data-ui="wp2026"] .recent-chip {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+/* ========== 列表行：玻璃行（性能守則：行不透視模糊） ========== */
+body[data-ui="wp2026"] .metro-row {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px; margin: 4px 0; padding: 12px 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+body[data-ui="wp2026"] .metro-row:active {
+  transform: scale(.985) translateY(1px);
+  box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgba(255,255,255,.2);
+}
+body[data-ui="wp2026"] .metro-row .row-no {
+  background: var(--accent); color: #fff; border-radius: 50%;
+  box-shadow: 0 0 12px rgba(0,120,215,.35);
+}
+body[data-ui="wp2026"] .metro-row .row-eta { color: var(--text); text-shadow: 0 0 16px rgba(0,120,215,.3); }
+body[data-ui="wp2026"] .metro-group { color: var(--aux); font-weight: 600; letter-spacing: .5px; }
+body[data-ui="wp2026"] .metro-row .row-name { color: var(--text); }
+body[data-ui="wp2026"] .metro-row .row-sub { color: var(--text2); }
+body[data-ui="wp2026"][data-theme="light"] .metro-row { background: rgba(255,255,255,.6); border-color: rgba(0,0,0,.08); }
+
+/* ========== 詳情 Sheet：玻璃底層 ========== */
+body[data-ui="wp2026"] .detail-sheet {
+  background: rgba(15,15,15,.72);
+  -webkit-backdrop-filter: blur(60px) saturate(2);
+  backdrop-filter: blur(60px) saturate(2);
+  border-radius: 20px 20px 0 0; border-top: 1px solid rgba(255,255,255,.25);
+}
+body[data-ui="wp2026"] .detail-bar { border-bottom: 1px solid rgba(255,255,255,.1); background: transparent; }
+body[data-ui="wp2026"] .ds-stop .ds-seq {
+  background: rgba(255,255,255,.08); color: var(--text2); border-radius: 50%;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2);
+}
+body[data-ui="wp2026"] .ds-cur { background: rgba(0,120,215,.14); border-radius: 12px; }
+body[data-ui="wp2026"] .ds-cur-tag { color: var(--aux); }
+body[data-ui="wp2026"] .ds-cur::before {
+  content: ''; width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--accent);
+  animation: wp26Pulse 1.6s ease-in-out infinite;
+}
+@keyframes wp26Pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,120,215,.5); }
+  55%      { box-shadow: 0 0 0 9px rgba(0,120,215,0); }
+}
+body[data-ui="wp2026"] .dir-tab, body[data-ui="wp2026"] .map-line-btn {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
+}
+body[data-ui="wp2026"] .dir-tab.active, body[data-ui="wp2026"] .map-line-btn.active {
+  background: rgba(0,120,215,.22); border-color: rgba(0,120,215,.5);
+  box-shadow: 0 0 14px rgba(0,120,215,.35);
+}
+
+/* ========== App Bar：玻璃欄 + 膠囊指示器微光 ========== */
+body[data-ui="wp2026"] .appbar {
+  background: rgba(10,10,10,.6);
+  -webkit-backdrop-filter: blur(48px) saturate(1.6);
+  backdrop-filter: blur(48px) saturate(1.6);
+  border-top: 1px solid rgba(255,255,255,.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+}
+body[data-ui="wp2026"] .ab-btn.active { color: var(--text); }
+body[data-ui="wp2026"] .ab-btn::before {
+  border-radius: 999px; background: rgba(0,120,215,.28);
+  box-shadow: 0 0 14px rgba(0,120,215,.4);
+}
+
+/* ========== 設定：玻璃行 + 玻璃開關 ========== */
+body[data-ui="wp2026"] .setting-row {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px; margin: 4px 0; padding: 0 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+}
+body[data-ui="wp2026"] .setting-row .label { color: var(--text); }
+body[data-ui="wp2026"] .setting-row .val { color: var(--text2); }
+body[data-ui="wp2026"] .seg {
+  border: 1px solid rgba(255,255,255,.16); border-radius: 999px;
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+}
+body[data-ui="wp2026"] .seg button { border-radius: 999px; }
+body[data-ui="wp2026"] .seg button.active { background: var(--accent); color: #fff; box-shadow: 0 0 14px rgba(0,120,215,.45); }
+body[data-ui="wp2026"] .fs-btn {
+  border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+/* ========== 收藏卡：玻璃卡 ========== */
+body[data-ui="wp2026"] .fav-card {
+  background: rgba(255,255,255,.07);
+  -webkit-backdrop-filter: blur(26px) saturate(1.4);
+  backdrop-filter: blur(26px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,.16); border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 -14px 18px -16px rgba(0,180,216,.18);
+}
+body[data-ui="wp2026"] .fav-no { color: var(--accent); }
+body[data-ui="wp2026"] .fav-eta-main { color: var(--text); text-shadow: 0 0 18px rgba(0,120,215,.35); }
+body[data-ui="wp2026"] .fav-sub, body[data-ui="wp2026"] .fav-more, body[data-ui="wp2026"] .fav-stale { color: var(--text2); }
+
+/* ========== K75P 實時頁：玻璃化 ========== */
+body[data-ui="wp2026"] .k75p-page { background: var(--bg); }
+body[data-ui="wp2026"] .k75p-page-bar {
+  background: rgba(10,10,10,.6);
+  -webkit-backdrop-filter: blur(48px) saturate(1.6);
+  backdrop-filter: blur(48px) saturate(1.6);
+  border-bottom: 1px solid rgba(255,255,255,.18);
+}
+body[data-ui="wp2026"] .k75p-page-live { background: var(--accent); box-shadow: 0 0 14px rgba(0,120,215,.5); }
+body[data-ui="wp2026"] .k75p-mapbox { background: radial-gradient(300px 180px at 62% 34%, rgba(0,120,215,.25), transparent 70%), #071423; }
+body[data-ui="wp2026"] .k75p-station {
+  background: rgba(10,10,10,.72);
+  -webkit-backdrop-filter: blur(60px) saturate(2);
+  backdrop-filter: blur(60px) saturate(2);
+}
+body[data-ui="wp2026"] .ksp-row .ksp-bus b { color: var(--accent); }
+body[data-ui="wp2026"] .k75p-card {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16);
+  -webkit-backdrop-filter: blur(26px) saturate(1.4);
+  backdrop-filter: blur(26px) saturate(1.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+}
+body[data-ui="wp2026"] .k75p-card .big { color: var(--accent); text-shadow: 0 0 16px rgba(0,120,215,.4); }
+body[data-ui="wp2026"] .k75p-card .sub, body[data-ui="wp2026"] .k75p-card .lab { color: var(--text2); }
+body[data-ui="wp2026"] .k75p-status {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2);
+}
+body[data-ui="wp2026"] .k75p-status .dot { animation: wp26Pulse 1.6s ease-in-out infinite; }
+
+/* ========== 警示/天氣/錯誤：玻璃 + 功能色 ========== */
+body[data-ui="wp2026"] .warning-bar {
+  background: rgba(255,180,0,.1); border: 1px solid rgba(255,180,0,.3);
+  color: #FFD54F; border-radius: 14px;
+}
+body[data-ui="wp2026"] .weather-bar {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16);
+  border-radius: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+}
+body[data-ui="wp2026"] .error-msg {
+  background: rgba(255,82,82,.1); border: 1px solid rgba(255,82,82,.4); color: #FF8A80; border-radius: 14px;
+}
+body[data-ui="wp2026"] .last-update { color: var(--text2); }
+
+/* ========== 活動態：微光 ========== */
+body[data-ui="wp2026"] .map-station::before { background: var(--accent); box-shadow: 0 0 10px rgba(0,120,215,.5); }
+body[data-ui="wp2026"] .map-station.interchange::before { background: #F0A30A; }
