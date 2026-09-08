@@ -21,6 +21,7 @@
     document.documentElement.style.setProperty('--accent-dark', cfg.accent);
     document.documentElement.style.fontSize = cfg.font + 'px';
     document.body.classList.toggle('no-fx', !cfg.fx);
+    document.body.classList.toggle('high-contrast', !!cfg.hc);
     document.body.dataset.mood = nightMood();
   }
   function nightMood() { const h = new Date().getHours(); return (h >= 19 || h < 6) ? 'night' : 'day'; }
@@ -223,11 +224,32 @@
   })();
 
   /* ---------- 搜索 ---------- */
-  let tp = 'bus', searchGen = 0, lastResults = [];
+  let tp = 'bus', searchGen = 0, lastResults = [], nightOnly = false;
+  const RECENT_KEY = 'wp2026_recent';
+  function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (e) { return []; } }
+  function pushRecent(q) {
+    let qs = getRecent().filter(x => x !== q);
+    qs.unshift(q); qs = qs.slice(0, 6);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(qs)); } catch (e) {}
+  }
+  function recentHtml() {
+    const qs = getRecent();
+    if (!qs.length) return '';
+    return '<div class="grp">最近搜尋</div><div class="chips">' + qs.map(q => '<button class="chip" data-rq="' + esc(q) + '">' + esc(q) + '</button>').join('') + '</div>';
+  }
   const G = { kmb: '九巴 KMB', ctb: '城巴 CTB', nlb: '大嶼山 NLB', mtr: '港鐵', lrt: '輕鐵', mtrbus: '港鐵巴士' };
   $('tpChips').addEventListener('click', (e) => {
     const c = e.target.closest('.chip'); if (!c) return;
-    document.querySelectorAll('#tpChips .chip').forEach(x => x.classList.toggle('active', x === c));
+    if (c.dataset.night) {
+      nightOnly = !nightOnly;
+      c.classList.toggle('active', nightOnly);
+      c.style.borderColor = nightOnly ? '' : '';
+      doSearch(); return;
+    }
+    nightOnly = false;
+    const n = $('tpChips').querySelector('[data-night]');
+    if (n && n.classList.contains('active')) n.classList.remove('active');
+    document.querySelectorAll('#tpChips .chip[data-tp]').forEach(x => x.classList.toggle('active', x === c));
     tp = c.dataset.tp; doSearch();
   });
   const input = $('searchInput');
@@ -263,7 +285,13 @@
     const q = input.value.trim();
     const gen = ++searchGen;
     const box = $('results');
-    if (!q) { box.innerHTML = ''; lastResults = []; return; }
+    if (!q) {
+      box.innerHTML = recentHtml();
+      box.querySelectorAll('.chip[data-rq]').forEach(c => c.addEventListener('click', () => { input.value = c.dataset.rq; doSearch(); }));
+      lastResults = [];
+      return;
+    }
+    pushRecent(q);
     if (tp === 'mtr') return searchMTR(q, gen);
     if (tp === 'lrt') return searchLRTImpl(q, gen);
     if (tp === 'mtrbus') return searchMTRBus(q, gen);
@@ -284,16 +312,30 @@
       }
       const C = await searchCTBRoute(q.toUpperCase());
       (C || []).slice(0, 4).forEach(r => out.push({
-        grp: G.ctb, no: r.route, name: (r.orig_tc || '') + ' → ' + (r.dest_tc || ''), kind: 'bus', data: { route: r.route, dir: 'outbound' },
+        grp: G.ctb, no: r.route, name: (r.orig_tc || '') + ' → ' + (r.dest_tc || ''), kind: 'bus', co: 'ctb', data: { route: r.route, dir: 'outbound' },
       }));
       const N = await searchNLBRoute(q);
       (N || []).slice(0, 4).forEach(r => out.push({
-        grp: G.nlb, no: r.routeNo || r.routeId, name: r.name_tc || '', kind: 'nlb', data: { route: r.routeId, dir: null },
+        grp: G.nlb, no: r.routeNo || r.routeId, name: r.name_tc || '', kind: 'nlb', co: 'nlb', data: { route: r.routeId, dir: null },
       }));
     } catch (e) {}
     if (gen !== searchGen) return;
+    if (nightOnly) out.splice(0, out.length, ...out.filter(it => /^N\d/i.test(String(it.no || ''))));
     lastResults = out;
     renderSearch(out);
+  }
+  /* 巴士站：該站路線 + ETA 摘要 */
+  async function stopRoutesText(stop) {
+    try {
+      const es = await getKMBETA(stop);
+      const byR = {};
+      (es || []).forEach(e => {
+        const sec = (parseHKTime(e.eta) - Date.now()) / 1000;
+        if (!(e.route in byR) || sec < byR[e.route]) byR[e.route] = sec;
+      });
+      return Object.keys(byR).sort((a, b) => byR[a] - byR[b]).slice(0, 3)
+        .map(r => r + ' ' + (byR[r] <= 60 ? '即將' : Math.ceil(byR[r] / 60) + '分')).join(' · ');
+    } catch (e) { return ''; }
   }
   async function kmbFirstSec(route, dir, stopId) {
     try {
@@ -312,12 +354,13 @@
     let last = null, html = '';
     for (const it of items) {
       if (it.grp !== last) { html += '<div class="grp">' + esc(it.grp) + '</div>'; last = it.grp; }
-      let eta = null;
+      let eta = null, capExtra = '';
       if (it.kind === 'bus') eta = await kmbFirstSec(it.data.route, it.data.dir, it.data.stop);
+      if (it.kind === 'busstop') capExtra = await stopRoutesText(it.data.stop);
       html += '<div class="row" data-i="' + items.indexOf(it) + '">'
         + '<span class="badge">' + esc(String(it.no).slice(0, 4)) + '</span>'
         + '<span class="main"><span class="nm">' + esc(it.name) + '</span>'
-        + (it.cap ? '<span class="cap">' + esc(it.cap) + '</span>' : '')
+        + (capExtra ? '<span class="cap">' + esc(capExtra) + '</span>' : (it.cap ? '<span class="cap">' + esc(it.cap) + '</span>' : ''))
         + '</span>' + etaHtml(eta) + starBtn(it.fav) + '</div>';
     }
     box.innerHTML = html;
@@ -406,36 +449,78 @@
     else if (it.kind === 'mtr') openMTRDetail(it);
   }
 
-  /* ---------- 巴士/港鐵 詳情 ---------- */
+  /* ---------- 巴士/港鐵 詳情（KMB/CTB/NLB 全支援） ---------- */
+  const ctbNameCache = {};
+  async function ctbName(sid) {
+    const k = String(sid);
+    if (ctbNameCache[k]) return ctbNameCache[k];
+    try {
+      const d = await fetchWithProxy(CTB_BASE + '/stop/' + k);
+      ctbNameCache[k] = (d && d.data && (d.data.name_tc || d.data.name_en)) || ('站 ' + k);
+    } catch (e) { ctbNameCache[k] = '站 ' + k; }
+    return ctbNameCache[k];
+  }
   async function openBusDetail(it) {
-    const dirs = [[it.data.dir, '去程'], [it.data.dir === 'inbound' ? 'outbound' : 'inbound', '回程']];
-    openSheet((it.data.route || it.no) + ' 路線詳情', '<div class="empty">載入中…</div>', dirs.map(d => d[1]));
+    const co = it.co || (it.fav && it.fav.company) || 'kmb';
+    const route = it.data.route;
+    const baseDir = it.data.dir || 'outbound';
+    const dirs = co === 'nlb'
+      ? [[null, '全程']]
+      : [[baseDir, '去程'], [baseDir === 'inbound' ? 'outbound' : 'inbound', '回程']];
+    openSheet((route || it.no) + ' 路線詳情', '<div class="empty">載入中…</div>', dirs.map(d => d[1]));
     const cache = {};
     async function loadDir(idx) {
       const dir = dirs[idx][0];
-      if (cache[dir]) { $('shBody').innerHTML = cache[dir]; return; }
+      if (cache[String(dir)]) { $('shBody').innerHTML = cache[String(dir)]; return; }
       $('shBody').innerHTML = '<div class="empty">載入中…</div>';
       try {
-        const stops = await getKMBStops(it.data.route, dir, '1');
-        if (!stops.length) { $('shBody').innerHTML = '<div class="empty">無法載入站點</div>'; return; }
-        const rows = [];
-        for (let i = 0; i < stops.length; i += 4) {
-          const rs = await Promise.all(stops.slice(i, i + 4).map(async st => {
-            let ts = [];
-            try {
-              const es = await getKMBETA(st.stop);
-              ts = (es || []).filter(e => e.route === String(it.data.route) && (e.dir || '').toUpperCase() === (dir === 'inbound' ? 'I' : 'O'))
-                .map(e => parseHKTime(e.eta)).filter(Boolean).sort((a, b) => a - b);
-            } catch (e) {}
-            return { name: st.name_tc || st.name_en || ('站 ' + st.stop), ts };
-          }));
-          rows.push(...rs);
+        let stops = [], rows = [];
+        if (co === 'nlb') {
+          stops = await getNLBRouteStops(route);
+          for (let i = 0; i < stops.length; i += 4) {
+            const rs = await Promise.all(stops.slice(i, i + 4).map(async st => {
+              let ts = [];
+              try { ts = (await getNLBETA(route, st.stopId)).map(x => x.etaTs).filter(Boolean).sort((a, b) => a - b); } catch (e) {}
+              return { name: st.stopName_c || st.stopName_s || ('站 ' + st.stopId), ts };
+            }));
+            rows.push(...rs);
+          }
+        } else if (co === 'ctb') {
+          stops = await getCTBStops(route, dir);
+          const wantDir = dir === 'inbound' ? 'I' : 'O';
+          for (let i = 0; i < stops.length; i += 4) {
+            const rs = await Promise.all(stops.slice(i, i + 4).map(async st => {
+              const sid = st.stop || st.stop_id;
+              let ts = [];
+              try {
+                ts = (await getCTBETA(sid, route)).filter(e => (e.dir || '').toUpperCase() === wantDir)
+                  .map(e => parseHKTime(e.eta)).filter(Boolean).sort((a, b) => a - b);
+              } catch (e) {}
+              return { name: st.name_tc || (sid ? await ctbName(sid) : ''), ts };
+            }));
+            rows.push(...rs);
+          }
+        } else {
+          stops = await getKMBStops(route, dir, '1');
+          const wantDir = dir === 'inbound' ? 'I' : 'O';
+          for (let i = 0; i < stops.length; i += 4) {
+            const rs = await Promise.all(stops.slice(i, i + 4).map(async st => {
+              let ts = [];
+              try {
+                ts = (await getKMBETA(st.stop)).filter(e => e.route === String(route) && (e.dir || '').toUpperCase() === wantDir)
+                  .map(e => parseHKTime(e.eta)).filter(Boolean).sort((a, b) => a - b);
+              } catch (e) {}
+              return { name: st.name_tc || st.name_en || ('站 ' + st.stop), ts };
+            }));
+            rows.push(...rs);
+          }
         }
+        if (!rows.length) { $('shBody').innerHTML = '<div class="empty">無法載入站點</div>'; return; }
         const html = rows.map((r, i) => {
           const sec = r.ts[0] ? (r.ts[0] - Date.now()) / 1000 : null;
           return '<div class="dstop"><span class="dseq">' + (i + 1) + '</span><span class="dnm">' + esc(r.name) + '</span>' + (sec == null ? '<span class="dtm">—</span>' : (sec <= 60 ? '<span class="dtm soon">即將</span>' : '<span class="dtm ' + etaSecCls(sec) + '">' + Math.ceil(sec / 60) + ' 分</span>')) + '</div>';
         }).join('');
-        cache[dir] = html;
+        cache[String(dir)] = html;
         $('shBody').innerHTML = html;
       } catch (e) { $('shBody').innerHTML = '<div class="empty">載入失敗</div>'; }
     }
@@ -771,13 +856,24 @@
     box.addEventListener('touchcancel', detach);
   }
 
-  /* ---------- 壽司郎（離線快照） ---------- */
+  /* ---------- 壽司郎（先試實時，失敗用離線快照） ---------- */
   let sushiDone = false;
-  function renderSushi() {
+  async function renderSushi(forceLive) {
     sushiDone = true;
-    const stores = SUSHIRO_SNAPSHOT.filter(s => s.area === '元朗區' || s.area === '屯門區')
-      .sort((a, b) => (parseInt(b.waitingGroup, 10) || 0) - (parseInt(a.waitingGroup, 10) || 0));
-    $('sushiList').innerHTML = '<div style="font-size:12px;color:var(--text2);padding:2px 4px 10px">' + esc(SUSHIRO_SNAPSHOT_AT) + ' 抓取 · 離線快照</div>'
+    let stores = SUSHIRO_SNAPSHOT.filter(s => s.area === '元朗區' || s.area === '屯門區');
+    let note = SUSHIRO_SNAPSHOT_AT + ' 抓取 · 離線快照';
+    if (forceLive !== false) {
+      for (const u of [SUSHIRO_PROXY(SUSHIRO_STORE_API), CORS_PROXIES[0](SUSHIRO_STORE_API)]) {
+        try {
+          const r = await fetch(u, { signal: AbortSignal.timeout(7000) });
+          if (!r.ok) continue;
+          const j = await r.json();
+          if (Array.isArray(j) && j.length) { stores = j.filter(s => s.area === '元朗區' || s.area === '屯門區'); note = '實時 · ' + new Date().toTimeString().slice(0, 5); break; }
+        } catch (e) {}
+      }
+    }
+    stores = stores.sort((a, b) => (parseInt(b.waitingGroup, 10) || 0) - (parseInt(a.waitingGroup, 10) || 0));
+    $('sushiList').innerHTML = '<div style="font-size:12px;color:var(--text2);padding:2px 4px 10px">' + esc(note) + '</div>'
       + stores.map(s => {
         const closed = s.storeStatus !== 'OPEN';
         const g = parseInt(s.waitingGroup, 10) || 0, w = parseInt(s.wait, 10) || 0;
@@ -1037,6 +1133,7 @@
       + '<div class="setrow"><span class="l">主題<small class="cap">深色 / 淺色</small></span>' + seg('theme', [['dark', '深色'], ['light', '淺色']], cfg.theme) + '</div>'
       + '<div class="setrow"><span class="l">強調色<small class="cap">藍 · 青綠 · 紫 · 靛</small></span>' + seg('accent', ACCENTS.map(a => [a[0], a[1]]), cfg.accent) + '</div>'
       + '<div class="setrow"><span class="l">字體大小<small class="cap">8 級 · 全局</small></span><span class="fs"><button data-fs="-1">A−</button><span class="dots">' + FONT_LEVELS.map((_, i) => '<i class="' + (i === fontLevel ? 'on' : '') + '"></i>').join('') + '</span><button data-fs="1">A＋</button></span></div>'
+      + '<div class="setrow"><span class="l">高對比<small class="cap">純黑白 · 2px 描邊</small></span><button class="sw ' + (cfg.hc ? 'on' : '') + '" data-hc></button></div>'
       + '<div class="setrow"><span class="l">減少動效<small class="cap">流光 · 波紋 · 光斑 · 脈衝</small></span><button class="sw ' + (cfg.fx ? 'on' : '') + '" data-fx></button></div>'
       + '<div class="grp">出行</div>'
       + '<div class="setrow"><span class="l">自動重新整理<small class="cap">首頁磁貼</small></span>' + seg('refresh', [['30', '30s'], ['60', '60s'], ['0', '關']], String(cfg.refresh)) + '</div>'
@@ -1056,11 +1153,28 @@
     box.querySelectorAll('[data-fx]').forEach(b => b.addEventListener('click', () => {
       cfg.fx = !cfg.fx; saveCfg(); applyCfg(); renderSettings();
     }));
+    box.querySelectorAll('[data-hc]').forEach(b => b.addEventListener('click', () => {
+      cfg.hc = !cfg.hc; saveCfg(); applyCfg(); renderSettings();
+    }));
   }
+
+  /* ---------- 手動刷新 + 數據新鮮度 ---------- */
+  function stampSub() {
+    const s = $('tbSub');
+    if (s) s.textContent = '更新 ' + new Date().toTimeString().slice(0, 5) + ' · 實時巴士 · 港鐵 · 輕鐵';
+  }
+  async function refreshNow() {
+    await renderHome();
+    if (curPane === 'favs') renderFavs();
+    if (curPane === 'sushi') renderSushi();
+    stampSub();
+  }
+  $('tbRefresh').addEventListener('click', refreshNow);
 
   /* ---------- 啟動 ---------- */
   renderHome();
   renderSettings();
+  stampSub();
   const refreshSec = (cfg.refresh || 30) * 1000;
-  setInterval(() => { if (cfg.refresh > 0) renderHome(); }, refreshSec);
+  setInterval(() => { if (cfg.refresh > 0) { renderHome(); stampSub(); } }, refreshSec);
 })();
