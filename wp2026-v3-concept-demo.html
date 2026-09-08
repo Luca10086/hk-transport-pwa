@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>森友出行 · WP2026 v3.0 概念 DEMO</title>
+<style>
+  /* ============================================================
+     WP2026 v3.0 概念 DEMO —— Phase 1+2+3 + 偽折射套餐
+     畫面優先 · 性能放開 · 全部 CSS/JS 無依賴
+     ============================================================ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #04060C;
+    --text: #FFFFFF; --text2: rgba(255,255,255,.55); --line: rgba(255,255,255,.16);
+    --ease-press: cubic-bezier(.34,1.56,.64,1);
+    --ease-sheet: cubic-bezier(.05,.7,.1,1);
+    --ease-subtle: cubic-bezier(.16,1,.3,1);
+    --c-info: #0078D7; --c-success: #4CAF50; --c-warning: #FFB74D; --c-danger: #FF5252;
+    --co-kmb: #0078D7; --co-ctb: #FF6B35; --co-nlb: #4CAF50; --co-mtr: #E91E63; --co-lrt: #7C4DFF; --co-mtrbus: #00897B;
+    /* 玻璃強度（級別 0-4，由 JS 設到 body[data-glass]） */
+    --glass-opacity: .07; --glass-blur: 26px; --glass-sat: 1.4;
+    --shine-dur: 12s;
+    --toolbar-h: 100px; --appbar-h: 72px;
+  }
+  body[data-glass="0"] { --glass-opacity: .00; --glass-blur: 0px; --glass-sat: 1; }
+  body[data-glass="1"] { --glass-opacity: .03; --glass-blur: 12px; --glass-sat: 1.1; }
+  body[data-glass="2"] { --glass-opacity: .07; --glass-blur: 26px; --glass-sat: 1.4; }
+  body[data-glass="3"] { --glass-opacity: .10; --glass-blur: 36px; --glass-sat: 1.6; }
+  body[data-glass="4"] { --glass-opacity: .14; --glass-blur: 48px; --glass-sat: 1.8; }
+  body[data-glass="0"] .g { border-width: 2px; border-color: rgba(255,255,255,.18); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 3px 14px rgba(0,0,0,.35); }
+  body.deepnight { color: #C7D5E8; }
+  body.deepnight .num, body.deepnight .big, body.deepnight .tile b { color: #7FA9CC !important; }
+  body.bigtext :root { }
+  body.bigtext .tile b { font-size: 56px; }
+  body.bigtext .tile { min-height: 108px; }
+  body.bigtext .row { min-height: 80px; }
+  body.bigtext .row .nm { font-size: 19.6px; }
+  /* 動效三級 */
+  body[data-fx="simple"] .g::after, body[data-fx="simple"] .halo { animation: none !important; }
+  body[data-fx="simple"] .blob { opacity: .8; }
+  body[data-fx="none"] .g::after, body[data-fx="none"] .orbit, body[data-fx="none"] .tile i.pulse { animation: none !important; }
+  body[data-fx="none"] .bleed { display: none; }
+
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--text); overflow: hidden;
+    font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #bg { position: fixed; inset: 0; z-index: 0; }
+  .stage {
+    position: relative; z-index: 1; width: 100%; max-width: 420px; height: 100%;
+    margin: 0 auto; display: flex; flex-direction: column;
+  }
+  @media (min-width: 520px) {
+    body { display: flex; align-items: center; justify-content: center; background: radial-gradient(900px 600px at 30% 20%, #0B1D33, #04060C 70%); }
+    .stage { max-width: 420px; height: min(880px, calc(100vh - 56px)); border-radius: 44px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,.16); box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 10px rgba(10,14,22,.9); }
+  }
+
+  /* ============ 液態玻璃基底 ============ */
+  .g {
+    position: relative; z-index: 0; border-radius: 18px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,var(--glass-opacity));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .g::before { /* 邊緣折射光環：backdrop-filter × feDisplacementMap 真彎曲 */
+    content: ''; position: absolute; inset: -14px; z-index: -1; border-radius: 28px; pointer-events: none;
+    border: 1px solid rgba(255,255,255,.10);
+    -webkit-backdrop-filter: blur(10px) saturate(1.5) brightness(1.08);
+    backdrop-filter: blur(10px) saturate(1.5) brightness(1.08);
+    filter: url(#warpE);
+  }
+  .g::after { /* 液態高光：位移過的流光 */
+    content: ''; position: absolute; inset: 0; z-index: 3; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,.13) 50%, transparent 60%) -180% 0 / 230% 110% no-repeat;
+    animation: liquidShine var(--shine-dur) ease-in-out infinite;
+    filter: url(#warpS);
+  }
+  @keyframes liquidShine { 0%, 62% { background-position: -180% 0; } 76% { background-position: 180% 0; } 100% { background-position: 180% 0; } }
+  .bleed { /* 姿態反光：裝置傾斜驅動的內部晨光 */
+    content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(280px 190px at calc(50% + var(--tx,0) * 70px) calc(28% + var(--ty,0) * 46px), rgba(255,255,255,.13), transparent 66%);
+    transition: background .1s ease-out;
+  }
+  body[data-glass="0"] .g::before { display: none; }
+  body.deepnight .g::after { animation-duration: 20s; }
+  /* 折射光環的發光（更猛：外圈二次發光） */
+  .g::marker { }
+
+  /* ============ 氣泡 Toolbar（滾動收縮） ============ */
+  .toolbar {
+    position: relative; z-index: 30; margin: 0; flex: 0 0 auto;
+    height: var(--toolbar-h); padding: 14px 18px 10px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    transition: height .28s var(--ease-press), margin .28s var(--ease-press), border-radius .28s var(--ease-press), background .28s ease;
+  }
+  .toolbar .kicker { font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,.5); text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+  .toolbar .title { font-size: 34px; font-weight: 300; line-height: 1.1; white-space: nowrap; overflow: hidden; transition: font-size .28s var(--ease-press); }
+  .toolbar .title b { color: var(--c-info); font-weight: 300; }
+  .toolbar .sub { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; padding-right: 46px; transition: opacity .2s; }
+  .toolbar .live { position: absolute; right: 16px; top: 14px; width: 40px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+    font-size: 17px; background: transparent; border: 1px solid var(--line); color: var(--text); cursor: pointer; }
+  .toolbar.collapsed {
+    height: 56px; margin: 8px 16px 0; border-radius: 20px;
+    background: rgba(10,12,18,.45);
+    -webkit-backdrop-filter: blur(48px) saturate(1.6); backdrop-filter: blur(48px) saturate(1.6);
+    flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px;
+    padding: 0 16px;
+  }
+  .toolbar.collapsed .kicker, .toolbar.collapsed .sub { display: none; }
+  .toolbar.collapsed .title { font-size: 20px; flex: 1; }
+  .toolbar.collapsed .live { position: static; width: 36px; height: 36px; }
+  @media (min-width: 700px) { .toolbar.collapsed { margin: 0; border-radius: 0; background: transparent; } }
+
+  /* ============ 內容區 ============ */
+  #scroll { flex: 1; overflow-y: auto; padding: 14px 16px 24px; scroll-behavior: smooth; }
+  #scroll::-webkit-scrollbar { display: none; }
+  .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (min-width: 700px) { .tiles { grid-template-columns: repeat(3, 1fr); } }
+  .tile {
+    min-height: 92px; padding: 14px; cursor: pointer; text-align: left; color: var(--text);
+    display: flex; flex-direction: column; justify-content: flex-end; gap: 4px;
+    font-family: inherit; border-radius: 18px;
+    transition: transform .18s var(--ease-press);
+  }
+  .tile.wide { grid-column: span 2; min-height: 120px; }
+  .tile:active { transform: scale(.96); }
+  .tile.up { transform: scale(1.02); }
+  .tile .lab { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile b { font-size: 42px; font-weight: 300; line-height: 1.0; font-variant-numeric: tabular-nums; color: var(--text); }
+  .tile b small { font-size: 15px; color: var(--text2); }
+  .tile .num { color: var(--c-info); }
+  .tile.pulse-low { box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 0 0 0 rgba(0,120,215,0); }
+  .tile.breathe { animation: tbreathe .5s ease; }
+  @keyframes tbreathe { 0%,100% { filter: none; } 50% { filter: brightness(1.16); } }
+  .tile .cap { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile i.pulse { position: absolute; right: 12px; top: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--c-success); animation: wpPulse 1.6s infinite; }
+  @keyframes wpPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(76,175,80,.5); } 55% { box-shadow: 0 0 0 8px rgba(76,175,80,0); } }
+
+  /* K75P U 形磁貼 */
+  .ku { position: absolute; inset: 0 0 auto 0; height: 62px; pointer-events: none; }
+  .ku svg { width: 100%; height: 100%; display: block; }
+  .kubus { transition: transform 1s linear; }
+
+  /* 搜索 */
+  .searchbar { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; height: 50px; border-radius: 999px; padding: 0 18px; }
+  .searchbar svg { width: 20px; height: 20px; fill: none; stroke: var(--text2); stroke-width: 1.8; flex: 0 0 auto; }
+  .searchbar input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: var(--text); font-size: 17px; font-family: inherit; }
+  .searchbar input::placeholder { color: var(--text2); }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 12px; }
+  .chip { min-height: 40px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.05); color: var(--text2); font-size: 13px; cursor: pointer; font-family: inherit; transition: transform .14s var(--ease-press); }
+  .chip:active { transform: scale(.95); }
+  .chip.on { background: var(--c-info); border-color: var(--c-info); color: #fff; box-shadow: 0 0 16px rgba(0,120,215,.4); }
+
+  .grp { font-size: 13px; font-weight: 600; color: var(--c-success); padding: 14px 4px 6px; letter-spacing: .5px; }
+  .grp.favc { color: var(--text2); }
+  .row { display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 8px 14px; border-radius: 18px; margin: 6px 0; cursor: pointer; transition: transform .16s var(--ease-press); }
+  .row:active { transform: scale(.985) translateY(1px); }
+  .row .b { width: 42px; height: 42px; border-radius: 50%; flex: 0 0 auto; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
+  .row .main { flex: 1; min-width: 0; }
+  .row .nm { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .cap { display: block; font-size: 12px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .eta { flex: 0 0 auto; font-size: 26px; font-weight: 300; font-variant-numeric: tabular-nums; transition: color .3s ease; }
+  .row .eta small { font-size: 12px; color: var(--text2); }
+  .row .eta.r { color: var(--c-danger); } .row .eta.a { color: var(--c-warning); } .row .eta.g { color: var(--c-success); }
+  .row .st { flex: 0 0 auto; border: none; background: transparent; color: var(--text2); font-size: 20px; cursor: pointer; width: 40px; height: 40px; }
+  .row .st.on { color: var(--c-warning); }
+
+  /* 收藏分組 */
+  .fgroup .fh { display: flex; align-items: center; gap: 8px; padding: 12px 4px 6px; }
+  .fgroup .fh .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .fgroup .fh .t { font-size: 13px; font-weight: 600; color: var(--text2); flex: 1; letter-spacing: 1px; }
+
+  /* ============ Dock ============ */
+  .dock { position: relative; z-index: 31; flex: 0 0 auto; height: var(--appbar-h); border-radius: 0; display: flex; align-items: center; justify-content: space-around; padding: 0 6px; }
+  .ab { border: none; background: transparent; color: var(--text2); cursor: pointer; width: 62px; height: 62px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-family: inherit; border-radius: 16px; transition: transform .18s var(--ease-press); }
+  .ab:active { transform: scale(.92); }
+  .ab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+  .ab .pill { width: 34px; height: 4px; border-radius: 999px; background: transparent; }
+  .ab.on { color: var(--text); }
+  .ab.on .pill { background: var(--c-info); box-shadow: 0 0 10px rgba(0,120,215,.6); }
+
+  /* ============ 演示控制台 ============ */
+  .ctlbtn { position: fixed; z-index: 60; right: 12px; top: 12px; width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line); background: rgba(10,12,18,.5); color: var(--text); font-size: 20px; cursor: pointer; -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); }
+  .ctl { position: fixed; z-index: 70; right: 12px; top: 64px; width: 250px; padding: 14px; border-radius: 20px; display: none; flex-direction: column; gap: 10px; max-height: calc(100vh - 90px); overflow-y: auto; }
+  .ctl.open { display: flex; }
+  .ctl .cname { font-size: 12px; color: var(--text2); letter-spacing: 1px; margin-top: 4px; }
+  .ctl .csegs { display: flex; gap: 6px; }
+  .ctl .cseg { flex: 1; min-height: 34px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text2); font-size: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .ctl .cseg.on { background: var(--c-info); border-color: var(--c-info); color: #fff; }
+  .ctl .swrow { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+  .ctl .sw { width: 46px; height: 26px; border-radius: 999px; border: 1px solid var(--line); background: transparent; position: relative; cursor: pointer; }
+  .ctl .sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--text2); transition: transform .2s var(--ease-press), background .2s; }
+  .ctl .sw.on { background: rgba(0,120,215,.35); }
+  .ctl .sw.on::after { transform: translateX(20px); background: var(--c-info); box-shadow: 0 0 8px rgba(0,120,215,.7); }
+  .ctl .note { font-size: 11px; color: var(--text2); line-height: 1.5; }
+
+  /* ============ Sheet（彈簧 + 折射） ============ */
+  .mask { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .mask.open { opacity: 1; pointer-events: auto; }
+  .sheet { position: fixed; z-index: 45; left: 50%; transform: translateX(-50%) translateY(103%); bottom: 0; width: 100%; max-width: 420px; height: 70%; border-radius: 26px 26px 0 0; padding: 0 14px 18px; display: flex; flex-direction: column; transition: transform .32s var(--ease-sheet); }
+  .sheet .handle { width: 40px; height: 4px; border-radius: 999px; background: rgba(255,255,255,.35); margin: 10px auto 4px; }
+  .sheet .shead { display: flex; align-items: center; gap: 10px; padding: 6px 2px 10px; }
+  .sheet .shead .t { flex: 1; font-size: 20px; font-weight: 300; }
+  .sheet .shead .x { width: 40px; height: 40px; border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; cursor: pointer; font-size: 15px; }
+  .sheet .dstop { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .sheet .dstop .ds { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.08); color: var(--text2); display: flex; align-items: center; justify-content: center; font-size: 12px; flex: 0 0 auto; }
+  .sheet .dstop .dnm { flex: 1; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sheet .dstop .dtm { font-size: 18px; font-weight: 300; flex: 0 0 auto; }
+  .sheet .dstop .dtm.r { color: var(--c-danger); } .sheet .dstop .dtm.a { color: var(--c-warning); } .sheet .dstop .dtm.g { color: var(--c-success); }
+
+  svg.defs { position: absolute; width: 0; height: 0; }
+  .fade-in { animation: fadeIn .4s var(--ease-subtle) both; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body data-glass="2" data-fx="full">
+<canvas id="bg"></canvas>
+
+<!-- SVG 過濾器：邊緣折射 + 液態高光位移 -->
+<svg class="defs" aria-hidden="true">
+  <defs>
+    <filter id="warpE" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="turbulence" baseFrequency="0.016 0.03" numOctaves="2" seed="4" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="20" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="warpS" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="turbulence" baseFrequency="0.02 0.05" numOctaves="2" seed="11" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="14" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="stage">
+  <!-- 氣泡 Toolbar -->
+  <header class="toolbar g" id="tb">
+    <span class="bleed"></span>
+    <div class="kicker">Senyou · HK Transport · v3 概念</div>
+    <div class="title">森友<b>出行</b></div>
+    <div class="sub">氣泡收起試試滾動 · 實時 22:37</div>
+    <button class="live" id="refresh">↻</button>
+  </header>
+
+  <main id="scroll">
+    <!-- 磁貼 -->
+    <div class="tiles" id="tiles">
+      <button class="tile wide g" style="height:120px">
+        <span class="bleed"></span><i class="pulse"></i>
+        <span class="ku" id="ku"></span>
+        <span class="lab">K75P 天瑞 ↺ 洪水橋 · GPS 3 班在路</span>
+        <b class="num">1<span><small> 分</small></span></b>
+      </button>
+      <button class="tile g" style="min-height:120px">
+        <span class="bleed"></span><i class="pulse"></i>
+        <span class="lab">我的收藏</span><b class="num">7<span><small> 條</small></span></b>
+        <span class="cap">下一班 69X · 8 分</span>
+      </button>
+      <button class="tile g" style="min-height:120px">
+        <span class="bleed"></span><i class="pulse"></i>
+        <span class="lab">天氣 · 三天</span><b>35<span><small>°</small></span></b>
+        <span class="cap">🌤️ 今31° 明31° 後31°</span>
+      </button>
+      <button class="tile g" style="min-height:120px">
+        <span class="bleed"></span>
+        <span class="lab">壽司郎</span><b>46<span><small> 組</small></span></b>
+      </button>
+      <button class="tile g" style="min-height:120px">
+        <span class="bleed"></span>
+        <span class="lab">路線圖 · 語義色</span><b class="num">屯馬<span style="font-size:20px">綫</span></b>
+      </button>
+    </div>
+
+    <!-- 搜索 -->
+    <div class="searchbar g"><span class="bleed"></span>
+      <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>
+      <input placeholder="搜 69X / 969 / 天水圍 …" id="q">
+    </div>
+    <div class="chips">
+      <button class="chip on">公交</button><button class="chip">港鐵巴士</button><button class="chip">港鐵</button><button class="chip">輕鐵</button><button class="chip">通宵</button>
+    </div>
+
+    <!-- 結果（語義色 ETA + 公司色） -->
+    <div class="grp">九巴 KMB</div>
+    <div id="results"></div>
+
+    <!-- 收藏按公司分組 -->
+    <div class="grp favc">收藏 · 按公司分組</div>
+    <div class="fgroup" id="favs"></div>
+    <div style="height:130px"></div>
+  </main>
+
+  <!-- Dock -->
+  <nav class="dock g"><span class="bleed"></span>
+    <button class="ab on"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 4l9 6.5V20h-6v-6H9v6H3z"/></svg>首頁<span class="pill"></span></button>
+    <button class="ab"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.6C.9 8 3 4.5 6.6 4.5c2.1 0 3.9 1.2 5.4 3 1.5-1.8 3.3-3 5.4-3 3.6 0 5.7 3.5 3.9 6.9C19 15.6 12 20 12 20z"/></svg>收藏<span class="pill"></span></button>
+    <button class="ab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M8 13a4.5 4.5 0 0 0 9 0"/></svg>壽司<span class="pill"></span></button>
+    <button class="ab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16-3-3-3-13 0-16z"/></svg>路線<span class="pill"></span></button>
+    <button class="ab"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M5 8l9 2M7 21l5-6 5 6"/></svg>設定<span class="pill"></span></button>
+  </nav>
+</div>
+
+<button class="ctlbtn g" id="ctlBtn" title="Demo 控制台"><span class="bleed"></span>⚙</button>
+<aside class="ctl g" id="ctl">
+  <span class="bleed"></span>
+  <div class="cname">玻璃強度（0 無玻璃 → 4 濃郁）</div>
+  <div class="csegs" data-k="glass">
+    <button class="cseg" data-v="0">無</button><button class="cseg" data-v="1">淡</button><button class="cseg on" data-v="2">標準</button><button class="cseg" data-v="3">深</button><button class="cseg" data-v="4">濃</button>
+  </div>
+  <div class="cname">動效三級</div>
+  <div class="csegs" data-k="fx">
+    <button class="cseg on" data-v="full">完整</button><button class="cseg" data-v="simple">簡約</button><button class="cseg" data-v="none">關閉</button>
+  </div>
+  <div class="cname">流光週期</div>
+  <div class="csegs" data-k="shine">
+    <button class="cseg" data-v="9">9s</button><button class="cseg on" data-v="12">12s</button><button class="cseg" data-v="14">14s</button>
+  </div>
+  <div style="height:2px"></div>
+  <div class="swrow">大字模式（第 9 級）<button class="sw" data-k="bigtext" id="swBig"></button></div>
+  <div class="swrow">深夜模式（冷色 · 停動效）<button class="sw" data-k="deep" id="swDeep"></button></div>
+  <div class="swrow">姿態反光<span style="font-size:11px;color:var(--text2)">滑鼠/傾斜</span><button class="sw on" data-k="tilt" id="swTilt"></button></div>
+  <div class="swrow">呼吸微動效<button class="sw on" data-k="breathe" id="swBreathe"></button></div>
+  <div class="note">夜間=⚙ 外玻璃隨時間 · 深色主題在演示中恆開 · 性能已放開（畫面優先）</div>
+</aside>
+
+<div class="mask" id="mask"></div>
+<div class="sheet g" id="sheet">
+  <span class="bleed"></span>
+  <div class="handle"></div>
+  <div class="shead"><span class="t">69X 路線詳情 · 去程</span><button class="x" id="shX">✕</button></div>
+  <div id="shBody" style="flex:1;overflow-y:auto"></div>
+</div>
+
+<script>
+  /* ================= 液體背景（Canvas，性能放開） ================= */
+  const bg = document.getElementById('bg'), cx2 = bg.getContext('2d');
+  let W = 0, H = 0, bgOn = true;
+  const blobs = [];
+  for (let i = 0; i < 6; i++) blobs.push({ x: Math.random(), y: Math.random(), r: .25 + Math.random() * .3, a1: Math.random() * 6.28, a2: Math.random() * 6.28, s: .12 + Math.random() * .1, hue: i % 3, ph: Math.random() * 6.28 });
+  const stars = []; for (let i = 0; i < 46; i++) stars.push({ x: Math.random(), y: Math.random(), r: .5 + Math.random() * 1.4, ph: Math.random() * 6.28 });
+  function sizeBg() { W = bg.width = innerWidth * (devicePixelRatio > 1.5 ? 1.5 : devicePixelRatio); H = bg.height = innerHeight * (devicePixelRatio > 1.5 ? 1.5 : devicePixelRatio); }
+  sizeBg(); addEventListener('resize', sizeBg);
+  const tints = ['rgba(0,120,215,', 'rgba(0,180,216,', 'rgba(106,0,255,'];
+  let t0 = performance.now();
+  function drawBg(t) {
+    if (document.body.dataset.fx === 'none') { if (bgOn) { bgOn = false; } return; }
+    bgOn = true;
+    const deep = document.body.classList.contains('deepnight');
+    const k = H / 900;
+    cx2.clearRect(0, 0, W, H);
+    cx2.fillStyle = deep ? '#020409' : '#04060C'; cx2.fillRect(0, 0, W, H);
+    const sec = (t - t0) / 1000;
+    for (const b of blobs) {
+      const x = (b.x + Math.sin(sec * b.s + b.ph) * .16) * W;
+      const y = (b.y + Math.cos(sec * b.s * .9 + b.ph) * .14) * H;
+      const r = b.r * W * .55;
+      const g = cx2.createRadialGradient(x, y, 0, x, y, r);
+      const al = deep ? .18 : (b.hue === 0 ? .34 : .26);
+      g.addColorStop(0, tints[b.hue] + al + ')'); g.addColorStop(1, tints[b.hue] + '0)');
+      cx2.fillStyle = g; cx2.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    const starA = deep ? .25 : .7;
+    for (const s of stars) { cx2.globalAlpha = starA * (0.4 + 0.6 * Math.abs(Math.sin(sec * .8 + s.ph))); cx2.fillStyle = '#fff'; cx2.beginPath(); cx2.arc(s.x * W, s.y * H, s.r * k, 0, 6.29); cx2.fill(); }
+    cx2.globalAlpha = 1;
+    if (document.body.dataset.fx === 'full') requestAnimationFrame(drawBg);
+  }
+  function bgLoop() { if (document.body.dataset.fx === 'full') requestAnimationFrame(drawBg); }
+  bgLoop();
+
+  /* ================= 姿態反光 ================= */
+  const root = document.documentElement;
+  let tiltOn = true;
+  addEventListener('pointermove', e => { if (tiltOn) { root.style.setProperty('--tx', (e.clientX / innerWidth - .5) * 2); root.style.setProperty('--ty', (e.clientY / innerHeight - .5) * 2); } }, { passive: true });
+  try {
+    navigator.deviceorientation && (navigator.deviceorientation.addEventListener('deviceorientation', ev => {
+      if (tiltOn) { root.style.setProperty('--tx', Math.max(-1, Math.min(1, (ev.gamma || 0) / 30))); root.style.setProperty('--ty', Math.max(-1, Math.min(1, ((ev.beta || 0) - 45) / 30))); }
+    }), navigator.deviceorientation.addEventListener('deviceorientation' in navigator ? 'deviceorientation' : 'deviceorientationdynamic', null));
+  } catch (e) {}
+
+  /* ================= K75P U 形迷你地圖（實時小巴點） ================= */
+  const K = [{ n: 'D010', l: '天瑞' }, { n: 'D040', l: '天耀' }, { n: 'U050', l: '鄉委會' }, { n: 'U060', l: '洪水橋' }, { n: 'U090', l: '石埗村' }, { n: 'U120', l: '賞湖居' }, { n: 'U140', l: '天瑞' }];
+  let kubusEl = null;
+  (function buildKU() {
+    const W0 = 388, H0 = 60, xL = 34, xR = W0 - 34, yT = 14, yB = 46;
+    let s = '<svg viewBox="0 0 388 60">';
+    s += '<path d="M' + xL + ',' + yT + ' L' + xL + ',' + yB + ' Q' + (W0 / 2) + ',58 ' + xR + ',' + yB + ' L' + xR + ',' + yT + '" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="5" stroke-linecap="round"/>';
+    s += '<path d="M' + xL + ',' + yT + ' L' + xL + ',' + yB + ' Q' + (W0 / 2) + ',58 ' + xR + ',' + yB + ' L' + xR + ',' + yT + '" fill="none" stroke="#0078D7" stroke-width="2" stroke-linecap="round"/>';
+    K.forEach((st, i) => { const x = xL, y = yT + (i / (K.length - 1)) * (yB - yT); if (i) s += '<circle cx="' + (i <= 3 ? xL : xR) + '" cy="' + (i <= 3 ? yT + (i / 3) * (yB - yT) : yT + ((K.length - 1 - i) / 3) * (yB - yT)) + '" r="2.6" fill="#fff" stroke="#0078D7" stroke-width="1.4"/>'; });
+    s += '<g id="kubus"><rect x="-8" y="-5" width="16" height="7" rx="2" fill="#F4F6F8" stroke="#33537B"/><rect x="-8" y="-2.2" width="16" height="1.6" fill="#0078D7"/></g>';
+    s += '</svg>';
+    document.getElementById('ku').innerHTML = s;
+    kubusEl = document.getElementById('kubus');
+  })();
+  let kubusT = 0;
+  (function kubusAnim() {
+    kubusT = (kubusT + 0.0018) % 1;
+    if (kubusEl) {
+      const t = kubusT, a = t < .5 ? t * 2 : (1 - t) * 2;
+      const x = a <= 1 ? 34 : 354 - (a - 1) * 0; /* 左臂下 → 弧底 → 右臂上 */
+      const xx = t < .5 ? 34 + (t * 2) * 0 : 354;
+      let px, py;
+      if (t < .5) { const u = t * 2; px = 34; py = 14 + u * 32; } else { const u = (t - .5) * 2; px = 354; py = 46 - u * 32; }
+      kubusEl.setAttribute('transform', 'translate(' + px + ',' + (py + 4) + ')');
+    }
+    requestAnimationFrame(kubusAnim);
+  })();
+  /* 注意：上述動畫走直線 U；弧底僅視覺圓角，簡化為兩臂 + 過渡 */
+</script>
+<script>
+  /* ================= 數據 ================= */
+  const ROWS = [
+    { no: '69X', co: 'kmb', nm: '天瑞 → 高鐵(西九龍站)', cap: '去程 · 天瑞總站', sec: 480, fav: true },
+    { no: '969', co: 'ctb', nm: '天水圍市中心 → 銅鑼灣(摩頓台)', cap: '去程 · 大欖隧道直達', sec: 840, fav: true },
+    { no: 'K75P', co: 'mtrbus', nm: '天瑞 ↺ 洪水橋', cap: '實時 GPS · 3 班在路', sec: 62, fav: true },
+    { no: 'B2', co: 'nlb', nm: '元朗站 → 深圳灣口岸', cap: '去程', sec: 180, fav: false },
+    { no: '屯馬綫', co: 'mtr', nm: '天水圍 → 尖東', cap: '上行 · 3 分鐘後', sec: 168, fav: false },
+    { no: '710', co: 'lrt', nm: '天瑞 → 元朗', cap: '輕鐵 · 11 班/時', sec: 120, fav: false },
+  ];
+  const coName = { kmb: '九巴', ctb: '城巴', nlb: '嶼巴', mtr: '港鐵', lrt: '輕鐵', mtrbus: '港鐵巴士' };
+  const coColor = { kmb: 'var(--co-kmb)', ctb: 'var(--co-ctb)', nlb: 'var(--co-nlb)', mtr: 'var(--co-mtr)', lrt: 'var(--co-lrt)', mtrbus: 'var(--co-mtrbus)' };
+  const etaCls = s => s <= 120 ? 'r' : s <= 600 ? 'a' : 'g';
+  const etaTxt = s => s <= 120 ? Math.max(1, Math.round(s / 60)) + '<small> 分</small>' : Math.round(s / 60) + '<small> 分</small>';
+  function rowHtml(r, i) {
+    return '<div class="row g fade-in" style="animation-delay:' + (i * 70) + 'ms" data-i="' + i + '"><span class="bleed"></span>'
+      + '<span class="b" style="background:' + coColor[r.co] + '">' + r.no.slice(0, 4) + '</span>'
+      + '<span class="main"><span class="nm">' + r.nm + '</span><span class="cap">' + r.cap + '</span></span>'
+      + '<span class="eta ' + etaCls(r.sec) + '">' + etaTxt(r.sec) + '</span>'
+      + '<button class="st' + (r.fav ? ' on' : '') + '" data-i="' + i + '">' + (r.fav ? '★' : '☆') + '</button></div>';
+  }
+  function renderRows() {
+    document.getElementById('results').innerHTML = ROWS.map(rowHtml).join('');
+    document.querySelectorAll('#results .row').forEach(r => r.addEventListener('click', e => {
+      if (e.target.closest('.st')) return; openSheet(ROWS[+r.dataset.i]);
+    }));
+    document.querySelectorAll('#results .st').forEach(b => b.addEventListener('click', e => {
+      e.stopPropagation(); const i = +b.dataset.i; ROWS[i].fav = !ROWS[i].fav; b.textContent = ROWS[i].fav ? '★' : '☆'; b.classList.toggle('on', ROWS[i].fav);
+    }));
+  }
+  /* 收藏分組（按公司） */
+  const GROUPS = ['kmb', 'ctb', 'mtrbus', 'mtr', 'lrt'];
+  function renderFavGroups() {
+    const box = document.getElementById('favs');
+    box.innerHTML = GROUPS.map(g => {
+      const rows = ROWS.filter(r => r.co === g && r.fav);
+      if (!rows.length) return '';
+      return '<div class="fh"><span class="dot" style="background:' + coColor[g] + '"></span><span class="t">' + coName[g] + '</span></div>' + rows.map(rowHtml).join('');
+    }).join('');
+    box.querySelectorAll('.row').forEach(r => r.addEventListener('click', e => { if (!e.target.closest('.st')) openSheet(ROWS[+r.dataset.i]); }));
+  }
+  renderRows(); renderFavGroups();
+
+  /* ================= 氣泡 Toolbar（滾動收縮） ================= */
+  const tb = document.getElementById('tb'), scr = document.getElementById('scroll');
+  let collapsed = false, lastY = 0, sd = 1;
+  scr.addEventListener('scroll', () => {
+    const y = scr.scrollTop, dy = y - lastY; if (dy !== 0) sd = dy > 0 ? 1 : -1; lastY = y;
+    document.body.style.setProperty('--sd', sd);
+    const want = y > 80 && !matchMedia('(min-width:700px)').matches;
+    if (want !== collapsed) { collapsed = want; tb.classList.toggle('collapsed', want); }
+  }, { passive: true });
+
+  /* ================= 按壓微光暈 + overshoot ================= */
+  function pressFx(el, x, y) {
+    const r = el.getBoundingClientRect(), d = document.createElement('i');
+    d.className = 'bleed'; d.style.cssText = 'position:absolute;left:' + (x - r.left - 44) + 'px;top:' + (y - r.top - 44) + 'px;width:88px;height:88px;border-radius:50%;background:radial-gradient(circle,rgba(0,120,215,.35),transparent 70%);transform:scale(0);opacity:1;pointer-events:none;z-index:4;animation:pg .5s var(--ease-subtle) forwards;';
+    el.appendChild(d); setTimeout(() => d.remove(), 520);
+    el.classList.add('up'); setTimeout(() => el.classList.remove('up'), 240);
+  }
+  const pgk = document.createElement('style'); pgk.textContent = '@keyframes pg { to { transform: scale(1); opacity: 0; } }'; document.head.appendChild(pgk);
+  document.addEventListener('pointerdown', e => {
+    const g = e.target.closest('.tile,.row,.chip,.ab'); if (!g) return;
+    if (document.body.dataset.fx === 'none') return;
+    pressFx(g, e.clientX, e.clientY);
+  }, { passive: true });
+
+  /* ================= 呼吸微動效（±1.5s 隨機錯開） ================= */
+  function breatheFx() {
+    const tiles = [...document.querySelectorAll('.tile')];
+    tiles.forEach((t, i) => setTimeout(() => {
+      if (document.body.dataset.fx === 'none') return;
+      t.classList.remove('breathe'); void t.offsetWidth === undefined; t.classList.remove('breathe');
+      t.classList.add('breathe');
+      setTimeout(() => t.classList.remove('breathe'), 500);
+    }, (i * 4000 + Math.random() * 3000) % 15000));
+  }
+  let brTimer = null;
+  function startBreathe() { clearInterval(brTimer); brTimer = setInterval(breatheFx, 15000); }
+  startBreathe();
+
+  /* ================= Sheet（彈簧） ================= */
+  const sh = document.getElementById('sheet'), mask = document.getElementById('mask');
+  function openSheet(r) {
+    document.getElementById('shBody').innerHTML = [
+      { n: '天瑞', e: 0 }, { n: '天水圍公園', e: 210 }, { n: '天耀邨耀盛樓', e: 330 }, { n: '輕鐵天耀站', e: 420 },
+      { n: '廈村市', e: 540 }, { n: '輕鐵洪水橋站（折返）', e: 810 }, { n: '洪福邨', e: 900 }, { n: '天水圍警署', e: 1020 }, { n: '天瑞', e: 1260 },
+    ].map((s, i) => '<div class="dstop"><span class="ds">' + (i + 1) + '</span><span class="dnm">' + s.n + '</span><span class="dtm ' + etaCls(s.e) + '">' + (s.e === 0 ? '00:00' : Math.round(s.e / 60) + ' 分') + '</span></div>').join('');
+    document.querySelector('.sheet .shead .t').textContent = r.no + ' 路線詳情 · ' + (r.sec ? '去程' : '');
+    mask.classList.add('open'); sh.classList.add('open');
+  }
+  function closeSheet() { mask.classList.remove('open'); sh.classList.remove('open'); }
+  document.getElementById('shX').addEventListener('click', closeSheet);
+  mask.addEventListener('click', closeSheet);
+
+  /* ================= 演示控制台 ================= */
+  const ctl = document.getElementById('ctl');
+  document.getElementById('ctlBtn').addEventListener('click', () => ctl.classList.toggle('open'));
+  const gs = (sel) => document.querySelectorAll(sel);
+  gs('[data-k="glass"] .cseg').forEach(b => b.addEventListener('click', () => {
+    document.body.dataset.glass = b.dataset.v;
+    gs('[data-k="glass"] .cseg').forEach(x => x.classList.toggle('on', x === b));
+  }));
+  gs('[data-k="fx"] .cseg').forEach(b => b.addEventListener('click', () => {
+    document.body.dataset.fx = b.dataset.v;
+    gs('[data-k="fx"] .cseg').forEach(x => x.classList.toggle('on', x === b));
+    if (b.dataset.v === 'full') requestAnimationFrame(bgLoop);
+  }));
+  gs('[data-k="shine"] .cseg').forEach(b => b.addEventListener('click', () => {
+    document.documentElement.style.setProperty('--shine-dur', b.dataset.v + 's');
+    gs('[data-k="shine"] .cseg').forEach(x => x.classList.toggle('on', x === b));
+  }));
+  const sw = (id, fn, def) => { const el = document.getElementById(id); let on = def; const set = v => { on = v; el.classList.toggle('on', on); fn(on); }; el.addEventListener('click', () => set(!on)); return set; };
+  sw('swBig', on => document.body.classList.toggle('bigtext', on), false);
+  sw('swDeep', on => document.body.classList.toggle('deepnight', on), false);
+  sw('swTilt', on => tiltOn = on, true);
+  sw('swBreathe', on => { if (!on) clearInterval(brTimer); else startBreathe(); }, true);
+  if (location.search.includes('ctl=1')) ctl.classList.add('open');
+  const q = document.getElementById('q');
+  q.addEventListener('input', () => {
+    const v = q.value.trim().toUpperCase();
+    const f = ROWS.filter(r => !v || r.no.includes(v) || r.nm.includes(q.value));
+    document.getElementById('results').innerHTML = f.map(rowHtml).join('');
+  });
+</script>
+</body>
+</html>
