@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>森友出行 · WP2026</title>
+<link rel="stylesheet" href="css/wp2026.css">
+</head>
+<body>
+<div id="app">
+  <div class="orb" style="width:320px;height:320px;top:-90px;left:-110px"></div>
+  <div class="orb" style="width:280px;height:280px;bottom:-80px;right:-100px;animation-duration:19s,4s;animation-delay:-7s,0s"></div>
+
+  <header class="toolbar">
+    <div class="kicker">Senyou · HK Transport</div>
+    <div class="title" id="tbTitle">森友<b>出行</b></div>
+    <div class="sub" id="tbSub">實時巴士 · 港鐵 · 輕鐵</div>
+  </header>
+
+  <main id="pivot">
+    <section class="pane" data-pane="home">
+      <div class="tiles" id="homeTiles"></div>
+      <div class="searchbar">
+        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>
+        <input id="searchInput" placeholder="輸入路線、站名或港鐵車站" aria-label="搜尋">
+      </div>
+      <div class="chips" id="tpChips">
+        <button class="chip active" data-tp="bus">公交</button>
+        <button class="chip" data-tp="mtrbus">港鐵巴士</button>
+        <button class="chip" data-tp="mtr">港鐵</button>
+        <button class="chip" data-tp="lrt">輕鐵</button>
+      </div>
+      <div id="results"></div>
+    </section>
+
+    <section class="pane" data-pane="favs">
+      <div id="favList" class="pane-inner"></div>
+    </section>
+
+    <section class="pane" data-pane="sushi">
+      <div id="sushiList" class="pane-inner"></div>
+    </section>
+
+    <section class="pane" data-pane="map">
+      <div class="chips" id="lineChips">
+        <button class="chip active" data-lm="mtr">港鐵</button>
+        <button class="chip" data-lm="lrt">輕鐵</button>
+      </div>
+      <div class="chips" id="mtrLineBtns"></div>
+      <div id="mapBody"></div>
+    </section>
+
+    <section class="pane" data-pane="settings">
+      <div id="settingsList"></div>
+    </section>
+  </main>
+
+  <nav class="appbar" id="appbar">
+    <button class="ab on" data-pane="home"></button>
+    <button class="ab" data-pane="favs"></button>
+    <button class="ab" data-pane="sushi"></button>
+    <button class="ab" data-pane="map"></button>
+    <button class="ab" data-pane="settings"></button>
+  </nav>
+
+  <div class="sheet-mask" id="sheetMask"></div>
+  <div class="sheet" id="sheet">
+    <div class="handle"></div>
+    <div class="shead"><span class="t" id="shTitle">詳情</span><button class="x" id="shClose">✕</button></div>
+    <div class="stabs" id="shTabs" hidden></div>
+    <div class="sbody" id="shBody"></div>
+  </div>
+
+  <div class="sheet" id="k75pPage" style="height:100%;z-index:96">
+    <div class="sheath" style="padding:0 14px;display:flex;flex-direction:column;height:100%">
+      <div class="kmap" id="kmap"></div>
+      <div id="kbody" style="flex:1;overflow-y:auto;margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/util.js"></script>
+<script src="js/api.js"></script>
+<script src="js/wp2026-app.js"></script>
+</body>
+</html>
