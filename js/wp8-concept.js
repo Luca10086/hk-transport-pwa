@@ -1461,7 +1461,7 @@ function buildK75PLiveModel(stops, stopMap, coords) {
     const next2 = es.find(e => e.idx !== next.idx && e.sec > next.sec);
     const gap = next2 ? Math.max(30, next2.sec - next.sec) : 120;
     const f = next.sec === 0 ? 1 : Math.max(0, Math.min(1, (gap - next.sec) / gap));
-    const refPos = next.idx === 0 ? 0 : next.idx - 1 + f;
+    const refPos = next.idx === 0 ? (stops.length - 1) + f : next.idx - 1 + f;   /* 環線繞行：過終點站後續走 22.x 不歸零 */
     let pos = gpsLoopPosition(coords, stops, next.loc, refPos);
     if (pos != null && Math.abs(pos - refPos) > 2) pos = null;
     if (pos == null) pos = refPos;
@@ -1472,7 +1472,13 @@ function buildK75PLiveModel(stops, stopMap, coords) {
 /* ---- Leaflet 地圖（本地 lib + OSM；路線白邊+皮膚強調色） ---- */
 let k75pMap = null, k75pRouteLayer = null, k75pStationMarks = [], k75pMapCum = [];
 const k75pBusMarkers = {};
-const K75P_BUS_SVG = '<svg viewBox="0 0 28 16"><rect x="0" y="0" width="28" height="10" fill="#FFB300" stroke="#7A5C00"/><rect x="3" y="11.5" width="5" height="3.5" fill="#333"/><rect x="20" y="11.5" width="5" height="3.5" fill="#333"/><rect x="5" y="2.2" width="10" height="3" fill="#fff"/><rect x="18" y="2.2" width="5" height="3" fill="#fff"/></svg>';
+const K75P_BUS_SVG = '<svg viewBox="0 0 28 16">'
+  + '<rect x="0" y="1" width="28" height="10" fill="#F4F6F8" stroke="#33537B"/>'
+  + '<rect x="0" y="4.6" width="28" height="2.6" fill="#0078D7"/>'
+  + '<rect x="3" y="11.5" width="5" height="3.5" fill="#1B1F27"/>'
+  + '<rect x="20" y="11.5" width="5" height="3.5" fill="#1B1F27"/>'
+  + '<rect x="5" y="2.2" width="9" height="2.4" fill="#33537B"/>'
+  + '<rect x="16" y="2.2" width="6" height="2.4" fill="#33537B"/></svg>';
 function haversineM(a, b) {
   const R = 6371000, dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180;
   const v = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
@@ -1615,7 +1621,7 @@ async function renderK75PPage() {
           mk = L.marker(k75pPointAt(m.pos), { icon: L.divIcon({ className: '', html: K75P_BUS_SVG, iconSize: [28, 16], iconAnchor: [14, 8] }) }).addTo(k75pMap);
           k75pBusMarkers[key] = mk;
         }
-        mk.dataset_ref = m.pos; mk.dataset_gap = m.gap; mk.dataset_stop = m.nextIdx - 1;
+        mk.dataset_ref = m.pos; mk.dataset_gap = m.gap; mk.dataset_stop = m.nextIdx === 0 ? K75P_STOPS.length - 1 : m.nextIdx - 1;
         mk.setLatLng(k75pPointAt(m.pos));
         mk.bindTooltip('巴士 ' + m.id + ' · 下一站 ' + m.nextName + ' · ' + mmss(m.nextSec) + ' 後到達', { direction: 'top', offset: [0, -10] });
       });
