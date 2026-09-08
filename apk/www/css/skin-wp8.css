@@ -130,10 +130,3 @@ body[data-ui="wp8"] .search-btn:active { background: var(--accent-dark); transfo
 body[data-ui="wp8"] .chip:active, body[data-ui="wp8"] .seg button:active, body[data-ui="wp8"] .dir-tab:active, body[data-ui="wp8"] .map-line-btn:active { transform: none; }
 body[data-ui="wp8"] .recent-chip { border-radius: 0; }
 body[data-ui="wp8"] .row-star:active, body[data-ui="wp8"] .row-remove:active { transform: none; }
-
-/* ===== K75P 班次路線圖：WP8 扁平化（§10 禁粗體 · §11 全直角；站點圓點＝地圖節點豁免） ===== */
-body[data-ui="wp8"] .k75p-live-title { font-family: 'Segoe UI Light', 'Segoe UI', sans-serif; font-weight: 300; }
-body[data-ui="wp8"] .k75p-live-close, body[data-ui="wp8"] .k75p-live-refresh { border-radius: 0; }
-body[data-ui="wp8"] .kt-chip { border-radius: 0; }
-body[data-ui="wp8"] .kt-bus { border-radius: 0; }
-body[data-ui="wp8"] .kt-name { font-size: 0.95rem; }
