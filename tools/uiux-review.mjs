@@ -41,15 +41,29 @@ const model = flag('model') || 'mimo-v2.5';
 const maxTokens = Number(flag('max-tokens') || '20000');
 const outFile = flag('out');
 const lang = flag('lang') || 'zh';
+const baseline = flag('baseline') || 'default';   /* default=WP8 系規格；wp2026=液態玻璃規格 */
 if (!diffFile) { console.error('缺少 --diff <文件>（先 git diff base..HEAD > 文件）'); process.exit(1); }
 if (!existsSync(diffFile)) { console.error('diff 文件不存在: ' + diffFile); process.exit(1); }
 
-/* ---------- 读取设计文档（权威依据） ---------- */
-const defaultDocs = [
-  'DESIGN.md', 'DESIGN-UIUX.md', 'DESIGN-WP8-CONCEPT.md', 'DESIGN-SPEC-UPDATE.md', 'DESIGN-WP8.md',
-  'E:/DAFYU GZQ/WP8-Metro-Spec/设计规范.md',
-];
-const designFiles = [...defaultDocs.map(d => d.includes(':') ? d : join(repo, d)), ...allFlags('design')];
+/* ---------- 读取设计文档（权威依据，按基准选择） ---------- */
+const BASELINES = {
+  default: {
+    docs: ['DESIGN.md', 'DESIGN-UIUX.md', 'DESIGN-WP8-CONCEPT.md', 'DESIGN-SPEC-UPDATE.md', 'DESIGN-WP8.md', 'E:/DAFYU GZQ/WP8-Metro-Spec/设计规范.md'],
+    system: '你是「森友出行」香港交通应用（hk-transport-pwa）的 UI/UX 设计一致性审查员。' +
+      '你的任务：对照权威设计文档逐项检查代码变更是否偏离设计原意。' +
+      '严格遵守设计文档的硬性规定（如 WP8-Metro-Spec：纯黑背景、单一强调色 #0078D7、字级 42/72/32/28/24/22/17/13、全直角、无阴影无渐变无圆角、磁贴政策、应用栏 72px、禁 3D 动画等）。' +
+      '只报告有依据的发现，引用具体文件与变更片段；不臆测。',
+  },
+  wp2026: {
+    docs: ['DESIGN-WP2026.md'],
+    system: '你是「森友出行」香港交通应用（hk-transport-pwa）WP×2026 液態玻璃皮肤（body[data-ui="wp2026"]）的 UI/UX 设计一致性审查员。' +
+      '唯一权威基准：DESIGN-WP2026.md（液態玻璃材料 blur26px/rgba(.07)/1px 描边/顶缘反光条/对角反光；纯黑蓝底 #05070D；主 #0078D7 辅 #00B4D8 仅高光微光；禁彩虹多色渐变；圆角 14px/胶囊是玻璃语言；华滞动效系统含流光 9s/波紋 .22s/ETA swap .2s/脈衝 1.6s；reduced-motion 与 fx-paused 降级）。' +
+      '注意：本皮肤与 WP8 皮肤（全直角/无阴影/纯黑）是不同设计语言，禁止以 WP8-Metro-Spec 红线判定——那是基准错配。' +
+      '只报告有依据的发现，引用具体文件与变更片段；不臆测。',
+  },
+};
+const bcfg = BASELINES[baseline] || BASELINES.default;
+const designFiles = [...bcfg.docs.map(d => d.includes(':') ? d : join(repo, d)), ...allFlags('design')];
 const CAP = 32000; // 单文档截断上限（字符）
 let designText = '';
 for (const f of designFiles) {
@@ -81,10 +95,7 @@ const key = line.replace(/^[^:]+:\s*/, '').replace(/["']/g, '').trim();
 if (!key) { console.error('未找到 XIAOMI_API_KEY'); process.exit(1); }
 
 /* ---------- 组装提示词 ---------- */
-const system = '你是「森友出行」香港交通应用（hk-transport-pwa）的 UI/UX 设计一致性审查员。' +
-  '你的任务：对照权威设计文档逐项检查代码变更是否偏离设计原意。' +
-  '严格遵守设计文档的硬性规定（如 WP8-Metro-Spec：纯黑背景、单一强调色 #0078D7、字级 42/72/32/28/24/22/17/13、全直角、无阴影无渐变无圆角、磁贴政策、应用栏 72px、禁 3D 动画等）。' +
-  '只报告有依据的发现，引用具体文件与变更片段；不臆测。';
+const system = bcfg.system;
 const user = (lang === 'zh'
   ? '请用中文输出结构化审查报告，严格按以下格式：\n\n' +
     '一、总体结论：符合设计 / 基本符合（n 处小偏差）/ 明显偏离（列出 n 处）\n\n' +
