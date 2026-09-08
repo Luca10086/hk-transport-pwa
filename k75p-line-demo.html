@@ -3,70 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K75P 實時路線 · 澳泊式介面 Demo</title>
+<title>K75P 實時路線 · 澳泊式介面 × WP8 Demo</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  /* ===== 澳泊式介面複刻（K75P 數據）：地圖頂 + 大路線號 + 三張預報卡 + 狀態列 + 底部標籤 ===== */
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* ===== 澳泊式結構 × WP8-Metro 語法（純黑 · #0078D7 · 全直角 · 無陰影） ===== */
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
   html, body { height: 100%; }
   body {
-    background: #E9EDF2; color: #14213D; font-family: 'Noto Sans TC', 'Segoe UI', sans-serif;
+    background: #000; color: #FFFFFF; font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
     display: flex; justify-content: center;
   }
-  .app { width: 100%; max-width: 420px; height: 100vh; background: #F7F9FC; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 24px rgba(0,0,0,.12); }
-  /* ---- 地圖區 ---- */
-  .map { flex: 0 0 46vh; position: relative; background: #DFE8DC; }
-  .map .fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #5C6B7A; font-size: 14px; text-align: center; padding: 20px; }
-  .map-topbar {
-    position: absolute; top: 10px; left: 10px; right: 10px; z-index: 500;
-    display: flex; align-items: center; gap: 8px; pointer-events: none;
-  }
+  .app { width: 100%; max-width: 420px; height: 100vh; background: #000; display: flex; flex-direction: column; position: relative; }
+  /* ---- 地圖區（地圖為內容層，保留 OSM 明色） ---- */
+  .map { flex: 0 0 46vh; position: relative; background: #101D15; }
+  .map .fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #A6A6A6; font-size: 14px; text-align: center; padding: 20px; }
+  .map-topbar { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 500; display: flex; align-items: center; gap: 8px; pointer-events: none; }
   .map-back {
-    pointer-events: auto; width: 34px; height: 34px; border: none; border-radius: 50%;
-    background: #fff; color: #14213D; font-size: 18px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    pointer-events: auto; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,.3);
+    background: #000; color: #FFFFFF; font-size: 18px; cursor: pointer;
   }
-  .map-chip {
-    background: #fff; border-radius: 14px; padding: 6px 12px; font-size: 13px; font-weight: 600;
-    box-shadow: 0 1px 4px rgba(0,0,0,.18);
-  }
-  .map-live {
-    margin-left: auto; background: #0A84FF; color: #fff; border-radius: 12px; padding: 5px 10px;
-    font-size: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.2);
-  }
-  /* ---- 巴士圖標 ---- */
+  .map-chip { background: #000; border: 1px solid rgba(255,255,255,.3); padding: 6px 12px; font-size: 13px; font-weight: 300; color: #FFFFFF; }
+  .map-live { margin-left: auto; background: #0078D7; color: #FFFFFF; padding: 5px 10px; font-size: 12px; }
+  /* ---- 巴士圖標（地圖節點，保留黃色以高亮班次） ---- */
   .busm { width: 28px; height: 16px; }
   .busm svg { width: 28px; height: 16px; display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  /* ---- 車站三班面板（點站彈出，WP8 方角） ---- */
+  .station-panel {
+    position: absolute; left: 0; right: 0; top: 46vh; z-index: 550;
+    background: #000; border-top: 1px solid rgba(255,255,255,.3); border-bottom: 1px solid rgba(255,255,255,.3);
+    padding: 10px 16px 12px;
+  }
+  .station-panel[hidden] { display: none; }
+  .station-panel .sp-head { display: flex; align-items: center; gap: 8px; }
+  .station-panel .sp-name { flex: 1; font-size: 22px; font-weight: 300; color: #FFFFFF; }
+  .station-panel .sp-close { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,.3); background: #000; color: #FFFFFF; font-size: 16px; cursor: pointer; }
+  .sp-row { display: flex; align-items: center; gap: 10px; height: 40px; border-top: 1px solid rgba(255,255,255,.15); margin-top: 6px; padding-top: 6px; font-size: 15px; }
+  .sp-row .sp-no { width: 44px; color: #A6A6A6; }
+  .sp-row .sp-bus { flex: 1; }
+  .sp-row .sp-bus b { font-weight: 400; color: #0078D7; }
+  .sp-tag { font-size: 11px; border: 1px solid #0078D7; color: #0078D7; padding: 0 6px; }
+  .sp-tag.off { border-color: rgba(255,255,255,.3); color: #A6A6A6; }
+  .sp-eta { font-variant-numeric: tabular-nums; font-family: 'Consolas', 'Segoe UI', monospace; font-size: 17px; color: #FFFFFF; }
   /* ---- 資訊面板 ---- */
-  .panel { flex: 1; overflow-y: auto; padding: 14px 16px 70px; background: #F7F9FC; }
+  .panel { flex: 1; overflow-y: auto; padding: 14px 16px 70px; background: #000; }
   .head { display: flex; align-items: baseline; gap: 10px; }
-  .head .no { font-size: 44px; font-weight: 800; color: #0A84FF; letter-spacing: -1px; }
-  .head .dest { font-size: 20px; font-weight: 700; }
-  .head .meta { font-size: 13px; color: #6B7A90; margin-top: 2px; }
+  .head .no { font-size: 42px; font-weight: 300; color: #0078D7; }
+  .head .dest { font-size: 22px; font-weight: 300; }
+  .head .meta { font-size: 13px; color: #A6A6A6; margin-top: 2px; }
   .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
-  .card { background: #FFFFFF; border: 1px solid #E3E8EF; border-radius: 12px; padding: 10px 9px; }
-  .card .lab { font-size: 12px; color: #6B7A90; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-  .card .gps { font-size: 10px; background: #0A84FF; color: #fff; border-radius: 4px; padding: 1px 4px; }
-  .card .gps.off { background: #B9C2CE; }
-  .card .big { font-size: 20px; font-weight: 700; color: #14213D; margin-top: 8px; white-space: nowrap; }
-  .card .sub { font-size: 12px; color: #6B7A90; margin-top: 3px; white-space: nowrap; }
+  .card { background: #000; border: 1px solid rgba(255,255,255,.25); padding: 10px 9px; }
+  .card .lab { font-size: 13px; color: #A6A6A6; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .card .gps { font-size: 11px; border: 1px solid #0078D7; color: #0078D7; padding: 0 4px; }
+  .card .gps.off { border-color: rgba(255,255,255,.3); color: #A6A6A6; }
+  .card .big { font-size: 22px; font-weight: 300; color: #0078D7; margin-top: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; font-family: 'Consolas', 'Segoe UI', monospace; }
+  .card .sub { font-size: 13px; color: #A6A6A6; margin-top: 3px; white-space: nowrap; }
   /* ---- 狀態列 ---- */
-  .status {
-    margin-top: 12px; background: #FFFFFF; border: 1px solid #E3E8EF; border-radius: 12px;
-    padding: 11px 12px; font-size: 13px; color: #14213D; line-height: 1.7;
-  }
-  .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #12B76A; margin-right: 6px; }
-  .status b { color: #0A84FF; font-weight: 700; }
-  .status .gps { font-size: 10px; background: #0A84FF; color: #fff; border-radius: 4px; padding: 1px 5px; margin: 0 2px; }
+  .status { margin-top: 12px; background: #000; border: 1px solid rgba(255,255,255,.25); padding: 11px 12px; font-size: 13px; color: #FFFFFF; line-height: 1.7; }
+  .status .dot { display: inline-block; width: 8px; height: 8px; background: #0078D7; margin-right: 6px; }
+  .status b { color: #0078D7; font-weight: 400; }
+  .status .gps { font-size: 11px; border: 1px solid #0078D7; color: #0078D7; padding: 0 5px; margin: 0 2px; }
   /* ---- 底部標籤 ---- */
-  .tabs {
-    position: absolute; left: 0; right: 0; bottom: 0; z-index: 600;
-    display: flex; background: #FFFFFF; border-top: 1px solid #E3E8EF;
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-  }
-  .tabs span {
-    flex: 1; text-align: center; font-size: 12px; color: #6B7A90; padding: 6px 0; cursor: pointer;
-  }
-  .tabs span.on { color: #0A84FF; font-weight: 700; }
+  .tabs { position: absolute; left: 0; right: 0; bottom: 0; z-index: 600; display: flex; background: #000; border-top: 1px solid rgba(255,255,255,.3); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
+  .tabs span { flex: 1; text-align: center; font-size: 13px; color: #A6A6A6; padding: 6px 0; cursor: pointer; }
+  .tabs span.on { color: #0078D7; }
 </style>
 </head>
 <body>
@@ -78,6 +77,13 @@
       <span class="map-chip">K75P 循環線</span>
       <span class="map-live" id="mapLive">● 實時</span>
     </div>
+  </div>
+  <div class="station-panel" id="stationPanel" hidden>
+    <div class="sp-head">
+      <span class="sp-name" id="spName">車站</span>
+      <button class="sp-close" onclick="document.getElementById('stationPanel').hidden = true" aria-label="關閉">✕</button>
+    </div>
+    <div id="spRows"></div>
   </div>
   <div class="panel">
     <div class="head">
@@ -97,7 +103,7 @@
 
 <script>window.DEMO_K75P_STOPS = [{"id":"D010","name":"天瑞"},{"id":"D020","name":"天水圍公園"},{"id":"D030","name":"天耀邨耀盛樓"},{"id":"D040","name":"輕鐵天耀站"},{"id":"D050","name":"天盛苑"},{"id":"D060","name":"石埗路"},{"id":"D070","name":"沙洲里村"},{"id":"D080","name":"廈村市"},{"id":"U011","name":"新屋村"},{"id":"U010","name":"李屋村"},{"id":"U020","name":"新生村"},{"id":"U030","name":"新李屋村"},{"id":"U040","name":"田心"},{"id":"U050","name":"鄉事委員會"},{"id":"U060","name":"輕鐵洪水橋站"},{"id":"U070","name":"洪水橋巴士廠"},{"id":"U080","name":"洪福邨"},{"id":"U090","name":"石埗村"},{"id":"U100","name":"天盛苑"},{"id":"U110","name":"天水圍警署"},{"id":"U120","name":"賞湖居"},{"id":"U130","name":"天水圍公園"},{"id":"U140","name":"天瑞"}];
 window.DEMO_K75P_COORDS = null;
-window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","bus":[{"id":"516","sec":130,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":780,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1515,"sched":true,"la":0,"ln":0},{"id":"352","sec":2235,"sched":true,"la":0,"ln":0}]},{"id":"D020","bus":[{"id":"516","sec":272,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":922,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1652,"sched":true,"la":0,"ln":0},{"id":"352","sec":2372,"sched":true,"la":0,"ln":0}]},{"id":"D030","bus":[{"id":"516","sec":304,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":954,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1684,"sched":true,"la":0,"ln":0},{"id":"352","sec":2404,"sched":true,"la":0,"ln":0}]},{"id":"D040","bus":[{"id":"516","sec":399,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1049,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1779,"sched":true,"la":0,"ln":0},{"id":"352","sec":2499,"sched":true,"la":0,"ln":0}]},{"id":"D050","bus":[{"id":"516","sec":563,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1213,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1940,"sched":true,"la":0,"ln":0},{"id":"352","sec":2660,"sched":true,"la":0,"ln":0}]},{"id":"D060","bus":[{"id":"516","sec":655,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1305,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":2036,"sched":true,"la":0,"ln":0}]},{"id":"D070","bus":[{"id":"516","sec":851,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1501,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":2238,"sched":true,"la":0,"ln":0}]},{"id":"D080","bus":[{"id":"352","sec":9,"sched":false,"la":22.452902,"ln":114.0028905},{"id":"516","sec":937,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1587,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":2326,"sched":true,"la":0,"ln":0}]},{"id":"U010","bus":[{"id":"354","sec":108000,"sched":true,"la":0,"ln":0},{"id":"352","sec":108000,"sched":true,"la":0,"ln":0},{"id":"516","sec":108000,"sched":true,"la":0,"ln":0},{"id":"534","sec":108000,"sched":true,"la":0,"ln":0}]},{"id":"U011","bus":[{"id":"352","sec":158,"sched":false,"la":22.452902,"ln":114.0028905},{"id":"516","sec":1086,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1736,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":2469,"sched":true,"la":0,"ln":0}]},{"id":"U020","bus":[{"id":"354","sec":437,"sched":true,"la":0,"ln":0},{"id":"352","sec":1157,"sched":true,"la":0,"ln":0},{"id":"516","sec":1877,"sched":true,"la":0,"ln":0},{"id":"534","sec":2657,"sched":true,"la":0,"ln":0}]},{"id":"U030","bus":[{"id":"354","sec":531,"sched":true,"la":0,"ln":0},{"id":"352","sec":1251,"sched":true,"la":0,"ln":0},{"id":"516","sec":1971,"sched":true,"la":0,"ln":0}]},{"id":"U040","bus":[{"id":"354","sec":647,"sched":true,"la":0,"ln":0},{"id":"352","sec":1367,"sched":true,"la":0,"ln":0},{"id":"516","sec":2087,"sched":true,"la":0,"ln":0}]},{"id":"U050","bus":[{"id":"534","sec":16,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":743,"sched":true,"la":0,"ln":0},{"id":"352","sec":1463,"sched":true,"la":0,"ln":0},{"id":"516","sec":2183,"sched":true,"la":0,"ln":0}]},{"id":"U060","bus":[{"id":"534","sec":183,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":915,"sched":true,"la":0,"ln":0},{"id":"352","sec":1635,"sched":true,"la":0,"ln":0},{"id":"516","sec":2355,"sched":true,"la":0,"ln":0}]},{"id":"U070","bus":[{"id":"534","sec":208,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":941,"sched":true,"la":0,"ln":0},{"id":"352","sec":1661,"sched":true,"la":0,"ln":0},{"id":"516","sec":2381,"sched":true,"la":0,"ln":0}]},{"id":"U080","bus":[{"id":"534","sec":316,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1046,"sched":true,"la":0,"ln":0},{"id":"352","sec":1766,"sched":true,"la":0,"ln":0},{"id":"516","sec":2486,"sched":true,"la":0,"ln":0}]},{"id":"U090","bus":[{"id":"534","sec":361,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1090,"sched":true,"la":0,"ln":0},{"id":"352","sec":1810,"sched":true,"la":0,"ln":0},{"id":"516","sec":2530,"sched":true,"la":0,"ln":0}]},{"id":"U100","bus":[{"id":"534","sec":402,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1132,"sched":true,"la":0,"ln":0},{"id":"352","sec":1852,"sched":true,"la":0,"ln":0},{"id":"516","sec":2572,"sched":true,"la":0,"ln":0}]},{"id":"U110","bus":[{"id":"534","sec":453,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1184,"sched":true,"la":0,"ln":0},{"id":"352","sec":1904,"sched":true,"la":0,"ln":0},{"id":"516","sec":2624,"sched":true,"la":0,"ln":0}]},{"id":"U120","bus":[{"id":"534","sec":538,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1271,"sched":true,"la":0,"ln":0},{"id":"352","sec":1991,"sched":true,"la":0,"ln":0}]},{"id":"U130","bus":[{"id":"534","sec":605,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1338,"sched":true,"la":0,"ln":0},{"id":"352","sec":2058,"sched":true,"la":0,"ln":0}]},{"id":"U140","bus":[{"id":"516","sec":0,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":642,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1375,"sched":true,"la":0,"ln":0},{"id":"352","sec":2095,"sched":true,"la":0,"ln":0}]}]};</script>
+window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:06:36","stops":[{"id":"D010","bus":[{"id":"534","sec":507,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":1207,"sched":true,"la":0,"ln":0},{"id":"352","sec":1927,"sched":true,"la":0,"ln":0},{"id":"516","sec":2647,"sched":true,"la":0,"ln":0}]},{"id":"D020","bus":[{"id":"534","sec":649,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":1344,"sched":true,"la":0,"ln":0},{"id":"352","sec":2064,"sched":true,"la":0,"ln":0}]},{"id":"D030","bus":[{"id":"534","sec":681,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":1376,"sched":true,"la":0,"ln":0},{"id":"352","sec":2096,"sched":true,"la":0,"ln":0}]},{"id":"D040","bus":[{"id":"516","sec":14,"sched":false,"la":22.439114166666666,"ln":113.99835749999998},{"id":"534","sec":776,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":1471,"sched":true,"la":0,"ln":0},{"id":"352","sec":2191,"sched":true,"la":0,"ln":0}]},{"id":"D050","bus":[{"id":"516","sec":178,"sched":false,"la":22.439114166666666,"ln":113.99835749999998},{"id":"534","sec":940,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":1632,"sched":true,"la":0,"ln":0},{"id":"352","sec":2352,"sched":true,"la":0,"ln":0}]},{"id":"D060","bus":[{"id":"516","sec":270,"sched":false,"la":22.439114166666666,"ln":113.99835749999998},{"id":"534","sec":1032,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":1728,"sched":true,"la":0,"ln":0},{"id":"352","sec":2448,"sched":true,"la":0,"ln":0}]},{"id":"D070","bus":[{"id":"516","sec":466,"sched":false,"la":22.439114166666666,"ln":113.99835749999998},{"id":"534","sec":1228,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":1930,"sched":true,"la":0,"ln":0},{"id":"352","sec":2650,"sched":true,"la":0,"ln":0}]},{"id":"D080","bus":[{"id":"516","sec":551,"sched":false,"la":22.439114166666666,"ln":113.99835749999998},{"id":"534","sec":1313,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":2018,"sched":true,"la":0,"ln":0}]},{"id":"U010","bus":[{"id":"354","sec":108000,"sched":true,"la":0,"ln":0},{"id":"352","sec":108000,"sched":true,"la":0,"ln":0},{"id":"516","sec":108000,"sched":true,"la":0,"ln":0},{"id":"534","sec":108000,"sched":true,"la":0,"ln":0}]},{"id":"U011","bus":[{"id":"516","sec":701,"sched":false,"la":22.439114166666666,"ln":113.99835749999998},{"id":"534","sec":1463,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":2161,"sched":true,"la":0,"ln":0}]},{"id":"U020","bus":[{"id":"354","sec":129,"sched":true,"la":0,"ln":0},{"id":"352","sec":849,"sched":true,"la":0,"ln":0},{"id":"516","sec":1569,"sched":true,"la":0,"ln":0},{"id":"534","sec":2349,"sched":true,"la":0,"ln":0}]},{"id":"U030","bus":[{"id":"354","sec":223,"sched":true,"la":0,"ln":0},{"id":"352","sec":943,"sched":true,"la":0,"ln":0},{"id":"516","sec":1663,"sched":true,"la":0,"ln":0},{"id":"534","sec":2443,"sched":true,"la":0,"ln":0}]},{"id":"U040","bus":[{"id":"354","sec":339,"sched":true,"la":0,"ln":0},{"id":"352","sec":1059,"sched":true,"la":0,"ln":0},{"id":"516","sec":1779,"sched":true,"la":0,"ln":0},{"id":"534","sec":2559,"sched":true,"la":0,"ln":0}]},{"id":"U050","bus":[{"id":"354","sec":435,"sched":true,"la":0,"ln":0},{"id":"352","sec":1155,"sched":true,"la":0,"ln":0},{"id":"516","sec":1875,"sched":true,"la":0,"ln":0},{"id":"534","sec":2655,"sched":true,"la":0,"ln":0}]},{"id":"U060","bus":[{"id":"354","sec":607,"sched":true,"la":0,"ln":0},{"id":"352","sec":1327,"sched":true,"la":0,"ln":0},{"id":"516","sec":2047,"sched":true,"la":0,"ln":0}]},{"id":"U070","bus":[{"id":"354","sec":633,"sched":true,"la":0,"ln":0},{"id":"352","sec":1353,"sched":true,"la":0,"ln":0},{"id":"516","sec":2073,"sched":true,"la":0,"ln":0}]},{"id":"U080","bus":[{"id":"534","sec":43,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":738,"sched":true,"la":0,"ln":0},{"id":"352","sec":1458,"sched":true,"la":0,"ln":0},{"id":"516","sec":2178,"sched":true,"la":0,"ln":0}]},{"id":"U090","bus":[{"id":"534","sec":87,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":782,"sched":true,"la":0,"ln":0},{"id":"352","sec":1502,"sched":true,"la":0,"ln":0},{"id":"516","sec":2222,"sched":true,"la":0,"ln":0}]},{"id":"U100","bus":[{"id":"534","sec":129,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":824,"sched":true,"la":0,"ln":0},{"id":"352","sec":1544,"sched":true,"la":0,"ln":0},{"id":"516","sec":2264,"sched":true,"la":0,"ln":0}]},{"id":"U110","bus":[{"id":"534","sec":180,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":876,"sched":true,"la":0,"ln":0},{"id":"352","sec":1596,"sched":true,"la":0,"ln":0},{"id":"516","sec":2316,"sched":true,"la":0,"ln":0}]},{"id":"U120","bus":[{"id":"534","sec":265,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":963,"sched":true,"la":0,"ln":0},{"id":"352","sec":1683,"sched":true,"la":0,"ln":0},{"id":"516","sec":2403,"sched":true,"la":0,"ln":0}]},{"id":"U130","bus":[{"id":"534","sec":332,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":1030,"sched":true,"la":0,"ln":0},{"id":"352","sec":1750,"sched":true,"la":0,"ln":0},{"id":"516","sec":2470,"sched":true,"la":0,"ln":0}]},{"id":"U140","bus":[{"id":"534","sec":369,"sched":false,"la":22.44666683333333,"ln":113.99457366666665},{"id":"354","sec":1067,"sched":true,"la":0,"ln":0},{"id":"352","sec":1787,"sched":true,"la":0,"ln":0},{"id":"516","sec":2507,"sched":true,"la":0,"ln":0}]}]};</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function () {
@@ -143,7 +149,9 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","b
     const stopMap = {};
     (data.stops || []).forEach(st => { stopMap[st.id] = st.bus || []; });
     const byBus = {};
+    const stopBuses = [];
     for (let i = 0; i < STOPS.length; i++) {
+      const list = [];
       for (const b of (stopMap[STOPS[i].id] || [])) {
         const sec = parseInt(b.sec, 10);
         if (isNaN(sec) || sec < 0 || sec >= 108000) continue;
@@ -153,7 +161,9 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","b
         if (!byBus[id]) byBus[id] = { live: false, entries: [] };
         if (live) byBus[id].live = true;
         byBus[id].entries.push({ idx: i, sec, loc: live ? { lat: Number(b.la), lng: Number(b.ln) } : null });
+        list.push({ id, sec, live });
       }
+      stopBuses.push(list.sort((a, b) => a.sec - b.sec));
     }
     const markers = [], chips = [];
     for (const id of Object.keys(byBus)) {
@@ -172,11 +182,11 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","b
       if (pos == null) pos = refPos;
       markers.push({ id, pos, nextIdx: next.idx, nextName: STOPS[next.idx].name, nextSec: next.sec, gap: Math.max(10, gap) });
     }
-    return { markers, chips };
+    return { markers, chips, stopBuses };
   }
 
   /* ================= 地圖（Leaflet + OSM）：路線線 + 站點 + 移動巴士 ================= */
-  let map = null, routeLine = null;
+  let map = null, routeLine = null, stationMarks = [];
   const busMarkers = {};
   let cum = [];
   function haversine(a, b) {
@@ -190,11 +200,12 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","b
     cum = [0];
     for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + haversine(pts[i - 1], pts[i]));
     L.polyline(pts, { color: '#FFFFFF', weight: 8, opacity: .9 }).addTo(map);
-    routeLine = L.polyline(pts, { color: '#0A84FF', weight: 4, opacity: .95 }).addTo(map);
-    L.layerGroup(pts.map((p, i) => L.circleMarker(p, {
+    routeLine = L.polyline(pts, { color: '#0078D7', weight: 4, opacity: .95 }).addTo(map);
+    stationMarks = pts.map((p, i) => L.circleMarker(p, {
       radius: i === 0 || i === pts.length - 1 ? 7 : 5,
-      color: '#FFFFFF', weight: 2.5, fillColor: '#0A84FF', fillOpacity: 1,
-    }).bindTooltip(STOPS[i].name, { direction: 'right', offset: [8, 0] }))).addTo(map);
+      color: '#FFFFFF', weight: 2.5, fillColor: '#0078D7', fillOpacity: 1,
+    }).on('click', () => selectStation(i)));
+    L.layerGroup(stationMarks).addTo(map);
     map.fitBounds(L.latLngBounds(pts), { padding: [34, 34] });
     return true;
   }
@@ -208,9 +219,7 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","b
     while (j < pts.length - 2 && cum[j + 1] < target) j++;
     const span = cum[j + 1] - cum[j];
     const t = span > 0 ? (target - cum[j]) / span : 0;
-    return L.latLng(
-      pts[j].lat + (pts[j + 1].lat - pts[j].lat) * t,
-      pts[j].lng + (pts[j + 1].lng - pts[j].lng) * t);
+    return L.latLng(pts[j].lat + (pts[j + 1].lat - pts[j].lat) * t, pts[j].lng + (pts[j + 1].lng - pts[j].lng) * t);
   }
   function initMap() {
     if (!window.L) { $('mapFallback').hidden = false; $('mapLive').textContent = '地圖離線'; return; }
@@ -221,10 +230,38 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","b
   }
   const BUS_SVG = '<svg viewBox="0 0 28 16"><rect x="0" y="0" width="28" height="10" fill="#FFB300" stroke="#7A5C00"/><rect x="3" y="11.5" width="5" height="3.5" fill="#333"/><rect x="20" y="11.5" width="5" height="3.5" fill="#333"/><rect x="5" y="2.2" width="10" height="3" fill="#fff"/><rect x="18" y="2.2" width="5" height="3" fill="#fff"/></svg>';
 
+  /* ================= 點站：顯示最近三班（GPS/定時標識，每秒倒數） ================= */
+  let selectedIdx = -1, spAt = 0, state = null;
+  function selectStation(i) {
+    selectedIdx = i;
+    const rows = (state && state.stopBuses[i] ? state.stopBuses[i] : []).slice(0, 3);
+    $('spName').textContent = STOPS[i].name + (i === 0 ? '（起點）' : i === STOPS.length - 1 ? '（終點）' : '');
+    $('spRows').innerHTML = rows.map((b, k) =>
+      '<div class="sp-row">'
+      + '<span class="sp-no">' + (['下一班', '次班', '三班'][k] || (k + 1)) + '</span>'
+      + '<span class="sp-bus">巴士 <b>' + escapeHtml(b.id) + '</b> '
+      + '<span class="sp-tag' + (b.live ? '' : ' off') + '">' + (b.live ? 'GPS' : '定時') + '</span>'
+      + (b.sec === 0 ? '<span class="sp-tag">已到站</span>' : '')
+      + '</span>'
+      + '<span class="sp-eta" data-sec="' + b.sec + '">' + (b.sec === 0 ? '00:00' : mmss(b.sec)) + '</span>'
+      + '</div>').join('') || '<div class="sp-row"><span class="sp-no">—</span><span class="sp-bus">暫無班次資料</span></div>';
+    $('stationPanel').hidden = false;
+    spAt = Date.now();
+    stationMarks.forEach((m, k) => m.setStyle({ radius: k === i ? 9 : (k === 0 || k === STOPS.length - 1 ? 7 : 5) }));
+  }
+  function tickStationPanel() {
+    if ($('stationPanel').hidden) return;
+    const el = Math.floor((Date.now() - spAt) / 1000);
+    document.querySelectorAll('#spRows .sp-eta[data-sec]').forEach(ch => {
+      ch.textContent = mmss(Math.max(0, parseInt(ch.dataset.sec, 10) - el));
+    });
+  }
+
   /* ================= 渲染：預報卡 + 狀態列 + 巴士定位 ================= */
   let lastRender = 0, tick = null;
   function render() {
-    const { markers, chips } = buildModel(snapshot);
+    state = buildModel(snapshot);
+    const { markers, chips } = state;
     const gpsBuses = markers.slice().sort((a, b) => a.nextSec - b.nextSec);
     const schedNext = (chips.filter(c => !c.live).sort((a, b) => a.sec - b.sec))[0];
     const cardList = [
@@ -258,6 +295,7 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","b
       const keep = new Set(markers.map(m => 'b' + m.id));
       Object.keys(busMarkers).forEach(k => { if (!keep.has(k)) { map.removeLayer(busMarkers[k]); delete busMarkers[k]; } });
     }
+    if (selectedIdx >= 0) selectStation(selectedIdx);
     lastRender = Date.now();
     clearInterval(tick);
     tick = setInterval(() => {
@@ -265,6 +303,7 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","b
       document.querySelectorAll('.card .big[data-sec]').forEach(ch => {
         ch.textContent = minsOf(Math.max(0, parseInt(ch.dataset.sec, 10) - elS));
       });
+      tickStationPanel();
       Object.keys(busMarkers).forEach(k => {
         const mk = busMarkers[k];
         const ref = parseFloat(mk.dataset_ref || '0');
