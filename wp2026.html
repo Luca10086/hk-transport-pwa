@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>森友出行 · WP2026</title>
-<link rel="stylesheet" href="css/wp2026.css?v=26">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="css/wp2026.css?v=27">
 </head>
 <body>
 <div id="app">
@@ -79,15 +78,16 @@
 
   <div class="sheet" id="k75pPage" style="height:100%;z-index:96">
     <div class="sheath" style="padding:0 14px;display:flex;flex-direction:column;height:100%">
-      <div class="kmap" id="kmap"></div>
+      <div class="khead"><span class="kt">K75P · 天瑞 ↺ 洪水橋</span><span class="kstat" id="kStat">實時</span><button class="kx" id="kClose">✕</button></div>
+      <div id="kroute"></div>
       <div id="kbody" style="flex:1;overflow-y:auto;margin-top:12px"></div>
     </div>
   </div>
 </div>
 
-<script src="js/data.js?v=26"></script>
-<script src="js/util.js?v=26"></script>
-<script src="js/api.js?v=26"></script>
-<script src="js/wp2026-app.js?v=26"></script>
+<script src="js/data.js?v=27"></script>
+<script src="js/util.js?v=27"></script>
+<script src="js/api.js?v=27"></script>
+<script src="js/wp2026-app.js?v=27"></script>
 </body>
 </html>

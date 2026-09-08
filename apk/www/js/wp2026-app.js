@@ -535,7 +535,7 @@
                 ts = (await getKMBETA(st.stop)).filter(e => e.route === String(route) && (e.dir || '').toUpperCase() === wantDir)
                   .map(e => parseHKTime(e.eta)).filter(Boolean).sort((a, b) => a - b);
               } catch (e) {}
-              return { name: st.name_tc || st.name_en || ('站 ' + st.stop), ts };
+              return { name: await getKMBStopName(st.stop), ts };
             }));
             rows.push(...rs);
           }
@@ -648,11 +648,19 @@
     } catch (e) {}
     try {
       const f = await fetchWithProxy(WEATHER_FND_API);
-      const fc = (f && (f.forecast || f.forecastPeriod)) || [];
+      /* HKO fnd：字段为 weatherForecast[]（旧版 forecastPeriod 已弃用），
+         每项含 week/forecastMaxtemp/forecastMintemp/forecastMaxrh/Minrh/ForecastIcon */
+      const fc = (f && (f.weatherForecast || f.forecast || f.forecastPeriod)) || [];
       w.days = fc.slice(0, 3).map(d => ({
+        date: typeof d.forecastDate === 'string' && d.forecastDate.length === 8
+          ? Number(d.forecastDate.slice(4, 6)) + '/' + Number(d.forecastDate.slice(6, 8)) : '',
+        week: d.week || '',
         max: d.forecastMaxtemp && d.forecastMaxtemp.value,
         min: d.forecastMintemp && d.forecastMintemp.value,
+        rh: d.forecastMaxrh && d.forecastMinrh
+          ? { max: Math.round(d.forecastMaxrh.value), min: Math.round(d.forecastMinrh.value) } : null,
         desc: (d.forecastWeather && (d.forecastWeather.tc || d.forecastWeather)) || '',
+        icon: d.ForecastIcon != null ? String(d.ForecastIcon) : '',
       }));
     } catch (e) {}
     return w;
@@ -678,7 +686,16 @@
         w.uv != null ? '紫外線 ' + w.uv : '',
       ].filter(Boolean).join(' · ') || '—' + '</div></div>';
     const days = '<div class="grp">未來三天</div><div class="wdays">'
-      + (w.days.length ? w.days.map(d => '<div class="wday"><span class="n">' + (['今天', '明天', '後天'][w.days.indexOf(d)] || '') + '</span><div class="d">' + (d.max != null ? Math.round(d.max) + '°' : '--') + '</div><span class="n">' + (d.min != null ? Math.round(d.min) + '°' : '') + '</span></div>').join('') : '<div class="wday"><span class="n">—</span></div>')
+      + (w.days.length ? w.days.map((d, i) => {
+        const em = d.icon && HKO_ICON_EMOJI[d.icon] ? HKO_ICON_EMOJI[d.icon] : '';
+        const ic = d.icon && HKO_ICONS[d.icon] ? HKO_ICONS[d.icon] : '';
+        const label = (['今天', '明天', '後天'][i] || '') + (d.week ? ' · ' + d.week : '') + (d.date ? ' · ' + d.date : '');
+        return '<div class="wday"><span class="n">' + esc(label) + '</span>'
+          + '<div class="d">' + (d.max != null ? Math.round(d.max) + '°' : '--') + '<small>' + (d.min != null ? '/' + Math.round(d.min) + '°' : '') + '</small></div>'
+          + '<span class="n wx">' + esc(em + ' ' + (ic || d.desc)) + '</span>'
+          + (d.rh ? '<span class="n">濕度 ' + d.rh.min + '–' + d.rh.max + '%</span>' : '')
+          + '</div>';
+      }).join('') : '<div class="wday"><span class="n">—</span></div>')
       + '</div>';
     return wn + now + days + (w.at ? '<div class="empty" style="text-align:left;padding:10px 4px 4px;font-size:12px">更新 ' + esc(w.at) + '</div>' : '');
   }
