@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WP2026 v3 · 折射/液態玻璃 DEMO</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #05070D; color: #fff; overflow: hidden;
+    font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* ===== 液體背景：orbs + 漸變 + feTurbulence 扭動（真·流體） ===== */
+  .fluid {
+    position: fixed; inset: -60px; z-index: 0;
+    background:
+      radial-gradient(560px 420px at 18% 12%, rgba(0,120,215,.5), transparent 66%),
+      radial-gradient(520px 400px at 84% 26%, rgba(0,180,216,.38), transparent 66%),
+      radial-gradient(640px 480px at 52% 96%, rgba(0,120,215,.30), transparent 70%),
+      radial-gradient(8px 8px at 30% 40%, rgba(255,255,255,.8), transparent),
+      radial-gradient(5px 5px at 70% 60%, rgba(255,255,255,.7), transparent),
+      radial-gradient(6px 6px at 44% 78%, rgba(255,255,255,.5), transparent),
+      radial-gradient(4px 4px at 88% 12%, rgba(255,255,255,.6), transparent),
+      radial-gradient(5px 5px at 12% 70%, rgba(255,255,255,.55), transparent),
+      #05070D;
+    filter: url(#warpA);
+    animation: driftBg 26s ease-in-out infinite alternate;
+  }
+  @keyframes driftBg { from { transform: translate(0,0) scale(1); } to { transform: translate(3%, -2%) scale(1.08); } }
+
+  /* ===== 對照場景：滾動的內容（玻璃背後的真實內容） ===== */
+  .world {
+    position: absolute; inset: 0; z-index: 1; overflow: hidden; padding: 100px 24px 0;
+  }
+  .row {
+    display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 14px;
+    border-radius: 14px; margin: 8px 0; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.15); font-size: 15px;
+  }
+  .row .b { width: 38px; height: 38px; border-radius: 50%; background: #0078D7; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex: 0 0 auto; }
+  .row .t { flex: 1; }
+  .row .e { font-size: 24px; font-weight: 300; color: #FFB74D; }
+  .world.anim .row { animation: rowIn .5s both; }
+  .world.anim .row:nth-child(2) { animation-delay: .06s; }
+  .world.anim .row:nth-child(3) { animation-delay: .12s; }
+  .world.anim .row:nth-child(4) { animation-delay: .18s; }
+  .world.anim .row:nth-child(5) { animation-delay: .24s; }
+  .world.anim .row:nth-child(6) { animation-delay: .30s; }
+  @keyframes rowIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+  /* ===== 上排：v2 玻璃（靜態） vs v3 液體玻璃（折射光環 + 液態高光 + 姿態反光） ===== */
+  .stage { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: stretch; }
+  .cols { display: flex; gap: 14px; padding: 108px 18px 0; }
+  .col { flex: 1; }
+  .coltag { font-size: 12px; letter-spacing: 2px; color: rgba(255,255,255,.5); margin: 0 4px 8px; }
+  .glass {
+    position: relative; border-radius: 18px; padding: 14px; min-height: 170px;
+    background: rgba(255,255,255,.07);
+    -webkit-backdrop-filter: blur(26px) saturate(1.4); backdrop-filter: blur(26px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.22);
+    overflow: hidden;
+  }
+  .glass .gname { font-size: 28px; font-weight: 300; margin-top: 8px; }
+  .glass .gsub { font-size: 13px; color: rgba(255,255,255,.55); margin-top: 4px; line-height: 1.5; word-break: break-word; }
+
+  /* --- v3 折射光環：外擴 12px 薄條 = backdrop-filter + feDisplacementMap 同層 → 邊緣真彎曲 --- */
+  .v3wrap { position: relative; }
+  .v3wrap .glass { position: relative; z-index: 1; }
+  .v3wrap .refract {
+    position: absolute; inset: -14px; z-index: 0; border-radius: 26px; pointer-events: none;
+    -webkit-backdrop-filter: blur(9px) saturate(1.45) brightness(1.08);
+    backdrop-filter: blur(9px) saturate(1.45) brightness(1.08);
+    filter: url(#warpEdge);
+    border: 1px solid rgba(255,255,255,.10);
+    opacity: .95;
+  }
+  .v3wrap .refract.r2 { inset: -8px; border-radius: 26px; backdrop-filter: blur(6px) brightness(1.05); -webkit-backdrop-filter: blur(6px) brightness(1.05); filter: url(#warpEdgeSm); }
+  /* --- v3 液態高光：流光 + displacement → 高光像液體流動 --- */
+  .v3glass::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,.16) 50%, transparent 60%) -180% 0 / 240% 110% no-repeat;
+    animation: liquidShine 5.5s ease-in-out infinite;
+    filter: url(#warpEdgeSm);
+  }
+  @keyframes liquidShine { 0%, 55% { background-position: -180% 0; } 78% { background-position: 180% 0; } 100% { background-position: 180% 0; } }
+  /* --- 姿態反光：--tx/--ty 驅動內層晨光角度（桌面用滑鼠模擬傾斜） --- */
+  .v3glass::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+    background: radial-gradient(300px 200px at calc(50% + var(--tx, 0) * 60px) calc(30% + var(--ty, 0) * 40px), rgba(255,255,255,.12), transparent 66%);
+    transition: background .12s ease-out;
+  }
+  .v2glass .lt { position: absolute; left: 6%; right: 6%; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent); }
+
+  /* --- 下方對照工具列：v2 全寬 vs v3 氣泡 --- */
+  .bars { display: flex; gap: 14px; padding: 20px 18px 0; }
+  .bar { flex: 1; border-radius: 20px; height: 56px; display: flex; align-items: center; padding: 0 18px; font-size: 20px; font-weight: 300; }
+  .bar.v2 { border-radius: 0; }
+  .v3bar { position: relative; z-index: 1; }
+  .hint { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: 12px; color: rgba(255,255,255,.4); z-index: 9; }
+
+  /* 隱藏 SVG 過濾器定義 */
+  svg.defs { position: absolute; width: 0; height: 0; }
+</style>
+</head>
+<body>
+<!-- SVG 過濾器：液體背景扭動 + 邊緣折射位移 -->
+<svg class="defs" aria-hidden="true">
+  <defs>
+    <filter id="warpA" x="-25%" y="-25%" width="150%" height="150%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.007 0.011" numOctaves="2" seed="7" result="t">
+        <animate attributeName="baseFrequency" dur="48s" values="0.007 0.011;0.010 0.008;0.007 0.011" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="55" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="warpEdge" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="turbulence" baseFrequency="0.018 0.030" numOctaves="2" seed="3" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="13" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="warpEdgeSm" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="turbulence" baseFrequency="0.02 0.05" numOctaves="2" seed="11" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="fluid"></div>
+
+<!-- 玻璃背後的內容（真實世界：路線卡） -->
+<div class="world">
+  <div class="row"><span class="b">69X</span><span class="t">天瑞 → 高鐵(西九龍站)</span><span class="e">8分</span></div>
+  <div class="row"><span class="b">K75P</span><span class="t">天瑞 ↺ 洪水橋 · 實時</span><span class="e">1分</span></div>
+  <div class="row"><span class="b">507A</span><span class="t">天水圍公園 → 紅磡站</span><span class="e">21分</span></div>
+  <div class="row"><span class="b">969</span><span class="t">天水圍市中心 → 銅鑼灣(摩頓台)</span><span class="e">14分</span></div>
+  <div class="row"><span class="b">輕鐵</span><span class="t">710 天水圍 → 元朗 · 2分鐘後</span><span class="e">2分</span></div>
+  <div class="row"><span class="b">屯馬</span><span class="t">天水圍 → 尖東 · 3分鐘後</span><span class="e">3分</span></div>
+</div>
+
+<!-- 玻璃對比台 -->
+<div class="stage">
+  <div class="cols">
+    <div class="col">
+      <div class="coltag">V2 · 靜態磨砂</div>
+      <div class="glass v2glass">
+        <span class="lt"></span>
+        <div class="gname">35°</div>
+        <div class="gsub">固定 blur(26px) · 不反應光線</div>
+        <div class="gsub">邊緣筆直 · 高光靜止</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="coltag">V3 · 液體玻璃</div>
+      <div class="v3wrap">
+        <span class="refract"></span>
+        <div class="glass v3glass">
+          <div class="gname">35°</div>
+          <div class="gsub">邊緣折射光環 · 內容真的彎曲</div>
+          <div class="gsub">液態高光 · 滑動滑鼠模擬傾斜</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bars">
+    <div class="bar v2 glass"><span>V2 · 全寬 dock</span></div>
+    <div class="v3wrap"><span class="refract r2"></span><div class="bar v3bar glass" style="background:rgba(255,255,255,.10)"><span>V3 · 氣泡折射</span></div></div>
+  </div>
+  <div class="hint">V3 = 背景液體化( feTurbulence ) + 邊緣折射( backdrop-filter × feDisplacementMap ) + 液態高光 + 姿態反光 —— 全部增量，不改結構</div>
+</div>
+
+<script>
+  /* 姿態反光：滑鼠模擬裝置傾斜（真機 deviceorientation 替換） */
+  const root = document.documentElement;
+  document.addEventListener('pointermove', e => {
+    root.style.setProperty('--tx', String((e.clientX / innerWidth - .5) * 2));
+    root.style.setProperty('--ty', String((e.clientY / innerHeight - .5) * 2));
+  }, { passive: true });
+  if (navigator.deviceorientation && !window.matchMedia('(pointer:fine)').matches) {
+    navigator.deviceorientation.addListener ? navigator.deviceorientation.addListener(ev => {
+      root.style.setProperty('--tx', String(Math.max(-1, Math.min(1, (ev.gamma || 0) / 30))));
+      root.style.setProperty('--ty', String(Math.max(-1, Math.min(1, ((ev.beta || 0) - 45) / 30))));
+    }) : navigator.deviceorientation.addEventListener('deviceorientation', ev => {
+      root.style.setProperty('--tx', String(Math.max(-1, Math.min(1, (ev.gamma || 0) / 30))));
+      root.style.setProperty('--ty', String(Math.max(-1, Math.min(1, ((ev.beta || 0) - 45) / 30))));
+    });
+  }
+  document.querySelector('.world').classList.add('anim');
+</script>
+</body>
+</html>
