@@ -61,7 +61,7 @@
               <span class="tile-face"><span>天氣</span><b id="tileWeatherV">--°</b><span class="tile-sub" id="tileWeatherSub">載入中</span></span>
               <span class="tile-face tile-face-back" id="tileWeatherD">明天 --</span>
             </button>
-            <button class="tile tile-wide tile-cyan" id="tileK75P" data-tile="k75p" onclick="goBusMap()">
+            <button class="tile tile-wide tile-cyan" id="tileK75P" data-tile="k75p" onclick="openK75PPage()">
               <span>K75P · 天瑞</span>
               <b id="k75pTileV">--</b>
               <span class="tile-sub" id="k75pTileSub">載入中</span>
@@ -101,7 +101,7 @@
           <div id="warningBar" class="warning-bar" hidden></div>
           <div id="weather" class="weather-bar">載入中…</div>
           <h3 class="pane-title" data-i18n="k75pTitle">k75p 全線實時</h3>
-          <div id="k75p" class="flat-list"></div>
+          <div id="k75p" class="flat-list"><div class="k75p-map-link" onclick="openK75PPage()"><svg class="k75p-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-6 5 12 2.5-6H21"/></svg> 實時路線圖 · 每班車位置 · 點站查三班<span>›</span></div></div>
         </div>
       </div>
       <div class="pano-hint" id="panoHint"><i class="on"></i><i></i><i></i></div>
@@ -130,7 +130,6 @@
       <h2 class="pane-title" data-i18n="map">路線圖</h2>
       <div class="map-lines" id="mapLines"></div>
       <div class="map-body" id="mapBody"></div>
-      <div id="busMap" class="bus-map" hidden></div>
     </div>
   </section>
 
@@ -226,14 +225,35 @@
   </div>
 </nav>
 
-<!-- ================= K75P 班次實時路線圖（全屏） ================= -->
-<div class="k75p-live" id="k75pLive" hidden>
-  <header class="k75p-live-bar">
-    <button class="k75p-live-close" onclick="closeK75PLive()" aria-label="返回">✕</button>
-    <div class="k75p-live-title">K75P 全綫 · 班次實時位置</div>
-    <button class="k75p-live-refresh" onclick="renderK75PLive()" aria-label="重新整理">↻</button>
+<!-- ================= K75P 實時路線頁（澳泊式：地圖 + 預報卡 + 點站查三班） ================= -->
+<div class="k75p-page" id="k75pPage" hidden>
+  <header class="k75p-page-bar">
+    <button class="k75p-page-close" onclick="closeK75PPage()" aria-label="返回">✕</button>
+    <div class="k75p-page-title">K75P 實時路線</div>
+    <span class="k75p-page-live" id="k75pLiveBadge">● 實時</span>
   </header>
-  <div class="k75p-live-body" id="k75pLiveBody"></div>
+  <div class="k75p-mapbox" id="k75pMapBox"></div>
+  <div class="k75p-station" id="k75pStationPanel" hidden>
+    <div class="ksp-head">
+      <span class="ksp-name" id="kspName">車站</span>
+      <button class="ksp-close" onclick="document.getElementById('k75pStationPanel').hidden = true" aria-label="關閉">✕</button>
+    </div>
+    <div id="kspRows"></div>
+  </div>
+  <div class="k75p-panel">
+    <div class="k75p-head">
+      <span class="k75p-no">K75P</span>
+      <span>
+        <div class="k75p-dest">往 天瑞（循環線）</div>
+        <div class="k75p-meta">港鐵巴士 · 全程 23 站 · 天水圍</div>
+      </span>
+    </div>
+    <div class="k75p-cards" id="k75pCards"></div>
+    <div class="k75p-status" id="k75pStatus"></div>
+  </div>
+  <nav class="k75p-tabs">
+    <span class="on">實時路線</span><span>站點</span><span>地圖</span><span>設定</span>
+  </nav>
 </div>
 
 <!-- ================= 路線詳情（點擊路線後右側滑入） ================= -->
