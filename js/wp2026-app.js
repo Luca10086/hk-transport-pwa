@@ -20,7 +20,11 @@
     document.documentElement.style.setProperty('--accent', cfg.accent);
     document.documentElement.style.setProperty('--accent-dark', cfg.accent);
     document.documentElement.style.fontSize = cfg.font + 'px';
+    document.body.classList.toggle('no-fx', !cfg.fx);
+    document.body.dataset.mood = nightMood();
   }
+  function nightMood() { const h = new Date().getHours(); return (h >= 19 || h < 6) ? 'night' : 'day'; }
+  setInterval(() => { document.body.dataset.mood = nightMood(); }, 5 * 60 * 1000);
   applyCfg();
 
   /* ---------- App Bar 圖標 ---------- */
@@ -132,6 +136,62 @@
   function closeSheet() { sheetEl.classList.remove('open'); maskEl.classList.remove('open'); }
   $('shClose').addEventListener('click', closeSheet);
   maskEl.addEventListener('click', closeSheet);
+
+  /* 光斑感應：pointermove 時最近光斑向觸點緩移（0.8s），閒置 900ms 回位 */
+  const orbs = [...document.querySelectorAll('.orb')];
+  let orbTimer = 0, orbRaf = 0;
+  document.addEventListener('pointermove', (e) => {
+    if (!cfg.fx) return;
+    cancelAnimationFrame(orbRaf);
+    orbRaf = requestAnimationFrame(() => {
+      let best = null, bd = Infinity;
+      for (const o of orbs) {
+        const r = o.getBoundingClientRect();
+        const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+        if (d < bd) { bd = d; best = o; }
+      }
+      if (!best || bd > 320) return;
+      const r = best.getBoundingClientRect();
+      const dx = Math.max(-26, Math.min(26, (e.clientX - (r.left + r.width / 2)) * .12));
+      const dy = Math.max(-22, Math.min(22, (e.clientY - (r.top + r.height / 2)) * .1));
+      best.style.animation = 'none';
+      best.style.transition = 'transform .8s cubic-bezier(.16,1,.3,1)';
+      best.style.transform = 'translate(' + dx.toFixed(0) + 'px,' + dy.toFixed(0) + 'px)';
+      best.style.opacity = '.9';
+      clearTimeout(orbTimer);
+      orbTimer = setTimeout(() => {
+        best.style.transition = '';
+        best.style.transform = '';
+        best.style.opacity = '';
+        best.style.animation = '';
+      }, 900);
+    });
+  }, { passive: true });
+
+  /* 詳情 Sheet：下拉 >120px 關閉 + blur 衰減 */
+  (function sheetDrag() {
+    let sy = 0, dragging = false;
+    sheetEl.addEventListener('touchstart', (e) => {
+      if (!e.target.closest('.handle, .shead')) return;
+      sy = e.touches[0].clientY; dragging = true;
+      sheetEl.style.transition = 'none';
+    }, { passive: true });
+    sheetEl.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      const dy = Math.max(0, e.touches[0].clientY - sy);
+      sheetEl.style.transform = 'translateX(-50%) translateY(' + (102 + dy) + 'px)';
+      maskEl.style.opacity = Math.max(0, 1 - dy / 300);
+    }, { passive: true });
+    sheetEl.addEventListener('touchend', (e) => {
+      if (!dragging) return;
+      dragging = false;
+      const dy = Math.max(0, e.changedTouches[0].clientY - sy);
+      sheetEl.style.transition = 'transform .25s cubic-bezier(.16,1,.3,1)';
+      if (dy > 120) closeSheet();
+      else { sheetEl.style.transform = ''; maskEl.style.opacity = ''; }
+      setTimeout(() => { if (!sheetEl.classList.contains('open')) { sheetEl.style.transition = ''; sheetEl.style.transform = ''; maskEl.style.opacity = ''; } }, 260);
+    }, { passive: true });
+  })();
 
   /* ---------- 搜索 ---------- */
   let tp = 'bus', searchGen = 0, lastResults = [];
@@ -293,29 +353,39 @@
 
   /* ---------- 巴士/港鐵 詳情 ---------- */
   async function openBusDetail(it) {
-    openSheet((it.data.route || it.no) + ' 路線詳情', '<div class="empty">載入中…</div>');
-    try {
-      const stops = await getKMBStops(it.data.route, it.data.dir, '1');
-      if (!stops.length) { $('shBody').innerHTML = '<div class="empty">無法載入站點</div>'; return; }
-      const rows = [];
-      for (let i = 0; i < stops.length; i += 4) {
-        const rs = await Promise.all(stops.slice(i, i + 4).map(async st => {
-          let ts = [];
-          try {
-            const es = await getKMBETA(st.stop);
-            ts = (es || []).filter(e => e.route === String(it.data.route) && (e.dir || '').toUpperCase() === (it.data.dir === 'inbound' ? 'I' : 'O'))
-              .map(e => parseHKTime(e.eta)).filter(Boolean).sort((a, b) => a - b);
-          } catch (e) {}
-          return { name: st.name_tc || st.name_en || ('站 ' + st.stop), ts };
-        }));
-        rows.push(...rs);
-      }
-      $('shBody').innerHTML = rows.map((r, i) => {
-        const sec = r.ts[0] ? (r.ts[0] - Date.now()) / 1000 : null;
-        return '<div class="dstop"><span class="dseq">' + (i + 1) + '</span><span class="dnm">' + esc(r.name) + '</span>' + (sec == null ? '<span class="dtm">—</span>' : (sec <= 60 ? '<span class="dtm soon">即將</span>' : '<span class="dtm ' + etaSecCls(sec) + '">' + Math.ceil(sec / 60) + ' 分</span>')) + '</div>';
-      }).join('');
-      onTab = () => {};
-    } catch (e) { $('shBody').innerHTML = '<div class="empty">載入失敗</div>'; }
+    const dirs = [[it.data.dir, '去程'], [it.data.dir === 'inbound' ? 'outbound' : 'inbound', '回程']];
+    openSheet((it.data.route || it.no) + ' 路線詳情', '<div class="empty">載入中…</div>', dirs.map(d => d[1]));
+    const cache = {};
+    async function loadDir(idx) {
+      const dir = dirs[idx][0];
+      if (cache[dir]) { $('shBody').innerHTML = cache[dir]; return; }
+      $('shBody').innerHTML = '<div class="empty">載入中…</div>';
+      try {
+        const stops = await getKMBStops(it.data.route, dir, '1');
+        if (!stops.length) { $('shBody').innerHTML = '<div class="empty">無法載入站點</div>'; return; }
+        const rows = [];
+        for (let i = 0; i < stops.length; i += 4) {
+          const rs = await Promise.all(stops.slice(i, i + 4).map(async st => {
+            let ts = [];
+            try {
+              const es = await getKMBETA(st.stop);
+              ts = (es || []).filter(e => e.route === String(it.data.route) && (e.dir || '').toUpperCase() === (dir === 'inbound' ? 'I' : 'O'))
+                .map(e => parseHKTime(e.eta)).filter(Boolean).sort((a, b) => a - b);
+            } catch (e) {}
+            return { name: st.name_tc || st.name_en || ('站 ' + st.stop), ts };
+          }));
+          rows.push(...rs);
+        }
+        const html = rows.map((r, i) => {
+          const sec = r.ts[0] ? (r.ts[0] - Date.now()) / 1000 : null;
+          return '<div class="dstop"><span class="dseq">' + (i + 1) + '</span><span class="dnm">' + esc(r.name) + '</span>' + (sec == null ? '<span class="dtm">—</span>' : (sec <= 60 ? '<span class="dtm soon">即將</span>' : '<span class="dtm ' + etaSecCls(sec) + '">' + Math.ceil(sec / 60) + ' 分</span>')) + '</div>';
+        }).join('');
+        cache[dir] = html;
+        $('shBody').innerHTML = html;
+      } catch (e) { $('shBody').innerHTML = '<div class="empty">載入失敗</div>'; }
+    }
+    onTab = (i) => loadDir(i);
+    loadDir(0);
   }
   async function openMTRDetail(it) {
     openSheet(it.name + ' 車站', '<div class="empty">載入中…</div>');
@@ -336,6 +406,7 @@
   }
 
   /* ---------- 首頁磁貼 ---------- */
+  let homeSeen = false;
   async function renderHome() {
     const tiles = $('homeTiles');
     let k75pEta = '—', k75pSub = '載入中';
@@ -361,6 +432,14 @@
       else if (k === 'weather') renderWeather();
       else setPane(k);
     }));
+    /* 開場編舞：首次渲染才做 80ms 階梯（避免刷新重繪閃動） */
+    if (!homeSeen) {
+      homeSeen = true;
+      tiles.querySelectorAll('.tile').forEach((t, i) => {
+        t.classList.add('anim');
+        t.style.animationDelay = (i * 80) + 'ms';
+      });
+    }
     loadWeather();
     const sm = $('sushiMini');
     const stores = SUSHIRO_SNAPSHOT.filter(s => s.area === '元朗區' || s.area === '屯門區');
@@ -711,7 +790,7 @@
       + '<div class="setrow"><span class="l">主題<small class="cap">深色 / 淺色</small></span>' + seg('theme', [['dark', '深色'], ['light', '淺色']], cfg.theme) + '</div>'
       + '<div class="setrow"><span class="l">強調色<small class="cap">藍 · 青綠 · 紫 · 靛</small></span>' + seg('accent', ACCENTS.map(a => [a[0], a[1]]), cfg.accent) + '</div>'
       + '<div class="setrow"><span class="l">字體大小<small class="cap">8 級 · 全局</small></span><span class="fs"><button data-fs="-1">A−</button><span class="dots">' + FONT_LEVELS.map((_, i) => '<i class="' + (i === fontLevel ? 'on' : '') + '"></i>').join('') + '</span><button data-fs="1">A＋</button></span></div>'
-      + '<div class="setrow"><span class="l">液態玻璃動效<small class="cap">流光 · 波紋 · 脈衝</small></span><button class="sw ' + (cfg.fx ? 'on' : '') + '" data-fx></button></div>'
+      + '<div class="setrow"><span class="l">減少動效<small class="cap">流光 · 波紋 · 光斑 · 脈衝</small></span><button class="sw ' + (cfg.fx ? 'on' : '') + '" data-fx></button></div>'
       + '<div class="grp">出行</div>'
       + '<div class="setrow"><span class="l">自動重新整理<small class="cap">首頁磁貼</small></span>' + seg('refresh', [['30', '30s'], ['60', '60s'], ['0', '關']], String(cfg.refresh)) + '</div>'
       + '<div class="setrow"><span class="l">版本<small class="cap">WP2026 全新界面</small></span><span style="font-size:13px;color:var(--text2)">Beta 0.2</span></div>';
