@@ -81,11 +81,12 @@
 | 項目 | 狀態 |
 |---|---|
 | 深色令牌/玻璃材料/光斑/按壓/微光/玻璃 Sheet/App Bar/設定/K75P 玻璃化 | ✅ v1 已實裝（skin-wp2026.css） |
-| 玻璃流光 shimmer（磁貼 ::after 與基礎按壓層衝突） | 待 v2（改用獨立覆蓋層元素） |
-| 按鈕圓波紋 ripple | 待 v2 |
-| ETA 數字滾動換值 | 待 v2（接入 JS 值變更鉤子） |
-| Pivot blur 視差 | 待 v2（需 JS 橫滑鉤子 + 全局玻璃底板） |
-| 淺色通道完整校驗 | 待 v2（基座已建） |
+| 玻璃流光 shimmer（磁貼 ::after 與基礎按壓層衝突） | ✅ v2 已實裝（::after 流光層 + 滾動/觸摸/刷新時 `body.fx-paused` 暫停 1.5s） |
+| 按鈕圓波紋 ripple | ✅ v2 已實裝（pointerdown 注入 .ripple-fx，0.22s；reduced-motion 跳過） |
+| ETA 數字滾動換值 | ✅ v2 已實裝（1s 倒數 ticker；刷新換值觸發 .wp26-eta-swap 0.2s） |
+| K75P 完整玻璃地圖（概念板 05） | ✅ v2 已實裝（瓦片 brightness .55 + saturate .7、星塵光暈覆層、玻璃廊線） |
+| Pivot blur 視差 | 待 v3（需 JS 橫滑鉤子 + 全局玻璃底板） |
+| 淺色通道完整校驗 | 待 v2 尾（基座已建） |
 | 節日情境 | 待 v3 |
 | 夜間情境（時間偵測後光斑降級 opacity .35 + 降飽 8%） | 待 v3 |
 

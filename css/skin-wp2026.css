@@ -262,3 +262,45 @@ body[data-ui="wp2026"] .last-update { color: var(--text2); }
 /* ========== 活動態：微光 ========== */
 body[data-ui="wp2026"] .map-station::before { background: var(--accent); box-shadow: 0 0 10px rgba(0,120,215,.5); }
 body[data-ui="wp2026"] .map-station.interchange::before { background: #F0A30A; }
+
+/* ========== v2：玻璃流光（磁貼/收藏卡/K75P 卡 · 9s 週期 1.2s 掃過 · 滾動/觸摸/刷新暫停） ========== */
+body[data-ui="wp2026"] .tile::after,
+body[data-ui="wp2026"] .fav-card::after,
+body[data-ui="wp2026"] .k75p-card::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.09) 50%, transparent 58%) -160% 0 / 230% 100% no-repeat;
+  animation: wp26Shimmer 9s ease-in-out infinite;
+}
+@keyframes wp26Shimmer {
+  0%, 60% { background-position: -160% 0; }
+  73%     { background-position: 160% 0; }   /* 13% ≈ 1.2s 掃過 */
+  100%    { background-position: 160% 0; }
+}
+body.fx-paused .tile::after,
+body.fx-paused .fav-card::after,
+body.fx-paused .k75p-card::after { animation-play-state: paused !important; }
+body[data-ui="wp2026"] .fav-card { overflow: hidden; }
+body[data-ui="wp2026"] .k75p-card { border-radius: 14px; }
+
+/* ========== v2：按鈕觸點波紋（JS 注入 .ripple-fx · 0.22s 擴散） ========== */
+body[data-ui="wp2026"] .metro-row { overflow: hidden; }
+.ripple-fx {
+  position: absolute; border-radius: 50%; background: rgba(0,120,215,.15);
+  pointer-events: none; transform: scale(0); z-index: 2;
+  animation: wp26Ripple .22s ease-out forwards;
+}
+@keyframes wp26Ripple { to { transform: scale(1); opacity: 0; } }
+
+/* ========== v2：ETA 滾動換值（舊值上移淡出/新值下浮入 · JS 每小時級刷新換值時觸發） ========== */
+.wp26-eta-swap { animation: wp26EtaSwap .2s cubic-bezier(.16,1,.3,1); }
+@keyframes wp26EtaSwap { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ========== v2：K75P 完整玻璃地圖（概念板 05 · 瓦片調暗 + 光暈覆層） ========== */
+body[data-ui="wp2026"] .k75p-mapbox { border-bottom: 1px solid rgba(255,255,255,.16); }
+body[data-ui="wp2026"] .k75p-mapbox .leaflet-tile { filter: brightness(.55) saturate(.7); }
+body[data-ui="wp2026"] .k75p-mapbox::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 800;
+  background:
+    radial-gradient(240px 120px at 68% 30%, rgba(0,120,215,.25), transparent 70%),
+    linear-gradient(180deg, rgba(0,0,0,.20), transparent 28%, rgba(0,0,0,.30));
+}

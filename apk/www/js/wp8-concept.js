@@ -2034,3 +2034,57 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshAll();
   restartAutoRefresh();
 });
+
+/* ---------- WP2026 動效（流光暫停 / 波紋 / ETA 滾動換值） ---------- */
+let wp26FxTimer = 0;
+function wp26PauseFx(ms) {
+  if (document.body.dataset.ui !== 'wp2026') return;
+  document.body.classList.add('fx-paused');
+  clearTimeout(wp26FxTimer);
+  wp26FxTimer = setTimeout(() => document.body.classList.remove('fx-paused'), ms || 1500);
+}
+(function wp26FxInit() {
+  const pivotEl = $('pivot');
+  if (pivotEl) pivotEl.addEventListener('scroll', () => wp26PauseFx(), { passive: true });
+  document.addEventListener('scroll', () => wp26PauseFx(), { passive: true });
+  document.addEventListener('touchstart', () => wp26PauseFx(), { passive: true });
+  /* 波紋（僅 WP2026；觸點為心 0.22s 擴散） */
+  document.addEventListener('pointerdown', (e) => {
+    if (document.body.dataset.ui !== 'wp2026') return;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const el = e.target && e.target.closest
+      ? e.target.closest('.tile, .metro-row, .chip, .seg button, .search-btn, .ab-btn, .map-line-btn, .dir-tab, .fav-pick, .fs-btn, .k75p-card')
+      : null;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width) return;
+    const d = Math.max(r.width, r.height) * 1.4;
+    const sp = document.createElement('span');
+    sp.className = 'ripple-fx';
+    sp.style.cssText = 'left:' + (e.clientX - r.left - d / 2).toFixed(0) + 'px;top:' + (e.clientY - r.top - d / 2).toFixed(0) + 'px;width:' + d.toFixed(0) + 'px;height:' + d.toFixed(0) + 'px;';
+    el.appendChild(sp);
+    setTimeout(() => sp.remove(), 280);
+  }, { passive: true });
+  /* ETA 滾動換值：每秒倒數；刷新重繪出新值時觸發 swap 動畫 */
+  const etaMap = new WeakMap();
+  setInterval(() => {
+    if (document.body.dataset.ui !== 'wp2026') return;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const now = Date.now();
+    document.querySelectorAll('.row-eta, .fav-eta-main, .k75p-card .big').forEach(el => {
+      const txt = (el.textContent || '').trim();
+      const m = txt.match(/(\d+)\s*(分鐘|分)/);
+      if (!m) { etaMap.delete(el); return; }
+      const base = parseInt(m[1], 10) * 60;
+      const rec = etaMap.get(el);
+      if (!rec || rec.base !== base) {
+        if (rec) { el.classList.remove('wp26-eta-swap'); void el.offsetWidth; }
+        etaMap.set(el, { base, t: now });
+        el.classList.add('wp26-eta-swap');
+      } else {
+        const sec = Math.max(0, base - Math.floor((now - rec.t) / 1000));
+        el.textContent = Math.ceil(sec / 60) + ' ' + m[2];
+      }
+    });
+  }, 1000);
+})();
