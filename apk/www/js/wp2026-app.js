@@ -299,10 +299,20 @@
     const out = [];
     try {
       const K = await searchKMBRoute(q.toUpperCase());
-      (K || []).slice(0, 6).forEach(r => out.push({
-        grp: G.kmb, no: r.route, name: (r.orig_tc || '') + ' → ' + (r.dest_tc || ''), kind: 'bus', data: { route: r.route, dir: 'outbound' },
-        fav: { type: 'bus', company: 'kmb', route: r.route, orig: r.orig_tc || '', dest: r.dest_tc || '', direction: 'outbound', stop_id: null },
-      }));
+      /* 一個路線號只出一張卡：優先 service_type=1 + outbound（其餘為變體/回程，詳情頁有去程/回程分頁） */
+      const seenK = new Set();
+      (K || []).sort((a, b) =>
+        ((a.service_type === '1' ? 0 : 1) - (b.service_type === '1' ? 0 : 1)) ||
+        ((a.bound === 'O' ? 0 : 1) - (b.bound === 'O' ? 0 : 1)))
+        .slice(0, 6).forEach(r => {
+          const key = String(r.route).toUpperCase();
+          if (seenK.has(key)) return;
+          seenK.add(key);
+          out.push({
+            grp: G.kmb, no: r.route, name: (r.orig_tc || '') + ' → ' + (r.dest_tc || ''), kind: 'bus', data: { route: r.route, dir: r.bound === 'I' ? 'inbound' : 'outbound' },
+            fav: { type: 'bus', company: 'kmb', route: r.route, orig: r.orig_tc || '', dest: r.dest_tc || '', direction: r.bound === 'I' ? 'inbound' : 'outbound', stop_id: null },
+          });
+        });
       if (!/^[A-Z0-9]+$/i.test(q)) {
         const stops = await searchKMBStopsByName(q);
         (stops || []).slice(0, 6).forEach(st => {

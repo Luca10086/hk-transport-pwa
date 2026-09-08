@@ -209,8 +209,8 @@ body[data-theme="light"] .row { box-shadow: inset 0 1px 0 rgba(255,255,255,.8); 
 }
 .row:first-of-type .badge { box-shadow: 0 0 14px rgba(0,120,215,.5); }
 .row .main { flex: 1; min-width: 0; }
-.row .nm { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .cap { font-size: 13px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .nm { display: block; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .cap { display: block; font-size: 13px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .eta { font-size: 28px; font-weight: 300; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 .row .eta small { font-size: 13px; color: var(--text2); }
 .row .eta.soon { color: #FF5252; }
