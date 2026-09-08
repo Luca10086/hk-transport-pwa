@@ -58,6 +58,33 @@
     if (name === 'map') initMapPane();
   }
   document.querySelectorAll('.ab').forEach(b => b.addEventListener('click', () => enterPane(b.dataset.pane)));
+  /* ---------- Pivot 玻璃視差（離場 blur 12→0 · 內容 ±24px · 光條跟手） ---------- */
+  let pvRaf = 0;
+  function applyParallax() {
+    if (!cfg.fx || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      pivot.querySelectorAll('.pane').forEach(p => { p.style.transform = ''; p.style.filter = ''; });
+      const lt0 = $('pivotLight'); if (lt0) lt0.style.opacity = '0';
+      return;
+    }
+    const x = pivot.scrollLeft;
+    pivot.querySelectorAll('.pane').forEach(p => {
+      const aw = p.offsetWidth || 1;
+      const p01 = Math.max(0, Math.min(1, Math.abs(x - p.offsetLeft) / aw));
+      if (p01 < 0.02 || p01 > 0.98) { p.style.transform = ''; p.style.filter = ''; return; }
+      const side = p.offsetLeft >= x ? 1 : -1;   /* 視口右側=進場頁，左側=離場頁 */
+      p.style.transform = 'translateX(' + (side * p01 * 24).toFixed(1) + 'px)';
+      p.style.filter = side < 0
+        ? 'blur(' + (p01 * 9).toFixed(1) + 'px)'          /* 離場：滑出發糊 */
+        : 'blur(' + ((1 - p01) * 6).toFixed(1) + 'px)';   /* 進場：由清漸入微糊 */
+    });
+    const lt = $('pivotLight');
+    if (lt) {
+      const max = Math.max(1, pivot.scrollWidth - pivot.clientWidth - 80);
+      const f = max ? (x / max) : 0;
+      lt.style.transform = 'translateX(' + (f * max).toFixed(0) + 'px)';
+      lt.style.opacity = String(Math.min(1, Math.abs(x) > 2 ? 0.95 : 0));
+    }
+  }
   pivot.addEventListener('scroll', () => {
     let cur = 'home';
     pivot.querySelectorAll('.pane').forEach(p => { if (p.offsetLeft <= pivot.scrollLeft + 60) cur = p.dataset.pane; });
@@ -69,6 +96,8 @@
       if (cur === 'sushi' && !sushiDone) renderSushi();
       if (cur === 'map') initMapPane();
     }
+    cancelAnimationFrame(pvRaf);
+    pvRaf = requestAnimationFrame(applyParallax);
     pauseFx();
   }, { passive: true });
 
