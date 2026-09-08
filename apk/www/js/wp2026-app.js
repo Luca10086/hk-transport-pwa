@@ -625,7 +625,9 @@
   /* ---------- 天氣（完整：警告/描述/濕度/雨量/紫外線/三天溫差） ---------- */
   const WEATHER_UV_API = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=uvindex&lang=tc';
   const SEVERE_RE = /雨|颱風|風暴|雷暴|山泥|酷熱|寒冷|霜凍|海嘯|水浸/;
+  let weatherCache = null, weatherCacheAt = 0;
   async function fetchWeather() {
+    if (weatherCache && Date.now() - weatherCacheAt < 5 * 60 * 1000) return weatherCache;
     const w = { temp: null, humid: null, rain: null, uv: null, desc: '', severe: [], mild: [], days: [], at: '' };
     try {
       const r = await fetchWithProxy(WEATHER_API);
@@ -663,6 +665,7 @@
         icon: d.ForecastIcon != null ? String(d.ForecastIcon) : '',
       }));
     } catch (e) {}
+    weatherCache = w; weatherCacheAt = Date.now();
     return w;
   }
   function warnBarHtml(w) {
@@ -700,9 +703,11 @@
     return wn + now + days + (w.at ? '<div class="empty" style="text-align:left;padding:10px 4px 4px;font-size:12px">更新 ' + esc(w.at) + '</div>' : '');
   }
   async function openWeatherPage() {
-    const w = await fetchWeather();
-    openSheet('天氣', weatherSheetHtml(w));
+    /* 秒開：先開 sheet 顯示載入中，再填充（配合 5 分鐘緩存，通常瞬間完成） */
+    openSheet('天氣', '<div class="empty">載入中…</div>');
     onTab = () => {};
+    const w = await fetchWeather();
+    $('shBody').innerHTML = weatherSheetHtml(w);
   }
 
   /* ---------- 收藏 ---------- */
@@ -1021,12 +1026,23 @@
     box.innerHTML = html;
   }
 
-  /* ---------- K75P 完整玻璃地圖頁 ---------- */
-  let kMap = null, kCum = [], kMarks = [], kBusM = {}, kState = null, kSel = -1, kTick = null;
+  /* ---------- K75P U形路線圖頁（無實景地圖：起終點 + 每班車沿線位置，同屯馬線式線路圖） ---------- */
+  let kState = null, kSel = -1, kTick = null;
   const kCoords = {};
   Object.keys(K75P_STOP_COORDS).forEach(k => { const c = K75P_STOP_COORDS[k]; if (c && c.lat) kCoords[k] = { lat: c.lat, lng: c.lng }; });
-  const K75P_BUS = '<svg viewBox="0 0 28 16"><rect x="0" y="1" width="28" height="10" fill="#F4F6F8" stroke="#33537B"/><rect x="0" y="4.6" width="28" height="2.6" fill="#0078D7"/><rect x="3" y="11.5" width="5" height="3.5" fill="#1B1F27"/><rect x="20" y="11.5" width="5" height="3.5" fill="#1B1F27"/><rect x="5" y="2.2" width="9" height="2.4" fill="#33537B"/><rect x="16" y="2.2" width="6" height="2.4" fill="#33537B"/></svg>';
-  function hav(a, b) { const R = 6371000, dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180; const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(s)); }
+  const KN = K75P_STOPS.length;
+  const kTurn = K75P_STOPS.findIndex(s => /洪水橋站/.test(s.name));   /* 折返點 */
+  const busSm = {}, busAt = {};   /* 每車平滑位置：GPS 抖動不再來回亂跑 */
+  /* U 形幾何：左臂=去程（天瑞→洪水橋）· 右臂=回程（洪水橋→天瑞）· 底部圓弧折返 */
+  const U = { W: 380, H: 300, xL: 56, xR: 324, xM: 190, yTop: 24, yBot: 246, yCurve: 280 };
+  const kTA = (kTurn - 1) / (KN - 1), kTB = (kTurn + 1) / (KN - 1);
+  function kUXY(t) {
+    t = Math.max(0, Math.min(1, t));
+    if (t <= kTA) { const u = t / kTA; return [U.xL, U.yTop + u * (U.yBot - U.yTop)]; }
+    if (t >= kTB) { const u = (t - kTB) / (1 - kTB); return [U.xR, U.yBot - u * (U.yBot - U.yTop)]; }
+    const u = (t - kTA) / (kTB - kTA), q = 1 - u;
+    return [q * q * U.xL + 2 * q * u * U.xM + u * u * U.xR, q * q * U.yBot + 2 * q * u * U.yCurve + u * u * U.yBot];
+  }
   function segFrac(a, b, p) {
     const kx = 111320 * Math.cos(a.lat * Math.PI / 180), ky = 110540;
     const bx = (b.lng - a.lng) * kx, by = (b.lat - a.lat) * ky;
@@ -1039,14 +1055,14 @@
   }
   function gpsPos(p, ref) {
     let best = null;
-    for (let i = 0; i < K75P_STOPS.length; i++) {
-      const a = kCoords[K75P_STOPS[i].id], b = kCoords[K75P_STOPS[(i + 1) % K75P_STOPS.length].id];
+    for (let i = 0; i < KN - 1; i++) {
+      const a = kCoords[K75P_STOPS[i].id], b = kCoords[K75P_STOPS[i + 1].id];
       if (!a || !b) continue;
       const r = segFrac(a, b, p);
-      const score = r.d2 + 4000 * Math.abs(i + r.f - ref);
+      const score = r.d2 + 3000 * Math.abs(i + r.f - ref);
       if (!best || score < best.score) best = { score, d2: r.d2, pos: i + r.f };
     }
-    return best && Math.sqrt(best.d2) < 300 ? best.pos : null;
+    return best && Math.sqrt(best.d2) < 400 ? best.pos : null;
   }
   function kModel(data) {
     const stopMap = {};
@@ -1059,7 +1075,6 @@
         if (isNaN(sec) || sec < 0 || sec >= 108000) continue;
         const loc = b.busLocation;
         const live = !!(loc && Number(loc.latitude) && Number(loc.longitude));
-        if (live && sec === 0) kCoords[K75P_STOPS[i].id] = { lat: Number(loc.latitude), lng: Number(loc.longitude) };
         const id = String(b.busId || '?');
         if (!byBus[id]) byBus[id] = { live: false, e: [] };
         if (live) byBus[id].live = true;
@@ -1069,67 +1084,93 @@
       stopBuses.push(list.sort((a, b) => a.sec - b.sec));
     }
     const markers = [], chips = [];
+    const now = Date.now();
     for (const id of Object.keys(byBus)) {
       const b = byBus[id];
       if (!b.e.length) continue;
       const es = b.e.slice().sort((a, c) => a.sec - c.sec);
       const next = es[0];
       chips.push({ idx: next.idx, sec: next.sec, live: b.live });
-      if (!b.live || !next.loc) continue;
       const n2 = es.find(x => x.idx !== next.idx && x.sec > next.sec);
       const gap = n2 ? Math.max(30, n2.sec - next.sec) : 120;
       const f = next.sec === 0 ? 1 : Math.max(0, Math.min(1, (gap - next.sec) / gap));
-      const ref = next.idx === 0 ? (K75P_STOPS.length - 1) + f : next.idx - 1 + f;
-      let pos = gpsPos(next.loc, ref);
-      if (pos != null && Math.abs(pos - ref) > 2) pos = null;
-      markers.push({ id, pos: pos == null ? ref : pos, nextIdx: next.idx, nextName: K75P_STOPS[next.idx].name, nextSec: next.sec, gap: Math.max(10, gap) });
+      const ref = next.idx === 0 ? (KN - 1) + f : next.idx - 1 + f;
+      let pos = (b.live && next.loc) ? gpsPos(next.loc, ref) : null;
+      if (pos == null) pos = ref;
+      /* 平滑 + 只進不退：GPS 抖動不再讓班次來回亂跑 */
+      if (busSm[id] != null && now - (busAt[id] || 0) < 90000) {
+        let d = pos - busSm[id];
+        if (d < -0.3) d = -0.3;
+        if (d > 0.9) d = 0.9;
+        pos = busSm[id] + d * 0.55;
+      }
+      pos = Math.max(0, Math.min(KN - 1, pos));
+      busSm[id] = pos; busAt[id] = now;
+      markers.push({ id, pos, nextIdx: next.idx, nextName: K75P_STOPS[next.idx].name, nextSec: next.sec, gap: Math.max(10, gap) });
     }
     return { markers, chips, stopBuses };
   }
-  function kPointAt(pos) {
-    const pts = K75P_STOPS.map(st => kCoords[st.id]).filter(Boolean);
-    if (!kCum.length || pts.length < 2) return pts[0] ? L.latLng(pts[0].lat, pts[0].lng) : L.latLng(22.45, 114.0);
-    const seg = Math.min(pts.length - 2, Math.floor(pos));
-    const f = pos - seg;
-    const target = kCum[seg] + f * (kCum[seg + 1] - kCum[seg]);
-    let j = 0;
-    while (j < pts.length - 2 && kCum[j + 1] < target) j++;
-    const span = kCum[j + 1] - kCum[j];
-    const t = span > 0 ? (target - kCum[j]) / span : 0;
-    return L.latLng(pts[j].lat + (pts[j + 1].lat - pts[j].lat) * t, pts[j].lng + (pts[j + 1].lng - pts[j].lng) * t);
+  /* U 形路線圖渲染（純 SVG，無第三方地圖庫） */
+  let kRouteSVG = null, kBusLayer = null, kStDots = [], busEls = {};
+  function buildKRoute() {
+    const box = $('kroute');
+    const P = (t) => { const p = kUXY(t); return p[0].toFixed(1) + ',' + p[1].toFixed(1); };
+    const d = 'M' + P(0) + ' L' + P(kTA) + ' Q' + U.xM + ',' + U.yCurve + ' ' + P(kTB) + ' L' + P(1);
+    let s = '<svg viewBox="0 0 380 300" preserveAspectRatio="xMidYMid meet">';
+    s += '<path class="kline2" d="' + d + '"/><path class="kline" d="' + d + '"/>';
+    s += '<text class="ktag" x="' + (U.xL - 10) + '" y="' + (U.yTop - 9) + '" text-anchor="end">起點</text>'
+      + '<text class="ktag" x="' + (U.xR + 10) + '" y="' + (U.yTop - 9) + '" text-anchor="start">終點</text>';
+    for (let i = 0; i < KN; i++) {
+      const p = kUXY(i / (KN - 1));
+      const main = i === 0 || i === KN - 1 || i === kTurn;
+      const r = main ? (i === kTurn ? 7 : 6) : 4;
+      s += '<circle class="kst' + (main ? ' main' : '') + '" data-i="' + i + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + r + '"/>';
+      let lx, ly, anchor;
+      if (i === kTurn) { lx = U.xM; ly = p[1] - 13; anchor = 'middle'; }
+      else if (i < kTurn) { lx = U.xL - 9; ly = p[1] + 3; anchor = 'end'; }
+      else { lx = U.xR + 9; ly = p[1] + 3; anchor = 'start'; }
+      s += '<text class="kname' + (main ? ' main' : '') + '" x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '">' + esc(K75P_STOPS[i].name) + '</text>';
+    }
+    s += '<g id="kbuses"></g></svg>';
+    box.innerHTML = s;
+    kRouteSVG = box.querySelector('svg');
+    kBusLayer = box.querySelector('#kbuses');
+    kStDots = [...box.querySelectorAll('.kst')];
+    kStDots.forEach(dt => dt.addEventListener('click', () => selectKStop(Number(dt.dataset.i))));
   }
-  async function initKMap() {
-    const box = $('kmap');
-    if (kMap) { setTimeout(() => kMap.invalidateSize(), 100); return; }
-    try {
-      if (!window.L) {
-        await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'lib/leaflet/leaflet.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
-        const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'lib/leaflet/leaflet.css'; document.head.appendChild(l);
+  function updateKBuses(markers) {
+    if (!kBusLayer) return;
+    const seen = new Set();
+    for (const m of markers) {
+      const p = kUXY(m.pos / (KN - 1));
+      const k = 'b' + m.id;
+      seen.add(k);
+      let el = busEls[k];
+      if (!el) {
+        el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        el.setAttribute('class', 'kbus');
+        el.innerHTML = '<circle class="kglow" r="11"/><rect x="-14" y="-8" width="28" height="10" rx="2" fill="#F4F6F8" stroke="#33537B"/><rect x="-14" y="-3.4" width="28" height="2.6" style="fill:var(--accent)"/><rect x="-11" y="2.5" width="5" height="3.5" fill="#1B1F27"/><rect x="6" y="2.5" width="5" height="3.5" fill="#1B1F27"/><rect x="-9" y="-6.8" width="9" height="2.4" fill="#33537B"/><rect x="2" y="-6.8" width="6" height="2.4" fill="#33537B"/><title>' + esc('巴士 ' + m.id) + '</title>';
+        kBusLayer.appendChild(el);
+        busEls[k] = el;
+        el.setAttribute('transform', 'translate(' + p[0].toFixed(1) + ',' + p[1].toFixed(1) + ')');
+        requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('on')));
+      } else {
+        el.setAttribute('transform', 'translate(' + p[0].toFixed(1) + ',' + p[1].toFixed(1) + ')');
       }
-      if (!window.L) return;
-      kMap = L.map(box, { zoomControl: false, attributionControl: false });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(kMap);
-      const pts = K75P_STOPS.map(st => kCoords[st.id]).filter(Boolean);
-      kCum = [0];
-      for (let i = 1; i < pts.length; i++) kCum.push(kCum[i - 1] + hav(pts[i - 1], pts[i]));
-      const ac = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0078D7';
-      L.polyline(pts, { color: '#FFFFFF', weight: 8, opacity: .9 }).addTo(kMap);
-      L.polyline(pts, { color: ac, weight: 4, opacity: .95 }).addTo(kMap);
-      kMarks = pts.map((p, i) => L.circleMarker(p, { radius: i === 0 || i === pts.length - 1 ? 7 : 5, color: '#FFFFFF', weight: 2.5, fillColor: ac, fillOpacity: 1 }).on('click', () => selectKStop(i)));
-      kMarks.forEach(m => m.addTo(kMap));
-      kMap.fitBounds(L.latLngBounds(pts), { padding: [30, 30] });
-    } catch (e) {}
+    }
+    Object.keys(busEls).forEach(kk => { if (!seen.has(kk)) { busEls[kk].remove(); delete busEls[kk]; } });
   }
   async function openK75P() {
     const page = $('k75pPage');
     page.classList.add('open');
-    await initKMap();
+    if (!kRouteSVG) buildKRoute();
     renderK75P();
     clearInterval(kTick);
     kTick = setInterval(renderK75P, 20000);
   }
+  $('kClose').addEventListener('click', () => { $('k75pPage').classList.remove('open'); clearInterval(kTick); });
   $('k75pPage').addEventListener('click', (e) => {
-    if (e.target.closest('.kroom, .krow, .kcard, .kstatus, .kpanel, .kmap, .km-chip')) return;
+    if (e.target.closest('.krow, .kcard, .kstatus, .kpanel, .khead, #kroute, #kbody')) return;
     $('k75pPage').classList.remove('open');
     clearInterval(kTick);
   });
@@ -1138,6 +1179,9 @@
       const data = await getMTRBusETA('K75P');
       kState = kModel(data);
       const { markers, chips } = kState;
+      updateKBuses(markers);
+      const ks = $('kStat');
+      if (ks) ks.textContent = '實時 ' + markers.length + ' 班';
       const gpsB = markers.slice().sort((a, b) => a.nextSec - b.nextSec);
       const sched = chips.filter(c => !c.live).sort((a, b) => a.sec - b.sec)[0];
       const lead = gpsB[0];
@@ -1154,18 +1198,6 @@
       const kx = $('kx');
       if (kx) kx.onclick = () => { kSel = -1; $('#kpanel').hidden = true; };
       if (kSel >= 0) selectKStop(kSel);
-      if (kMap) {
-        markers.forEach(m => {
-          const k = 'b' + m.id;
-          let mk = kBusM[k];
-          if (!mk) { mk = L.marker(kPointAt(m.pos), { icon: L.divIcon({ className: '', html: K75P_BUS, iconSize: [28, 16], iconAnchor: [14, 8] }) }).addTo(kMap); kBusM[k] = mk; }
-          mk.dataset_ref = m.pos; mk.dataset_gap = m.gap; mk.dataset_stop = m.nextIdx === 0 ? K75P_STOPS.length - 1 : m.nextIdx - 1;
-          mk.setLatLng(kPointAt(m.pos));
-          mk.bindTooltip('巴士 ' + m.id + ' · 下一站 ' + m.nextName, { direction: 'top', offset: [0, -10] });
-        });
-        const keep = new Set(markers.map(m => 'b' + m.id));
-        Object.keys(kBusM).forEach(kk => { if (!keep.has(kk)) { kMap.removeLayer(kBusM[kk]); delete kBusM[kk]; } });
-      }
     } catch (e) {}
   }
   function selectKStop(i) {
@@ -1173,11 +1205,14 @@
     const pn = $('kpanel'), kn = $('kpn'), kr = $('krows');
     if (!pn || !kr) return;
     pn.hidden = false;
-    kn.textContent = K75P_STOPS[i].name + (i === 0 ? '（起點）' : i === K75P_STOPS.length - 1 ? '（終點）' : '');
+    kn.textContent = K75P_STOPS[i].name + (i === 0 ? '（起點）' : i === KN - 1 ? '（終點）' : i === kTurn ? '（折返）' : '');
     const rows = (kState && kState.stopBuses[i] || []).slice(0, 3);
     kr.innerHTML = rows.map((b, k) => '<div class="krow"><span class="no">' + (['下一班', '次班', '三班'][k] || (k + 1)) + '</span><span class="bus">巴士 <b>' + esc(b.id) + '</b> <span class="ktag' + (b.live ? '' : ' off') + '">' + (b.live ? 'GPS' : '定時') + '</span></span><span class="eta"' + (b.sec === 0 ? '' : ' data-sec="' + Math.ceil(b.sec / 60) + '"') + '>' + (b.sec === 0 ? '00:00' : mmss(b.sec)) + '</span></div>').join('')
       || '<div class="krow"><span class="no">—</span><span class="bus">暫無班次</span></div>';
-    kMarks.forEach((m, kk) => m.setStyle({ radius: kk === i ? 9 : (kk === 0 || kk === K75P_STOPS.length - 1 ? 7 : 5) }));
+    kStDots.forEach((dt, kk) => {
+      dt.classList.toggle('sel', kk === i);
+      dt.setAttribute('r', kk === i ? 8 : (kk === 0 || kk === KN - 1 ? 6 : kk === kTurn ? 7 : 4));
+    });
   }
 
   /* ---------- 設定 ---------- */
@@ -1203,7 +1238,6 @@
       if (b.dataset.k === 'accent') cfg.accent = b.dataset.v;
       if (b.dataset.k === 'refresh') cfg.refresh = Number(b.dataset.v);
       saveCfg(); applyCfg(); renderSettings();
-      if (b.dataset.k === 'accent' && kMap) { kMap.remove(); kMap = null; kBusM = {}; setTimeout(() => initKMap(), 80); }
     }));
     box.querySelectorAll('button[data-fs]').forEach(b => b.addEventListener('click', () => {
       fontLevel = Math.max(0, Math.min(FONT_LEVELS.length - 1, fontLevel + Number(b.dataset.fs)));

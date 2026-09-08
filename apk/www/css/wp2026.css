@@ -262,16 +262,26 @@ body[data-theme="light"] .dstop { border-bottom-color: rgba(0,0,0,.06); }
 .dstop.cur { background: rgba(0,120,215,.12); border-radius: 12px; }
 .dstop.cur .dseq { background: var(--accent); color: #fff; animation: wp26Pulse 1.6s infinite; }
 
-/* ---------- K75P 頁 ---------- */
-.kmap { position: relative; height: 46%; min-height: 220px; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: #071423; }
-.kmap::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 800;
-  background: radial-gradient(220px 110px at 66% 30%, rgba(0,120,215,.25), transparent 70%), linear-gradient(180deg, rgba(0,0,0,.2), transparent 28%, rgba(0,0,0,.3)); }
-.kmap .leaflet-tile { filter: brightness(.55) saturate(.7); }
-.kmap .leaflet-container { background: #071423; }
-.kmap .leaflet-marker-icon { transition: transform .8s linear; }
-.kmap-top { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 900; display: flex; gap: 8px; pointer-events: none; }
-.km-chip { padding: 6px 12px; font-size: 13px; border-radius: 999px; background: rgba(10,10,10,.6); border: 1px solid rgba(255,255,255,.25); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); color: var(--text); }
-.km-live { margin-left: auto; background: var(--accent); color: #fff; padding: 6px 12px; font-size: 12px; border-radius: 999px; box-shadow: 0 0 14px rgba(0,120,215,.5); }
+/* ---------- K75P U形路線圖頁 ---------- */
+.khead { display: flex; align-items: center; gap: 10px; height: 54px; flex: 0 0 auto; }
+.khead .kt { flex: 1; font-size: 20px; font-weight: 300; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.khead .kstat { font-size: 11px; padding: 4px 10px; border-radius: 999px; background: var(--accent); color: #fff; box-shadow: 0 0 12px rgba(0,120,215,.45); }
+.khead .kx { width: 40px; height: 40px; border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; cursor: pointer; font-size: 16px; }
+#kroute { position: relative; height: 46%; min-height: 280px; max-height: 340px; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; flex: 0 0 auto;
+  background: radial-gradient(220px 120px at 66% 28%, rgba(0,120,215,.22), transparent 70%), #071423; }
+body[data-theme="light"] #kroute { background: radial-gradient(220px 120px at 66% 28%, rgba(0,120,215,.18), transparent 70%), #E8EDF5; }
+#kroute svg { width: 100%; height: 100%; display: block; }
+#kroute .kline2 { fill: none; stroke: rgba(255,255,255,.85); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+#kroute .kline { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+#kroute .kst { fill: var(--accent); stroke: #FFF; stroke-width: 2; cursor: pointer; }
+#kroute .kst.main { fill: #FFF; stroke: var(--accent); stroke-width: 2.5; }
+#kroute .kst.sel { stroke: #FFD54F; stroke-width: 3.5; }
+#kroute .kname { fill: var(--text2); font-size: 8.5px; }
+#kroute .kname.main { fill: var(--text); font-size: 10px; font-weight: 600; }
+#kroute .ktag { fill: var(--accent); font-size: 9px; font-weight: 600; letter-spacing: 1px; }
+#kroute .kbus { transition: none; }
+#kroute .kbus.on { transition: transform 1s linear; }
+#kroute .kglow { fill: var(--accent); opacity: .28; }
 .kcards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
 .kcard { border-radius: 16px; padding: 12px 10px; background: var(--surface2); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
 .kcard .lab { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; }
@@ -367,17 +377,25 @@ body[data-mood="night"] .shine::after { animation-duration: 12s; }
 /* ========== 減少動效（cfg.fx=false → body.no-fx 裝飾動畫歸零，僅留功能脈衝） ========== */
 body.no-fx .shine::after, body.no-fx .orb, body.no-fx .anim { animation: none !important; }
 
-/* ========== 摺疊屏 / 大屏優化（同源舊版：利用寬度，而非放大手機） ========== */
+/* ========== 摺疊屏 / 大屏優化（同源舊版：全寬填滿 + 首頁雙欄並列，而非窄條居中） ========== */
 @media (min-width: 700px) {
-  #app, .toolbar, .pivot-glass, #pivot { max-width: 640px; }
-  .pane { padding-left: 40px; padding-right: 40px; }
-  .tiles { gap: 12px; grid-template-columns: repeat(3, 1fr); }
+  #app, .toolbar, .pivot-glass, #pivot, .appbar, .sheet, #k75pPage { max-width: none; }
+  .appbar { justify-content: center; gap: 44px; }
+  .pane { padding-left: 44px; padding-right: 44px; }
   .toolbar .title { font-size: 38px; }
+  .tiles { gap: 12px; }
+  /* 首頁雙欄：磁貼 | 搜索（同源舊版 pano-panel 並列設計） */
+  .pane[data-pane="home"] { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; column-gap: 20px; align-items: start; }
+  .pane[data-pane="home"] .tiles { grid-column: 1; grid-row: 1 / span 3; align-self: start; }
+  .pane[data-pane="home"] .searchbar { grid-column: 2; grid-row: 1; margin-top: 0; }
+  .pane[data-pane="home"] .chips { grid-column: 2; grid-row: 2; }
+  .pane[data-pane="home"] #results { grid-column: 2; grid-row: 3; min-height: 45vh; }
+  .sheet .sbody { padding-left: 12px; padding-right: 12px; }
 }
 @media (min-width: 1000px) {
-  #app, .toolbar, .pivot-glass, #pivot { max-width: 800px; }
-  .pane { padding-left: 52px; padding-right: 52px; }
-  .toolbar .title { font-size: 42px; }
+  .pane { padding-left: 60px; padding-right: 60px; }
+  .toolbar .title { font-size: 44px; }
+  .pane[data-pane="home"] { grid-template-columns: 5fr 6fr; column-gap: 28px; }
 }
 /* 雙屏 / 摺疊設備：內容避開鉸鏈縫（viewport segments 環境變量） */
 @media (spanning: single-fold-vertical) {
