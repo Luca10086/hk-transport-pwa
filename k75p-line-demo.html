@@ -3,158 +3,128 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K75P 全綫 · 班次實時位置（線路圖 Demo）</title>
+<title>K75P 實時路線 · 澳泊式介面 Demo</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  /* ===== K75P 垂直線路圖 Demo（WP8-Metro 語法：純黑 · 單一強調色 · 全直角） ===== */
+  /* ===== 澳泊式介面複刻（K75P 數據）：地圖頂 + 大路線號 + 三張預報卡 + 狀態列 + 底部標籤 ===== */
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
   body {
-    background: #000; color: #fff; min-height: 100vh;
-    font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
-    display: flex; justify-content: center; padding: 20px 0 48px;
+    background: #E9EDF2; color: #14213D; font-family: 'Noto Sans TC', 'Segoe UI', sans-serif;
+    display: flex; justify-content: center;
   }
-  .wrap { width: 360px; padding: 0 24px; }
-  /* ---- 標題欄 ---- */
-  .bar { display: flex; align-items: center; gap: 10px; padding: 6px 0 2px; }
-  .bar .t { flex: 1; font-size: 22px; font-weight: 300; }
-  .bar button {
-    width: 44px; height: 44px; border: 1px solid rgba(255,255,255,.25);
-    background: transparent; color: #fff; font-size: 20px; cursor: pointer;
+  .app { width: 100%; max-width: 420px; height: 100vh; background: #F7F9FC; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 24px rgba(0,0,0,.12); }
+  /* ---- 地圖區 ---- */
+  .map { flex: 0 0 46vh; position: relative; background: #DFE8DC; }
+  .map .fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #5C6B7A; font-size: 14px; text-align: center; padding: 20px; }
+  .map-topbar {
+    position: absolute; top: 10px; left: 10px; right: 10px; z-index: 500;
+    display: flex; align-items: center; gap: 8px; pointer-events: none;
   }
-  .bar button:active { background: #0078D7; }
-  .badge { font-size: 13px; color: rgba(255,255,255,.5); }
-  /* ---- 方向提示 ---- */
-  .dir { height: 26px; padding-left: 66px; font-size: 13px; color: rgba(255,255,255,.5); line-height: 26px; }
-  .dir b { color: #0078D7; font-weight: 400; font-size: 17px; margin-right: 4px; }
-  /* ---- 起終點標籤 ---- */
-  .term-label { font-size: 22px; color: #0078D7; padding-left: 94px; height: 34px; line-height: 34px; }
-  .term-label.bottom { height: 40px; line-height: 40px; }
-  /* ---- 站線區 ---- */
-  .stops { position: relative; margin-top: 4px; }
-  .stops::before {
-    content: ''; position: absolute; left: 80px; top: 0; bottom: 0; width: 4px;
-    background: #0078D7;
+  .map-back {
+    pointer-events: auto; width: 34px; height: 34px; border: none; border-radius: 50%;
+    background: #fff; color: #14213D; font-size: 18px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.2);
   }
-  .stop { position: relative; height: 52px; }
-  .dot {
-    position: absolute; left: 73px; top: 50%; width: 18px; height: 18px;
-    transform: translateY(-50%); background: #0078D7;
+  .map-chip {
+    background: #fff; border-radius: 14px; padding: 6px 12px; font-size: 13px; font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0,0,0,.18);
   }
-  .dot.term { width: 24px; height: 24px; left: 70px; border: 3px solid #005A9E; }
-  .name {
-    position: absolute; left: 94px; top: 50%; transform: translateY(-50%);
-    font-size: 17px; white-space: nowrap;
+  .map-live {
+    margin-left: auto; background: #0A84FF; color: #fff; border-radius: 12px; padding: 5px 10px;
+    font-size: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.2);
   }
-  .chips {
-    position: absolute; right: calc(100% - 72px); top: 50%; transform: translateY(-50%);
-    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
-  }
-  .chip {
-    border: 1px solid rgba(255,255,255,.25); color: #fff;
-    padding: 4px 8px; font-size: 13px; white-space: nowrap;
-    font-variant-numeric: tabular-nums; font-family: 'Consolas', 'Segoe UI', monospace;
-  }
-  .chip.live { color: #0078D7; border-color: #0078D7; }
-  .chip.sched { color: rgba(255,255,255,.5); border-style: dashed; }
-  .chip.more { color: rgba(255,255,255,.5); }
-  /* ---- 班次位置橫標（隨刷新平滑移動） ---- */
-  .bus {
-    position: absolute; width: 24px; height: 14px;
-    transition: top .8s linear; color: #0078D7; pointer-events: none;
-  }
-  .bus svg { width: 24px; height: 14px; display: block; fill: currentColor; }
-  /* ---- 預報卡（下一班/再下一班/預測，仿澳泊三卡語法） ---- */
-  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
-  .card { border: 1px solid rgba(255,255,255,.25); padding: 10px 8px; }
-  .card .lab { font-size: 13px; color: rgba(255,255,255,.5); display: flex; align-items: center; gap: 4px; }
-  .card .gps { font-size: 11px; border: 1px solid #0078D7; color: #0078D7; padding: 0 4px; white-space: nowrap; }
-  .card .big {
-    font-size: 22px; color: #0078D7; margin-top: 7px;
-    font-variant-numeric: tabular-nums; font-family: 'Consolas', 'Segoe UI', monospace;
-  }
-  .card .sub { font-size: 13px; color: rgba(255,255,255,.5); margin-top: 4px; }
-  .card.pred .big { color: rgba(255,255,255,.5); }
-  /* ---- 動態狀態列 ---- */
+  /* ---- 巴士圖標 ---- */
+  .busm { width: 28px; height: 16px; }
+  .busm svg { width: 28px; height: 16px; display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  /* ---- 資訊面板 ---- */
+  .panel { flex: 1; overflow-y: auto; padding: 14px 16px 70px; background: #F7F9FC; }
+  .head { display: flex; align-items: baseline; gap: 10px; }
+  .head .no { font-size: 44px; font-weight: 800; color: #0A84FF; letter-spacing: -1px; }
+  .head .dest { font-size: 20px; font-weight: 700; }
+  .head .meta { font-size: 13px; color: #6B7A90; margin-top: 2px; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+  .card { background: #FFFFFF; border: 1px solid #E3E8EF; border-radius: 12px; padding: 10px 9px; }
+  .card .lab { font-size: 12px; color: #6B7A90; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .card .gps { font-size: 10px; background: #0A84FF; color: #fff; border-radius: 4px; padding: 1px 4px; }
+  .card .gps.off { background: #B9C2CE; }
+  .card .big { font-size: 20px; font-weight: 700; color: #14213D; margin-top: 8px; white-space: nowrap; }
+  .card .sub { font-size: 12px; color: #6B7A90; margin-top: 3px; white-space: nowrap; }
+  /* ---- 狀態列 ---- */
   .status {
-    margin-top: 10px; font-size: 13px; color: rgba(255,255,255,.7);
-    border-top: 1px solid rgba(255,255,255,.15); padding: 9px 2px 2px; line-height: 1.6;
+    margin-top: 12px; background: #FFFFFF; border: 1px solid #E3E8EF; border-radius: 12px;
+    padding: 11px 12px; font-size: 13px; color: #14213D; line-height: 1.7;
   }
-  .status b { color: #0078D7; font-weight: 400; }
-  /* ---- 圖例 ---- */
-  .legend {
-    display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
-    margin-top: 18px; font-size: 13px; color: rgba(255,255,255,.5);
+  .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #12B76A; margin-right: 6px; }
+  .status b { color: #0A84FF; font-weight: 700; }
+  .status .gps { font-size: 10px; background: #0A84FF; color: #fff; border-radius: 4px; padding: 1px 5px; margin: 0 2px; }
+  /* ---- 底部標籤 ---- */
+  .tabs {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 600;
+    display: flex; background: #FFFFFF; border-top: 1px solid #E3E8EF;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
   }
-  .legend i { font-style: normal; }
-  .lg-dot, .lg-term { display: inline-block; width: 10px; height: 10px; background: #0078D7; margin-right: 4px; }
-  .lg-term { width: 14px; height: 14px; border: 2px solid #005A9E; vertical-align: -1px; }
-  .lg-bus { display: inline-block; width: 16px; height: 8px; background: #0078D7; margin-right: 4px; }
-  .lg-chip { border: 1px solid #0078D7; color: #0078D7; padding: 1px 5px; margin: 0 4px; font-variant-numeric: tabular-nums; }
-  .note { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,.5); text-align: center; }
+  .tabs span {
+    flex: 1; text-align: center; font-size: 12px; color: #6B7A90; padding: 6px 0; cursor: pointer;
+  }
+  .tabs span.on { color: #0A84FF; font-weight: 700; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="bar">
-    <div class="t">K75P 全綫 · 班次實時位置</div>
-    <button id="refreshBtn" aria-label="重新整理" title="重新整理">↻</button>
-  </header>
-  <div class="badge" id="badge">載入中…</div>
-
-  <div class="dir"><b>▼</b>循環方向</div>
-  <div class="term-label">天瑞（起點）</div>
-
-  <div class="stops" id="stops"></div>
-
-  <div class="term-label bottom">天瑞（終點）</div>
-  <div class="dir"><b>▼</b>返回天瑞</div>
-
-  <div class="legend">
-    <span><i class="lg-term"></i>起/終點</span>
-    <span><i class="lg-dot"></i>中途站</span>
-    <span><i class="lg-bus"></i>班次位置（GPS）</span>
-    <span><i class="lg-chip">13:14</i>預計到達</span>
+<div class="app">
+  <div class="map" id="map">
+    <div class="fallback" id="mapFallback" hidden>地圖組件載入中…（無網絡時僅顯示下方資訊）</div>
+    <div class="map-topbar">
+      <button class="map-back" aria-label="返回">‹</button>
+      <span class="map-chip">K75P 循環線</span>
+      <span class="map-live" id="mapLive">● 實時</span>
+    </div>
   </div>
-
-  <div class="cards" id="cards"></div>
-  <div class="status" id="status"></div>
-  <div class="note" id="note">Demo：以快照數據演示動態班次位置；APK 集成版走原生通道實時刷新</div>
+  <div class="panel">
+    <div class="head">
+      <span class="no">K75P</span>
+      <span>
+        <div class="dest">往 天瑞（循環線）</div>
+        <div class="meta">港鐵巴士 · 全程 23 站 · 天水圍</div>
+      </span>
+    </div>
+    <div class="cards" id="cards"></div>
+    <div class="status" id="status"></div>
+  </div>
+  <nav class="tabs">
+    <span class="on">實時路線</span><span>站點</span><span>地圖</span><span>設定</span>
+  </nav>
 </div>
 
 <script>window.DEMO_K75P_STOPS = [{"id":"D010","name":"天瑞"},{"id":"D020","name":"天水圍公園"},{"id":"D030","name":"天耀邨耀盛樓"},{"id":"D040","name":"輕鐵天耀站"},{"id":"D050","name":"天盛苑"},{"id":"D060","name":"石埗路"},{"id":"D070","name":"沙洲里村"},{"id":"D080","name":"廈村市"},{"id":"U011","name":"新屋村"},{"id":"U010","name":"李屋村"},{"id":"U020","name":"新生村"},{"id":"U030","name":"新李屋村"},{"id":"U040","name":"田心"},{"id":"U050","name":"鄉事委員會"},{"id":"U060","name":"輕鐵洪水橋站"},{"id":"U070","name":"洪水橋巴士廠"},{"id":"U080","name":"洪福邨"},{"id":"U090","name":"石埗村"},{"id":"U100","name":"天盛苑"},{"id":"U110","name":"天水圍警署"},{"id":"U120","name":"賞湖居"},{"id":"U130","name":"天水圍公園"},{"id":"U140","name":"天瑞"}];
 window.DEMO_K75P_COORDS = null;
-window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 19:55:51","stops":[{"id":"D010","bus":[{"id":"516","sec":465,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":1128,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1852,"sched":true,"la":0,"ln":0},{"id":"352","sec":2572,"sched":true,"la":0,"ln":0}]},{"id":"D020","bus":[{"id":"516","sec":607,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":1270,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1989,"sched":true,"la":0,"ln":0}]},{"id":"D030","bus":[{"id":"516","sec":639,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":1301,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":2021,"sched":true,"la":0,"ln":0}]},{"id":"D040","bus":[{"id":"516","sec":734,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":1396,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":2116,"sched":true,"la":0,"ln":0}]},{"id":"D050","bus":[{"id":"352","sec":28,"sched":false,"la":22.446407999999998,"ln":113.99941416666667},{"id":"516","sec":897,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":1559,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":2277,"sched":true,"la":0,"ln":0}]},{"id":"D060","bus":[{"id":"352","sec":117,"sched":false,"la":22.446407999999998,"ln":113.99941416666667},{"id":"516","sec":989,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":1652,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":2373,"sched":true,"la":0,"ln":0}]},{"id":"D070","bus":[{"id":"352","sec":324,"sched":false,"la":22.446407999999998,"ln":113.99941416666667},{"id":"516","sec":1188,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":1850,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":2575,"sched":true,"la":0,"ln":0}]},{"id":"D080","bus":[{"id":"352","sec":418,"sched":false,"la":22.446407999999998,"ln":113.99941416666667},{"id":"516","sec":1274,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":1937,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":2663,"sched":true,"la":0,"ln":0}]},{"id":"U010","bus":[{"id":"354","sec":108000,"sched":true,"la":0,"ln":0},{"id":"352","sec":108000,"sched":true,"la":0,"ln":0},{"id":"516","sec":108000,"sched":true,"la":0,"ln":0}]},{"id":"U011","bus":[{"id":"352","sec":567,"sched":false,"la":22.446407999999998,"ln":113.99941416666667},{"id":"516","sec":1423,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":2086,"sched":false,"la":22.455749,"ln":113.99996983333334}]},{"id":"U020","bus":[{"id":"534","sec":63,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":774,"sched":true,"la":0,"ln":0},{"id":"352","sec":1494,"sched":true,"la":0,"ln":0},{"id":"516","sec":2214,"sched":true,"la":0,"ln":0}]},{"id":"U030","bus":[{"id":"534","sec":157,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":868,"sched":true,"la":0,"ln":0},{"id":"352","sec":1588,"sched":true,"la":0,"ln":0},{"id":"516","sec":2308,"sched":true,"la":0,"ln":0}]},{"id":"U040","bus":[{"id":"534","sec":271,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":984,"sched":true,"la":0,"ln":0},{"id":"352","sec":1704,"sched":true,"la":0,"ln":0},{"id":"516","sec":2424,"sched":true,"la":0,"ln":0}]},{"id":"U050","bus":[{"id":"534","sec":366,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1080,"sched":true,"la":0,"ln":0},{"id":"352","sec":1800,"sched":true,"la":0,"ln":0},{"id":"516","sec":2520,"sched":true,"la":0,"ln":0}]},{"id":"U060","bus":[{"id":"534","sec":533,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1252,"sched":true,"la":0,"ln":0},{"id":"352","sec":1972,"sched":true,"la":0,"ln":0},{"id":"516","sec":2692,"sched":true,"la":0,"ln":0}]},{"id":"U070","bus":[{"id":"534","sec":558,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1278,"sched":true,"la":0,"ln":0},{"id":"352","sec":1998,"sched":true,"la":0,"ln":0}]},{"id":"U080","bus":[{"id":"516","sec":0,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":666,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1383,"sched":true,"la":0,"ln":0},{"id":"352","sec":2103,"sched":true,"la":0,"ln":0}]},{"id":"U090","bus":[{"id":"516","sec":23,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":710,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1427,"sched":true,"la":0,"ln":0},{"id":"352","sec":2147,"sched":true,"la":0,"ln":0}]},{"id":"U100","bus":[{"id":"516","sec":66,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":752,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1469,"sched":true,"la":0,"ln":0},{"id":"352","sec":2189,"sched":true,"la":0,"ln":0}]},{"id":"U110","bus":[{"id":"516","sec":125,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":803,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1521,"sched":true,"la":0,"ln":0},{"id":"352","sec":2241,"sched":true,"la":0,"ln":0}]},{"id":"U120","bus":[{"id":"516","sec":212,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":886,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1608,"sched":true,"la":0,"ln":0},{"id":"352","sec":2328,"sched":true,"la":0,"ln":0}]},{"id":"U130","bus":[{"id":"516","sec":282,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":953,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1675,"sched":true,"la":0,"ln":0},{"id":"352","sec":2395,"sched":true,"la":0,"ln":0}]},{"id":"U140","bus":[{"id":"516","sec":327,"sched":false,"la":22.446214499999996,"ln":113.99332766666666},{"id":"534","sec":990,"sched":false,"la":22.455749,"ln":113.99996983333334},{"id":"354","sec":1712,"sched":true,"la":0,"ln":0},{"id":"352","sec":2432,"sched":true,"la":0,"ln":0}]}]};</script>
+window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 20:01:17","stops":[{"id":"D010","bus":[{"id":"516","sec":130,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":780,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1515,"sched":true,"la":0,"ln":0},{"id":"352","sec":2235,"sched":true,"la":0,"ln":0}]},{"id":"D020","bus":[{"id":"516","sec":272,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":922,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1652,"sched":true,"la":0,"ln":0},{"id":"352","sec":2372,"sched":true,"la":0,"ln":0}]},{"id":"D030","bus":[{"id":"516","sec":304,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":954,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1684,"sched":true,"la":0,"ln":0},{"id":"352","sec":2404,"sched":true,"la":0,"ln":0}]},{"id":"D040","bus":[{"id":"516","sec":399,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1049,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1779,"sched":true,"la":0,"ln":0},{"id":"352","sec":2499,"sched":true,"la":0,"ln":0}]},{"id":"D050","bus":[{"id":"516","sec":563,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1213,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1940,"sched":true,"la":0,"ln":0},{"id":"352","sec":2660,"sched":true,"la":0,"ln":0}]},{"id":"D060","bus":[{"id":"516","sec":655,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1305,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":2036,"sched":true,"la":0,"ln":0}]},{"id":"D070","bus":[{"id":"516","sec":851,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1501,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":2238,"sched":true,"la":0,"ln":0}]},{"id":"D080","bus":[{"id":"352","sec":9,"sched":false,"la":22.452902,"ln":114.0028905},{"id":"516","sec":937,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1587,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":2326,"sched":true,"la":0,"ln":0}]},{"id":"U010","bus":[{"id":"354","sec":108000,"sched":true,"la":0,"ln":0},{"id":"352","sec":108000,"sched":true,"la":0,"ln":0},{"id":"516","sec":108000,"sched":true,"la":0,"ln":0},{"id":"534","sec":108000,"sched":true,"la":0,"ln":0}]},{"id":"U011","bus":[{"id":"352","sec":158,"sched":false,"la":22.452902,"ln":114.0028905},{"id":"516","sec":1086,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":1736,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":2469,"sched":true,"la":0,"ln":0}]},{"id":"U020","bus":[{"id":"354","sec":437,"sched":true,"la":0,"ln":0},{"id":"352","sec":1157,"sched":true,"la":0,"ln":0},{"id":"516","sec":1877,"sched":true,"la":0,"ln":0},{"id":"534","sec":2657,"sched":true,"la":0,"ln":0}]},{"id":"U030","bus":[{"id":"354","sec":531,"sched":true,"la":0,"ln":0},{"id":"352","sec":1251,"sched":true,"la":0,"ln":0},{"id":"516","sec":1971,"sched":true,"la":0,"ln":0}]},{"id":"U040","bus":[{"id":"354","sec":647,"sched":true,"la":0,"ln":0},{"id":"352","sec":1367,"sched":true,"la":0,"ln":0},{"id":"516","sec":2087,"sched":true,"la":0,"ln":0}]},{"id":"U050","bus":[{"id":"534","sec":16,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":743,"sched":true,"la":0,"ln":0},{"id":"352","sec":1463,"sched":true,"la":0,"ln":0},{"id":"516","sec":2183,"sched":true,"la":0,"ln":0}]},{"id":"U060","bus":[{"id":"534","sec":183,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":915,"sched":true,"la":0,"ln":0},{"id":"352","sec":1635,"sched":true,"la":0,"ln":0},{"id":"516","sec":2355,"sched":true,"la":0,"ln":0}]},{"id":"U070","bus":[{"id":"534","sec":208,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":941,"sched":true,"la":0,"ln":0},{"id":"352","sec":1661,"sched":true,"la":0,"ln":0},{"id":"516","sec":2381,"sched":true,"la":0,"ln":0}]},{"id":"U080","bus":[{"id":"534","sec":316,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1046,"sched":true,"la":0,"ln":0},{"id":"352","sec":1766,"sched":true,"la":0,"ln":0},{"id":"516","sec":2486,"sched":true,"la":0,"ln":0}]},{"id":"U090","bus":[{"id":"534","sec":361,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1090,"sched":true,"la":0,"ln":0},{"id":"352","sec":1810,"sched":true,"la":0,"ln":0},{"id":"516","sec":2530,"sched":true,"la":0,"ln":0}]},{"id":"U100","bus":[{"id":"534","sec":402,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1132,"sched":true,"la":0,"ln":0},{"id":"352","sec":1852,"sched":true,"la":0,"ln":0},{"id":"516","sec":2572,"sched":true,"la":0,"ln":0}]},{"id":"U110","bus":[{"id":"534","sec":453,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1184,"sched":true,"la":0,"ln":0},{"id":"352","sec":1904,"sched":true,"la":0,"ln":0},{"id":"516","sec":2624,"sched":true,"la":0,"ln":0}]},{"id":"U120","bus":[{"id":"534","sec":538,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1271,"sched":true,"la":0,"ln":0},{"id":"352","sec":1991,"sched":true,"la":0,"ln":0}]},{"id":"U130","bus":[{"id":"534","sec":605,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1338,"sched":true,"la":0,"ln":0},{"id":"352","sec":2058,"sched":true,"la":0,"ln":0}]},{"id":"U140","bus":[{"id":"516","sec":0,"sched":false,"la":22.431709833333336,"ln":113.99279499999999},{"id":"534","sec":642,"sched":false,"la":22.448201166666664,"ln":114.00375933333335},{"id":"354","sec":1375,"sched":true,"la":0,"ln":0},{"id":"352","sec":2095,"sched":true,"la":0,"ln":0}]}]};</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function () {
   'use strict';
   const STOPS = window.DEMO_K75P_STOPS || [];
+  const COORDS = window.DEMO_K75P_COORDS || {};
   let snapshot = window.DEMO_K75P_SNAPSHOT || { at: '', stops: [] };
-  const coords = {};          /* 運行期學習站點座標 */
-  /* GPS 定位標準：靜態座標基準（生成時內嵌）+ 進站學習精修 */
-  if (window.DEMO_K75P_COORDS) {
-    for (const k of Object.keys(window.DEMO_K75P_COORDS)) {
-      const c = window.DEMO_K75P_COORDS[k];
-      if (c && c.lat) coords[k] = { lat: c.lat, lng: c.lng };
-    }
-  }
-  const ROW = 52, RAIL_CENTER = 82;
-  const markerEls = {};
   const $ = (id) => document.getElementById(id);
-  if (!STOPS.length || !snapshot.at) { $('badge').textContent = '數據未載入（請確認 demo 文件完整）'; $('stops').innerHTML = ''; return; }
-
   const mmss = (sec) => {
     if (sec <= 0) return '00:00';
     const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
     return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
   };
+  const minsOf = (sec) => Math.max(1, Math.round(sec / 60)) + ' 分鐘';
   const escapeHtml = (x) => String(x).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  if (!STOPS.length || !snapshot.at) { $('cards').innerHTML = '<div class="card"><div class="lab">數據未載入</div></div>'; return; }
+
+  /* ================= 模型（與 App 同源：GPS 投影 + 秒數兜底 + 交叉校驗） ================= */
+  const coords = {};
+  if (COORDS) for (const k of Object.keys(COORDS)) { const c = COORDS[k]; if (c && c.lat) coords[k] = { lat: c.lat, lng: c.lng }; }
   function segPointFrac(a, b, p) {
     const kx = 111320 * Math.cos(a.lat * Math.PI / 180), ky = 110540;
     const bx = (b.lng - a.lng) * kx, by = (b.lat - a.lat) * ky;
     const px = (p.lng - a.lng) * kx, py = (p.lat - a.lat) * ky;
     const len2 = bx * bx + by * by;
     if (len2 < 1e-6) return { d2: px * px + py * py, f: 0 };
-    let t = (px * bx + py * by) / len2;
-    t = Math.max(0, Math.min(1, t));
+    let t = (px * bx + py * by) / len2; t = Math.max(0, Math.min(1, t));
     const cx = bx * t, cy = by * t;
     return { d2: (px - cx) * (px - cx) + (py - cy) * (py - cy), f: t };
   }
@@ -169,8 +139,6 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 19:55:51","stops":[{"id":"D010","b
     }
     return (best && Math.sqrt(best.d2) < 300) ? best.pos : null;
   }
-  /* 與 App 同源模型：班次位置 = GPS 投影（站點座標由「已到站班車 GPS」即時學習），
-     座標不足時用「到站秒數差」插值兜底 */
   function buildModel(data) {
     const stopMap = {};
     (data.stops || []).forEach(st => { stopMap[st.id] = st.bus || []; });
@@ -200,105 +168,115 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 19:55:51","stops":[{"id":"D010","b
       const f = next.sec === 0 ? 1 : Math.max(0, Math.min(1, (gap - next.sec) / gap));
       const refPos = next.idx === 0 ? 0 : next.idx - 1 + f;
       let pos = gpsLoopPosition(next.loc, refPos);
-      if (pos != null && Math.abs(pos - refPos) > 2) pos = null;   /* GPS 與班表矛盾（>2 站）＝定位失效 */
+      if (pos != null && Math.abs(pos - refPos) > 2) pos = null;
       if (pos == null) pos = refPos;
       markers.push({ id, pos, nextIdx: next.idx, nextName: STOPS[next.idx].name, nextSec: next.sec, gap: Math.max(10, gap) });
     }
     return { markers, chips };
   }
 
+  /* ================= 地圖（Leaflet + OSM）：路線線 + 站點 + 移動巴士 ================= */
+  let map = null, routeLine = null;
+  const busMarkers = {};
+  let cum = [];
+  function haversine(a, b) {
+    const R = 6371000, dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180;
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
+  function buildRoute() {
+    const pts = STOPS.map(st => coords[st.id]).filter(Boolean);
+    if (pts.length < 2) return false;
+    cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + haversine(pts[i - 1], pts[i]));
+    L.polyline(pts, { color: '#FFFFFF', weight: 8, opacity: .9 }).addTo(map);
+    routeLine = L.polyline(pts, { color: '#0A84FF', weight: 4, opacity: .95 }).addTo(map);
+    L.layerGroup(pts.map((p, i) => L.circleMarker(p, {
+      radius: i === 0 || i === pts.length - 1 ? 7 : 5,
+      color: '#FFFFFF', weight: 2.5, fillColor: '#0A84FF', fillOpacity: 1,
+    }).bindTooltip(STOPS[i].name, { direction: 'right', offset: [8, 0] }))).addTo(map);
+    map.fitBounds(L.latLngBounds(pts), { padding: [34, 34] });
+    return true;
+  }
+  function pointAtPos(pos) {
+    const pts = STOPS.map(st => coords[st.id]).filter(Boolean);
+    if (!cum.length || pts.length < 2) return pts[0] ? L.latLng(pts[0].lat, pts[0].lng) : L.latLng(22.45, 114.0);
+    const seg = Math.min(pts.length - 2, Math.floor(pos));
+    const f = pos - seg;
+    const target = cum[seg] + f * (cum[seg + 1] - cum[seg]);
+    let j = 0;
+    while (j < pts.length - 2 && cum[j + 1] < target) j++;
+    const span = cum[j + 1] - cum[j];
+    const t = span > 0 ? (target - cum[j]) / span : 0;
+    return L.latLng(
+      pts[j].lat + (pts[j + 1].lat - pts[j].lat) * t,
+      pts[j].lng + (pts[j + 1].lng - pts[j].lng) * t);
+  }
+  function initMap() {
+    if (!window.L) { $('mapFallback').hidden = false; $('mapLive').textContent = '地圖離線'; return; }
+    map = L.map('map', { zoomControl: false, attributionControl: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    if (!buildRoute()) $('mapFallback').hidden = false;
+    setTimeout(() => { if (map) map.invalidateSize(); }, 120);
+  }
+  const BUS_SVG = '<svg viewBox="0 0 28 16"><rect x="0" y="0" width="28" height="10" fill="#FFB300" stroke="#7A5C00"/><rect x="3" y="11.5" width="5" height="3.5" fill="#333"/><rect x="20" y="11.5" width="5" height="3.5" fill="#333"/><rect x="5" y="2.2" width="10" height="3" fill="#fff"/><rect x="18" y="2.2" width="5" height="3" fill="#fff"/></svg>';
+
+  /* ================= 渲染：預報卡 + 狀態列 + 巴士定位 ================= */
   let lastRender = 0, tick = null;
   function render() {
-    const box = $('stops');
     const { markers, chips } = buildModel(snapshot);
-    const byStop = {};
-    chips.forEach(c => { (byStop[c.idx] = byStop[c.idx] || []).push(c); });
-    let html = '';
-    STOPS.forEach((st, i) => {
-      const cs = (byStop[i] || []).slice(0, 2);
-      const more = (byStop[i] || []).length - 2;
-      html += '<div class="stop">'
-        + (cs.length ? '<span class="chips">' + cs.map(c => '<span class="chip' + (c.live ? ' live' : ' sched') + '" data-sec="' + c.sec + '">' + mmss(c.sec) + '</span>').join('')
-          + (more > 0 ? '<span class="chip more">+' + more + '</span>' : '') + '</span>' : '')
-        + '<span class="dot' + (i === 0 || i === STOPS.length - 1 ? ' term' : '') + '"></span>'
-        + '<span class="name">' + st.name + '</span>'
-        + '</div>';
-    });
-    box.innerHTML = html;
+    const gpsBuses = markers.slice().sort((a, b) => a.nextSec - b.nextSec);
+    const schedNext = (chips.filter(c => !c.live).sort((a, b) => a.sec - b.sec))[0];
+    const cardList = [
+      gpsBuses[0] && { id: gpsBuses[0].id, sec: gpsBuses[0].nextSec, gps: true, idx: gpsBuses[0].nextIdx },
+      gpsBuses[1] && { id: gpsBuses[1].id, sec: gpsBuses[1].nextSec, gps: true, idx: gpsBuses[1].nextIdx },
+      schedNext && { id: '—', sec: schedNext.sec, gps: false, idx: schedNext.idx },
+    ].filter(Boolean).slice(0, 3);
+    const labels = ['下一班', '再下一班', '第三班'];
+    $('cards').innerHTML = cardList.map((c, i) =>
+      '<div class="card">'
+      + '<div class="lab">' + labels[i] + '<span class="gps' + (c.gps ? '' : ' off') + '">' + (c.gps ? 'GPS' : '無GPS') + '</span></div>'
+      + '<div class="big" data-sec="' + c.sec + '">' + minsOf(c.sec) + '</div>'
+      + '<div class="sub">' + Math.max(0, STOPS.length - 1 - c.idx) + ' 站後到終點</div>'
+      + '</div>').join('');
+    const lead = gpsBuses[0];
+    $('status').innerHTML = lead
+      ? '<span class="dot"></span>巴士 <b>' + escapeHtml(String(lead.id)) + '</b> · 實時資料<span class="gps">GPS</span>· 已離開 <b>' + escapeHtml(STOPS[Math.max(0, Math.min(STOPS.length - 1, Math.floor(lead.pos)))].name) + '</b>，前往 <b>' + escapeHtml(lead.nextName) + '</b>'
+      : '<span class="dot"></span>暫無實時班次（非服務時間）';
+    if (map) {
+      markers.forEach(m => {
+        const key = 'b' + m.id;
+        let mk = busMarkers[key];
+        if (!mk) {
+          mk = L.marker(pointAtPos(m.pos), { icon: L.divIcon({ className: '', html: BUS_SVG, iconSize: [28, 16], iconAnchor: [14, 8] }) }).addTo(map);
+          busMarkers[key] = mk;
+        }
+        mk.dataset_ref = m.pos; mk.dataset_gap = m.gap; mk.dataset_stop = m.nextIdx - 1;
+        mk.setLatLng(pointAtPos(m.pos));
+        mk.bindTooltip('巴士 ' + m.id + ' · 下一站 ' + m.nextName + ' · ' + mmss(m.nextSec) + ' 後到達', { direction: 'top', offset: [0, -10] });
+      });
+      const keep = new Set(markers.map(m => 'b' + m.id));
+      Object.keys(busMarkers).forEach(k => { if (!keep.has(k)) { map.removeLayer(busMarkers[k]); delete busMarkers[k]; } });
+    }
     lastRender = Date.now();
-    /* 班次橫標：按班次 id 保持元素身份 → CSS transition 平滑移動 */
-    const occ = {};
-    markers.forEach(m => {
-      const key = 'b' + m.id;
-      const k = m.pos.toFixed(1);
-      occ[k] = (occ[k] || 0) + 1;
-      const off = (occ[k] - 1) * 6;
-      let el = markerEls[key];
-      if (!el) {
-        el = document.createElement('span'); el.className = 'bus';
-        el.innerHTML = '<svg viewBox="0 0 24 14" aria-hidden="true">'
-          + '<rect x="0" y="0" width="24" height="9"/><rect x="3" y="10.5" width="4" height="3"/><rect x="17" y="10.5" width="4" height="3"/>'
-          + '<rect x="4" y="2" width="12" height="2.6" fill="#000"/></svg>';
-        box.appendChild(el); markerEls[key] = el;
-      }
-      el.dataset.ref = m.pos; el.dataset.gap = m.gap; el.dataset.stop = m.nextIdx - 1;
-      el.style.top = (m.pos * ROW + 26 - 7).toFixed(1) + 'px';
-      el.style.left = (RAIL_CENTER - 12 + off) + 'px';
-      el.title = '班次 ' + m.id + ' · 下一站 ' + m.nextName + ' · ' + (m.nextSec === 0 ? '即將到達' : mmss(m.nextSec) + ' 後到達');
-    });
-    const keep = new Set(markers.map(m => 'b' + m.id));
-    Object.keys(markerEls).forEach(k => { if (!keep.has(k)) { markerEls[k].remove(); delete markerEls[k]; } });
-    /* 預報卡：下一班 GPS / 再下一班 GPS / 預測（無 GPS，取定時班次中最早） */
-    const cardsBox = document.getElementById('cards');
-    if (cardsBox) {
-      const gpsBuses = markers.slice().sort((a, b) => a.nextSec - b.nextSec);
-      const schedNext = (chips.filter(c => !c.live).sort((a, b) => a.sec - b.sec))[0];
-      const cardList = [
-        gpsBuses[0] && { id: gpsBuses[0].id, sec: gpsBuses[0].nextSec, gps: true, idx: gpsBuses[0].nextIdx },
-        gpsBuses[1] && { id: gpsBuses[1].id, sec: gpsBuses[1].nextSec, gps: true, idx: gpsBuses[1].nextIdx },
-        schedNext && { id: '—', sec: schedNext.sec, gps: false, idx: schedNext.idx },
-      ].filter(Boolean).slice(0, 3);
-      const labels = ['下一班', '再下一班', '第三班'];
-      cardsBox.innerHTML = cardList.map((c, i) =>
-        '<div class="card' + (c.gps ? '' : ' pred') + '">'
-        + '<div class="lab">' + labels[i] + (c.gps ? '<span class="gps">GPS</span>' : '<span class="gps">無GPS</span>') + '</div>'
-        + '<div class="big" data-sec="' + c.sec + '">' + mmss(c.sec) + '</div>'
-        + '<div class="sub">' + Math.max(0, STOPS.length - 1 - c.idx) + ' 站後到終點</div>'
-        + '</div>').join('');
-    }
-    /* 狀態列：領先班次的下一動作 */
-    const statusBox = document.getElementById('status');
-    if (statusBox) {
-      const lead = markers.slice().sort((a, b) => a.nextSec - b.nextSec)[0];
-      statusBox.innerHTML = lead
-        ? '■ 巴士 <b>' + escapeHtml(String(lead.id)) + '</b> · GPS · 已離開 <b>' + escapeHtml(STOPS[Math.max(0, Math.min(STOPS.length - 1, Math.floor(lead.pos)))] ? STOPS[Math.max(0, Math.min(STOPS.length - 1, Math.floor(lead.pos)))].name : '') + '</b>，前往 <b>' + escapeHtml(lead.nextName) + '</b>'
-        : '■ 暫無實時班次';
-    }
-    /* 每秒膠囊倒數 */
     clearInterval(tick);
     tick = setInterval(() => {
-      const elS = Math.floor((Date.now() - lastRender) / 1000);
-      box.querySelectorAll('.chip[data-sec]').forEach(ch => {
-        ch.textContent = mmss(Math.max(0, parseInt(ch.dataset.sec, 10) - elS));
+      const elS = (Date.now() - lastRender) / 1000;
+      document.querySelectorAll('.card .big[data-sec]').forEach(ch => {
+        ch.textContent = minsOf(Math.max(0, parseInt(ch.dataset.sec, 10) - elS));
       });
-      box.querySelectorAll('.card .big[data-sec]').forEach(ch => {
-        ch.textContent = mmss(Math.max(0, parseInt(ch.dataset.sec, 10) - elS));
-      });
-      /* 巴士連續移動：pos = ref + 已過秒數/gap（一條 segment 用 gap 秒走完） */
-      Object.keys(markerEls).forEach(k => {
-        const mEl = markerEls[k];
-        const ref = parseFloat(mEl.dataset.ref || '0');
-        const gap = parseFloat(mEl.dataset.gap || '60');
-        const stopNo = parseInt(mEl.dataset.stop || '0', 10);
+      Object.keys(busMarkers).forEach(k => {
+        const mk = busMarkers[k];
+        const ref = parseFloat(mk.dataset_ref || '0');
+        const gap = parseFloat(mk.dataset_gap || '60');
+        const stopNo = parseFloat(mk.dataset_stop || '0');
         if (!isFinite(ref)) return;
-        const t = (Date.now() - lastRender) / 1000;
-        const pos = Math.min(ref + t / gap, stopNo + 0.98);
-        mEl.style.top = (pos * ROW + 26 - 7).toFixed(1) + 'px';
+        const pos = Math.min(ref + elS / gap, stopNo + 0.98);
+        mk.setLatLng(pointAtPos(pos));
       });
     }, 1000);
   }
 
-  function badge(text) { $('badge').textContent = text; }
   async function refreshLive() {
     const url = 'https://rt.data.gov.hk/v1/transport/mtr/bus/getSchedule';
     const tries = ['https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
@@ -318,18 +296,18 @@ window.DEMO_K75P_SNAPSHOT = {"at":"2026-09-08 19:55:51","stops":[{"id":"D010","b
               ln: (b.busLocation && Number(b.busLocation.longitude)) || 0,
             })),
           })) };
-          badge('實時更新 · ' + snapshot.at);
+          $('mapLive').textContent = '● 實時 · ' + snapshot.at.slice(5, 16);
           render();
           return;
         }
       } catch (e) {}
     }
-    badge('快照 ' + snapshot.at.slice(5, 16) + ' · 接口離線（demo 模式）');
+    $('mapLive').textContent = '● 快照 ' + snapshot.at.slice(5, 16);
   }
 
+  initMap();
   render();
-  if (snapshot.at) badge('快照 ' + snapshot.at.slice(5, 16) + ' · 每秒倒數中');
-  $('refreshBtn').addEventListener('click', refreshLive);
+  $('mapLive').textContent = '● 快照 ' + snapshot.at.slice(5, 16);
   setInterval(refreshLive, 30000);
 })();
 </script>
