@@ -240,6 +240,25 @@
     if (sec <= 60) return '<span class="eta soon">即將</span>';
     return '<span class="eta ' + etaSecCls(sec) + '">' + Math.ceil(sec / 60) + ' <small>分</small></span>';
   }
+  /* 收藏星標 */
+  function starBtn(fav) {
+    if (!fav) return '';
+    const on = isFavorited(fav);
+    return '<button class="star' + (on ? ' on' : '') + '" data-fav="' + esc(JSON.stringify(fav)) + '">' + (on ? '★' : '☆') + '</button>';
+  }
+  function toggleStar(b) {
+    let fav; try { fav = JSON.parse(b.dataset.fav || 'null'); } catch (err) { return; }
+    if (!fav) return;
+    const favs = getFavorites();
+    const idx = favs.findIndex(f => favKey(f) === favKey(fav));
+    if (idx >= 0) { favs.splice(idx, 1); b.textContent = '☆'; b.classList.remove('on'); }
+    else { favs.push(fav); b.textContent = '★'; b.classList.add('on'); }
+    saveFavorites(favs);
+    pauseFx(800);
+  }
+  function bindStars(root) {
+    root.querySelectorAll('.star[data-fav]').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); toggleStar(b); }));
+  }
   async function doSearch() {
     const q = input.value.trim();
     const gen = ++searchGen;
@@ -254,11 +273,13 @@
       const K = await searchKMBRoute(q.toUpperCase());
       (K || []).slice(0, 6).forEach(r => out.push({
         grp: G.kmb, no: r.route, name: (r.orig_tc || '') + ' → ' + (r.dest_tc || ''), kind: 'bus', data: { route: r.route, dir: 'outbound' },
+        fav: { type: 'bus', company: 'kmb', route: r.route, orig: r.orig_tc || '', dest: r.dest_tc || '', direction: 'outbound', stop_id: null },
       }));
       if (!/^[A-Z0-9]+$/i.test(q)) {
         const stops = await searchKMBStopsByName(q);
         (stops || []).slice(0, 6).forEach(st => out.push({
           grp: '巴士站', no: '站', name: st.name_tc || st.name_en, kind: 'busstop', data: { route: null, dir: null, stop: st.stop },
+          fav: { type: 'bus', company: 'kmb', route: '', direction: 'outbound', stop_id: st.stop, stop_name: st.name_tc || st.name_en },
         }));
       }
       const C = await searchCTBRoute(q.toUpperCase());
@@ -297,9 +318,10 @@
         + '<span class="badge">' + esc(String(it.no).slice(0, 4)) + '</span>'
         + '<span class="main"><span class="nm">' + esc(it.name) + '</span>'
         + (it.cap ? '<span class="cap">' + esc(it.cap) + '</span>' : '')
-        + '</span>' + etaHtml(eta) + '</div>';
+        + '</span>' + etaHtml(eta) + starBtn(it.fav) + '</div>';
     }
     box.innerHTML = html;
+    bindStars(box);
     box.querySelectorAll('.row').forEach(r => r.addEventListener('click', () => openRow(r)));
   }
   async function searchMTR(q, gen) {
@@ -329,7 +351,8 @@
     const box = $('results');
     box.innerHTML = out.map((it, i) => '<div class="row" data-i="' + i + '">'
       + '<span class="badge">MTR</span><span class="main"><span class="nm">' + esc(it.name) + '</span></span>'
-      + etaHtml(it.eta) + '</div>').join('') || '<div class="empty">沒有結果</div>';
+      + etaHtml(it.eta) + starBtn(it.fav) + '</div>').join('') || '<div class="empty">沒有結果</div>';
+    bindStars(box);
     box.querySelectorAll('.row').forEach(r => r.addEventListener('click', () => openRow(r)));
   }
   async function searchLRTImpl(q, gen) {
@@ -340,7 +363,8 @@
     for (const id of ids.slice(0, 8)) {
       let es = [];
       try { es = await getLRTEta(Number(id)); } catch (e) {}
-      html += '<div class="grp">' + esc(LRT_STATIONS[id]) + '</div>';
+      const lrtFav = { type: 'lrt', route: LRT_STATIONS[id], station_id: Number(id), stop_name: LRT_STATIONS[id] };
+      html += '<div class="grp" style="display:flex;align-items:center;justify-content:space-between">' + esc(LRT_STATIONS[id]) + starBtn(lrtFav) + '</div>';
       let n = 0;
       for (const e of es) {
         if (n++ >= 4) break;
@@ -352,6 +376,7 @@
     }
     if (gen !== searchGen) return;
     box.innerHTML = html;
+    bindStars(box);
     lastResults = [];
   }
   async function searchMTRBus(q, gen) {
@@ -370,7 +395,8 @@
       if (gen !== searchGen) return;
       const ids = Object.keys(byId).sort((a, b) => byId[a] - byId[b]).slice(0, 6);
       box.innerHTML = ids.map(bid => '<div class="row" style="cursor:default"><span class="badge">' + esc(q.toUpperCase().slice(0, 4)) + '</span>'
-        + '<span class="main"><span class="nm">班次 ' + esc(bid) + '</span></span>' + etaHtml(byId[bid]) + '</div>').join('') || '<div class="empty">沒有結果</div>';
+        + '<span class="main"><span class="nm">班次 ' + esc(bid) + '</span></span>' + etaHtml(byId[bid]) + starBtn({ type: 'mtrbus', company: 'mtr', route: q.toUpperCase(), stop_id: null }) + '</div>').join('') || '<div class="empty">沒有結果</div>';
+      bindStars(box);
     } catch (e) { if (gen === searchGen) box.innerHTML = '<div class="empty">搜尋出錯</div>'; }
   }
   function openRow(r) {
@@ -437,8 +463,7 @@
   /* ---------- 首頁磁貼 ---------- */
   let homeSeen = false;
   async function renderHome() {
-    const tiles = $('homeTiles');
-    let k75pEta = '—', k75pSub = '載入中';
+    const tiles = $('homeTiles');    let k75pEta = '—', k75pSub = '載入中';
     try {
       const data = await getMTRBusETA('K75P');
       const stop = ((data && data.busStop) || []).find(x => String(x.busStopId || '').replace(/^K75P-/, '') === 'D010') || {};
@@ -447,18 +472,28 @@
       const live = new Set((data.busStop || []).flatMap(st => (st.bus || []).filter(b => b.busLocation && Number(b.busLocation.latitude)).map(b => b.busId)));
       k75pSub = '實時 ' + live.size + ' 班在路';
     } catch (e) { k75pSub = '暫無資料'; }
+    /* 收藏①磁貼：首條（釘選優先）收藏的下一班 */
+    let favNoTxt = '', favCapTxt = getFavorites().length + ' 條收藏';
+    const favs0 = getFavorites();
+    const pk = getFavShowKey();
+    const fav0 = favs0.find(f => favKey(f) === pk) || favs0[0];
+    if (fav0) {
+      favNoTxt = favNoStr(fav0);
+      try { const s0 = await favEta(fav0); favCapTxt = s0 ? Math.max(1, Math.ceil(s0 / 60)) + ' 分鐘' : '暫無班次'; }
+      catch (e) { favCapTxt = '暫無班次'; }
+    }
     tiles.innerHTML =
       '<button class="tile blue wide shine" data-open="k75p">'
       + '<div class="mini-map"><div class="road"></div><span class="st" style="left:10%;top:56%"></span><span class="st" style="left:38%;top:44%"></span><span class="st" style="left:68%;top:36%"></span><span class="bus"></span><span class="no">K75P</span><span class="eta">' + esc(k75pEta) + '</span></div>'
       + '<span class="lab">天瑞 ↺ 洪水橋 · ' + esc(k75pSub) + '</span></button>'
-      + '<button class="tile cyan shine" data-open="favs"><span class="lab">我的收藏</span><b>★</b><span class="cap">' + getFavorites().length + ' 條收藏</span></button>'
+      + '<button class="tile cyan shine" data-open="favs"><span class="lab">我的收藏</span><b>' + esc(favNoTxt || '★') + '</b><span class="cap">' + esc(favCapTxt) + '</span></button>'
       + '<button class="tile warn shine" data-open="weather"><span class="lab">天氣</span><b id="wTemp">--°</b><span class="cap">載入中</span></button>'
       + '<button class="tile cyan shine" data-open="sushi"><span class="lab">壽司郎</span><b id="sushiMini">—</b></button>'
       + '<button class="tile shine" data-open="map"><span class="lab">路線圖</span><b>屯馬綫</b><span class="cap">全線候車</span></button>';
     tiles.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.open;
       if (k === 'k75p') openK75P();
-      else if (k === 'weather') renderWeather();
+      else if (k === 'weather') openWeatherPage();
       else setPane(k);
     }));
     /* 開場編舞：首次渲染才做 80ms 階梯（避免刷新重繪閃動） */
@@ -474,37 +509,92 @@
     const stores = SUSHIRO_SNAPSHOT.filter(s => s.area === '元朗區' || s.area === '屯門區');
     if (stores.length) sm.textContent = Math.max(...stores.map(s => parseInt(s.waitingGroup, 10) || 0)) + ' 組';
   }
-  async function loadWeather() {
-    const el = $('wTemp');
+  /* ---------- 天氣（完整：警告/描述/濕度/雨量/紫外線/三天溫差） ---------- */
+  const WEATHER_UV_API = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=uvindex&lang=tc';
+  const SEVERE_RE = /雨|颱風|風暴|雷暴|山泥|酷熱|寒冷|霜凍|海嘯|水浸/;
+  async function fetchWeather() {
+    const w = { temp: null, humid: null, rain: null, uv: null, desc: '', severe: [], mild: [], days: [], at: '' };
     try {
       const r = await fetchWithProxy(WEATHER_API);
-      const t = r && r.temperature && r.temperature.data && r.temperature.data[0];
-      if (t) { el.textContent = Math.round(t.value) + '°'; const cap = el.parentElement.querySelector('.cap'); if (cap) cap.textContent = (r.humidity && r.humidity.data) ? '濕度 ' + Math.round(r.humidity.data[0].value) + '%' : ''; }
-    } catch (e) {}
-  }
-  const DAYS = ['今天', '明天', '後天'];
-  async function renderWeather() {
-    try {
-      const r = await fetchWithProxy(WEATHER_FND_API);
-      const fc = (r && r.forecast) || [];
-      const tiles = $('homeTiles');
-      if (!tiles.querySelector('.wcard')) {
-        tiles.insertAdjacentHTML('beforeend', '<div class="tile wide wcard anim"><span class="lab">未來三天</span><div class="wdays">'
-          + fc.slice(0, 3).map((d, i) => '<div class="wday"><span class="n">' + (DAYS[i] || '') + '</span><div class="d">' + (d.forecastMaxtemp && d.forecastMaxtemp.value ? Math.round(d.forecastMaxtemp.value) : '--') + '°</div></div>').join('')
-          + '</div></div>');
+      const td = (r && r.temperature && r.temperature.data) || [];
+      const pick = td.find(x => /天水|元朗|屯門|荃灣/.test(x.place)) || td[0];
+      w.temp = pick ? Math.round(pick.value) : null;
+      w.humid = r.humidity && r.humidity.data && r.humidity.data[0] ? Math.round(r.humidity.data[0].value) : null;
+      w.rain = r.rainfall && r.rainfall.data && r.rainfall.data[0] ? Number(r.rainfall.data[0].max || 0) : null;
+      for (const msg of ((r && r.warningMessage) || [])) {
+        const s = String(msg);
+        (SEVERE_RE.test(s) ? w.severe : w.mild).push(s);
       }
+      w.desc = (r && HKO_ICONS[r.icon]) || '';
+      w.at = r && r.updateTime ? r.updateTime.slice(11, 16) : '';
     } catch (e) {}
+    try {
+      const u = await fetchWithProxy(WEATHER_UV_API);
+      const c = (u && u.data && u.data[0]) || u;
+      if (c && c.value) w.uv = Math.round(c.value);
+    } catch (e) {}
+    try {
+      const f = await fetchWithProxy(WEATHER_FND_API);
+      const fc = (f && (f.forecast || f.forecastPeriod)) || [];
+      w.days = fc.slice(0, 3).map(d => ({
+        max: d.forecastMaxtemp && d.forecastMaxtemp.value,
+        min: d.forecastMintemp && d.forecastMintemp.value,
+        desc: (d.forecastWeather && (d.forecastWeather.tc || d.forecastWeather)) || '',
+      }));
+    } catch (e) {}
+    return w;
+  }
+  function warnBarHtml(w) {
+    const item = (s, cls) => '<div class="wwarn ' + cls + '">⚠ ' + esc(s) + '</div>';
+    return (w.severe || w.mild).map(s => SEVERE_RE.test(s) ? item(s, 'severe') : item(s, 'mild')).join('');
+  }
+  async function loadWeather() {
+    const w = await fetchWeather();
+    const el = $('wTemp');
+    if (el && w.temp != null) el.textContent = w.temp + '°';
+    const cap = el && el.parentElement.querySelector('.cap');
+    if (cap) cap.textContent = w.desc || (w.humid != null ? '濕度 ' + w.humid + '%' : '');
+  }
+  function weatherSheetHtml(w) {
+    const wn = warnBarHtml(w);
+    const now = '<div class="wcard"><span class="desc">現在 · ' + esc(w.desc || '—') + '</span>'
+      + '<div class="now">' + (w.temp != null ? w.temp + '°' : '--°') + '</div>'
+      + '<div class="desc">' + [
+        w.humid != null ? '濕度 ' + w.humid + '%' : '',
+        w.rain != null ? '雨量 ' + w.rain + 'mm' : '',
+        w.uv != null ? '紫外線 ' + w.uv : '',
+      ].filter(Boolean).join(' · ') || '—' + '</div></div>';
+    const days = '<div class="grp">未來三天</div><div class="wdays">'
+      + (w.days.length ? w.days.map(d => '<div class="wday"><span class="n">' + (['今天', '明天', '後天'][w.days.indexOf(d)] || '') + '</span><div class="d">' + (d.max != null ? Math.round(d.max) + '°' : '--') + '</div><span class="n">' + (d.min != null ? Math.round(d.min) + '°' : '') + '</span></div>').join('') : '<div class="wday"><span class="n">—</span></div>')
+      + '</div>';
+    return wn + now + days + (w.at ? '<div class="empty" style="text-align:left;padding:10px 4px 4px;font-size:12px">更新 ' + esc(w.at) + '</div>' : '');
+  }
+  async function openWeatherPage() {
+    const w = await fetchWeather();
+    openSheet('天氣', weatherSheetHtml(w));
+    onTab = () => {};
   }
 
   /* ---------- 收藏 ---------- */
   function favMeta(f) {
-    return f.type === 'bus' ? ('公交 ' + f.route) : f.type === 'mtr' ? ((f.lineName || f.line || '') + ' 線') : f.type === 'lrt' ? (f.stop_name || '輕鐵站') : f.type === 'mtrbus' ? ('港鐵巴士 ' + f.route) : '收藏';
+    return f.type === 'bus' ? ('公交 ' + (f.company === 'ctb' ? '城巴' : '九巴 ' + f.route)) : f.type === 'mtr' ? ((f.lineName || f.line || '') + ' 線') : f.type === 'lrt' ? (f.stop_name || '輕鐵站') : f.type === 'mtrbus' ? ('港鐵巴士 ' + f.route) : '收藏';
+  }
+  const kmbStopCache = {};
+  async function resolveKMBStop(route, dir) {
+    const k = route + '|' + dir;
+    if (kmbStopCache[k] === undefined) {
+      try { const s = await getKMBStops(route, dir, '1'); kmbStopCache[k] = (s && s[0] && s[0].stop) || null; }
+      catch (e) { kmbStopCache[k] = null; }
+    }
+    return kmbStopCache[k];
   }
   async function favEta(f) {
     try {
-      if (f.type === 'bus' && f.stop_id) {
-        const es = await getKMBETA(f.stop_id);
-        const e = (es || []).filter(x => x.route === String(f.route) && (x.dir || '').toUpperCase() === (f.direction === 'inbound' ? 'I' : 'O')).sort((a, b) => parseHKTime(a.eta) - parseHKTime(b.eta))[0];
+      if (f.type === 'bus') {
+        const sid = f.stop_id || await resolveKMBStop(f.route, f.direction || 'outbound');
+        if (!sid) return null;
+        const es = await getKMBETA(sid);
+        const e = (es || []).filter(x => (!f.route || x.route === String(f.route)) && (x.dir || '').toUpperCase() === (f.direction === 'inbound' ? 'I' : 'O')).sort((a, b) => parseHKTime(a.eta) - parseHKTime(b.eta))[0];
         return e ? (parseHKTime(e.eta) - Date.now()) / 1000 : null;
       }
       if (f.type === 'mtr' && f.station_id) {
@@ -521,37 +611,165 @@
         const es = await getLRTEta(Number(f.station_id));
         return es && es[0] ? es[0].mins * 60 : null;
       }
+      if (f.type === 'mtrbus' && f.route) {
+        const data = await getMTRBusETA(f.route);
+        let best = null;
+        for (const st of ((data && data.busStop) || [])) for (const b of (st.bus || [])) {
+          const sec = parseInt(b.arrivalTimeInSecond, 10) || 0;
+          if (sec > 0 && sec < 108000 && (best === null || sec < best)) best = sec;
+        }
+        return best;
+      }
     } catch (e) {}
     return null;
+  }
+  /* 收藏卡多班次線（下一班/次班/三班） */
+  async function favLines(f) {
+    const rows = [];
+    try {
+      if (f.type === 'bus') {
+        const sid = f.stop_id || await resolveKMBStop(f.route, f.direction || 'outbound');
+        if (!sid) return '';
+        const es = await getKMBETA(sid);
+        (es || []).filter(x => (!f.route || x.route === String(f.route)) && (x.dir || '').toUpperCase() === (f.direction === 'inbound' ? 'I' : 'O'))
+          .sort((a, b) => parseHKTime(a.eta) - parseHKTime(b.eta)).slice(0, 3).forEach(e => {
+            rows.push({ label: e.dest_tc || '下一班', sec: (parseHKTime(e.eta) - Date.now()) / 1000 });
+          });
+      } else if (f.type === 'mtr' && f.station_id) {
+        const lcs = Object.keys(MTR_LINE_STOPS).filter(lc => MTR_LINE_STOPS[lc].some(x => x.code === f.station_id)).slice(0, 3);
+        for (const lc of lcs) {
+          const d = (await getMTRSchedule(lc, f.station_id)) || {};
+          const dd = d[lc + '-' + f.station_id] || {};
+          const ts = [...(dd.UP || []), ...(dd.DOWN || [])].map(t => parseHKTime(t.time)).filter(Boolean).sort((a, b) => a - b)[0];
+          if (ts) rows.push({ label: MTR_LINES[lc] || lc, sec: (ts - Date.now()) / 1000 });
+        }
+      } else if (f.type === 'lrt' && f.station_id != null) {
+        const es = await getLRTEta(Number(f.station_id));
+        (es || []).slice(0, 3).forEach(e => rows.push({ label: e.routeNo + ' · 往 ' + e.dest, sec: e.mins * 60 }));
+      } else if (f.type === 'mtrbus' && f.route) {
+        const data = await getMTRBusETA(f.route);
+        const byId = {};
+        for (const st of ((data && data.busStop) || [])) for (const b of (st.bus || [])) {
+          const bid = String(b.busId || '?');
+          const sec = parseInt(b.arrivalTimeInSecond, 10) || 0;
+          if (sec > 0 && sec < 108000 && sec < (byId[bid] === undefined ? Infinity : byId[bid])) byId[bid] = sec;
+        }
+        Object.keys(byId).sort((a, b) => byId[a] - byId[b]).slice(0, 3).forEach((bid, i) => rows.push({ label: '班次 ' + bid, sec: byId[bid] }));
+      }
+    } catch (e) {}
+    return rows.map(r => '<div class="fline"><span class="l">' + esc(r.label) + '</span><span class="v' + etaSecCls(r.sec) + '">' + (r.sec == null ? '—' : Math.max(1, Math.ceil(r.sec / 60)) + ' 分') + '</span></div>').join('');
   }
   async function renderFavs() {
     const list = getFavorites();
     const box = $('favList');
-    if (!list.length) { box.innerHTML = '<div class="empty">暫無收藏，在搜尋結果點 ★ 加入</div>'; return; }
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">暫無收藏\n在搜尋結果點 ☆ 加入</div>';
+      box.style.cursor = 'default';
+      return;
+    }
     let html = '';
     for (let i = 0; i < list.length; i++) {
       const f = list[i];
       const sec = await favEta(f);
       const pinned = getFavShowKey() === favKey(f);
-      const name = f.name || f.stop_name || f.station_name || f.route || f.lineName || '';
-      html += '<div class="fcard shine"><div class="fh"><span class="no">' + esc(favNoStr(f)) + '</span><span class="tag">' + esc(favMeta(f)) + '</span>'
-        + '<span class="actions"><button data-a="pin" data-i="' + i + '" class="' + (pinned ? 'pin' : '') + '">' + (pinned ? '✓ 釘選' : '釘選') + '</button><button class="x" data-a="del" data-i="' + i + '">✕</button></span></div>'
+      const name = f.stop_name || f.station_name || f.name || f.dest || f.orig || f.route || f.lineName || '';
+      const lines = await favLines(f);
+      html += '<div class="fcard shine" data-i="' + i + '"><div class="fh"><span class="no">' + esc(favNoStr(f)) + '</span><span class="tag">' + esc(favMeta(f)) + '</span>'
+        + '<span class="actions"><button class="bt' + (pinned ? ' pin' : '') + '" data-a="pin" data-i="' + i + '">' + (pinned ? '✓ 釘選' : '釘選') + '</button>'
+        + (f.type === 'bus' && f.route ? '<button class="bt" data-a="pick" data-i="' + i + '">換站</button>' : '')
+        + (sec == null ? '<button class="bt" data-a="retry" data-i="' + i + '">重試</button>' : '')
+        + '<button class="bt x" data-a="del" data-i="' + i + '">✕</button></span></div>'
         + '<div class="dest">' + esc(name) + '</div>'
-        + '<div class="sub">' + esc(f.direction === 'inbound' ? '回程' : '去程') + (f.stop_name ? '' : '') + '</div>'
+        + '<div class="sub">' + esc(f.direction === 'inbound' ? '回程' : '去程') + '</div>'
         + '<div class="big"' + (sec ? ' data-sec="' + Math.ceil(sec / 60) + '"' : '') + '>' + (sec ? Math.max(1, Math.ceil(sec / 60)) + '<small> 分鐘</small>' : '—') + '</div>'
+        + (lines ? '<div class="flines">' + lines + '</div>' : '')
         + '<div class="bar"><i style="width:' + Math.min(100, (sec || 0) / 6) + '%"></i></div></div>';
     }
     box.innerHTML = html;
+    box.style.cursor = '';
     box.querySelectorAll('button[data-a]').forEach(b => b.addEventListener('click', (e) => {
       e.stopPropagation();
       const i = parseInt(b.dataset.i, 10);
       const fs2 = getFavorites();
       if (b.dataset.a === 'pin') { try { localStorage.setItem('wp8concept_pinned_fav', favKey(fs2[i])); } catch (err) {} }
-      else { fs2.splice(i, 1); saveFavorites(fs2); }
+      else if (b.dataset.a === 'del') { fs2.splice(i, 1); saveFavorites(fs2); }
+      else if (b.dataset.a === 'retry') { renderFavs(); return; }
+      else if (b.dataset.a === 'pick') { openStopPicker(fs2[i], i); return; }
       renderFavs();
     }));
+    box.querySelectorAll('.fcard').forEach(card => card.addEventListener('click', () => {
+      const f = getFavorites()[parseInt(card.dataset.i, 10)];
+      if (f && f.type === 'bus' && f.route) openBusDetail({ data: { route: f.route, dir: f.direction || 'outbound' }, no: f.route });
+      else if (f && f.type === 'mtr') openMTRDetail({ name: f.station_name || f.station_id, data: { station: f.station_id } });
+    }));
+    bindFavDrag(box);
+    bindStars(box);
   }
   function favNoStr(f) { return f.route || (f.lineName || f.line || 'MTR'); }
+  /* 換站：站點選擇器（該路線前 8 站） */
+  async function openStopPicker(f, i) {
+    let stops = [];
+    try { stops = await getKMBStops(f.route, f.direction || 'outbound', '1'); } catch (e) {}
+    openSheet('換站 · ' + f.route, '<div class="empty">載入中…</div>');
+    let html = '';
+    for (const st of stops.slice(0, 10)) {
+      html += '<div class="dstop" data-stop="' + esc(st.stop) + '" data-name="' + esc(st.name_tc || st.name_en || '') + '"><span class="dseq">›</span><span class="dnm">' + esc(st.name_tc || st.name_en || st.stop) + '</span></div>';
+    }
+    $('shBody').innerHTML = html || '<div class="empty">無法載入站點</div>';
+    $('shBody').querySelectorAll('.dstop').forEach(row => row.addEventListener('click', () => {
+      const favs = getFavorites();
+      if (favs[i]) { favs[i].stop_id = row.dataset.stop; favs[i].stop_name = row.dataset.name; saveFavorites(favs); closeSheet(); renderFavs(); }
+    }));
+    onTab = () => {};
+  }
+  /* 收藏拖拽排序（長按 450ms 拖動，鬆開保存） */
+  function bindFavDrag(box) {
+    if (box.dataset.dragBound) return;
+    box.dataset.dragBound = '1';
+    let el = null, sy = 0, timer = null, from = -1, active = false, moved = false;
+    const cards = () => [...box.querySelectorAll('.fcard')];
+    const idx = (c) => cards().indexOf(c);
+    const detach = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (!el || !active) { el = null; return; }
+      if (moved && from >= 0) {
+        const to = idx(el);
+        if (to >= 0 && from !== to) {
+          const favs = getFavorites();
+          const item = favs.splice(from, 1)[0];
+          favs.splice(to, 0, item);
+          saveFavorites(favs);
+          renderFavs();
+        }
+      }
+      el.classList.remove('dragging');
+      el.style.transform = ''; el.style.zIndex = ''; el.style.position = '';
+      el = null; active = false; moved = false;
+    };
+    box.addEventListener('touchstart', (e) => {
+      const c = e.target.closest ? e.target.closest('.fcard') : null;
+      if (!c || (e.target.closest && e.target.closest('button'))) return;
+      el = c; sy = e.touches[0].clientY; moved = false;
+      timer = setTimeout(() => { if (el) { active = true; from = idx(el); el.classList.add('dragging'); el.style.position = 'relative'; el.style.zIndex = '9'; el.style.transform = 'translateY(0)'; } }, 450);
+    }, { passive: true });
+    box.addEventListener('touchmove', (e) => {
+      if (!el) return;
+      const dy = e.touches[0].clientY - sy;
+      if (!active) { if (Math.abs(dy) > 12) { clearTimeout(timer); timer = null; el = null; } return; }
+      moved = true;
+      if (e.cancelable) e.preventDefault();
+      el.style.transform = 'translateY(' + dy + 'px)';
+      const mid = el.getBoundingClientRect().top + el.getBoundingClientRect().height / 2;
+      for (const c of cards()) {
+        if (c === el) continue;
+        const r = c.getBoundingClientRect();
+        if (mid < r.top + r.height / 2) { box.insertBefore(el, c); break; }
+        if (c === cards()[cards().length - 1] && mid > r.top + r.height / 2) box.appendChild(el);
+      }
+    }, { passive: false });
+    box.addEventListener('touchend', detach);
+    box.addEventListener('touchcancel', detach);
+  }
 
   /* ---------- 壽司郎（離線快照） ---------- */
   let sushiDone = false;
