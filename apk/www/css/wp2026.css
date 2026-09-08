@@ -14,7 +14,7 @@
   --accent: #0078D7;
   --accent-dark: #005A9E;
   --aux: #00B4D8;
-  --toolbar-h: 76px;
+  --toolbar-h: 100px;
   --appbar-h: 72px;
 }
 body[data-theme="light"] {
@@ -84,7 +84,7 @@ body[data-theme="light"] .orb { opacity: .5; }
 
 /* ---------- Pivot 容納器（玻璃視差：離場 blur 12→0 · 內容 ±24px · 光條跟手） ---------- */
 .pivot-glass {
-  position: fixed; top: var(--toolbar-h); bottom: var(--appbar-h);
+  position: fixed; top: calc(var(--toolbar-h) + env(safe-area-inset-top)); bottom: var(--appbar-h);
   left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px;
   z-index: 4; pointer-events: none;
   background:
@@ -97,7 +97,7 @@ body[data-theme="light"] .orb { opacity: .5; }
   box-shadow: 0 0 10px rgba(0,120,215,.5); opacity: 0; pointer-events: none;
 }
 .tb-refresh {
-  position: absolute; right: 16px; bottom: 16px; width: 40px; height: 40px;
+  position: absolute; right: 16px; top: calc(12px + env(safe-area-inset-top)); width: 40px; height: 40px;
   border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.05);
   color: var(--text); font-size: 18px; cursor: pointer;
   -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
@@ -110,25 +110,26 @@ body.high-contrast .tile, body.high-contrast .row, body.high-contrast .setrow,
 body.high-contrast .fcard, body.high-contrast .kcard, body.high-contrast .kstatus { border-width: 2px; }
 body.high-contrast .wwarn.severe, body.high-contrast .wwarn.mild { border-width: 2px; }
 body.fx-paused .pivot-light { opacity: 0; }
-#pivot { position: fixed; top: var(--toolbar-h); left: 50%; width: 100%; max-width: 420px; transform: translateX(-50%); bottom: var(--appbar-h); overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; display: flex; z-index: 5; }
+#pivot { position: fixed; top: calc(var(--toolbar-h) + env(safe-area-inset-top)); left: 50%; width: 100%; max-width: 420px; transform: translateX(-50%); bottom: var(--appbar-h); overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; display: flex; z-index: 5; }
 #pivot::-webkit-scrollbar { display: none; }
-.pane { flex: 0 0 100%; min-width: 100%; scroll-snap-align: start; overflow-y: auto; padding: 14px 16px 24px; will-change: transform, filter; }
+.pane { flex: 0 0 100%; min-width: 100%; scroll-snap-align: start; overflow-y: auto; padding: 14px 16px 24px; }
 .pane::-webkit-scrollbar { display: none; }
 
-/* ---------- 頂欄玻璃 ---------- */
+/* ---------- 頂欄玻璃（加高防擠壓） ---------- */
 .toolbar {
   position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px;
-  height: var(--toolbar-h); z-index: 50; padding: calc(10px + env(safe-area-inset-top)) 18px 8px;
+  height: calc(var(--toolbar-h) + env(safe-area-inset-top)); z-index: 50; padding: calc(12px + env(safe-area-inset-top)) 18px 10px;
   background: rgba(10,10,10,.6);
   -webkit-backdrop-filter: blur(48px) saturate(1.6); backdrop-filter: blur(48px) saturate(1.6);
   border-bottom: 1px solid rgba(255,255,255,.18);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+  overflow: hidden;
 }
 body[data-theme="light"] .toolbar { background: rgba(255,255,255,.65); }
-.toolbar .kicker { font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,.5); text-transform: uppercase; }
-.toolbar .title { font-size: 36px; font-weight: 300; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toolbar .kicker { font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,.5); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toolbar .title { font-size: 34px; font-weight: 300; line-height: 1.15; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .toolbar .title b { color: var(--accent); font-weight: 300; }
-.toolbar .sub { font-size: 13px; color: var(--text2); }
+.toolbar .sub { font-size: 12px; color: var(--text2); line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 48px; }
 body[data-theme="light"] .toolbar .kicker { color: rgba(22,36,58,.5); }
 
 /* ---------- 首頁：磁貼 ---------- */
@@ -138,14 +139,18 @@ body[data-theme="light"] .toolbar .kicker { color: rgba(22,36,58,.5); }
   display: flex; flex-direction: column; justify-content: flex-end; gap: 4px;
   transition: transform .12s ease, filter .12s ease;
   text-align: left; color: var(--text); border: 1px solid var(--line);
+  background: rgba(255,255,255,.10);
+  -webkit-backdrop-filter: blur(26px) saturate(1.4);
+  backdrop-filter: blur(26px) saturate(1.4);
 }
 .tile:active { transform: scale(.96); filter: brightness(1.08); }
 .tile.wide { grid-column: span 2; min-height: 120px; }
 .tile .lab, .tile .cap { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile b { font-size: 40px; font-weight: 300; line-height: 1.06; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tile b small { font-size: 15px; font-weight: 300; color: var(--text2); }
-.tile.blue { background: rgba(0,120,215,.22); border-color: rgba(0,120,215,.45); }
-.tile.cyan { background: rgba(0,120,215,.13); border-color: rgba(0,120,215,.3); }
+.tile.blue { background: rgba(0,120,215,.25); border-color: rgba(0,120,215,.45); }
+.tile.cyan { background: rgba(0,120,215,.16); border-color: rgba(0,120,215,.3); }
+.tile.warn { background: rgba(255,255,255,.10); }
 .tile.warn b { color: #FFD54F; }
 .tile.live b { color: #80DEEA; }
 /* K75P 玻璃地圖磁貼 */

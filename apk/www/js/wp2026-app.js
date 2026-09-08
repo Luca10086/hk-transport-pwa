@@ -305,10 +305,13 @@
       }));
       if (!/^[A-Z0-9]+$/i.test(q)) {
         const stops = await searchKMBStopsByName(q);
-        (stops || []).slice(0, 6).forEach(st => out.push({
-          grp: '巴士站', no: '站', name: st.name_tc || st.name_en, kind: 'busstop', data: { route: null, dir: null, stop: st.stop },
-          fav: { type: 'bus', company: 'kmb', route: '', direction: 'outbound', stop_id: st.stop, stop_name: st.name_tc || st.name_en },
-        }));
+        (stops || []).slice(0, 6).forEach(st => {
+          const nm = st.name_tc || st.name_en || st.name_sc || ('站 ' + st.stop);
+          out.push({
+            grp: '巴士站', no: '站', name: nm, kind: 'busstop', data: { route: null, dir: null, stop: st.stop },
+            fav: { type: 'bus', company: 'kmb', route: '', direction: 'outbound', stop_id: st.stop, stop_name: nm },
+          });
+        });
       }
       const C = await searchCTBRoute(q.toUpperCase());
       (C || []).slice(0, 4).forEach(r => out.push({
@@ -447,6 +450,28 @@
     if (!it) return;
     if (it.kind === 'bus' || it.kind === 'nlb') openBusDetail(it);
     else if (it.kind === 'mtr') openMTRDetail(it);
+    else if (it.kind === 'busstop') openStopDetail(it.data.stop, it.name);
+  }
+  /* 巴士站詳情：該站全部路線 + 班次（點擊站名行進入） */
+  async function openStopDetail(stop, name) {
+    openSheet(name + ' 車站', '<div class="empty">載入中…</div>');
+    try {
+      const es = await getKMBETA(stop);
+      if (!es || !es.length) { $('shBody').innerHTML = '<div class="empty">暫無班次資料</div>'; return; }
+      const byR = {};
+      for (const e of es) {
+        const sec = (parseHKTime(e.eta) - Date.now()) / 1000;
+        const k = String(e.route);
+        if (!byR[k] || sec < byR[k].sec) byR[k] = { sec, dest: e.dest_tc || '' };
+      }
+      $('shBody').innerHTML = Object.keys(byR).sort((a, b) => byR[a].sec - byR[b].sec).map(rr => {
+        const sec = byR[rr].sec;
+        const lbl = rr + (byR[rr].dest ? ' · ' + byR[rr].dest : '');
+        return '<div class="dstop"><span class="dseq" style="width:auto;min-width:56px;border-radius:999px;padding:0 10px">' + esc(rr) + '</span><span class="dnm">' + esc(byR[rr].dest || '') + '</span>'
+          + (sec == null || sec <= 0 ? '<span class="dtm">—</span>' : (sec <= 60 ? '<span class="dtm soon">即將</span>' : '<span class="dtm ' + etaSecCls(sec) + '">' + Math.ceil(sec / 60) + ' 分</span>')) + '</div>';
+      }).join('');
+      onTab = () => {};
+    } catch (e) { $('shBody').innerHTML = '<div class="empty">載入失敗</div>'; }
   }
 
   /* ---------- 巴士/港鐵 詳情（KMB/CTB/NLB 全支援） ---------- */
@@ -529,19 +554,22 @@
   }
   async function openMTRDetail(it) {
     openSheet(it.name + ' 車站', '<div class="empty">載入中…</div>');
-    const lines = [];
+    const cells = [];
     for (const lc of Object.keys(MTR_LINE_STOPS)) {
       if (!MTR_LINE_STOPS[lc].some(x => x.code === it.data.station)) continue;
       try {
         const d = (await getMTRSchedule(lc, it.data.station)) || {};
         const dd = d[lc + '-' + it.data.station] || {};
-        const ts = [...(dd.UP || []), ...(dd.DOWN || [])].map(t => parseHKTime(t.time)).filter(Boolean).sort((a, b) => a - b)[0];
-        lines.push({ line: MTR_LINES[lc] || lc, ts });
+        const up = [...(dd.UP || [])].map(t => parseHKTime(t.time)).filter(Boolean).sort((a, b) => a - b)[0];
+        const dn = [...(dd.DOWN || [])].map(t => parseHKTime(t.time)).filter(Boolean).sort((a, b) => a - b)[0];
+        if (up) cells.push({ line: (MTR_LINES[lc] || lc) + ' 上行', ts: up });
+        if (dn) cells.push({ line: (MTR_LINES[lc] || lc) + ' 下行', ts: dn });
       } catch (e) {}
     }
-    $('shBody').innerHTML = lines.map(l => {
-      const sec = l.ts ? (l.ts - Date.now()) / 1000 : null;
-      return '<div class="dstop"><span class="dseq" style="width:auto;min-width:56px;border-radius:999px;padding:0 10px">' + esc(l.line) + '</span><span class="dnm">下一班</span>' + (sec == null ? '<span class="dtm">—</span>' : (sec <= 60 ? '<span class="dtm soon">即將</span>' : '<span class="dtm ' + etaSecCls(sec) + '">' + Math.ceil(sec / 60) + ' 分</span>')) + '</div>';
+    cells.sort((a, b) => a.ts - b.ts);
+    $('shBody').innerHTML = cells.slice(0, 3).slice().map(c => {
+      const sec = (c.ts - Date.now()) / 1000;
+      return '<div class="dstop"><span class="dseq" style="width:auto;min-width:56px;border-radius:999px;padding:0 10px">' + esc(c.line) + '</span><span class="dnm">下一班</span>' + (sec == null ? '<span class="dtm">—</span>' : (sec <= 60 ? '<span class="dtm soon">即將</span>' : '<span class="dtm ' + etaSecCls(sec) + '">' + Math.ceil(sec / 60) + ' 分</span>')) + '</div>';
     }).join('') || '<div class="empty">暫無班次</div>';
   }
 
@@ -721,13 +749,17 @@
             rows.push({ label: e.dest_tc || '下一班', sec: (parseHKTime(e.eta) - Date.now()) / 1000 });
           });
       } else if (f.type === 'mtr' && f.station_id) {
-        const lcs = Object.keys(MTR_LINE_STOPS).filter(lc => MTR_LINE_STOPS[lc].some(x => x.code === f.station_id)).slice(0, 3);
+        const lcs = Object.keys(MTR_LINE_STOPS).filter(lc => MTR_LINE_STOPS[lc].some(x => x.code === f.station_id)).slice(0, 2);
         for (const lc of lcs) {
           const d = (await getMTRSchedule(lc, f.station_id)) || {};
           const dd = d[lc + '-' + f.station_id] || {};
-          const ts = [...(dd.UP || []), ...(dd.DOWN || [])].map(t => parseHKTime(t.time)).filter(Boolean).sort((a, b) => a - b)[0];
-          if (ts) rows.push({ label: MTR_LINES[lc] || lc, sec: (ts - Date.now()) / 1000 });
+          const up = [...(dd.UP || [])].map(t => parseHKTime(t.time)).filter(Boolean).sort((a, b) => a - b)[0];
+          const dn = [...(dd.DOWN || [])].map(t => parseHKTime(t.time)).filter(Boolean).sort((a, b) => a - b)[0];
+          if (up) rows.push({ label: (MTR_LINES[lc] || lc) + ' 上行', sec: (up - Date.now()) / 1000 });
+          if (dn) rows.push({ label: (MTR_LINES[lc] || lc) + ' 下行', sec: (dn - Date.now()) / 1000 });
         }
+        rows.sort((a, b) => a.sec - b.sec);
+        rows.splice(3);
       } else if (f.type === 'lrt' && f.station_id != null) {
         const es = await getLRTEta(Number(f.station_id));
         (es || []).slice(0, 3).forEach(e => rows.push({ label: e.routeNo + ' · 往 ' + e.dest, sec: e.mins * 60 }));
@@ -925,27 +957,38 @@
     const stops = MTR_LINE_STOPS[lc] || [];
     const all = Object.keys(MTR_LINE_STOPS);
     const box = $('mapBody');
-    box.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:2px 4px 8px">膠囊＝下一班（分:秒）· 班表推算</div>'
+    box.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:2px 4px 8px">膠囊＝各方向下一班（分:秒）· 班表推算</div>'
       + stops.map((s, i) => {
         const serving = all.filter(x => MTR_LINE_STOPS[x].some(y => y.code === s.code));
         return '<div class="row" style="min-height:56px"><span class="badge" style="background:rgba(0,120,215,.18);box-shadow:none">' + (i + 1) + '</span>'
-          + '<span class="main"><span class="nm">' + esc(s.name) + '</span>' + (serving.length > 1 ? '<span class="cap">轉乘 ' + esc(serving.map(x => MTR_LINES[x]).join(' / ')) + '</span>' : '') + '</span>'
+          + '<span class="main"><span class="nm">' + esc(s.name) + '</span>' + (serving.length > 1 ? '<span class="cap">轉乘 ' + esc(serving.map(x => MTR_LINES[x]).join(' / ')) + '</span>' : '') + '<span class="cap" data-dcap="' + s.code + '"></span></span>'
           + '<span class="eta" style="font-size:15px" data-sid="' + s.code + '">—</span></div>';
       }).join('');
     const schedMap = await lineSchedules(stops, lc);
     const now = Date.now();
     stops.forEach(s => {
-      const el = box.querySelector('[data-sid="' + s.code + '"]');
-      if (!el) return;
+      const row = box.querySelector('[data-sid="' + s.code + '"]');
+      if (!row) return;
       const d = schedMap[s.code] || {};
-      const next = [...(d.UP || []), ...(d.DOWN || [])].filter(t => t > now).sort((a, b) => a - b)[0];
-      if (next) { el.dataset.sec = Math.round((next - now) / 1000); el.textContent = mmss(el.dataset.sec); }
+      const up = [...(d.UP || [])].filter(t => t > now).sort((a, b) => a - b)[0];
+      const dn = [...(d.DOWN || [])].filter(t => t > now).sort((a, b) => a - b)[0];
+      const upSec = up ? Math.round((up - now) / 1000) : null;
+      const dnSec = dn ? Math.round((dn - now) / 1000) : null;
+      const cap = row.parentElement.querySelector('[data-dcap="' + s.code + '"]');
+      if (cap) {
+        cap.innerHTML = (upSec != null ? '<span style="color:var(--accent)">上行 ' + mmss(upSec) + '</span>' : '')
+          + (upSec != null && dnSec != null ? ' · ' : '')
+          + (dnSec != null ? '下行 ' + mmss(dnSec) : '');
+      }
+      if (upSec != null && (dnSec == null || upSec <= dnSec)) { row.dataset.sec = upSec; row.dataset.dir = '上 '; }
+      else if (dnSec != null) { row.dataset.sec = dnSec; row.dataset.dir = '下 '; }
+      row.textContent = (row.dataset.dir || '') + (row.dataset.sec != null ? mmss(Math.round(row.dataset.sec)) : '—');
     });
     clearInterval(mtrTick);
     mtrTick = setInterval(() => {
       if (curPane !== 'map') return;
       const el0 = Math.floor((Date.now() - now) / 1000);
-      box.querySelectorAll('.eta[data-sec]').forEach(el => { el.textContent = mmss(Math.max(0, parseInt(el.dataset.sec, 10) - el0)); });
+      box.querySelectorAll('.eta[data-sec]').forEach(el => { el.textContent = (el.dataset.dir || '') + mmss(Math.max(0, parseInt(el.dataset.sec, 10) - el0)); });
     }, 1000);
   }
   function renderLRTTable() {

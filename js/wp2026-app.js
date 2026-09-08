@@ -305,10 +305,13 @@
       }));
       if (!/^[A-Z0-9]+$/i.test(q)) {
         const stops = await searchKMBStopsByName(q);
-        (stops || []).slice(0, 6).forEach(st => out.push({
-          grp: '巴士站', no: '站', name: st.name_tc || st.name_en, kind: 'busstop', data: { route: null, dir: null, stop: st.stop },
-          fav: { type: 'bus', company: 'kmb', route: '', direction: 'outbound', stop_id: st.stop, stop_name: st.name_tc || st.name_en },
-        }));
+        (stops || []).slice(0, 6).forEach(st => {
+          const nm = st.name_tc || st.name_en || st.name_sc || ('站 ' + st.stop);
+          out.push({
+            grp: '巴士站', no: '站', name: nm, kind: 'busstop', data: { route: null, dir: null, stop: st.stop },
+            fav: { type: 'bus', company: 'kmb', route: '', direction: 'outbound', stop_id: st.stop, stop_name: nm },
+          });
+        });
       }
       const C = await searchCTBRoute(q.toUpperCase());
       (C || []).slice(0, 4).forEach(r => out.push({
@@ -447,6 +450,28 @@
     if (!it) return;
     if (it.kind === 'bus' || it.kind === 'nlb') openBusDetail(it);
     else if (it.kind === 'mtr') openMTRDetail(it);
+    else if (it.kind === 'busstop') openStopDetail(it.data.stop, it.name);
+  }
+  /* 巴士站詳情：該站全部路線 + 班次（點擊站名行進入） */
+  async function openStopDetail(stop, name) {
+    openSheet(name + ' 車站', '<div class="empty">載入中…</div>');
+    try {
+      const es = await getKMBETA(stop);
+      if (!es || !es.length) { $('shBody').innerHTML = '<div class="empty">暫無班次資料</div>'; return; }
+      const byR = {};
+      for (const e of es) {
+        const sec = (parseHKTime(e.eta) - Date.now()) / 1000;
+        const k = String(e.route);
+        if (!byR[k] || sec < byR[k].sec) byR[k] = { sec, dest: e.dest_tc || '' };
+      }
+      $('shBody').innerHTML = Object.keys(byR).sort((a, b) => byR[a].sec - byR[b].sec).map(rr => {
+        const sec = byR[rr].sec;
+        const lbl = rr + (byR[rr].dest ? ' · ' + byR[rr].dest : '');
+        return '<div class="dstop"><span class="dseq" style="width:auto;min-width:56px;border-radius:999px;padding:0 10px">' + esc(rr) + '</span><span class="dnm">' + esc(byR[rr].dest || '') + '</span>'
+          + (sec == null || sec <= 0 ? '<span class="dtm">—</span>' : (sec <= 60 ? '<span class="dtm soon">即將</span>' : '<span class="dtm ' + etaSecCls(sec) + '">' + Math.ceil(sec / 60) + ' 分</span>')) + '</div>';
+      }).join('');
+      onTab = () => {};
+    } catch (e) { $('shBody').innerHTML = '<div class="empty">載入失敗</div>'; }
   }
 
   /* ---------- 巴士/港鐵 詳情（KMB/CTB/NLB 全支援） ---------- */
