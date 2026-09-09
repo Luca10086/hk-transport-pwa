@@ -260,7 +260,7 @@ fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star
         .fillMaxWidth()
         .height(72.dp)
         .semantics {
-            contentDescription = "$no $name，${etaMins?.let { "$it 分鐘" } ?: "暫無班次"}${if (star) "，已收藏" else ""}"
+            contentDescription = "$no $name，${hk.senyou.travel.data.Api.etaText(etaMins).let { if (etaMins == null) "暫無班次" else it }}${if (star) "，已收藏" else ""}"
         }
         .clickable {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -287,9 +287,14 @@ fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star
                     etaMins <= 10 -> V3.Warning
                     else -> V3.Success
                 }
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text("$etaMins", color = etaColor, fontSize = 26.sp, fontWeight = FontWeight.Light)
-                    Text("分", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(start = 2.dp, bottom = 4.dp))
+                if (etaMins <= 0) {
+                    // 不足 1 分鐘：顯示「即將」而非「0 分」
+                    Text("即將", color = V3.Danger, fontSize = 20.sp, fontWeight = FontWeight.Light)
+                } else {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text("$etaMins", color = etaColor, fontSize = 26.sp, fontWeight = FontWeight.Light)
+                        Text("分", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(start = 2.dp, bottom = 4.dp))
+                    }
                 }
             } else {
                 Text("—", color = V3.Text2, fontSize = 22.sp, fontWeight = FontWeight.Light)

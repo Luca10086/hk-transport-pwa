@@ -175,21 +175,36 @@ private fun FavCard(
             Row(verticalAlignment = Alignment.Bottom) {
                 val showMins = mins ?: cached?.first
                 val stale = mins == null && cached != null
-                val (c, t) = when {
-                    showMins == null -> V3.Text2 to "—"
-                    showMins <= 2 -> V3.Danger to "$showMins"
-                    showMins <= 10 -> V3.Warning to "$showMins"
-                    else -> V3.Success to "$showMins"
+                if (showMins != null && showMins <= 0) {
+                    // 不足 1 分鐘
+                    Text("即將", color = V3.Danger, fontSize = 26.sp, fontWeight = FontWeight.Light)
+                } else {
+                    val (c, t) = when {
+                        showMins == null -> V3.Text2 to "—"
+                        showMins <= 2 -> V3.Danger to "$showMins"
+                        showMins <= 10 -> V3.Warning to "$showMins"
+                        else -> V3.Success to "$showMins"
+                    }
+                    Text(t, color = c, fontSize = 34.sp, fontWeight = FontWeight.Light)
+                    if (showMins != null) Text(" 分鐘", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
                 }
-                Text(t, color = c, fontSize = 34.sp, fontWeight = FontWeight.Light)
-                if (showMins != null) Text(" 分鐘", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
                 if (stale) {
                     val hhmm = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
                         .format(java.util.Date(cached!!.second))
                     Text("（上次 $hhmm）", color = V3.Text2, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp, bottom = 10.dp))
                 }
                 Spacer(Modifier.weight(1f))
-                Text(if (fav.dir == "inbound") "回程" else "去程", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                // 去程/回程只對巴士有意義；港鐵/輕鐵站改為班次提示
+                when {
+                    fav.type == "bus" -> Text(
+                        if (fav.dir == "inbound") "回程" else "去程",
+                        color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    showMins == null -> Text(
+                        "點擊查看班次 ›",
+                        color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                }
             }
             if (fav.stopName.isNotBlank() && fav.type != "mtr" && fav.type != "lrt") {
                 Text(fav.stopName, color = V3.Text2, fontSize = 12.sp, maxLines = 1)

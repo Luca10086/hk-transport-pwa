@@ -29,10 +29,17 @@ object Api {
             }.getOrNull()
     }
 
-    /** 距離現在的分鐘數（向上取整，最小 0） */
+    /** 距離現在的分鐘數（向上取整）；已過期回傳 null（與 Web 版一致：sec ≤ 0 → 無資料） */
     fun minsUntil(iso: String?): Int? = parseIso(iso)?.let {
         val sec = (it - System.currentTimeMillis()) / 1000.0
-        if (sec <= 0) 0 else kotlin.math.ceil(sec / 60.0).toInt()
+        if (sec <= 0) null else kotlin.math.ceil(sec / 60.0).toInt()
+    }
+
+    /** ETA 文案（與 Web 版一致）：null → —；0（不足 1 分鐘）→ 即將；否則 n 分 */
+    fun etaText(mins: Int?): String = when {
+        mins == null -> "—"
+        mins <= 0 -> "即將"
+        else -> "$mins 分"
     }
 
     /* ---------------- KMB ---------------- */

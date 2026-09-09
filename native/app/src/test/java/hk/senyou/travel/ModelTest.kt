@@ -62,7 +62,7 @@ class ModelTest {
         assertTrue("10 分鐘後應為 9..11，實際 $m", m!! in 9..11)
 
         val past = OffsetDateTime.now().minusMinutes(5).format(fmt)
-        assertEquals("已過時間應夾為 0", 0, Api.minsUntil(past))
+        assertNull("已過時間應為 null（顯示 —），與 Web 版一致", Api.minsUntil(past))
     }
 
     /* ---------- K75P 投影 ---------- */

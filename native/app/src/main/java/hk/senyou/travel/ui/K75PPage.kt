@@ -156,8 +156,9 @@ fun K75PPage(onClose: () -> Unit) {
                     modifier = Modifier.size(40.dp).semantics { contentDescription = "語音播報下一班" }
                         .clickable {
                             Tts.speak(
-                                lead?.let { "K75P，下一班 ${it.mins} 分鐘，前往 ${it.nextName}" }
-                                    ?: "K75P，暫無實時班次"
+                                lead?.let {
+                                    "K75P，${if (it.mins <= 0) "即將到站" else "下一班 ${it.mins} 分鐘"}，前往 ${it.nextName}"
+                                } ?: "K75P，暫無實時班次"
                             )
                         },
                     shape = CircleShape,
@@ -192,7 +193,8 @@ fun K75PPage(onClose: () -> Unit) {
                         val m = markers.getOrNull(i)
                         KCard(
                             label = labels[i],
-                            mins = m?.mins?.toString() ?: "—",
+                            mins = m?.mins?.let { if (it <= 0) "即將" else "$it" } ?: "—",
+                            unit = if (m != null && m.mins <= 0) "" else " 分",
                             sub = m?.nextName ?: "暫無資料",
                             gps = m?.gps == true,
                             modifier = Modifier.weight(1f),
@@ -226,7 +228,7 @@ fun K75PPage(onClose: () -> Unit) {
 }
 
 @Composable
-private fun KCard(label: String, mins: String, sub: String, gps: Boolean, modifier: Modifier = Modifier) {
+private fun KCard(label: String, mins: String, sub: String, gps: Boolean, unit: String = " 分", modifier: Modifier = Modifier) {
     GlassSurface(modifier = modifier.height(104.dp)) {
         Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -244,7 +246,7 @@ private fun KCard(label: String, mins: String, sub: String, gps: Boolean, modifi
             }
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(mins, color = V3.Accent, fontSize = 26.sp, fontWeight = FontWeight.Light)
-                Text(" 分", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
+                if (unit.isNotBlank()) Text(unit, color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
             }
             Text(sub, color = V3.Text2, fontSize = 11.sp, maxLines = 1)
         }
@@ -312,12 +314,15 @@ private fun K75PBigMap(buses: List<Pair<String, Float>>, modifier: Modifier = Mo
             }
         }
 
-        // 起點 / 終點標籤（加大與首站名的間距，避免重疊）
+        // 起點 / 循環點 / 返回標籤（K75P 為循環線：天瑞 ↺ 洪水橋 → 返回天瑞）
         tagPaint.textSize = 11.dp.toPx()
         tagPaint.textAlign = Paint.Align.RIGHT
         drawContext.canvas.nativeCanvas.drawText("起點 天瑞", pts[0].x - 13.dp.toPx(), pts[0].y - 26.dp.toPx(), tagPaint)
         tagPaint.textAlign = Paint.Align.LEFT
-        drawContext.canvas.nativeCanvas.drawText("終點 天瑞", pts[KN - 1].x + 13.dp.toPx(), pts[KN - 1].y - 26.dp.toPx(), tagPaint)
+        drawContext.canvas.nativeCanvas.drawText("返回 天瑞", pts[KN - 1].x + 13.dp.toPx(), pts[KN - 1].y - 26.dp.toPx(), tagPaint)
+        // 底部折返點：標示循環點（置中，站名下方一行）
+        tagPaint.textAlign = Paint.Align.CENTER
+        drawContext.canvas.nativeCanvas.drawText("循環點", pts[K_TURN].x, pts[K_TURN].y + 38.dp.toPx(), tagPaint)
 
         // 實時巴士（僅 GPS 車上圖；重疊自動錯開）
         buses.sortedBy { it.second }.forEachIndexed { idx, (_, pos) ->

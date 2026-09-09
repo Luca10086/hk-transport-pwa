@@ -3,6 +3,7 @@ package hk.senyou.travel.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -55,6 +57,7 @@ fun LineMapScreen() {
     var rows by remember { mutableStateOf<List<MtrLineRow>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var lrtSel by remember { mutableStateOf<Pair<Int, String>?>(null) }
+    val singleColumn = LocalAdaptive.current.listColumns == 1
 
     LaunchedEffect(mode, lineIdx) {
         if (mode != 0) return@LaunchedEffect
@@ -83,31 +86,30 @@ fun LineMapScreen() {
         }
 
         if (mode == 0) {
-            // 線路選擇
-            LazyColumn(Modifier.fillMaxWidth().height(52.dp)) {
-                item {
-                    Row(
-                        Modifier.padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+            // 線路選擇（橫向滾動，避免窄屏溢出裁切）
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                lines.forEachIndexed { i, code ->
+                    val on = i == lineIdx
+                    GlassSurface(
+                        modifier = Modifier.height(38.dp).clickable { lineIdx = i },
+                        shape = RoundedCornerShape(999.dp),
+                        strong = on,
                     ) {
-                        lines.forEachIndexed { i, code ->
-                            val on = i == lineIdx
-                            GlassSurface(
-                                modifier = Modifier.height(38.dp).clickable { lineIdx = i },
-                                shape = RoundedCornerShape(999.dp),
-                                strong = on,
-                            ) {
-                                Box(
-                                    Modifier.background(if (on) V3.Accent else Color.Transparent).padding(horizontal = 14.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(
-                                        StaticData.mtrLines[code] ?: code,
-                                        color = if (on) Color.White else V3.Text2,
-                                        fontSize = 12.sp, maxLines = 1,
-                                    )
-                                }
-                            }
+                        Box(
+                            Modifier.background(if (on) V3.Accent else Color.Transparent).padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                StaticData.mtrLines[code] ?: code,
+                                color = if (on) Color.White else V3.Text2,
+                                fontSize = 12.sp, maxLines = 1,
+                            )
                         }
                     }
                 }
@@ -123,19 +125,21 @@ fun LineMapScreen() {
                 ) {
                     itemsIndexed(rows) { idx, r ->
                         Row(Modifier.fillMaxWidth().height(58.dp), verticalAlignment = Alignment.CenterVertically) {
-                            // 站間連接線（港鐵路線圖樣式）
+                            // 站間連接線（僅單列模式；多列時每格獨立，畫線會錯亂）
                             Box(Modifier.width(36.dp).fillMaxHeight()) {
-                                Canvas(Modifier.fillMaxSize()) {
-                                    val cx = size.width / 2f
-                                    val top = if (idx == 0) size.height / 2f else 0f
-                                    val bottom = if (idx == rows.lastIndex) size.height / 2f else size.height
-                                    drawLine(
-                                        color = V3.CoMtr,
-                                        start = Offset(cx, top),
-                                        end = Offset(cx, bottom),
-                                        strokeWidth = 4.dp.toPx(),
-                                        cap = StrokeCap.Round,
-                                    )
+                                if (singleColumn) {
+                                    Canvas(Modifier.fillMaxSize()) {
+                                        val cx = size.width / 2f
+                                        val top = if (idx == 0) size.height / 2f else 0f
+                                        val bottom = if (idx == rows.lastIndex) size.height / 2f else size.height
+                                        drawLine(
+                                            color = V3.CoMtr,
+                                            start = Offset(cx, top),
+                                            end = Offset(cx, bottom),
+                                            strokeWidth = 4.dp.toPx(),
+                                            cap = StrokeCap.Round,
+                                        )
+                                    }
                                 }
                                 Box(
                                     Modifier.size(28.dp).align(Alignment.Center).clip(CircleShape).background(V3.CoMtr),
@@ -145,12 +149,13 @@ fun LineMapScreen() {
                             Spacer(Modifier.size(10.dp))
                             Text(r.name, color = V3.Text1, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1)
                             Column(horizontalAlignment = Alignment.End) {
+                                // 0 分（即 <60 秒）顯示「即將」，與輕鐵到站表一致
                                 Text(
-                                    r.upMins?.let { "上行 $it 分" } ?: "上行 —",
+                                    r.upMins?.let { if (it <= 0) "上行 即將" else "上行 $it 分" } ?: "上行 —",
                                     color = r.upMins?.let { tierColor(it) } ?: V3.Text2, fontSize = 13.sp,
                                 )
                                 Text(
-                                    r.downMins?.let { "下行 $it 分" } ?: "下行 —",
+                                    r.downMins?.let { if (it <= 0) "下行 即將" else "下行 $it 分" } ?: "下行 —",
                                     color = r.downMins?.let { tierColor(it) } ?: V3.Text2, fontSize = 13.sp,
                                 )
                             }
@@ -177,17 +182,19 @@ fun LineMapScreen() {
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Box(Modifier.width(36.dp).fillMaxHeight()) {
-                                Canvas(Modifier.fillMaxSize()) {
-                                    val cx = size.width / 2f
-                                    val top = if (idx == 0) size.height / 2f else 0f
-                                    val bottom = if (idx == list.lastIndex) size.height / 2f else size.height
-                                    drawLine(
-                                        color = V3.CoLrt,
-                                        start = Offset(cx, top),
-                                        end = Offset(cx, bottom),
-                                        strokeWidth = 4.dp.toPx(),
-                                        cap = StrokeCap.Round,
-                                    )
+                                if (singleColumn) {
+                                    Canvas(Modifier.fillMaxSize()) {
+                                        val cx = size.width / 2f
+                                        val top = if (idx == 0) size.height / 2f else 0f
+                                        val bottom = if (idx == list.lastIndex) size.height / 2f else size.height
+                                        drawLine(
+                                            color = V3.CoLrt,
+                                            start = Offset(cx, top),
+                                            end = Offset(cx, bottom),
+                                            strokeWidth = 4.dp.toPx(),
+                                            cap = StrokeCap.Round,
+                                        )
+                                    }
                                 }
                                 Box(
                                     Modifier.size(26.dp).align(Alignment.Center).clip(CircleShape).background(V3.CoLrt),
@@ -254,7 +261,7 @@ private fun LrtEtaSheet(stationId: Int, name: String, onClose: () -> Unit) {
                                 Text("${e.platformId} 號月台" + if (e.departing) " · 已離站" else "", color = V3.Text2, fontSize = 11.sp)
                             }
                             Text(
-                                if (e.mins == 0) "即將" else "${e.mins} 分",
+                                if (e.mins <= 0) "即將" else "${e.mins} 分",
                                 color = tierColor(e.mins), fontSize = 18.sp, fontWeight = FontWeight.Light,
                             )
                         }

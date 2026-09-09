@@ -127,8 +127,8 @@ fun HomeScreen(
     val tiles: @Composable () -> Unit = {
         Tile(
             label = "K75P 天瑞 ↺ 洪水橋 · 實時 $k75pLive 班在路",
-            value = k75pMins?.toString() ?: "—",
-            unit = " 分鐘",
+            value = if (k75pMins == null) "—" else if (k75pMins!! <= 0) "即將" else "$k75pMins",
+            unit = if (k75pMins != null && k75pMins!! > 0) " 分鐘" else null,
             valueColor = V3.Accent,
             live = k75pLive > 0,
             modifier = Modifier.fillMaxWidth(),
@@ -139,7 +139,7 @@ fun HomeScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Tile(
                 label = "我的收藏", value = favs.size.toString(), unit = " 條",
-                cap = favMins?.let { "下一班 $it 分" } ?: "點星標加入",
+                cap = favMins?.let { "下一班 ${Api.etaText(it)}" } ?: "點星標加入",
                 valueColor = V3.Accent, modifier = Modifier.weight(1f),
             )
             Tile(
@@ -151,7 +151,7 @@ fun HomeScreen(
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Tile(label = "壽司郎", value = "—", unit = " 組", cap = "分頁查看", modifier = Modifier.weight(1f))
-            Tile(label = "路線圖", value = "屯馬", unit = "綫", cap = "全線候車", valueColor = V3.CoMtr, modifier = Modifier.weight(1f))
+            Tile(label = "路線圖", value = "屯馬綫", cap = "全線候車", valueColor = V3.CoMtr, modifier = Modifier.weight(1f))
         }
     }
 

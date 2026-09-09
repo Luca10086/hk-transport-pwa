@@ -39,9 +39,9 @@ class SenyouWidgetProvider : AppWidgetProvider() {
             }.getOrDefault(250)
             val small = minW in 1 until 220
 
-            val etaText = Cache.k75pMins?.let { "$it 分" } ?: "—"
+            val etaText = hk.senyou.travel.data.Api.etaText(Cache.k75pMins)
             val favText = if (Cache.favLine.isBlank()) "收藏：暫無"
-            else "${Cache.favLine} · " + (Cache.favMins?.let { "$it 分" } ?: "—")
+            else "${Cache.favLine} · " + hk.senyou.travel.data.Api.etaText(Cache.favMins)
 
             val v = if (small) {
                 RemoteViews(context.packageName, R.layout.widget_k75p_small).apply {

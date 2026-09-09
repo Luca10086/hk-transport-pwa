@@ -100,9 +100,11 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                     modifier = Modifier.size(40.dp).semantics { contentDescription = "語音播報" }
                         .clickable {
                             val first = rows.firstOrNull { it.mins != null }
+                            val firstMins = first?.mins
                             Tts.speak(
-                                if (first != null) "${item.no}，${first.name}，${first.mins} 分鐘"
-                                else "${item.no}，暫無班次"
+                                if (first != null && firstMins != null) {
+                                    "${item.no}，${first.name}，${if (firstMins <= 0) "即將到站" else "$firstMins 分鐘"}"
+                                } else "${item.no}，暫無班次"
                             )
                         },
                     shape = CircleShape,
@@ -190,14 +192,18 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                             Spacer(Modifier.size(12.dp))
                             Text(r.name, color = V3.Text1, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1)
                             if (r.mins != null) {
-                                val c = when {
-                                    r.mins <= 2 -> V3.Danger
-                                    r.mins <= 10 -> V3.Warning
-                                    else -> V3.Success
-                                }
-                                Row(verticalAlignment = Alignment.Bottom) {
-                                    Text("${r.mins}", color = c, fontSize = 20.sp, fontWeight = FontWeight.Light)
-                                    Text(" 分", color = V3.Text2, fontSize = 11.sp, modifier = Modifier.padding(bottom = 3.dp))
+                                if (r.mins <= 0) {
+                                    Text("即將", color = V3.Danger, fontSize = 16.sp, fontWeight = FontWeight.Light)
+                                } else {
+                                    val c = when {
+                                        r.mins <= 2 -> V3.Danger
+                                        r.mins <= 10 -> V3.Warning
+                                        else -> V3.Success
+                                    }
+                                    Row(verticalAlignment = Alignment.Bottom) {
+                                        Text("${r.mins}", color = c, fontSize = 20.sp, fontWeight = FontWeight.Light)
+                                        Text(" 分", color = V3.Text2, fontSize = 11.sp, modifier = Modifier.padding(bottom = 3.dp))
+                                    }
                                 }
                             } else {
                                 Text("—", color = V3.Text2, fontSize = 18.sp)

@@ -74,7 +74,7 @@ class RefreshWorker(appContext: Context, params: WorkerParameters) : CoroutineWo
             Cache.putEtaCache(f.key, mins)
             if (f.alertMins > 0 && mins <= f.alertMins && now - Cache.alertSentAt(f.key) > 15 * 60_000) {
                 notifyArrival(f, mins)
-                Cache.alertSentAt(f.key).let { Cache.markAlertSent(f.key) }
+                Cache.markAlertSent(f.key)
             }
         }
         // 小組件顯示首條收藏
