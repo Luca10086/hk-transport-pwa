@@ -20,8 +20,8 @@ android {
         applicationId = "hk.senyou.travel"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "3.0.0-m5"
+        versionCode = 6
+        versionName = "3.0.0"
     }
 
     signingConfigs {
@@ -70,6 +70,8 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.work:work-runtime-ktx:2.10.0")
     implementation("androidx.window:window:1.3.0")
+    // Baseline Profile 安裝器：讓 Compose 自帶的 baseline profile 在 API 24–30 也生效（31+ 由 ART 自動使用）
+    implementation("androidx.profileinstaller:profileinstaller:1.4.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     debugImplementation("androidx.compose.ui:ui-tooling")

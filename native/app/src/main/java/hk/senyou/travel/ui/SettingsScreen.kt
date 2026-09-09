@@ -11,16 +11,21 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,6 +103,56 @@ fun SettingsScreen(s: Settings) {
         GroupTitle("出行")
         SegRow("自動重新整理", "首頁磁貼",
             listOf("30" to "30s", "60" to "60s", "0" to "關"), s.refresh.toString()) { v -> set { copy(refresh = v.toInt()) } }
+
+        GroupTitle("診斷")
+        var crashCount by remember { mutableIntStateOf(hk.senyou.travel.data.CrashLog.count(ctx)) }
+        var logText by remember { mutableStateOf<String?>(null) }
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("崩潰日誌", color = V3.Text1, fontSize = 15.sp)
+                Text(
+                    if (crashCount > 0) "最近 $crashCount 份（僅本地，不上傳）" else "暫無記錄（僅本地，不上傳）",
+                    color = V3.Text2, fontSize = 12.sp,
+                )
+            }
+            if (crashCount > 0) {
+                GlassSurface(modifier = Modifier.height(38.dp).clickable {
+                    logText = hk.senyou.travel.data.CrashLog.latestText(ctx) ?: "（讀取失敗）"
+                }, shape = RoundedCornerShape(999.dp)) {
+                    Box(Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+                        Text("查看", color = V3.Text1, fontSize = 13.sp)
+                    }
+                }
+                Spacer(Modifier.size(8.dp))
+                GlassSurface(modifier = Modifier.height(38.dp).clickable {
+                    hk.senyou.travel.data.CrashLog.clear(ctx)
+                    crashCount = 0
+                }, shape = RoundedCornerShape(999.dp)) {
+                    Box(Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+                        Text("清除", color = V3.Text2, fontSize = 13.sp)
+                    }
+                }
+            }
+        }
+        logText?.let { text ->
+            GlassSurface(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                Column(Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("最近一次崩潰", color = V3.Text1, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        Text("✕", color = V3.Text2, fontSize = 14.sp, modifier = Modifier.clickable { logText = null })
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text.take(2000),
+                        color = V3.Text2, fontSize = 11.sp,
+                        modifier = Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState()),
+                    )
+                }
+            }
+        }
         Row(
             Modifier.fillMaxWidth().padding(vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,

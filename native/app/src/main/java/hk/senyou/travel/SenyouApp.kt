@@ -11,6 +11,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import hk.senyou.travel.data.AppCtx
+import hk.senyou.travel.data.CrashLog
 import hk.senyou.travel.work.RefreshWorker
 import java.util.concurrent.TimeUnit
 
@@ -18,6 +19,7 @@ class SenyouApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         AppCtx.set(this)
+        CrashLog.install(this)
         ensureChannel()
         // 背景刷新：每 30 分鐘（WorkManager 最小值 15 分鐘）
         runCatching {

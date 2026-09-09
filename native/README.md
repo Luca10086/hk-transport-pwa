@@ -71,3 +71,11 @@ gradlew.bat :app:testDebugUnitTest      # 渲染 8 個頁面截圖 → app/build
 | 3.0.0-m3 | 收藏 / 天氣 / 壽司郎 / 設定（功能對等） |
 | 3.0.0-m4 | 真折射（RenderEffect + AGSL）+ 氣泡工具欄 |
 | 3.0.0-m5 | 路線圖頁 + 小組件 + 到站通知 + 背景刷新 + 觸感；release 簽名 |
+| **3.0.0** | 大屏/摺疊屏自適應（導航欄+雙欄+3列+半折分屏+鉸鏈避讓）、路線圖連接線、逐條到站提醒、搜尋歷史、詳情頁收藏+通知直達、淺色主題、強調色生效、TTS 粵語播報、TalkBack 語義、離線緩存、Baseline Profile、崩潰日誌、12 項單元測試 |
+
+## 自測與驗證
+
+- **單元測試**：`gradlew.bat :app:testDebugUnitTest`（12 項：時間解析 / K75P 投影 / 自適應斷點 / 靜態資料）
+- **截圖測試**：同命令輸出 18 張頁面 PNG（`app/build/screenshots/`），含緊湊態、展開態 953×852dp、淺色主題、強調色、收藏頁
+- **視覺審查**：截圖交給 MiMo v2.5 讀圖審查（模型可讀圖）
+- **Baseline Profile**：APK 內含 `assets/dexopt/baseline.prof`（Compose 自帶 profile，AGP 自動合併）
