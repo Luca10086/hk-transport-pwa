@@ -1,17 +1,25 @@
 package hk.senyou.travel.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -21,6 +29,49 @@ private class Blob(val x: Float, val y: Float, val r: Float, val s: Float, val p
 private class Star(val x: Float, val y: Float, val r: Float, val ph: Float)
 
 private fun rnd(a: Float, b: Float) = a + Random.nextFloat() * (b - a)
+
+/**
+ * 液體背景宿主：把背景繪製進 GraphicsLayer，並提供給玻璃面板做真·backdrop blur / AGSL 折射。
+ * 同時每 300ms 產出一張快照位圖（折射取樣用）。
+ */
+@Composable
+fun LiquidBackgroundHost(
+    modifier: Modifier = Modifier,
+    deepNight: Boolean = false,
+    snapshot: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    val layer = rememberGraphicsLayer()
+    var bmp by remember { mutableStateOf<ImageBitmap?>(null) }
+
+    if (snapshot) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                kotlinx.coroutines.delay(300)
+                bmp = runCatching { layer.toImageBitmap() }.getOrNull()
+            }
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalBgLayer provides layer,
+        LocalBgBitmap provides bmp,
+    ) {
+        Box(modifier) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .drawWithContent {
+                        layer.record { this@drawWithContent.drawContent() }
+                        drawLayer(layer)
+                    },
+            ) {
+                LiquidBackground(Modifier.fillMaxSize(), deepNight)
+            }
+            content()
+        }
+    }
+}
 
 /** 液體背景：7 團流動光斑 + 54 顆星野（~30fps，與 Web 版同參數） */
 @Composable

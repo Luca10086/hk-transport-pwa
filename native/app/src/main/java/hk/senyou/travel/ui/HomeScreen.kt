@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,9 +40,14 @@ import kotlinx.coroutines.launch
 
 private val MODES = listOf("bus" to "公交", "mtrbus" to "港鐵巴士", "mtr" to "港鐵", "lrt" to "輕鐵")
 
-/** 首頁（M3：真實搜索 + 收藏 + 天氣 + K75P 實時） */
+/** 首頁（M4：真玻璃 + 氣泡工具欄聯動滾動） */
 @Composable
-fun HomeScreen(onOpenK75P: () -> Unit, onOpenRoute: (SearchItem) -> Unit, onOpenWeather: () -> Unit) {
+fun HomeScreen(
+    scroll: ScrollState,
+    onOpenK75P: () -> Unit,
+    onOpenRoute: (SearchItem) -> Unit,
+    onOpenWeather: () -> Unit,
+) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val favs by Store.favorites(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
@@ -115,7 +121,7 @@ fun HomeScreen(onOpenK75P: () -> Unit, onOpenRoute: (SearchItem) -> Unit, onOpen
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scroll)
             .padding(horizontal = 16.dp)
             .padding(bottom = 110.dp),
     ) {

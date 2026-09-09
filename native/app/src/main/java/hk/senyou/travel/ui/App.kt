@@ -1,5 +1,8 @@
 package hk.senyou.travel.ui
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -66,65 +70,98 @@ fun SenyouApp() {
         3 -> 0.10f
         else -> 0.14f
     }
-    val glassCfg = GlassCfg(alpha = alpha, sheen = settings.fx != "off", motion = settings.fx == "full")
+    val blurPx = when (settings.glass) {
+        0 -> 0f
+        1 -> 12f
+        2 -> 26f
+        3 -> 36f
+        else -> 48f
+    }
+    val glassCfg = GlassCfg(
+        alpha = alpha,
+        blurPx = blurPx,
+        refractPx = if (settings.glass == 0) 0f else 20f,
+        sheen = settings.fx != "off",
+        motion = settings.fx == "full",
+    )
     val baseDensity = LocalDensity.current
+    val homeScroll = rememberScrollState()
 
     CompositionLocalProvider(
-        LocalGlassCfg provides glassCfg,
         LocalDeepNight provides settings.deep,
         LocalDensity provides Density(baseDensity.density, if (settings.big) 1.15f else 1f),
     ) {
-        Box(Modifier.fillMaxSize().background(V3.Bg)) {
-            LiquidBackground(Modifier.fillMaxSize(), deepNight = settings.deep)
-
-            Column(Modifier.fillMaxSize()) {
-                TopBar()
-                Box(Modifier.weight(1f)) {
-                    when (tab) {
-                        0 -> HomeScreen(
-                            onOpenK75P = { k75pOpen = true },
-                            onOpenRoute = { detail = it },
-                            onOpenWeather = { weatherOpen = true },
-                        )
-                        1 -> FavoritesScreen(onOpenRoute = { detail = it })
-                        2 -> SushiScreen()
-                        3 -> Placeholder("路線圖 · 語義色")
-                        else -> SettingsScreen(settings)
+        LiquidBackgroundHost(
+            modifier = Modifier.fillMaxSize().background(V3.Bg),
+            deepNight = settings.deep,
+            snapshot = settings.glass > 0,
+        ) {
+            CompositionLocalProvider(LocalGlassCfg provides glassCfg) {
+                Column(Modifier.fillMaxSize()) {
+                    TopBar(collapsed = tab == 0 && homeScroll.value > 80)
+                    Box(Modifier.weight(1f)) {
+                        when (tab) {
+                            0 -> HomeScreen(
+                                scroll = homeScroll,
+                                onOpenK75P = { k75pOpen = true },
+                                onOpenRoute = { detail = it },
+                                onOpenWeather = { weatherOpen = true },
+                            )
+                            1 -> FavoritesScreen(onOpenRoute = { detail = it })
+                            2 -> SushiScreen()
+                            3 -> Placeholder("路線圖 · 語義色")
+                            else -> SettingsScreen(settings)
+                        }
                     }
+                    BottomNav(tab) { tab = it }
                 }
-                BottomNav(tab) { tab = it }
-            }
 
-            if (k75pOpen) K75PPage(onClose = { k75pOpen = false })
-            if (weatherOpen) WeatherPage(onClose = { weatherOpen = false })
-            detail?.let { d -> RouteDetailPage(item = d, onClose = { detail = null }) }
+                if (k75pOpen) K75PPage(onClose = { k75pOpen = false })
+                if (weatherOpen) WeatherPage(onClose = { weatherOpen = false })
+                detail?.let { d -> RouteDetailPage(item = d, onClose = { detail = null }) }
+            }
         }
     }
 }
 
 @Composable
-private fun TopBar() {
+private fun TopBar(collapsed: Boolean) {
     val status = WindowInsets.statusBars.asPaddingValues()
+    val h by animateDpAsState(if (collapsed) 64.dp else 96.dp, tween(280, easing = V3.EasePress), label = "tbH")
+    val radius by animateDpAsState(if (collapsed) 20.dp else 0.dp, tween(280, easing = V3.EasePress), label = "tbR")
+    val hPad by animateDpAsState(if (collapsed) 16.dp else 0.dp, tween(280, easing = V3.EasePress), label = "tbP")
+    val titleSize by animateFloatAsState(if (collapsed) 22f else 32f, tween(280, easing = V3.EasePress), label = "tbT")
+
     GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = status.calculateTopPadding()),
-        shape = RoundedCornerShape(0.dp),
+            .padding(top = status.calculateTopPadding())
+            .padding(horizontal = hPad, vertical = if (collapsed) 6.dp else 0.dp)
+            .height(h),
+        shape = RoundedCornerShape(radius),
         strong = true,
     ) {
-        Column(
+        Row(
             Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 12.dp)
-                .height(76.dp),
-            verticalArrangement = Arrangement.Center,
+                .fillMaxSize()
+                .padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("SENYOU · HK TRANSPORT", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp, letterSpacing = 3.sp)
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text("森友", color = V3.Text1, fontSize = 32.sp, fontWeight = FontWeight.Light)
-                Text("出行", color = V3.Accent, fontSize = 32.sp, fontWeight = FontWeight.Light)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                if (!collapsed) {
+                    Text("SENYOU · HK TRANSPORT", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp, letterSpacing = 3.sp)
+                }
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("森友", color = V3.Text1, fontSize = titleSize.sp, fontWeight = FontWeight.Light)
+                    Text("出行", color = V3.Accent, fontSize = titleSize.sp, fontWeight = FontWeight.Light)
+                }
+                if (!collapsed) Text("原生 v3 · M4 真折射", color = V3.Text2, fontSize = 12.sp)
             }
-            Text("原生 v3 · M3 資料層", color = V3.Text2, fontSize = 12.sp)
+            GlassSurface(modifier = Modifier.size(if (collapsed) 36.dp else 40.dp), shape = CircleShape) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("↻", color = V3.Text1, fontSize = 16.sp)
+                }
+            }
         }
     }
 }
