@@ -37,6 +37,8 @@ import hk.senyou.travel.data.Kind
 import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.SearchRepo
 import hk.senyou.travel.data.Store
+import hk.senyou.travel.data.matchKey
+import hk.senyou.travel.data.toFav
 import hk.senyou.travel.ui.theme.V3
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,6 +56,7 @@ fun HomeScreen(
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val favs by Store.favorites(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
+    val recent by Store.recent(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
     val adaptive = LocalAdaptive.current
 
     var mode by remember { mutableIntStateOf(0) }
@@ -118,6 +121,7 @@ fun HomeScreen(
         items = base
         items = SearchRepo.fillEtas(base)
         loading = false
+        if (base.isNotEmpty()) Store.pushRecent(ctx, query)
     }
 
     val tiles: @Composable () -> Unit = {
@@ -159,19 +163,40 @@ fun HomeScreen(
     }
 
     val resultRow: @Composable (SearchItem) -> Unit = { it ->
-        val starred = favs.any { f -> favKeyOf(f) == favKeyOfItem(it) }
+        val starred = favs.any { f -> f.matchKey() == it.matchKey() }
         ResultRow(
             no = it.no, co = it.kind.toCo(), name = it.name, cap = it.cap,
             etaMins = it.etaMins, star = starred,
             onStar = {
                 scope.launch {
-                    val next = if (starred) favs.filterNot { f -> favKeyOf(f) == favKeyOfItem(it) }
-                    else favs + itemToFav(it)
+                    val next = if (starred) favs.filterNot { f -> f.matchKey() == it.matchKey() }
+                    else favs + it.toFav()
                     Store.saveFavorites(ctx, next)
                 }
             },
         ) { onOpenRoute(it) }
         Spacer(Modifier.height(8.dp))
+    }
+
+    // 最近搜尋（查詢為空時顯示）
+    val recentChips: @Composable () -> Unit = {
+        if (query.isBlank() && recent.isNotEmpty()) {
+            Spacer(Modifier.height(14.dp))
+            Text("最近搜尋", color = V3.Aux, fontSize = 13.sp)
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                recent.take(5).forEach { q ->
+                    GlassSurface(
+                        modifier = Modifier.height(38.dp).clickable { query = q },
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(999.dp),
+                    ) {
+                        Box(Modifier.padding(horizontal = 14.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            Text(q, color = V3.Text1, fontSize = 13.sp, maxLines = 1)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if (adaptive.flexMode) {
@@ -184,6 +209,7 @@ fun HomeScreen(
             Box(Modifier.weight(0.55f)) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     searchBox()
+                    recentChips()
                     LazyColumn(Modifier.fillMaxSize()) {
                         if (loading) item { Text("搜尋中…", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp)) }
                         else if (query.isNotBlank() && items.isEmpty()) item { Text("沒有結果", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp)) }
@@ -204,7 +230,8 @@ fun HomeScreen(
             }
             Column(Modifier.weight(1f)) {
                 searchBox()
-                if (query.isBlank()) {
+                recentChips()
+                if (query.isBlank() && recent.isEmpty()) {
                     // 展開態右欄空閒時給搜索引導（避免大面積空白）
                     Spacer(Modifier.height(24.dp))
                     Text("快速搜尋", color = V3.Aux, fontSize = 13.sp)
@@ -246,6 +273,7 @@ fun HomeScreen(
             tiles()
             Spacer(Modifier.height(16.dp))
             searchBox()
+            recentChips()
             when {
                 loading -> Text("搜尋中…", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
                 query.isNotBlank() && items.isEmpty() -> Text("沒有結果", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
@@ -263,32 +291,4 @@ fun Kind.toCo(): Co = when (this) {
     Kind.LRT -> Co.LRT
     Kind.MTRBUS -> Co.MTRBUS
     Kind.BUSSTOP -> Co.KMB
-}
-
-private fun favKeyOf(f: Fav): String = listOf(f.type, f.company, f.route, f.dir, f.stopId ?: f.stationCode ?: f.routeId ?: "").joinToString("|")
-
-private fun favKeyOfItem(it: SearchItem): String = listOf(
-    when (it.kind) {
-        Kind.KMB, Kind.BUSSTOP, Kind.CTB, Kind.NLB -> "bus"
-        Kind.MTRBUS -> "mtrbus"
-        Kind.MTR -> "mtr"
-        Kind.LRT -> "lrt"
-    },
-    when (it.kind) {
-        Kind.CTB -> "ctb"
-        Kind.NLB -> "nlb"
-        else -> "kmb"
-    },
-    it.route ?: "",
-    it.dir ?: "outbound",
-    it.stopId ?: it.stationCode ?: it.routeId ?: "",
-).joinToString("|")
-
-private fun itemToFav(it: SearchItem): Fav = when (it.kind) {
-    Kind.MTRBUS -> Fav(type = "mtrbus", company = "mtrbus", route = it.route ?: "", stopName = it.name)
-    Kind.MTR -> Fav(type = "mtr", company = "mtr", stationCode = it.stationCode, stationName = it.stationName ?: it.name)
-    Kind.LRT -> Fav(type = "lrt", company = "lrt", stationCode = it.stationCode, stationName = it.stationName ?: it.name, stopName = it.stationName ?: it.name)
-    Kind.CTB -> Fav(type = "bus", company = "ctb", route = it.route ?: "", dir = it.dir ?: "outbound", stopName = it.name)
-    Kind.NLB -> Fav(type = "bus", company = "nlb", route = it.route ?: "", routeId = it.routeId, dir = it.dir ?: "outbound", stopName = it.name)
-    else -> Fav(type = "bus", company = "kmb", route = it.route ?: "", dir = it.dir ?: "outbound", stopId = it.stopId, stopName = it.name)
 }

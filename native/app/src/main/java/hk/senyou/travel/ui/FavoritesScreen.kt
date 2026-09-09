@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -40,6 +41,7 @@ import hk.senyou.travel.data.Fav
 import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.SearchRepo
 import hk.senyou.travel.data.Store
+import hk.senyou.travel.data.displayName
 import hk.senyou.travel.ui.theme.V3
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -61,6 +63,8 @@ fun FavoritesScreen(onOpenRoute: (SearchItem) -> Unit) {
         if (favs.isEmpty()) { etas = emptyMap(); return@LaunchedEffect }
         val res = favs.map { f -> async { f.key to SearchRepo.favEta(f) } }.awaitAll()
         etas = res.toMap()
+        // 成功的 ETA 寫入離線緩存
+        res.forEach { (k, m) -> if (m != null) hk.senyou.travel.data.Cache.putEtaCache(k, m) }
     }
 
     if (favs.isEmpty()) {
@@ -94,10 +98,23 @@ fun FavoritesScreen(onOpenRoute: (SearchItem) -> Unit) {
                 }
             }
             items(list, key = { it.key }) { f ->
+                val cached = hk.senyou.travel.data.Cache.etaCache(f.key)
                 FavCard(
                     fav = f,
                     mins = etas[f.key],
+                    cached = cached,
                     onOpen = { onOpenRoute(SearchRepo.favToSearchItem(f)) },
+                    onCycleAlert = {
+                        scope.launch {
+                            val next = when (f.alertMins) {
+                                0 -> 3
+                                3 -> 5
+                                5 -> 10
+                                else -> 0
+                            }
+                            Store.saveFavorites(ctx, favs.map { if (it.key == f.key) it.copy(alertMins = next) else it })
+                        }
+                    },
                     onRemove = {
                         scope.launch {
                             Store.saveFavorites(ctx, favs.filterNot { it.key == f.key })
@@ -112,27 +129,56 @@ fun FavoritesScreen(onOpenRoute: (SearchItem) -> Unit) {
 }
 
 @Composable
-private fun FavCard(fav: Fav, mins: Int?, onOpen: () -> Unit, onRemove: () -> Unit) {
+private fun FavCard(
+    fav: Fav,
+    mins: Int?,
+    cached: Pair<Int, Long>?,
+    onOpen: () -> Unit,
+    onCycleAlert: () -> Unit,
+    onRemove: () -> Unit,
+) {
     GlassSurface(modifier = Modifier.fillMaxWidth().clickable { onOpen() }) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(if (fav.type == "bus" || fav.type == "mtrbus") fav.route else (fav.stationName.ifBlank { fav.stopName }), color = V3.Text1, fontSize = 18.sp, fontWeight = FontWeight.Light, modifier = Modifier.weight(1f))
+                Text(fav.displayName(), color = V3.Text1, fontSize = 18.sp, fontWeight = FontWeight.Light, modifier = Modifier.weight(1f))
                 Text(SearchRepo.favMeta(fav), color = V3.Text2, fontSize = 12.sp)
-                Spacer(Modifier.size(10.dp))
+                Spacer(Modifier.size(8.dp))
+                // 到站提醒門檻：關 → 3 → 5 → 10 分
+                GlassSurface(
+                    modifier = Modifier.widthIn(min = 62.dp).height(36.dp).clickable { onCycleAlert() },
+                    shape = CircleShape,
+                    strong = fav.alertMins > 0,
+                ) {
+                    Box(Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            if (fav.alertMins > 0) "🔔 ${fav.alertMins}分" else "🔕",
+                            color = if (fav.alertMins > 0) V3.Warning else V3.Text2,
+                            fontSize = 12.sp, maxLines = 1,
+                        )
+                    }
+                }
+                Spacer(Modifier.size(8.dp))
                 GlassSurface(modifier = Modifier.size(36.dp).clickable { onRemove() }, shape = CircleShape) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("✕", color = V3.Text2, fontSize = 13.sp) }
                 }
             }
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.Bottom) {
+                val showMins = mins ?: cached?.first
+                val stale = mins == null && cached != null
                 val (c, t) = when {
-                    mins == null -> V3.Text2 to "—"
-                    mins <= 2 -> V3.Danger to "$mins"
-                    mins <= 10 -> V3.Warning to "$mins"
-                    else -> V3.Success to "$mins"
+                    showMins == null -> V3.Text2 to "—"
+                    showMins <= 2 -> V3.Danger to "$showMins"
+                    showMins <= 10 -> V3.Warning to "$showMins"
+                    else -> V3.Success to "$showMins"
                 }
                 Text(t, color = c, fontSize = 34.sp, fontWeight = FontWeight.Light)
-                if (mins != null) Text(" 分鐘", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                if (showMins != null) Text(" 分鐘", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                if (stale) {
+                    val hhmm = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                        .format(java.util.Date(cached!!.second))
+                    Text("（上次 $hhmm）", color = V3.Text2, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp, bottom = 10.dp))
+                }
                 Spacer(Modifier.weight(1f))
                 Text(if (fav.dir == "inbound") "回程" else "去程", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
             }

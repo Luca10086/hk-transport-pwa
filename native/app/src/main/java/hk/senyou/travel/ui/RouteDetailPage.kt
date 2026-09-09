@@ -26,19 +26,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hk.senyou.travel.data.Kind
 import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.SearchRepo
 import hk.senyou.travel.data.StopRow
+import hk.senyou.travel.data.Store
+import hk.senyou.travel.data.matchKey
+import hk.senyou.travel.data.toFav
 import hk.senyou.travel.ui.theme.V3
+import kotlinx.coroutines.launch
 
 /** 路線詳情（原生）：去程/回程分頁 + 每站 ETA */
 @Composable
@@ -48,6 +55,10 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
     var loading by remember { mutableStateOf(true) }
     val twoWay = item.kind == Kind.KMB || item.kind == Kind.CTB
     val status = WindowInsets.statusBars.asPaddingValues()
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val favs by Store.favorites(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
+    val starred = favs.any { it.matchKey() == item.matchKey() }
 
     LaunchedEffect(tab, item) {
         loading = true
@@ -82,6 +93,27 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                     Text("${item.no} 路線詳情", color = V3.Text1, fontSize = 19.sp, fontWeight = FontWeight.Light, maxLines = 1)
                     Text(item.name, color = V3.Text2, fontSize = 12.sp, maxLines = 1)
                 }
+                // 收藏本路線
+                GlassSurface(
+                    modifier = Modifier.size(40.dp).clickable {
+                        scope.launch {
+                            val next = if (starred) favs.filterNot { it.matchKey() == item.matchKey() }
+                            else favs + item.toFav()
+                            Store.saveFavorites(ctx, next)
+                        }
+                    },
+                    shape = CircleShape,
+                    strong = starred,
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            if (starred) "★" else "☆",
+                            color = if (starred) V3.Warning else V3.Text2,
+                            fontSize = 18.sp,
+                        )
+                    }
+                }
+                Spacer(Modifier.size(8.dp))
                 GlassSurface(modifier = Modifier.size(40.dp).clickable { onClose() }, shape = CircleShape) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("✕", color = V3.Text1, fontSize = 15.sp)

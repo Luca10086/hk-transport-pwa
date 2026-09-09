@@ -76,6 +76,26 @@ object Cache {
     var updatedAt: Long
         get() = prefs.getLong("updated_at", 0L)
         set(v) = prefs.edit().putLong("updated_at", v).apply()
+
+    /* ---------- 逐條收藏的 ETA 離線緩存（分鐘 + 時間戳） ---------- */
+
+    fun etaCache(key: String): Pair<Int, Long>? {
+        val raw = prefs.getString("eta_$key", null) ?: return null
+        val parts = raw.split("|")
+        if (parts.size != 2) return null
+        val mins = parts[0].toIntOrNull() ?: return null
+        val ts = parts[1].toLongOrNull() ?: return null
+        return mins to ts
+    }
+
+    fun putEtaCache(key: String, mins: Int?) {
+        if (mins == null) return
+        prefs.edit().putString("eta_$key", "$mins|${System.currentTimeMillis()}").apply()
+    }
+
+    /** 上次已發提醒的時間（避免同一條收藏反覆通知） */
+    fun alertSentAt(key: String): Long = prefs.getLong("alert_$key", 0L)
+    fun markAlertSent(key: String) = prefs.edit().putLong("alert_$key", System.currentTimeMillis()).apply()
 }
 
 /** 全局 Application 上下文（供無 Context 的緩存/工作器使用） */

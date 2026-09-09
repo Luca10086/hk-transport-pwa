@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
@@ -36,6 +37,8 @@ data class Fav(
     val routeId: String? = null,
     val line: String? = null,
     val lineName: String = "",
+    /** 到站提醒門檻（分鐘）：0 = 關閉 */
+    val alertMins: Int = 0,
 ) {
     val key: String get() = listOf(type, company, route, dir, stopId ?: stationCode ?: routeId ?: "", stationName).joinToString("|")
 }
@@ -45,6 +48,24 @@ private val Context.ds: DataStore<Preferences> by preferencesDataStore("senyou_v
 object Store {
     private val K_CFG = stringPreferencesKey("cfg")
     private val K_FAVS = stringPreferencesKey("favs")
+    private val K_RECENT = stringPreferencesKey("recent")
+
+    /** 最近搜尋（最多 10 條） */
+    fun recent(ctx: Context): Flow<List<String>> = ctx.ds.data.map { p ->
+        val arr = p[K_RECENT]?.let { runCatching { JSONArray(it) }.getOrNull() } ?: return@map emptyList()
+        (0 until arr.length()).map { arr.optString(it) }.filter { it.isNotBlank() }
+    }
+
+    suspend fun pushRecent(ctx: Context, q: String) {
+        val q2 = q.trim()
+        if (q2.isEmpty()) return
+        val cur = recent(ctx).first().toMutableList()
+        cur.remove(q2)
+        cur.add(0, q2)
+        while (cur.size > 10) cur.removeAt(cur.size - 1)
+        val arr = JSONArray().apply { cur.forEach { put(it) } }
+        ctx.ds.edit { it[K_RECENT] = arr.toString() }
+    }
 
     fun settings(ctx: Context): Flow<Settings> = ctx.ds.data.map { p ->
         val o = p[K_CFG]?.let { runCatching { JSONObject(it) }.getOrNull() }
@@ -83,6 +104,7 @@ object Store {
                 routeId = o.optString("routeId").ifBlank { null },
                 line = o.optString("line").ifBlank { null },
                 lineName = o.optString("lineName"),
+                alertMins = o.optInt("alertMins", 0),
             )
         }
     }
@@ -95,6 +117,7 @@ object Store {
                     .put("dir", f.dir).put("stopId", f.stopId ?: "").put("stopName", f.stopName)
                     .put("stationCode", f.stationCode ?: "").put("stationName", f.stationName)
                     .put("routeId", f.routeId ?: "").put("line", f.line ?: "").put("lineName", f.lineName)
+                    .put("alertMins", f.alertMins)
             )
         }
         ctx.ds.edit { it[K_FAVS] = arr.toString() }

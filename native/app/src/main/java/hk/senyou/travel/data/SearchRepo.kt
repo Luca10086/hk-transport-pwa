@@ -294,7 +294,10 @@ object SearchRepo {
             "nlb" -> "嶼巴 ${f.route}"
             else -> "九巴 ${f.route}"
         }
-        "mtr" -> (f.lineName.ifBlank { f.line ?: "港鐵" }) + " 綫"
+        "mtr" -> {
+            val n = f.lineName.ifBlank { f.line ?: "港鐵" }
+            if (n.endsWith("綫") || n.endsWith("線")) n else "$n 綫"
+        }
         "lrt" -> f.stopName.ifBlank { "輕鐵站" }
         "mtrbus" -> "港鐵巴士 ${f.route}"
         else -> "收藏"

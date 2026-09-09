@@ -66,6 +66,15 @@ fun SenyouApp() {
     var detail by remember { mutableStateOf<SearchItem?>(null) }
     val homeScroll = rememberScrollState()
     val (posture, hinge) = rememberFoldInfo()
+    val deep by DeepLink.flow.collectAsStateWithLifecycle()
+
+    // 通知點擊 → 直接打開路線詳情
+    LaunchedEffect(deep) {
+        deep?.let {
+            detail = it
+            DeepLink.flow.value = null
+        }
+    }
 
     val alpha = when (settings.glass) {
         0 -> 0f; 1 -> 0.03f; 2 -> 0.07f; 3 -> 0.10f; else -> 0.14f

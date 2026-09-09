@@ -156,6 +156,22 @@ class ScreenshotTest {
         shoot("08-weather")
     }
 
+    /** 有收藏內容的收藏頁（驗證提醒鈴鐺 + 離線緩存顯示） */
+    @Test
+    fun favoritesWithItems() {
+        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        StaticData.load(ctx)
+        val f1 = hk.senyou.travel.data.Fav(type = "bus", company = "kmb", route = "69X", dir = "outbound", stopName = "天瑞總站", alertMins = 5)
+        val f2 = hk.senyou.travel.data.Fav(type = "mtrbus", company = "mtrbus", route = "K75P", stopName = "天瑞")
+        val f3 = hk.senyou.travel.data.Fav(type = "mtr", company = "mtr", stationCode = "TIS", stationName = "天水圍", lineName = "屯馬線")
+        kotlinx.coroutines.runBlocking { hk.senyou.travel.data.Store.saveFavorites(ctx, listOf(f1, f2, f3)) }
+        // 預置離線緩存（離線時應顯示「（上次 HH:mm）」）
+        hk.senyou.travel.data.Cache.putEtaCache(f1.key, 7)
+        hk.senyou.travel.data.Cache.putEtaCache(f2.key, 2)
+        rule.setContent { Frame { FavoritesScreen(onOpenRoute = {}) } }
+        shoot("16-favorites-items")
+    }
+
     /** 聯網測試：真實港鐵數據（驗證站間連接線與上下行 ETA） */
     @Test
     fun lineMapLive() {
