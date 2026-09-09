@@ -95,7 +95,7 @@ gradlew.bat :app:testDebugUnitTest      # 渲染 8 個頁面截圖 → app/build
 ## 自測與驗證
 
 - **單元測試**：`gradlew.bat :app:testDebugUnitTest`（48 項：時間解析 / ETA 文案 / K75P 投影 / 自適應斷點 / 收藏與設定序列化往返 / 搜尋歷史 / 離線緩存 / 崩潰日誌 / 收藏映射 / 通知深鏈分流 / 靜態資料）
-- **截圖測試**：同命令輸出 20 張頁面 PNG（`app/build/screenshots/`），含緊湊態、展開態 953×852dp、淺色主題、強調色、收藏頁、港鐵車站詳情、港鐵巴士班次
+- **截圖測試**：同命令輸出 21 張頁面 PNG（`app/build/screenshots/`），含緊湊態、展開態 953×852dp、淺色主題、強調色、收藏頁、港鐵車站詳情、輕鐵車站詳情、港鐵巴士班次
 - **視覺審查**：截圖交給 MiMo v2.5 讀圖審查（模型可讀圖）；可疑處再按原解析度裁剪複核，避免縮圖誤判
 - **像素校驗**：腳本掃描截圖左右邊緣亮像素簇，判定是否真有文字被裁切（區分星空裝飾與文字筆畫）
 - **Baseline Profile**：APK 內含 `assets/dexopt/baseline.prof`（Compose 自帶 profile，AGP 自動合併）

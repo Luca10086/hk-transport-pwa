@@ -238,4 +238,18 @@ class ScreenshotTest {
         Thread.sleep(5000)
         shoot("20-mtrbus-detail-live")
     }
+
+    /** 聯網測試：輕鐵車站詳情（各線到站） */
+    @Test
+    fun lrtStationLive() {
+        DebugFlags.offline = false
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        val item = SearchItem(
+            kind = hk.senyou.travel.data.Kind.LRT, no = "輕鐵", name = "天瑞", cap = "輕鐵",
+            stationCode = "460", stationName = "天瑞",
+        )
+        rule.setContent { Frame { hk.senyou.travel.ui.RouteDetailPage(item = item, onClose = {}) } }
+        Thread.sleep(5000)
+        shoot("21-station-lrt-live")
+    }
 }
