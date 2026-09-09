@@ -17,29 +17,46 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hk.senyou.travel.data.Api
+import hk.senyou.travel.data.Fav
+import hk.senyou.travel.data.Hko
 import hk.senyou.travel.data.Kind
 import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.SearchRepo
+import hk.senyou.travel.data.Store
 import hk.senyou.travel.ui.theme.V3
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private val MODES = listOf("bus" to "公交", "mtrbus" to "港鐵巴士", "mtr" to "港鐵", "lrt" to "輕鐵")
 
-/** 首頁（M2：真實搜索 + ETA） */
+/** 首頁（M3：真實搜索 + 收藏 + 天氣 + K75P 實時） */
 @Composable
-fun HomeScreen(onOpenK75P: () -> Unit, onOpenRoute: (SearchItem) -> Unit) {
+fun HomeScreen(onOpenK75P: () -> Unit, onOpenRoute: (SearchItem) -> Unit, onOpenWeather: () -> Unit) {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val favs by Store.favorites(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
+
     var mode by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
     var items by remember { mutableStateOf<List<SearchItem>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var k75pMins by remember { mutableStateOf<Int?>(null) }
-    var k75pLive by remember { mutableStateOf(0) }
+    var k75pLive by remember { mutableIntStateOf(0) }
+    var weatherTemp by remember { mutableStateOf<Int?>(null) }
+    var weatherCap by remember { mutableStateOf("載入中") }
+    var favMins by remember { mutableStateOf<Int?>(null) }
 
+    // K75P 實時
     LaunchedEffect(Unit) {
         while (true) {
             val d = Api.mtrBusSchedule("K75P")
@@ -48,8 +65,7 @@ fun HomeScreen(onOpenK75P: () -> Unit, onOpenRoute: (SearchItem) -> Unit) {
             var live = 0
             if (arr != null) {
                 for (i in 0 until arr.length()) {
-                    val stop = arr.optJSONObject(i) ?: continue
-                    val buses = stop.optJSONArray("bus") ?: continue
+                    val buses = arr.optJSONObject(i)?.optJSONArray("bus") ?: continue
                     for (j in 0 until buses.length()) {
                         val b = buses.optJSONObject(j) ?: continue
                         val sec = b.optInt("arrivalTimeInSecond", 0)
@@ -68,6 +84,20 @@ fun HomeScreen(onOpenK75P: () -> Unit, onOpenRoute: (SearchItem) -> Unit) {
         }
     }
 
+    // 天氣 + 收藏首條 ETA
+    LaunchedEffect(favs) {
+        val w = Hko.fetch()
+        weatherTemp = w.temp
+        weatherCap = buildString {
+            if (w.emoji.isNotBlank()) append(w.emoji).append(' ')
+            append(w.days.joinToString(" ") { d -> d.label.take(1) + (d.max?.let { "$it°" } ?: "") })
+            if (isEmpty()) append(w.desc)
+        }
+        val first = favs.firstOrNull()
+        favMins = first?.let { SearchRepo.favEta(it) }
+    }
+
+    // 搜索
     LaunchedEffect(query, mode) {
         if (query.isBlank()) {
             items = emptyList()
@@ -103,23 +133,24 @@ fun HomeScreen(onOpenK75P: () -> Unit, onOpenRoute: (SearchItem) -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Tile(
                 label = "我的收藏",
-                value = "0",
+                value = favs.size.toString(),
                 unit = " 條",
-                cap = "M3 接入",
+                cap = favMins?.let { "下一班 $it 分" } ?: "點星標加入",
                 valueColor = V3.Accent,
                 modifier = Modifier.weight(1f),
             )
             Tile(
                 label = "天氣 · 三天",
-                value = "--",
+                value = weatherTemp?.toString() ?: "--",
                 unit = "°",
-                cap = "M3 接入",
+                cap = weatherCap,
                 modifier = Modifier.weight(1f),
+                onClick = onOpenWeather,
             )
         }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Tile(label = "壽司郎", value = "—", unit = " 組", modifier = Modifier.weight(1f))
+            Tile(label = "壽司郎", value = "—", unit = " 組", cap = "分頁查看", modifier = Modifier.weight(1f))
             Tile(label = "路線圖", value = "屯馬", unit = "綫", cap = "全線候車", valueColor = V3.CoMtr, modifier = Modifier.weight(1f))
         }
 
@@ -137,13 +168,21 @@ fun HomeScreen(onOpenK75P: () -> Unit, onOpenRoute: (SearchItem) -> Unit) {
             loading -> Text("搜尋中…", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
             query.isNotBlank() && items.isEmpty() -> Text("沒有結果", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
             else -> items.forEach { it ->
+                val starred = favs.any { f -> favKeyOf(f) == favKeyOfItem(it) }
                 ResultRow(
                     no = it.no,
                     co = it.kind.toCo(),
                     name = it.name,
                     cap = it.cap,
                     etaMins = it.etaMins,
-                    star = false,
+                    star = starred,
+                    onStar = {
+                        scope.launch {
+                            val next = if (starred) favs.filterNot { f -> favKeyOf(f) == favKeyOfItem(it) }
+                            else favs + itemToFav(it)
+                            Store.saveFavorites(ctx, next)
+                        }
+                    },
                 ) { onOpenRoute(it) }
                 Spacer(Modifier.height(8.dp))
             }
@@ -159,4 +198,34 @@ fun Kind.toCo(): Co = when (this) {
     Kind.LRT -> Co.LRT
     Kind.MTRBUS -> Co.MTRBUS
     Kind.BUSSTOP -> Co.KMB
+}
+
+private fun favKeyOf(f: Fav): String = listOf(f.type, f.company, f.route, f.dir, f.stopId ?: f.stationCode ?: f.routeId ?: "").joinToString("|")
+
+private fun favKeyOfItem(it: SearchItem): String = listOf(
+    when (it.kind) {
+        Kind.KMB, Kind.BUSSTOP -> "bus"
+        Kind.CTB -> "bus"
+        Kind.NLB -> "bus"
+        Kind.MTRBUS -> "mtrbus"
+        Kind.MTR -> "mtr"
+        Kind.LRT -> "lrt"
+    },
+    when (it.kind) {
+        Kind.CTB -> "ctb"
+        Kind.NLB -> "nlb"
+        else -> "kmb"
+    },
+    it.route ?: "",
+    it.dir ?: "outbound",
+    it.stopId ?: it.stationCode ?: it.routeId ?: "",
+).joinToString("|")
+
+private fun itemToFav(it: SearchItem): Fav = when (it.kind) {
+    Kind.MTRBUS -> Fav(type = "mtrbus", company = "mtrbus", route = it.route ?: "", stopName = it.name)
+    Kind.MTR -> Fav(type = "mtr", company = "mtr", stationCode = it.stationCode, stationName = it.stationName ?: it.name)
+    Kind.LRT -> Fav(type = "lrt", company = "lrt", stationCode = it.stationCode, stationName = it.stationName ?: it.name, stopName = it.stationName ?: it.name)
+    Kind.CTB -> Fav(type = "bus", company = "ctb", route = it.route ?: "", dir = it.dir ?: "outbound", stopName = it.name)
+    Kind.NLB -> Fav(type = "bus", company = "nlb", route = it.route ?: "", routeId = it.routeId, dir = it.dir ?: "outbound", stopName = it.name)
+    else -> Fav(type = "bus", company = "kmb", route = it.route ?: "", dir = it.dir ?: "outbound", stopId = it.stopId, stopName = it.name)
 }

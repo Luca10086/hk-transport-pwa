@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +22,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import hk.senyou.travel.ui.theme.V3
+
+/** 玻璃配置（由設定頁驅動）：強度 alpha / 液態高光 / 動效開關 */
+data class GlassCfg(
+    val alpha: Float = 0.07f,
+    val sheen: Boolean = true,
+    val motion: Boolean = true,
+)
+
+val LocalGlassCfg = compositionLocalOf { GlassCfg() }
+val LocalDeepNight = compositionLocalOf { false }
 
 /**
  * 液態玻璃容器（v3）：半透明填充 + 1px 描邊 + 頂緣反光 + 12s 液態高光。
@@ -34,7 +45,8 @@ fun GlassSurface(
     sheen: Boolean = true,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val sheenPos: Float = if (sheen) {
+    val cfg = LocalGlassCfg.current
+    val sheenPos: Float = if (sheen && cfg.sheen && cfg.motion) {
         val tr = rememberInfiniteTransition(label = "sheen")
         tr.animateFloat(
             initialValue = -1.8f,
@@ -47,7 +59,7 @@ fun GlassSurface(
     Box(
         modifier = modifier
             .clip(shape)
-            .background(if (strong) V3.GlassStrong else V3.Glass)
+            .background(Color.White.copy(alpha = cfg.alpha))
             .border(1.dp, V3.Line, shape)
             .drawWithContent {
                 drawContent()
@@ -62,14 +74,16 @@ fun GlassSurface(
                     strokeWidth = stroke,
                 )
                 // 液態高光（對角掃過）
-                val c = size.width * (0.5f + sheenPos * 0.9f)
-                drawRect(
-                    brush = Brush.linearGradient(
-                        colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.10f), Color.Transparent),
-                        start = Offset(c - size.width * 0.35f, 0f),
-                        end = Offset(c + size.width * 0.35f, size.height),
-                    ),
-                )
+                if (cfg.sheen) {
+                    val c = size.width * (0.5f + sheenPos * 0.9f)
+                    drawRect(
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.10f), Color.Transparent),
+                            start = Offset(c - size.width * 0.35f, 0f),
+                            end = Offset(c + size.width * 0.35f, size.height),
+                        ),
+                    )
+                }
             },
         content = content,
     )

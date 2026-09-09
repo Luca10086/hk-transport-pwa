@@ -1,7 +1,5 @@
 package hk.senyou.travel.ui
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -32,14 +31,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hk.senyou.travel.data.SearchItem
+import hk.senyou.travel.data.Settings
 import hk.senyou.travel.data.StaticData
+import hk.senyou.travel.data.Store
 import hk.senyou.travel.ui.theme.V3
 
 private val TABS = listOf("首頁", "收藏", "壽司郎", "路線圖", "設定")
@@ -49,32 +52,52 @@ private val TAB_ICONS = listOf("⌂", "♡", "◎", "⌖", "⚙")
 fun SenyouApp() {
     val ctx = LocalContext.current
     LaunchedEffect(Unit) { StaticData.load(ctx) }
+    val settings by Store.settings(ctx).collectAsStateWithLifecycle(initialValue = Settings())
+
     var tab by remember { mutableIntStateOf(0) }
-    var k75pOpen by remember { mutableIntStateOf(0) }
+    var k75pOpen by remember { mutableStateOf(false) }
+    var weatherOpen by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<SearchItem?>(null) }
 
-    Box(Modifier.fillMaxSize().background(V3.Bg)) {
-        LiquidBackground(Modifier.fillMaxSize())
+    val alpha = when (settings.glass) {
+        0 -> 0f
+        1 -> 0.03f
+        2 -> 0.07f
+        3 -> 0.10f
+        else -> 0.14f
+    }
+    val glassCfg = GlassCfg(alpha = alpha, sheen = settings.fx != "off", motion = settings.fx == "full")
+    val baseDensity = LocalDensity.current
 
-        Column(Modifier.fillMaxSize()) {
-            TopBar()
-            Box(Modifier.weight(1f)) {
-                when (tab) {
-                    0 -> HomeScreen(
-                        onOpenK75P = { k75pOpen = 1 },
-                        onOpenRoute = { detail = it },
-                    )
-                    else -> Placeholder(TABS[tab])
+    CompositionLocalProvider(
+        LocalGlassCfg provides glassCfg,
+        LocalDeepNight provides settings.deep,
+        LocalDensity provides Density(baseDensity.density, if (settings.big) 1.15f else 1f),
+    ) {
+        Box(Modifier.fillMaxSize().background(V3.Bg)) {
+            LiquidBackground(Modifier.fillMaxSize(), deepNight = settings.deep)
+
+            Column(Modifier.fillMaxSize()) {
+                TopBar()
+                Box(Modifier.weight(1f)) {
+                    when (tab) {
+                        0 -> HomeScreen(
+                            onOpenK75P = { k75pOpen = true },
+                            onOpenRoute = { detail = it },
+                            onOpenWeather = { weatherOpen = true },
+                        )
+                        1 -> FavoritesScreen(onOpenRoute = { detail = it })
+                        2 -> SushiScreen()
+                        3 -> Placeholder("路線圖 · 語義色")
+                        else -> SettingsScreen(settings)
+                    }
                 }
+                BottomNav(tab) { tab = it }
             }
-            BottomNav(tab) { tab = it }
-        }
 
-        if (k75pOpen == 1) {
-            K75PPage(onClose = { k75pOpen = 0 })
-        }
-        detail?.let { d ->
-            RouteDetailPage(item = d, onClose = { detail = null })
+            if (k75pOpen) K75PPage(onClose = { k75pOpen = false })
+            if (weatherOpen) WeatherPage(onClose = { weatherOpen = false })
+            detail?.let { d -> RouteDetailPage(item = d, onClose = { detail = null }) }
         }
     }
 }
@@ -101,18 +124,7 @@ private fun TopBar() {
                 Text("森友", color = V3.Text1, fontSize = 32.sp, fontWeight = FontWeight.Light)
                 Text("出行", color = V3.Accent, fontSize = 32.sp, fontWeight = FontWeight.Light)
             }
-            Text("原生 v3 · M1 骨架 · 液態玻璃", color = V3.Text2, fontSize = 12.sp)
-        }
-        GlassSurface(
-            modifier = Modifier
-                .padding(end = 16.dp)
-                .size(40.dp)
-                .align(Alignment.CenterEnd),
-            shape = CircleShape,
-        ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("↻", color = V3.Text1, fontSize = 17.sp)
-            }
+            Text("原生 v3 · M3 資料層", color = V3.Text2, fontSize = 12.sp)
         }
     }
 }
@@ -137,13 +149,11 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
         ) {
             TABS.forEachIndexed { i, t ->
                 val on = i == selected
-                val scale by animateFloatAsState(if (on) 1f else 0.94f, tween(180), label = "s")
                 Column(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .clickable { onSelect(i) }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                        .scale(scale),
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(TAB_ICONS[i], color = if (on) V3.Text1 else V3.Text2, fontSize = 20.sp)
@@ -170,7 +180,7 @@ private fun Placeholder(name: String) {
             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(name, color = V3.Text1, fontSize = 22.sp, fontWeight = FontWeight.Light)
                 Spacer(Modifier.height(6.dp))
-                Text("M2/M3 里程碑接入", color = V3.Text2, fontSize = 13.sp)
+                Text("後續里程碑接入", color = V3.Text2, fontSize = 13.sp)
             }
         }
     }

@@ -240,7 +240,7 @@ fun coColor(co: Co): Color = when (co) {
 }
 
 @Composable
-fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star: Boolean, onClick: () -> Unit) {
+fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star: Boolean, onStar: (() -> Unit)? = null, onClick: () -> Unit) {
     GlassSurface(modifier = Modifier.fillMaxWidth().height(72.dp).clickable { onClick() }) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
@@ -271,7 +271,15 @@ fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star
                 Text("—", color = V3.Text2, fontSize = 22.sp, fontWeight = FontWeight.Light)
             }
             Spacer(Modifier.width(8.dp))
-            Text(if (star) "★" else "☆", color = if (star) V3.Warning else V3.Text2, fontSize = 20.sp)
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .then(if (onStar != null) Modifier.clickable { onStar() } else Modifier),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(if (star) "★" else "☆", color = if (star) V3.Warning else V3.Text2, fontSize = 20.sp)
+            }
         }
     }
 }

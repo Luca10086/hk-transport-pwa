@@ -235,6 +235,91 @@ object SearchRepo {
         else -> it.cap
     }
 
+    /* ---------------- 收藏 ETA ---------------- */
+    suspend fun favEta(f: Fav): Int? = when (f.type) {
+        "bus" -> if (f.company == "ctb") {
+            val sid = f.stopId ?: Api.ctbStops(f.route, f.dir).firstOrNull()?.optString("stop")
+            if (sid == null) null else Api.ctbEta(sid, f.route)
+                .filter { it.optString("dir").uppercase() == (if (f.dir == "inbound") "I" else "O") }
+                .mapNotNull { Api.minsUntil(it.optString("eta")) }.minOrNull()
+        } else if (f.company == "nlb") {
+            val rid = f.routeId ?: f.route
+            val sid = f.stopId ?: Api.nlbStops(rid).firstOrNull()?.optString("stopId")
+            if (sid == null) null else Api.nlbEtaMins(rid, sid)
+        } else {
+            val sid = f.stopId ?: Api.kmbStops(f.route, f.dir).firstOrNull()?.optString("stop")
+            if (sid == null) null else Api.kmbEta(sid)
+                .filter { it.optString("route") == f.route && it.optString("dir").uppercase() == (if (f.dir == "inbound") "I" else "O") }
+                .mapNotNull { Api.minsUntil(it.optString("eta")) }.minOrNull()
+        }
+        "mtr" -> {
+            val code = f.stationCode ?: return null
+            var best: Int? = null
+            for (line in StaticData.mtrLinesOf(code)) {
+                val d = Api.mtrSchedule(line, code) ?: continue
+                val dd = d.optJSONObject("$line-$code") ?: continue
+                for (k in listOf("UP", "DOWN")) {
+                    val arr = dd.optJSONArray(k) ?: continue
+                    for (i in 0 until arr.length()) {
+                        val m = Api.minsUntil(arr.optJSONObject(i)?.optString("time")) ?: continue
+                        if (best == null || m < best) best = m
+                    }
+                }
+            }
+            best
+        }
+        "lrt" -> f.stationCode?.toIntOrNull()?.let { Api.lrtEta(it).firstOrNull()?.mins }
+        "mtrbus" -> {
+            val d = Api.mtrBusSchedule(f.route) ?: return null
+            val arr = d.optJSONArray("busStop") ?: return null
+            var best: Int? = null
+            for (i in 0 until arr.length()) {
+                val buses = arr.optJSONObject(i)?.optJSONArray("bus") ?: continue
+                for (j in 0 until buses.length()) {
+                    val sec = buses.optJSONObject(j)?.optInt("arrivalTimeInSecond", 0) ?: 0
+                    if (sec in 1 until 108000) {
+                        val m = (sec + 59) / 60
+                        if (best == null || m < best) best = m
+                    }
+                }
+            }
+            best
+        }
+        else -> null
+    }
+
+    fun favMeta(f: Fav): String = when (f.type) {
+        "bus" -> when (f.company) {
+            "ctb" -> "城巴 ${f.route}"
+            "nlb" -> "嶼巴 ${f.route}"
+            else -> "九巴 ${f.route}"
+        }
+        "mtr" -> (f.lineName.ifBlank { f.line ?: "港鐵" }) + " 綫"
+        "lrt" -> f.stopName.ifBlank { "輕鐵站" }
+        "mtrbus" -> "港鐵巴士 ${f.route}"
+        else -> "收藏"
+    }
+
+    fun favGroup(f: Fav): String = when (f.type) {
+        "bus" -> f.company
+        "mtrbus" -> "mtrbus"
+        "mtr" -> "mtr"
+        "lrt" -> "lrt"
+        else -> "other"
+    }
+
+    fun favToSearchItem(f: Fav): SearchItem = when (f.type) {
+        "bus" -> SearchItem(
+            kind = if (f.company == "ctb") Kind.CTB else if (f.company == "nlb") Kind.NLB else Kind.KMB,
+            no = f.route, name = f.stopName.ifBlank { f.route }, cap = favMeta(f),
+            route = f.route, dir = f.dir, stopId = f.stopId, routeId = f.routeId,
+        )
+        "mtrbus" -> SearchItem(kind = Kind.MTRBUS, no = f.route, name = f.stopName.ifBlank { f.route }, cap = "港鐵巴士", route = f.route)
+        "mtr" -> SearchItem(kind = Kind.MTR, no = "MTR", name = f.stationName, cap = favMeta(f), stationCode = f.stationCode, stationName = f.stationName)
+        "lrt" -> SearchItem(kind = Kind.LRT, no = "輕鐵", name = f.stopName, cap = favMeta(f), stationCode = f.stationCode, stationName = f.stationName)
+        else -> SearchItem(kind = Kind.KMB, no = f.route, name = f.stopName)
+    }
+
     /* ---------------- 路線詳情（站表 + 各站 ETA） ---------------- */
     suspend fun routeStops(route: String, company: Kind, dir: String, routeId: String? = null): List<StopRow> = coroutineScope {
         when (company) {
