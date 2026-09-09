@@ -210,4 +210,32 @@ class ScreenshotTest {
         Thread.sleep(6000)   // 等待 MTR 各站班次載入
         shoot("09-linemap-live")
     }
+
+    /** 聯網測試：港鐵車站詳情（收藏卡片 / 到站通知點擊後的頁面） */
+    @Test
+    fun stationDetailLive() {
+        DebugFlags.offline = false
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        val item = SearchItem(
+            kind = hk.senyou.travel.data.Kind.MTR, no = "MTR", name = "天水圍",
+            cap = "屯馬線", stationCode = "TIS", stationName = "天水圍",
+        )
+        rule.setContent { Frame { hk.senyou.travel.ui.RouteDetailPage(item = item, onClose = {}) } }
+        Thread.sleep(6000)
+        shoot("19-station-mtr-live")
+    }
+
+    /** 聯網測試：港鐵巴士路線詳情（班次表） */
+    @Test
+    fun mtrBusDetailLive() {
+        DebugFlags.offline = false
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        val item = SearchItem(
+            kind = hk.senyou.travel.data.Kind.MTRBUS, no = "K75P", name = "K75P",
+            cap = "港鐵巴士", route = "K75P",
+        )
+        rule.setContent { Frame { hk.senyou.travel.ui.RouteDetailPage(item = item, onClose = {}) } }
+        Thread.sleep(5000)
+        shoot("20-mtrbus-detail-live")
+    }
 }

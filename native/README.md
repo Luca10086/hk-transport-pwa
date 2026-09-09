@@ -72,7 +72,7 @@ gradlew.bat :app:testDebugUnitTest      # 渲染 8 個頁面截圖 → app/build
 | 3.0.0-m4 | 真折射（RenderEffect + AGSL）+ 氣泡工具欄 |
 | 3.0.0-m5 | 路線圖頁 + 小組件 + 到站通知 + 背景刷新 + 觸感；release 簽名 |
 | **3.0.0** | 大屏/摺疊屏自適應（導航欄+雙欄+3列+半折分屏+鉸鏈避讓）、路線圖連接線、逐條到站提醒、搜尋歷史、詳情頁收藏+通知直達、淺色主題、強調色生效、TTS 粵語播報、TalkBack 語義、離線緩存、Baseline Profile、崩潰日誌、12 項單元測試 |
-| **3.0.1** | 缺陷排查修復（詳見下節）：ETA 文案語義對齊 Web 版、K75P 循環線標籤、首頁磁貼字號、收藏卡方向標籤、WorkManager 初始化、46 項單元測試 |
+| **3.0.1** | 缺陷排查修復（詳見下節）：ETA 文案語義對齊 Web 版、K75P 循環線標籤、首頁磁貼字號、收藏卡方向標籤、**港鐵/輕鐵/港鐵巴士收藏與通知深鏈的空白頁修復**、WorkManager 初始化、48 項單元測試 |
 
 ## 3.0.1 缺陷排查與修復
 
@@ -84,6 +84,9 @@ gradlew.bat :app:testDebugUnitTest      # 渲染 8 個頁面截圖 → app/build
 | K75P 標籤「起點 天瑞」「終點 天瑞」自相矛盾 | 循環線（↺）卻按普通線標終點 | 改為「起點 天瑞」+「返回 天瑞」，底部折返站加「循環點」 |
 | 首頁「路線圖」磁貼顯示「屯馬」42sp +「綫」15sp | 誤把「綫」當單位 | 合併為同一字號的「屯馬綫」 |
 | 收藏港鐵/輕鐵站卡片顯示「去程」 | 方向標籤未區分交通類型 | 僅巴士顯示去程/回程；無資料時顯示「點擊查看班次 ›」 |
+| **點開港鐵站 / 輕鐵站 / 港鐵巴士收藏顯示「無法載入站點」空白頁** | `routeStops()` 只支援 KMB/CTB/NLB，其餘回傳空列表 | 新增 `stationTrains()`（港鐵上下行 / 輕鐵各線）與 MTRBUS 班次表；詳情頁對車站改列班次、標題顯示「XX 站」 |
+| **港鐵站 / 輕鐵站到站通知點了沒反應** | 通知 extras 只有 route，車站類收藏的 route 為空 → 直接 return | 新增 `deepLinkItem()` 純函數 + extras 帶 `type`/`station`/`route_id`，四類收藏都能直達；K75P 走專用實時頁 |
+| 港鐵站搜尋結果副標題「屯馬線 · 觀塘線 線」 | 線名本身已含「線」字，又拼了後綴 | 移除多餘後綴 |
 | lint 錯誤 `RemoveWorkManagerInitializer` | `SenyouApp` 已實作 `Configuration.Provider`，仍保留默認初始化器 | manifest 移除 `androidx.work.WorkManagerInitializer` |
 
 同時確認**非缺陷**（經裁剪複核 + 像素掃描證實）：展開態「文字被切」「大片空白」為縮圖誤判與可滾動視口邊界；列表底部 110dp 留白為底部導航欄避讓；星空背景亮點曾被誤判為邊緣裁切。
@@ -91,8 +94,8 @@ gradlew.bat :app:testDebugUnitTest      # 渲染 8 個頁面截圖 → app/build
 
 ## 自測與驗證
 
-- **單元測試**：`gradlew.bat :app:testDebugUnitTest`（46 項：時間解析 / ETA 文案 / K75P 投影 / 自適應斷點 / 收藏與設定序列化往返 / 搜尋歷史 / 離線緩存 / 崩潰日誌 / 收藏映射 / 靜態資料）
-- **截圖測試**：同命令輸出 18 張頁面 PNG（`app/build/screenshots/`），含緊湊態、展開態 953×852dp、淺色主題、強調色、收藏頁
+- **單元測試**：`gradlew.bat :app:testDebugUnitTest`（48 項：時間解析 / ETA 文案 / K75P 投影 / 自適應斷點 / 收藏與設定序列化往返 / 搜尋歷史 / 離線緩存 / 崩潰日誌 / 收藏映射 / 通知深鏈分流 / 靜態資料）
+- **截圖測試**：同命令輸出 20 張頁面 PNG（`app/build/screenshots/`），含緊湊態、展開態 953×852dp、淺色主題、強調色、收藏頁、港鐵車站詳情、港鐵巴士班次
 - **視覺審查**：截圖交給 MiMo v2.5 讀圖審查（模型可讀圖）；可疑處再按原解析度裁剪複核，避免縮圖誤判
 - **像素校驗**：腳本掃描截圖左右邊緣亮像素簇，判定是否真有文字被裁切（區分星空裝飾與文字筆畫）
 - **Baseline Profile**：APK 內含 `assets/dexopt/baseline.prof`（Compose 自帶 profile，AGP 自動合併）

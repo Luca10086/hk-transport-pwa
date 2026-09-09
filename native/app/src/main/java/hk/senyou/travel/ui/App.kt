@@ -75,10 +75,19 @@ fun SenyouApp() {
     val (posture, hinge) = rememberFoldInfo()
     val deep by DeepLink.flow.collectAsStateWithLifecycle()
 
+    // 通知點擊 / 收藏卡片 → 開啟對應頁面（K75P 走專用實時頁）
+    val openItem: (SearchItem) -> Unit = { it ->
+        if (it.kind == hk.senyou.travel.data.Kind.MTRBUS && it.route.equals("K75P", ignoreCase = true)) {
+            k75pOpen = true
+        } else {
+            detail = it
+        }
+    }
+
     // 通知點擊 → 直接打開路線詳情
     LaunchedEffect(deep) {
         deep?.let {
-            detail = it
+            openItem(it)
             DeepLink.flow.value = null
         }
     }
@@ -136,7 +145,7 @@ fun SenyouApp() {
                                 tab = tab,
                                 homeScroll = homeScroll,
                                 onOpenK75P = { k75pOpen = true },
-                                onOpenRoute = { detail = it },
+                                onOpenRoute = { openItem(it) },
                                 onOpenWeather = { weatherOpen = true },
                                 settings = settings,
                             )

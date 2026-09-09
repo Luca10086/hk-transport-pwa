@@ -35,27 +35,20 @@ class MainActivity : ComponentActivity() {
         consumeDeepLink(intent)
     }
 
-    /** 通知點擊 → 直接打開對應路線詳情 */
+    /** 通知點擊 → 直接打開對應路線 / 車站（依收藏類型分流） */
     private fun consumeDeepLink(intent: Intent?) {
-        val route = intent?.getStringExtra("deep_link_route") ?: return
-        if (route.isBlank()) return
-        val company = intent.getStringExtra("deep_link_company") ?: "kmb"
-        val dir = intent.getStringExtra("deep_link_dir") ?: "outbound"
-        DeepLink.push(
-            SearchItem(
-                kind = when (company) {
-                    "ctb" -> Kind.CTB
-                    "nlb" -> Kind.NLB
-                    else -> Kind.KMB
-                },
-                no = route,
-                name = route,
-                cap = "到站提醒",
-                route = route,
-                dir = dir,
-                stopId = intent.getStringExtra("deep_link_stop")?.ifBlank { null },
-            )
+        if (intent == null) return
+        val item = hk.senyou.travel.data.deepLinkItem(
+            type = intent.getStringExtra("deep_link_type"),
+            route = intent.getStringExtra("deep_link_route"),
+            station = intent.getStringExtra("deep_link_station"),
+            stationName = intent.getStringExtra("deep_link_station_name"),
+            company = intent.getStringExtra("deep_link_company"),
+            dir = intent.getStringExtra("deep_link_dir"),
+            stopId = intent.getStringExtra("deep_link_stop"),
+            routeId = intent.getStringExtra("deep_link_route_id"),
         )
+        item?.let { DeepLink.push(it) }
     }
 
     /** Android 13+ 需要用戶授權才能發到站通知 */

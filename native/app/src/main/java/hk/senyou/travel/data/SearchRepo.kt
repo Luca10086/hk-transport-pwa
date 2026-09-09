@@ -24,6 +24,9 @@ data class SearchItem(
 
 data class StopRow(val seq: Int, val name: String, val stopId: String, val mins: Int?)
 
+/** 車站即時班次（港鐵 / 輕鐵收藏與通知深鏈用） */
+data class TrainRow(val dirLabel: String, val dest: String, val plat: String, val mins: Int?)
+
 /** 搜索 + ETA 補全（對應 Web 版 doSearch / renderSearch） */
 object SearchRepo {
 
@@ -116,7 +119,7 @@ object SearchRepo {
                 val lines = StaticData.mtrLinesOf(st.code).mapNotNull { StaticData.mtrLines[it] }
                 out += SearchItem(
                     kind = Kind.MTR, no = "MTR", name = st.name,
-                    cap = lines.joinToString(" · ") + " 線",
+                    cap = lines.joinToString(" · "),   // 線名已含「線」字，勿再拼後綴
                     stationCode = st.code, stationName = st.name, group = "港鐵車站",
                 )
             }
@@ -365,6 +368,65 @@ object SearchRepo {
                     }
                 }.chunked(6).flatMap { it.awaitAll() }
             }
+            Kind.MTRBUS -> {
+                // 港鐵巴士：按班次聚合最近到站時間（與 Web 版一致）
+                val d = Api.mtrBusSchedule(route) ?: return@coroutineScope emptyList()
+                val arr = d.optJSONArray("busStop") ?: return@coroutineScope emptyList()
+                val best = linkedMapOf<String, Int>()
+                for (i in 0 until arr.length()) {
+                    val buses = arr.optJSONObject(i)?.optJSONArray("bus") ?: continue
+                    for (j in 0 until buses.length()) {
+                        val b = buses.optJSONObject(j) ?: continue
+                        val id = b.optString("busId").ifBlank { "?" }
+                        val sec = b.optInt("arrivalTimeInSecond", 0)
+                        if (sec !in 1 until 108000) continue
+                        val m = (sec + 59) / 60
+                        if (best[id] == null || m < best.getValue(id)) best[id] = m
+                    }
+                }
+                best.entries.sortedBy { it.value }.mapIndexed { i, (id, m) -> StopRow(i + 1, "班次 $id", id, m) }
+            }
+            else -> emptyList()
+        }
+    }
+
+    /**
+     * 車站即時班次（港鐵上下行 / 輕鐵各線）。
+     * 供收藏中的港鐵站、輕鐵站，以及到站提醒通知點擊後直接查看班次。
+     */
+    suspend fun stationTrains(item: SearchItem): List<TrainRow> = coroutineScope {
+        val code = item.stationCode ?: return@coroutineScope emptyList()
+        when (item.kind) {
+            Kind.MTR -> {
+                val lines = StaticData.mtrLinesOf(code)
+                val parts = lines.map { line ->
+                    async {
+                        val out = mutableListOf<TrainRow>()
+                        val d = Api.mtrSchedule(line, code)
+                        val dd = d?.optJSONObject("$line-$code")
+                        if (dd != null) {
+                            for ((key, label) in listOf("UP" to "上行", "DOWN" to "下行")) {
+                                val arr = dd.optJSONArray(key) ?: continue
+                                for (i in 0 until arr.length()) {
+                                    val e = arr.optJSONObject(i) ?: continue
+                                    val mins = Api.minsUntil(e.optString("time")) ?: continue
+                                    val destCode = e.optString("dest")
+                                    out += TrainRow(
+                                        dirLabel = label,
+                                        dest = StaticData.stationNames[destCode] ?: destCode,
+                                        plat = e.optString("plat"),
+                                        mins = mins,
+                                    )
+                                }
+                            }
+                        }
+                        out
+                    }
+                }.awaitAll()
+                parts.flatten().sortedBy { it.mins }
+            }
+            Kind.LRT -> Api.lrtEta(code.toIntOrNull() ?: return@coroutineScope emptyList())
+                .map { TrainRow(dirLabel = it.routeNo, dest = it.dest, plat = it.platformId, mins = it.mins) }
             else -> emptyList()
         }
     }

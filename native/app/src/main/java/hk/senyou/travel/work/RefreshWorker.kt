@@ -93,10 +93,15 @@ class RefreshWorker(appContext: Context, params: WorkerParameters) : CoroutineWo
     private fun notifyArrival(f: Fav, mins: Int) {
         val label = labelOf(f)
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            // 依收藏類型分流（港鐵/輕鐵站需帶車站代碼，否則通知點了沒反應）
+            putExtra("deep_link_type", f.type)
             putExtra("deep_link_route", f.route)
             putExtra("deep_link_company", f.company)
             putExtra("deep_link_dir", f.dir)
             putExtra("deep_link_stop", f.stopId ?: "")
+            putExtra("deep_link_route_id", f.routeId ?: "")
+            putExtra("deep_link_station", f.stationCode ?: "")
+            putExtra("deep_link_station_name", if (f.type == "lrt") f.stopName.ifBlank { f.stationName } else f.stationName)
         }
         val pi = PendingIntent.getActivity(
             applicationContext, label.hashCode(), intent,

@@ -108,6 +108,11 @@ object StaticData {
     fun mtrLinesOf(stationCode: String): List<String> =
         mtrLineStops.filterValues { list -> list.any { it.code == stationCode } }.keys.toList()
 
+    /** 車站代碼 → 中文站名（港鐵班次的 dest 為代碼，顯示時需轉名） */
+    val stationNames: Map<String, String> by lazy {
+        mtrLineStops.values.flatten().associate { it.code to it.name }
+    }
+
     private fun JSONObject?.toStringMap(): Map<String, String> {
         if (this == null) return emptyMap()
         val m = mutableMapOf<String, String>()

@@ -11,6 +11,7 @@ import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.SearchRepo
 import hk.senyou.travel.data.Settings
 import hk.senyou.travel.data.Store
+import hk.senyou.travel.data.deepLinkItem
 import hk.senyou.travel.data.displayName
 import hk.senyou.travel.data.matchKey
 import hk.senyou.travel.data.toFav
@@ -221,6 +222,48 @@ class LogicTest {
         // 不同路線 / 不同站不應同鍵
         assertTrue(kmb.matchKey() != ctb.matchKey())
         assertTrue(mtr.matchKey() != lrt.matchKey())
+    }
+
+    /* ---------- 到站通知深鏈 ---------- */
+
+    @Test
+    fun deepLink_busTypes() {
+        val kmb = deepLinkItem("bus", "69X", null, null, "kmb", "inbound", "ABC", null)
+        assertEquals(Kind.KMB, kmb!!.kind)
+        assertEquals("inbound", kmb.dir)
+        assertEquals("ABC", kmb.stopId)
+
+        assertEquals(Kind.CTB, deepLinkItem("bus", "969", null, null, "ctb", null, null, null)!!.kind)
+        assertEquals(Kind.NLB, deepLinkItem("bus", "11", null, null, "nlb", null, null, "R11")!!.kind)
+        assertEquals("R11", deepLinkItem("bus", "11", null, null, "nlb", null, null, "R11")!!.routeId)
+        // 預設方向
+        assertEquals("outbound", deepLinkItem("bus", "69X", null, null, "kmb", null, null, null)!!.dir)
+        // 缺路線 → null（不開空白頁）
+        assertNull(deepLinkItem("bus", "", null, null, "kmb", null, null, null))
+        assertNull(deepLinkItem(null, null, null, null, null, null, null, null))
+    }
+
+    @Test
+    fun deepLink_stationTypes() {
+        val mtr = deepLinkItem("mtr", "", "TIS", "天水圍", "mtr", null, null, null)
+        assertEquals(Kind.MTR, mtr!!.kind)
+        assertEquals("TIS", mtr.stationCode)
+        assertEquals("天水圍", mtr.stationName)
+
+        val lrt = deepLinkItem("lrt", "", "460", "天瑞", "lrt", null, null, null)
+        assertEquals(Kind.LRT, lrt!!.kind)
+        assertEquals("460", lrt.stationCode)
+
+        val bus = deepLinkItem("mtrbus", "K75P", null, null, "mtrbus", null, null, null)
+        assertEquals(Kind.MTRBUS, bus!!.kind)
+        assertEquals("K75P", bus.route)
+
+        // 車站代碼缺失 → null（港鐵/輕鐵通知必須帶站碼）
+        assertNull(deepLinkItem("mtr", "", "", null, "mtr", null, null, null))
+        assertNull(deepLinkItem("lrt", "", null, null, "lrt", null, null, null))
+        assertNull(deepLinkItem("mtrbus", "", null, null, "mtrbus", null, null, null))
+        // 站名缺失時退回站碼
+        assertEquals("TIS", deepLinkItem("mtr", "", "TIS", "", "mtr", null, null, null)!!.stationName)
     }
 
     /* ---------- 語義色分級 ---------- */
