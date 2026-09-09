@@ -81,7 +81,8 @@ half4 main(float2 xy) {
 
 /**
  * 液態玻璃容器（v3 · M4 真玻璃）：
- * - API 31+：RenderEffect 對背景圖層做真·backdrop blur
+ * - 雙層結構：①背景副本層（GraphicsLayer 取樣 + RenderEffect 真 backdrop blur，API 31+）
+ *   ②內容層（色調 + 描邊 + 文字 + AGSL 邊緣折射 + 高光）——文字永不模糊
  * - API 33+：AGSL RuntimeShader 邊緣折射（內容真的彎曲）+ 邊緣提亮
  * - 低版本/無背景圖層：退回半透明填充
  */
@@ -119,64 +120,72 @@ fun GlassSurface(
     } else 0f
 
     Box(
-        modifier = modifier
+        modifier
             .onGloballyPositioned {
                 pos = it.positionInRoot()
                 size = Offset(it.size.width.toFloat(), it.size.height.toFloat())
             }
-            .clip(shape)
-            // 真·背景模糊：對背景圖層副本做 RenderEffect（API 31+）
-            .then(
-                if (canBlur) Modifier
+            .clip(shape),
+    ) {
+        // ① 背景副本層：真·backdrop blur（只模糊背景，不碰文字）
+        if (canBlur) {
+            Box(
+                Modifier
+                    .matchParentSize()
                     .graphicsLayer {
                         renderEffect = BlurEffect(cfg.blurPx, cfg.blurPx, TileMode.Clamp)
                     }
                     .drawWithContent {
                         val p = pos
                         withTransform({ translate(-p.x, -p.y) }) { drawLayer(bgLayer!!) }
-                    }
-                else Modifier.background(Color.White.copy(alpha = if (strong) cfg.alpha * 1.7f else cfg.alpha))
+                    },
             )
-            // 玻璃色調疊加（保留 v3 的乳白質感）
-            .background(Color.White.copy(alpha = if (strong) cfg.alpha * 1.7f else cfg.alpha))
-            .border(1.dp, V3.Line, shape)
-            .drawWithContent {
-                drawContent()
-                // 邊緣折射（AGSL）：內容真的彎曲
-                if (canRefract && refractShader != null) {
-                    val bmp = bgBitmap ?: return@drawWithContent
-                    runCatching {
-                        val bm = bmp.asAndroidBitmap()
-                        val bs = android.graphics.BitmapShader(bm, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-                        refractShader.setInputShader("uBg", bs)
-                        refractShader.setFloatUniform("uOffset", pos.x, pos.y)
-                        refractShader.setFloatUniform("uSize", size.x, size.y)
-                        refractShader.setFloatUniform("uRefract", cfg.refractPx)
-                        drawRect(brush = ShaderBrush(refractShader))
+        }
+        // ② 內容層：色調 + 描邊 + 文字 + 折射 + 高光
+        Box(
+            Modifier
+                .matchParentSize()
+                .background(Color.White.copy(alpha = if (strong) cfg.alpha * 1.7f else cfg.alpha))
+                .border(1.dp, V3.Line, shape)
+                .drawWithContent {
+                    drawContent()
+                    // 邊緣折射（AGSL）：內容真的彎曲
+                    if (canRefract && refractShader != null) {
+                        val bmp = bgBitmap ?: return@drawWithContent
+                        runCatching {
+                            val bm = bmp.asAndroidBitmap()
+                            val bs = android.graphics.BitmapShader(bm, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+                            refractShader.setInputShader("uBg", bs)
+                            refractShader.setFloatUniform("uOffset", pos.x, pos.y)
+                            refractShader.setFloatUniform("uSize", size.x, size.y)
+                            refractShader.setFloatUniform("uRefract", cfg.refractPx)
+                            drawRect(brush = ShaderBrush(refractShader))
+                        }
                     }
-                }
-                // 頂緣反光條
-                val stroke = 1.dp.toPx()
-                drawLine(
-                    brush = Brush.horizontalGradient(
-                        listOf(Color.Transparent, Color.White.copy(alpha = 0.35f), Color.Transparent)
-                    ),
-                    start = Offset(this.size.width * 0.06f, stroke / 2f),
-                    end = Offset(this.size.width * 0.94f, stroke / 2f),
-                    strokeWidth = stroke,
-                )
-                // 液態高光（對角掃過）
-                if (cfg.sheen) {
-                    val c = this.size.width * (0.5f + sheenPos * 0.9f)
-                    drawRect(
-                        brush = Brush.linearGradient(
-                            colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.10f), Color.Transparent),
-                            start = Offset(c - this.size.width * 0.35f, 0f),
-                            end = Offset(c + this.size.width * 0.35f, this.size.height),
+                    // 頂緣反光條
+                    val stroke = 1.dp.toPx()
+                    drawLine(
+                        brush = Brush.horizontalGradient(
+                            listOf(Color.Transparent, Color.White.copy(alpha = 0.35f), Color.Transparent)
                         ),
+                        start = Offset(this.size.width * 0.06f, stroke / 2f),
+                        end = Offset(this.size.width * 0.94f, stroke / 2f),
+                        strokeWidth = stroke,
                     )
-                }
-            },
-        content = content,
-    )
+                    // 液態高光（對角掃過）
+                    if (cfg.sheen) {
+                        val c = this.size.width * (0.5f + sheenPos * 0.9f)
+                        drawRect(
+                            brush = Brush.linearGradient(
+                                colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.10f), Color.Transparent),
+                                start = Offset(c - this.size.width * 0.35f, 0f),
+                                end = Offset(c + this.size.width * 0.35f, this.size.height),
+                            ),
+                        )
+                    }
+                },
+        ) {
+            content()
+        }
+    }
 }
