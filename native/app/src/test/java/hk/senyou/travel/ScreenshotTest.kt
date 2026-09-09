@@ -56,6 +56,7 @@ class ScreenshotTest {
     fun setup() {
         DebugFlags.staticUi = true
         DebugFlags.offline = true
+        V3.apply("dark", 0xFF0078D7)
     }
 
     private fun shoot(name: String) {
@@ -68,7 +69,7 @@ class ScreenshotTest {
     }
 
     @Composable
-    private fun Frame(glassLevel: Int = 2, content: @Composable () -> Unit) {
+    private fun Frame(glassLevel: Int = 2, light: Boolean = false, content: @Composable () -> Unit) {
         val alpha = when (glassLevel) {
             0 -> 0f; 1 -> 0.03f; 2 -> 0.07f; 3 -> 0.10f; else -> 0.14f
         }
@@ -81,17 +82,45 @@ class ScreenshotTest {
                     alpha = alpha, blurPx = blur,
                     refractPx = if (glassLevel == 0) 0f else 20f,
                     motion = false,
+                    light = light,
                 ),
             ) {
                 LiquidBackgroundHost(
                     modifier = Modifier.fillMaxSize().background(V3.Bg),
                     deepNight = false,
-                    snapshot = glassLevel > 0,
+                    snapshot = false,
+                    light = light,
                 ) {
                     Box(Modifier.fillMaxSize()) { content() }
                 }
             }
         }
+    }
+
+    /** 淺色主題 */
+    @Test
+    fun homeLight() {
+        V3.apply("light", 0xFF0078D7)
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent {
+            Frame(light = true) {
+                HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
+            }
+        }
+        shoot("17-home-light")
+    }
+
+    /** 強調色（紫） */
+    @Test
+    fun homeAccentPurple() {
+        V3.apply("dark", 0xFFAA00FF)
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent {
+            Frame {
+                HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
+            }
+        }
+        shoot("18-home-accent-purple")
     }
 
     @Test

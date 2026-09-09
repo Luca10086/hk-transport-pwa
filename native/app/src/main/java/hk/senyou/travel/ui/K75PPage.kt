@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -149,6 +151,19 @@ fun K75PPage(onClose: () -> Unit) {
                         .background(V3.Accent)
                         .padding(horizontal = 12.dp, vertical = 5.dp),
                 ) { Text("實時 $live 班", color = Color.White, fontSize = 11.sp) }
+                Spacer(Modifier.size(8.dp))
+                GlassSurface(
+                    modifier = Modifier.size(40.dp).semantics { contentDescription = "語音播報下一班" }
+                        .clickable {
+                            Tts.speak(
+                                lead?.let { "K75P，下一班 ${it.mins} 分鐘，前往 ${it.nextName}" }
+                                    ?: "K75P，暫無實時班次"
+                            )
+                        },
+                    shape = CircleShape,
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("🔊", fontSize = 15.sp) }
+                }
                 Spacer(Modifier.size(8.dp))
                 GlassSurface(modifier = Modifier.size(40.dp).clickable { onClose() }, shape = CircleShape) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

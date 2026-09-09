@@ -39,6 +39,7 @@ fun LiquidBackgroundHost(
     modifier: Modifier = Modifier,
     deepNight: Boolean = false,
     snapshot: Boolean = true,
+    light: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val layer = rememberGraphicsLayer()
@@ -51,7 +52,7 @@ fun LiquidBackgroundHost(
             LocalBgBitmap provides null,
         ) {
             Box(modifier) {
-                LiquidBackground(Modifier.fillMaxSize(), deepNight)
+                LiquidBackground(Modifier.fillMaxSize(), deepNight, light)
                 content()
             }
         }
@@ -80,16 +81,16 @@ fun LiquidBackgroundHost(
                         drawLayer(layer)
                     },
             ) {
-                LiquidBackground(Modifier.fillMaxSize(), deepNight)
+                LiquidBackground(Modifier.fillMaxSize(), deepNight, light)
             }
             content()
         }
     }
 }
 
-/** 液體背景：7 團流動光斑 + 54 顆星野（~30fps，與 Web 版同參數） */
+/** 液體背景：7 團流動光斑 + 54 顆星野（~30fps，與 Web 版同參數；淺色主題用淺底 + 淡藍光暈） */
 @Composable
-fun LiquidBackground(modifier: Modifier = Modifier, deepNight: Boolean = false) {
+fun LiquidBackground(modifier: Modifier = Modifier, deepNight: Boolean = false, light: Boolean = false) {
     val blobs = remember {
         List(7) { i ->
             Blob(
@@ -120,16 +121,28 @@ fun LiquidBackground(modifier: Modifier = Modifier, deepNight: Boolean = false) 
             }
         }
     }
-    val tints = listOf(Color(0xFF0078D7), Color(0xFF00B4D8), Color(0xFF0A5BD7))
+    val tints = if (light) listOf(Color(0xFF3E7FD0), Color(0xFF2FA6C8), Color(0xFF6C8FE0))
+    else listOf(Color(0xFF0078D7), Color(0xFF00B4D8), Color(0xFF0A5BD7))
     Canvas(modifier) {
         val w = size.width
         val h = size.height
-        drawRect(if (deepNight) Color(0xFF020409) else Color(0xFF04060C))
+        drawRect(
+            when {
+                light -> Color(0xFFEDF1F7)
+                deepNight -> Color(0xFF020409)
+                else -> Color(0xFF04060C)
+            }
+        )
         blobs.forEach { b ->
             val x = (b.x + sin(t * b.s + b.ph) * 0.20f) * w
             val y = (b.y + cos(t * b.s * 0.9f + b.ph) * 0.17f) * h
             val r = b.r * w * 0.62f
-            val a = if (deepNight) 0.20f else if (b.hue == 0) 0.40f else 0.33f
+            val a = when {
+                light -> if (b.hue == 0) 0.16f else 0.12f
+                deepNight -> 0.20f
+                b.hue == 0 -> 0.40f
+                else -> 0.33f
+            }
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(tints[b.hue].copy(alpha = a), Color.Transparent),
@@ -140,11 +153,15 @@ fun LiquidBackground(modifier: Modifier = Modifier, deepNight: Boolean = false) 
                 center = Offset(x, y),
             )
         }
-        val baseAlpha = if (deepNight) 0.28f else 0.78f
+        val baseAlpha = when {
+            light -> 0.10f
+            deepNight -> 0.28f
+            else -> 0.78f
+        }
         stars.forEach { s ->
             val a = baseAlpha * (0.4f + 0.6f * abs(sin(t * 0.8f + s.ph)))
             drawCircle(
-                color = Color.White.copy(alpha = a),
+                color = (if (light) Color(0xFF7E93AE) else Color.White).copy(alpha = a),
                 radius = s.r * (h / 900f),
                 center = Offset(s.x * w, s.y * h),
             )

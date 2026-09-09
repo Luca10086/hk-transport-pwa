@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -49,6 +52,7 @@ import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.Settings
 import hk.senyou.travel.data.StaticData
 import hk.senyou.travel.data.Store
+import hk.senyou.travel.ui.theme.SenyouTheme
 import hk.senyou.travel.ui.theme.V3
 
 private val TABS = listOf("首頁", "收藏", "壽司郎", "路線圖", "設定")
@@ -57,8 +61,11 @@ private val TAB_ICONS = listOf("⌂", "♡", "◎", "⌖", "⚙")
 @Composable
 fun SenyouApp() {
     val ctx = LocalContext.current
-    LaunchedEffect(Unit) { StaticData.load(ctx) }
+    LaunchedEffect(Unit) { StaticData.load(ctx); Tts.init(ctx) }
     val settings by Store.settings(ctx).collectAsStateWithLifecycle(initialValue = Settings())
+
+    // 主題 + 強調色：在組樹重建前套用（key() 令切換時整體重組）
+    V3.apply(settings.theme, settings.accent)
 
     var tab by remember { mutableIntStateOf(0) }
     var k75pOpen by remember { mutableStateOf(false) }
@@ -88,9 +95,12 @@ fun SenyouApp() {
         refractPx = if (settings.glass == 0) 0f else 20f,
         sheen = settings.fx != "off",
         motion = settings.fx == "full",
+        light = V3.isLight,
     )
     val baseDensity = LocalDensity.current
 
+    key(settings.theme, settings.accent) {
+    SenyouTheme {
     CompositionLocalProvider(
         LocalDeepNight provides settings.deep,
         LocalDensity provides Density(baseDensity.density, if (settings.big) 1.15f else 1f),
@@ -118,6 +128,7 @@ fun SenyouApp() {
                     modifier = Modifier.fillMaxSize(),
                     deepNight = settings.deep,
                     snapshot = settings.glass > 0,
+                    light = V3.isLight,
                 ) {
                     CompositionLocalProvider(LocalGlassCfg provides glassCfg) {
                         val content: @Composable () -> Unit = {
@@ -172,6 +183,8 @@ fun SenyouApp() {
             }
         }
     }
+    }
+    }
 }
 
 @Composable
@@ -222,6 +235,7 @@ private fun GlassRail(selected: Int, onSelect: (Int) -> Unit) {
                 Column(
                     modifier = Modifier
                         .clip(RoundedCornerShape(18.dp))
+                        .semantics { contentDescription = t }
                         .clickable { onSelect(i) }
                         .padding(horizontal = 14.dp, vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -308,6 +322,7 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                 Column(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
+                        .semantics { contentDescription = t }
                         .clickable { onSelect(i) }
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,

@@ -14,6 +14,7 @@ import org.json.JSONObject
 
 /** 設定（對應 Web 版 wp2026_cfg） */
 data class Settings(
+    val theme: String = "dark",  // dark / light
     val glass: Int = 2,          // 0 無 → 4 濃郁
     val fx: String = "full",     // full / simple / off
     val big: Boolean = false,    // 大字模式
@@ -70,6 +71,7 @@ object Store {
     fun settings(ctx: Context): Flow<Settings> = ctx.ds.data.map { p ->
         val o = p[K_CFG]?.let { runCatching { JSONObject(it) }.getOrNull() }
         Settings(
+            theme = o?.optString("theme", "dark") ?: "dark",
             glass = o?.optInt("glass", 2) ?: 2,
             fx = o?.optString("fx", "full") ?: "full",
             big = o?.optBoolean("big", false) ?: false,
@@ -83,6 +85,7 @@ object Store {
 
     suspend fun save(ctx: Context, s: Settings) {
         val o = JSONObject()
+            .put("theme", s.theme)
             .put("glass", s.glass).put("fx", s.fx).put("big", s.big).put("deep", s.deep)
             .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
         ctx.ds.edit { it[K_CFG] = o.toString() }

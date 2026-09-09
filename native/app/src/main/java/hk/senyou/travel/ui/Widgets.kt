@@ -36,6 +36,8 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,6 +62,9 @@ fun Tile(
     GlassSurface(
         modifier = modifier
             .height(120.dp)
+            .semantics {
+                contentDescription = "$label $value${unit ?: ""}" + (cap?.let { "，$it" } ?: "")
+            }
             .then(
                 if (onClick != null) Modifier.clickable {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -251,10 +256,16 @@ fun coColor(co: Co): Color = when (co) {
 @Composable
 fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star: Boolean, onStar: (() -> Unit)? = null, onClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
-    GlassSurface(modifier = Modifier.fillMaxWidth().height(72.dp).clickable {
-        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-        onClick()
-    }) {
+    GlassSurface(modifier = Modifier
+        .fillMaxWidth()
+        .height(72.dp)
+        .semantics {
+            contentDescription = "$no $name，${etaMins?.let { "$it 分鐘" } ?: "暫無班次"}${if (star) "，已收藏" else ""}"
+        }
+        .clickable {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onClick()
+        }) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,

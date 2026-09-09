@@ -59,6 +59,8 @@ fun SettingsScreen(s: Settings) {
                 .padding(bottom = 110.dp),
         ) {
         GroupTitle("外觀")
+        SegRow("主題", "深色 / 淺色",
+            listOf("dark" to "深色", "light" to "淺色"), s.theme) { v -> set { copy(theme = v) } }
         SegRow("玻璃強度", "0 無玻璃 → 4 濃郁",
             listOf("0" to "無", "1" to "淡", "2" to "標準", "3" to "深", "4" to "濃"),
             s.glass.toString()) { v -> set { copy(glass = v.toInt()) } }

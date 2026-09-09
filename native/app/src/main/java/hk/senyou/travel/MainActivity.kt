@@ -14,7 +14,6 @@ import hk.senyou.travel.data.Kind
 import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.ui.DeepLink
 import hk.senyou.travel.ui.SenyouApp
-import hk.senyou.travel.ui.theme.SenyouTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -26,9 +25,7 @@ class MainActivity : ComponentActivity() {
         maybeAskNotifications()
         consumeDeepLink(intent)
         setContent {
-            SenyouTheme {
-                SenyouApp()
-            }
+            SenyouApp()
         }
     }
 

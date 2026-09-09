@@ -33,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,9 +95,28 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                     Text("${item.no} 路線詳情", color = V3.Text1, fontSize = 19.sp, fontWeight = FontWeight.Light, maxLines = 1)
                     Text(item.name, color = V3.Text2, fontSize = 12.sp, maxLines = 1)
                 }
+                // 語音播報
+                GlassSurface(
+                    modifier = Modifier.size(40.dp).semantics { contentDescription = "語音播報" }
+                        .clickable {
+                            val first = rows.firstOrNull { it.mins != null }
+                            Tts.speak(
+                                if (first != null) "${item.no}，${first.name}，${first.mins} 分鐘"
+                                else "${item.no}，暫無班次"
+                            )
+                        },
+                    shape = CircleShape,
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("🔊", fontSize = 15.sp)
+                    }
+                }
+                Spacer(Modifier.size(8.dp))
                 // 收藏本路線
                 GlassSurface(
-                    modifier = Modifier.size(40.dp).clickable {
+                    modifier = Modifier.size(40.dp).semantics {
+                        contentDescription = if (starred) "取消收藏" else "收藏路線"
+                    }.clickable {
                         scope.launch {
                             val next = if (starred) favs.filterNot { it.matchKey() == item.matchKey() }
                             else favs + item.toFav()

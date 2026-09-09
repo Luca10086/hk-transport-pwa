@@ -33,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -145,7 +147,11 @@ private fun FavCard(
                 Spacer(Modifier.size(8.dp))
                 // 到站提醒門檻：關 → 3 → 5 → 10 分
                 GlassSurface(
-                    modifier = Modifier.widthIn(min = 62.dp).height(36.dp).clickable { onCycleAlert() },
+                    modifier = Modifier.widthIn(min = 62.dp).height(36.dp)
+                        .semantics {
+                            contentDescription = if (fav.alertMins > 0) "到站提醒 ${fav.alertMins} 分鐘，點擊更改" else "開啟到站提醒"
+                        }
+                        .clickable { onCycleAlert() },
                     shape = CircleShape,
                     strong = fav.alertMins > 0,
                 ) {
@@ -158,7 +164,10 @@ private fun FavCard(
                     }
                 }
                 Spacer(Modifier.size(8.dp))
-                GlassSurface(modifier = Modifier.size(36.dp).clickable { onRemove() }, shape = CircleShape) {
+                GlassSurface(
+                    modifier = Modifier.size(36.dp).semantics { contentDescription = "移除收藏" }.clickable { onRemove() },
+                    shape = CircleShape,
+                ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("✕", color = V3.Text2, fontSize = 13.sp) }
                 }
             }

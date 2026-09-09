@@ -40,13 +40,14 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.dp
 import hk.senyou.travel.ui.theme.V3
 
-/** 玻璃配置（設定頁驅動）：強度 alpha / 真模糊半徑 / 折射強度 / 高光 / 動效 */
+/** 玻璃配置（設定頁驅動）：強度 alpha / 真模糊半徑 / 折射強度 / 高光 / 動效 / 淺色主題 */
 data class GlassCfg(
     val alpha: Float = 0.07f,
     val blurPx: Float = 26f,
     val refractPx: Float = 20f,
     val sheen: Boolean = true,
     val motion: Boolean = true,
+    val light: Boolean = false,
 )
 
 val LocalGlassCfg = compositionLocalOf { GlassCfg() }
@@ -128,8 +129,10 @@ fun GlassSurface(
             .clip(shape)
             .border(1.dp, V3.Line, shape)
             .drawWithContent {
-                // ① 玻璃色調（在背景模糊層之上、內容之下）
-                drawRect(Color.White.copy(alpha = if (strong) cfg.alpha * 1.7f else cfg.alpha))
+                // ① 玻璃色調（淺色主題需更高不透明度；在背景模糊層之上、內容之下）
+                val tintAlpha = if (cfg.light) (if (strong) 0.62f else 0.45f)
+                else (if (strong) cfg.alpha * 1.7f else cfg.alpha)
+                drawRect(V3.GlassTint.copy(alpha = tintAlpha))
                 drawContent()
                 // ② 邊緣折射（AGSL）：內容真的彎曲
                 if (canRefract && refractShader != null) {
@@ -150,7 +153,11 @@ fun GlassSurface(
                 val stroke = 1.dp.toPx()
                 drawLine(
                     brush = Brush.horizontalGradient(
-                        listOf(Color.Transparent, Color.White.copy(alpha = 0.35f), Color.Transparent)
+                        listOf(
+                            Color.Transparent,
+                            if (cfg.light) Color.Black.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.35f),
+                            Color.Transparent,
+                        )
                     ),
                     start = Offset(this.size.width * 0.06f, stroke / 2f),
                     end = Offset(this.size.width * 0.94f, stroke / 2f),
@@ -159,9 +166,10 @@ fun GlassSurface(
                 // ④ 液態高光（對角掃過）
                 if (cfg.sheen) {
                     val c = this.size.width * (0.5f + sheenPos * 0.9f)
+                    val sheenColor = if (cfg.light) Color.Black.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.10f)
                     drawRect(
                         brush = Brush.linearGradient(
-                            colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.10f), Color.Transparent),
+                            colors = listOf(Color.Transparent, sheenColor, Color.Transparent),
                             start = Offset(c - this.size.width * 0.35f, 0f),
                             end = Offset(c + this.size.width * 0.35f, this.size.height),
                         ),
