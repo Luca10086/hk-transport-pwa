@@ -1,0 +1,5 @@
+﻿
+# 測試臨時產物
+.test/edge/
+.test/shots/
+.test/*.png
