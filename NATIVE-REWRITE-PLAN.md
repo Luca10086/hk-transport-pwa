@@ -48,7 +48,7 @@ native/app/src/main/java/hk/senyou/travel/
 | **M3 ✅** | 收藏（DataStore + 按公司分組）+ 天氣（HKO 3 天）+ 壽司郎 + 設定頁（玻璃強度/動效三檔/大字/深夜/夜間三選一） | 與 Web 版功能對等 |
 | **M4 ✅** | 真折射：`RenderEffect` 背景模糊（31+）+ **AGSL RuntimeShader 邊緣折射**（33+）+ 玻璃強度 5 級 + 氣泡工具欄收縮 | 真·液態玻璃，滾動 60/120fps |
 | **M5 ✅** | 原生加值：桌面小組件（K75P/收藏 ETA）+ 到站通知 + WorkManager 背景刷新 + 觸感反饋；路線圖頁（港鐵各線上下行 + 輕鐵分區） | 鎖屏可見下一班 |
-| **M6** | 打磨 + release keystore 簽名 + 與 Web 版並行驗證後停用 Web 版 | release APK |
+| **M6 ✅** | 打磨 + release keystore 簽名 + 與 Web 版並行驗證後停用 Web 版 | release APK |
 
 ## 4. 關鍵技術決策
 

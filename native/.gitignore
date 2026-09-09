@@ -9,6 +9,9 @@ captures/
 # 本機配置（含 SDK 路徑）
 local.properties
 
+# 簽名密鑰（絕不入庫）
+keystore/
+
 # IDE
 .idea/
 *.iml
