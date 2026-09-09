@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,14 +30,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hk.senyou.travel.ui.theme.V3
-import kotlin.math.max
 
 /* ---------------- 首页磁贴 ---------------- */
 
@@ -175,7 +177,7 @@ fun K75PMiniMap(modifier: Modifier = Modifier) {
 /* ---------------- 搜索 / 筛选 / 结果行 ---------------- */
 
 @Composable
-fun SearchPill(placeholder: String, modifier: Modifier = Modifier) {
+fun SearchPill(placeholder: String, value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
     GlassSurface(modifier = modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(999.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
@@ -183,7 +185,20 @@ fun SearchPill(placeholder: String, modifier: Modifier = Modifier) {
         ) {
             Text("⌕", color = V3.Text2, fontSize = 20.sp)
             Spacer(Modifier.width(10.dp))
-            Text(placeholder, color = V3.Text2, fontSize = 16.sp, maxLines = 1)
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = true,
+                textStyle = TextStyle(color = V3.Text1, fontSize = 16.sp),
+                cursorBrush = SolidColor(V3.Accent),
+                modifier = Modifier.weight(1f),
+                decorationBox = { inner ->
+                    Box {
+                        if (value.isEmpty()) Text(placeholder, color = V3.Text2, fontSize = 16.sp, maxLines = 1)
+                        inner()
+                    }
+                },
+            )
         }
     }
 }
@@ -225,7 +240,7 @@ fun coColor(co: Co): Color = when (co) {
 }
 
 @Composable
-fun ResultRow(no: String, co: Co, name: String, cap: String, etaSec: Int, star: Boolean, onClick: () -> Unit) {
+fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star: Boolean, onClick: () -> Unit) {
     GlassSurface(modifier = Modifier.fillMaxWidth().height(72.dp).clickable { onClick() }) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
@@ -240,16 +255,20 @@ fun ResultRow(no: String, co: Co, name: String, cap: String, etaSec: Int, star: 
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(name, color = V3.Text1, fontSize = 16.sp, maxLines = 1)
-                Text(cap, color = V3.Text2, fontSize = 12.sp, maxLines = 1)
+                if (cap.isNotBlank()) Text(cap, color = V3.Text2, fontSize = 12.sp, maxLines = 1)
             }
-            val (etaColor, etaText) = when {
-                etaSec <= 120 -> V3.Danger to "${max(1, etaSec / 60)}"
-                etaSec <= 600 -> V3.Warning to "${etaSec / 60}"
-                else -> V3.Success to "${etaSec / 60}"
-            }
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(etaText, color = etaColor, fontSize = 26.sp, fontWeight = FontWeight.Light)
-                Text("分", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(start = 2.dp, bottom = 4.dp))
+            if (etaMins != null) {
+                val etaColor = when {
+                    etaMins <= 2 -> V3.Danger
+                    etaMins <= 10 -> V3.Warning
+                    else -> V3.Success
+                }
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("$etaMins", color = etaColor, fontSize = 26.sp, fontWeight = FontWeight.Light)
+                    Text("分", color = V3.Text2, fontSize = 12.sp, modifier = Modifier.padding(start = 2.dp, bottom = 4.dp))
+                }
+            } else {
+                Text("—", color = V3.Text2, fontSize = 22.sp, fontWeight = FontWeight.Light)
             }
             Spacer(Modifier.width(8.dp))
             Text(if (star) "★" else "☆", color = if (star) V3.Warning else V3.Text2, fontSize = 20.sp)

@@ -23,8 +23,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,9 +34,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import hk.senyou.travel.data.SearchItem
+import hk.senyou.travel.data.StaticData
 import hk.senyou.travel.ui.theme.V3
 
 private val TABS = listOf("首頁", "收藏", "壽司郎", "路線圖", "設定")
@@ -42,8 +47,11 @@ private val TAB_ICONS = listOf("⌂", "♡", "◎", "⌖", "⚙")
 
 @Composable
 fun SenyouApp() {
+    val ctx = LocalContext.current
+    LaunchedEffect(Unit) { StaticData.load(ctx) }
     var tab by remember { mutableIntStateOf(0) }
     var k75pOpen by remember { mutableIntStateOf(0) }
+    var detail by remember { mutableStateOf<SearchItem?>(null) }
 
     Box(Modifier.fillMaxSize().background(V3.Bg)) {
         LiquidBackground(Modifier.fillMaxSize())
@@ -52,7 +60,10 @@ fun SenyouApp() {
             TopBar()
             Box(Modifier.weight(1f)) {
                 when (tab) {
-                    0 -> HomeScreen(onOpenK75P = { k75pOpen = 1 })
+                    0 -> HomeScreen(
+                        onOpenK75P = { k75pOpen = 1 },
+                        onOpenRoute = { detail = it },
+                    )
                     else -> Placeholder(TABS[tab])
                 }
             }
@@ -61,6 +72,9 @@ fun SenyouApp() {
 
         if (k75pOpen == 1) {
             K75PPage(onClose = { k75pOpen = 0 })
+        }
+        detail?.let { d ->
+            RouteDetailPage(item = d, onClose = { detail = null })
         }
     }
 }
