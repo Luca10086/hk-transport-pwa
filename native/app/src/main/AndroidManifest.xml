@@ -18,6 +18,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Senyou"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

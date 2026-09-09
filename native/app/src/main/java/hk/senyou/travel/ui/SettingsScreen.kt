@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,13 +49,15 @@ fun SettingsScreen(s: Settings) {
     val scope = rememberCoroutineScope()
     fun set(block: Settings.() -> Settings) = scope.launch { Store.save(ctx, s.block()) }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 110.dp),
-    ) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Column(
+            Modifier
+                .widthIn(max = 760.dp)
+                .fillMaxHeight()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 110.dp),
+        ) {
         GroupTitle("外觀")
         SegRow("玻璃強度", "0 無玻璃 → 4 濃郁",
             listOf("0" to "無", "1" to "淡", "2" to "標準", "3" to "深", "4" to "濃"),
@@ -97,9 +101,10 @@ fun SettingsScreen(s: Settings) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("版本", color = V3.Text1, fontSize = 15.sp, modifier = Modifier.weight(1f))
-            Text("原生 v3 · M3", color = V3.Text2, fontSize = 13.sp)
+            Text("原生 v3 · M5 大屏自適應", color = V3.Text2, fontSize = 13.sp)
         }
         Spacer(Modifier.height(20.dp))
+        }
     }
 }
 

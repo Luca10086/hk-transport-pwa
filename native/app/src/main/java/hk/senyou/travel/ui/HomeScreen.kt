@@ -1,5 +1,7 @@
 package hk.senyou.travel.ui
 
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,14 +37,12 @@ import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.SearchRepo
 import hk.senyou.travel.data.Store
 import hk.senyou.travel.ui.theme.V3
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val MODES = listOf("bus" to "公交", "mtrbus" to "港鐵巴士", "mtr" to "港鐵", "lrt" to "輕鐵")
 
-/** 首頁（M4：真玻璃 + 氣泡工具欄聯動滾動） */
+/** 首頁：緊湊態單欄；展開態（≥840dp，如 MIX Fold 4 內屏）磁貼 | 搜索結果 雙欄 */
 @Composable
 fun HomeScreen(
     scroll: ScrollState,
@@ -51,6 +53,7 @@ fun HomeScreen(
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val favs by Store.favorites(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
+    val adaptive = LocalAdaptive.current
 
     var mode by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
@@ -59,10 +62,9 @@ fun HomeScreen(
     var k75pMins by remember { mutableStateOf<Int?>(null) }
     var k75pLive by remember { mutableIntStateOf(0) }
     var weatherTemp by remember { mutableStateOf<Int?>(null) }
-    var weatherCap by remember { mutableStateOf("載入中") }
+    var weatherCap by remember { mutableStateOf("載入中…") }
     var favMins by remember { mutableStateOf<Int?>(null) }
 
-    // K75P 實時
     LaunchedEffect(Unit) {
         if (hk.senyou.travel.data.DebugFlags.staticUi) return@LaunchedEffect
         while (true) {
@@ -91,7 +93,6 @@ fun HomeScreen(
         }
     }
 
-    // 天氣 + 收藏首條 ETA
     LaunchedEffect(favs) {
         val w = Hko.fetch()
         weatherTemp = w.temp
@@ -104,7 +105,6 @@ fun HomeScreen(
         favMins = first?.let { SearchRepo.favEta(it) }
     }
 
-    // 搜索
     LaunchedEffect(query, mode) {
         if (query.isBlank()) {
             items = emptyList()
@@ -119,13 +119,7 @@ fun HomeScreen(
         loading = false
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scroll)
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 110.dp),
-    ) {
+    val tiles: @Composable () -> Unit = {
         Tile(
             label = "K75P 天瑞 ↺ 洪水橋 · 實時 $k75pLive 班在路",
             value = k75pMins?.toString() ?: "—",
@@ -139,20 +133,14 @@ fun HomeScreen(
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Tile(
-                label = "我的收藏",
-                value = favs.size.toString(),
-                unit = " 條",
+                label = "我的收藏", value = favs.size.toString(), unit = " 條",
                 cap = favMins?.let { "下一班 $it 分" } ?: "點星標加入",
-                valueColor = V3.Accent,
-                modifier = Modifier.weight(1f),
+                valueColor = V3.Accent, modifier = Modifier.weight(1f),
             )
             Tile(
-                label = "天氣 · 三天",
-                value = weatherTemp?.toString() ?: "—",
-                unit = if (weatherTemp != null) "°" else null,
-                cap = weatherCap,
-                modifier = Modifier.weight(1f),
-                onClick = onOpenWeather,
+                label = "天氣 · 三天", value = weatherTemp?.toString() ?: "—",
+                unit = if (weatherTemp != null) "°" else null, cap = weatherCap,
+                modifier = Modifier.weight(1f), onClick = onOpenWeather,
             )
         }
         Spacer(Modifier.height(12.dp))
@@ -160,38 +148,101 @@ fun HomeScreen(
             Tile(label = "壽司郎", value = "—", unit = " 組", cap = "分頁查看", modifier = Modifier.weight(1f))
             Tile(label = "路線圖", value = "屯馬", unit = "綫", cap = "全線候車", valueColor = V3.CoMtr, modifier = Modifier.weight(1f))
         }
+    }
 
-        Spacer(Modifier.height(16.dp))
-        SearchPill(
-            placeholder = "輸入路線、站名或港鐵車站",
-            value = query,
-            onValueChange = { query = it },
-        )
+    val searchBox: @Composable () -> Unit = {
+        SearchPill(placeholder = "輸入路線、站名或港鐵車站", value = query, onValueChange = { query = it })
         Spacer(Modifier.height(10.dp))
         ChipRow(MODES.map { it.second }, mode) { mode = it }
         Spacer(Modifier.height(6.dp))
+    }
 
-        when {
-            loading -> Text("搜尋中…", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
-            query.isNotBlank() && items.isEmpty() -> Text("沒有結果", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
-            else -> items.forEach { it ->
-                val starred = favs.any { f -> favKeyOf(f) == favKeyOfItem(it) }
-                ResultRow(
-                    no = it.no,
-                    co = it.kind.toCo(),
-                    name = it.name,
-                    cap = it.cap,
-                    etaMins = it.etaMins,
-                    star = starred,
-                    onStar = {
-                        scope.launch {
-                            val next = if (starred) favs.filterNot { f -> favKeyOf(f) == favKeyOfItem(it) }
-                            else favs + itemToFav(it)
-                            Store.saveFavorites(ctx, next)
+    if (adaptive.isExpanded) {
+        // 展開態：左磁貼 / 右搜索結果
+        Row(
+            Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            Column(Modifier.weight(1f).verticalScroll(scroll)) {
+                tiles()
+                Spacer(Modifier.height(24.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                searchBox()
+                if (query.isBlank()) {
+                    // 展開態右欄空閒時給搜索引導（避免大面積空白）
+                    Spacer(Modifier.height(24.dp))
+                    Text("快速搜尋", color = V3.Aux, fontSize = 13.sp)
+                    Spacer(Modifier.height(10.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("69X", "969", "K75P", "天水圍", "元朗").forEach { q ->
+                            GlassSurface(
+                                modifier = Modifier.fillMaxWidth().height(52.dp)
+                                    .clickable { query = q },
+                            ) {
+                                Row(
+                                    Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                ) {
+                                    Text("⌕", color = V3.Text2, fontSize = 16.sp)
+                                    Spacer(Modifier.width(10.dp))
+                                    Text("搜尋 $q", color = V3.Text1, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                                    Text("›", color = V3.Text2, fontSize = 18.sp)
+                                }
+                            }
                         }
-                    },
-                ) { onOpenRoute(it) }
-                Spacer(Modifier.height(8.dp))
+                    }
+                }
+                LazyColumn(Modifier.fillMaxSize()) {
+                    if (loading) item { Text("搜尋中…", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp)) }
+                    else if (query.isNotBlank() && items.isEmpty()) item { Text("沒有結果", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp)) }
+                    items(items, key = { "${it.kind}-${it.no}-${it.route}-${it.stationCode}" }) { it ->
+                        val starred = favs.any { f -> favKeyOf(f) == favKeyOfItem(it) }
+                        ResultRow(
+                            no = it.no, co = it.kind.toCo(), name = it.name, cap = it.cap,
+                            etaMins = it.etaMins, star = starred,
+                            onStar = {
+                                scope.launch {
+                                    val next = if (starred) favs.filterNot { f -> favKeyOf(f) == favKeyOfItem(it) }
+                                    else favs + itemToFav(it)
+                                    Store.saveFavorites(ctx, next)
+                                }
+                            },
+                        ) { onOpenRoute(it) }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+            }
+        }
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scroll)
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 110.dp),
+        ) {
+            tiles()
+            Spacer(Modifier.height(16.dp))
+            searchBox()
+            when {
+                loading -> Text("搜尋中…", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
+                query.isNotBlank() && items.isEmpty() -> Text("沒有結果", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
+                else -> items.forEach { it ->
+                    val starred = favs.any { f -> favKeyOf(f) == favKeyOfItem(it) }
+                    ResultRow(
+                        no = it.no, co = it.kind.toCo(), name = it.name, cap = it.cap,
+                        etaMins = it.etaMins, star = starred,
+                        onStar = {
+                            scope.launch {
+                                val next = if (starred) favs.filterNot { f -> favKeyOf(f) == favKeyOfItem(it) }
+                                else favs + itemToFav(it)
+                                Store.saveFavorites(ctx, next)
+                            }
+                        },
+                    ) { onOpenRoute(it) }
+                    Spacer(Modifier.height(8.dp))
+                }
             }
         }
     }
@@ -211,9 +262,7 @@ private fun favKeyOf(f: Fav): String = listOf(f.type, f.company, f.route, f.dir,
 
 private fun favKeyOfItem(it: SearchItem): String = listOf(
     when (it.kind) {
-        Kind.KMB, Kind.BUSSTOP -> "bus"
-        Kind.CTB -> "bus"
-        Kind.NLB -> "bus"
+        Kind.KMB, Kind.BUSSTOP, Kind.CTB, Kind.NLB -> "bus"
         Kind.MTRBUS -> "mtrbus"
         Kind.MTR -> "mtr"
         Kind.LRT -> "lrt"

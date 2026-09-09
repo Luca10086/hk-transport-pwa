@@ -14,7 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -107,9 +110,11 @@ fun LineMapScreen() {
             if (loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("載入中…", color = V3.Text2, fontSize = 14.sp) }
             } else {
-                LazyColumn(
-                    Modifier.fillMaxSize(),
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(if (LocalAdaptive.current.isExpanded) 2 else 1),
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(rows) { r ->
                         Row(Modifier.fillMaxWidth().height(58.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -131,17 +136,19 @@ fun LineMapScreen() {
                             }
                         }
                     }
-                    item { Spacer(Modifier.height(110.dp)) }
+                    item(span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(110.dp)) }
                 }
             }
         } else {
             // 輕鐵
-            LazyColumn(
-                Modifier.fillMaxSize(),
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(if (LocalAdaptive.current.isExpanded) 2 else 1),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 MtrRepo.lrtGroups().forEach { (group, list) ->
-                    item(key = "g-$group") {
+                    item(key = "g-$group", span = { GridItemSpan(maxLineSpan) }) {
                         Text(group, color = V3.Aux, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
                     }
                     items(list, key = { "lrt-${it.id}" }) { s ->

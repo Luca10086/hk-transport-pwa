@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -74,14 +76,17 @@ fun FavoritesScreen(onOpenRoute: (SearchItem) -> Unit) {
         return
     }
 
-    LazyColumn(
+    val expanded = LocalAdaptive.current.isExpanded
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(if (expanded) 2 else 1),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         GROUP_ORDER.forEach { g ->
             val list = favs.filter { SearchRepo.favGroup(it) == g }
             if (list.isEmpty()) return@forEach
-            item(key = "h-$g") {
+            item(key = "h-$g", span = { GridItemSpan(maxLineSpan) }) {
                 Row(Modifier.padding(top = 10.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(9.dp).clip(CircleShape).background(GROUP_COLORS[g] ?: V3.Accent))
                     Spacer(Modifier.size(8.dp))

@@ -7,11 +7,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -62,20 +64,14 @@ fun SenyouApp() {
     var k75pOpen by remember { mutableStateOf(false) }
     var weatherOpen by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<SearchItem?>(null) }
+    val homeScroll = rememberScrollState()
+    val (posture, hinge) = rememberFoldInfo()
 
     val alpha = when (settings.glass) {
-        0 -> 0f
-        1 -> 0.03f
-        2 -> 0.07f
-        3 -> 0.10f
-        else -> 0.14f
+        0 -> 0f; 1 -> 0.03f; 2 -> 0.07f; 3 -> 0.10f; else -> 0.14f
     }
     val blurPx = when (settings.glass) {
-        0 -> 0f
-        1 -> 12f
-        2 -> 26f
-        3 -> 36f
-        else -> 48f
+        0 -> 0f; 1 -> 12f; 2 -> 26f; 3 -> 36f; else -> 48f
     }
     val glassCfg = GlassCfg(
         alpha = alpha,
@@ -85,40 +81,137 @@ fun SenyouApp() {
         motion = settings.fx == "full",
     )
     val baseDensity = LocalDensity.current
-    val homeScroll = rememberScrollState()
 
     CompositionLocalProvider(
         LocalDeepNight provides settings.deep,
         LocalDensity provides Density(baseDensity.density, if (settings.big) 1.15f else 1f),
     ) {
-        LiquidBackgroundHost(
-            modifier = Modifier.fillMaxSize().background(V3.Bg),
-            deepNight = settings.deep,
-            snapshot = settings.glass > 0,
-        ) {
-            CompositionLocalProvider(LocalGlassCfg provides glassCfg) {
-                Column(Modifier.fillMaxSize()) {
-                    TopBar(collapsed = tab == 0 && homeScroll.value > 80)
-                    Box(Modifier.weight(1f)) {
-                        when (tab) {
-                            0 -> HomeScreen(
-                                scroll = homeScroll,
+        BoxWithConstraints(Modifier.fillMaxSize().background(V3.Bg)) {
+            val widthDp = maxWidth.value.toInt()
+            val heightDp = maxHeight.value.toInt()
+            val sizeClass = when {
+                widthDp >= 840 -> SizeClass.Expanded
+                widthDp >= 600 -> SizeClass.Medium
+                else -> SizeClass.Compact
+            }
+            val adaptive = AdaptiveInfo(
+                sizeClass = sizeClass,
+                widthDp = widthDp,
+                heightDp = heightDp,
+                posture = posture,
+                hingeTopPx = hinge?.first ?: 0,
+                hingeBottomPx = hinge?.last ?: 0,
+            )
+
+            CompositionLocalProvider(LocalAdaptive provides adaptive) {
+                LiquidBackgroundHost(
+                    modifier = Modifier.fillMaxSize(),
+                    deepNight = settings.deep,
+                    snapshot = settings.glass > 0,
+                ) {
+                    CompositionLocalProvider(LocalGlassCfg provides glassCfg) {
+                        val content: @Composable () -> Unit = {
+                            ScreenContent(
+                                tab = tab,
+                                homeScroll = homeScroll,
                                 onOpenK75P = { k75pOpen = true },
                                 onOpenRoute = { detail = it },
                                 onOpenWeather = { weatherOpen = true },
+                                settings = settings,
                             )
-                            1 -> FavoritesScreen(onOpenRoute = { detail = it })
-                            2 -> SushiScreen()
-                            3 -> LineMapScreen()
-                            else -> SettingsScreen(settings)
                         }
-                    }
-                    BottomNav(tab) { tab = it }
-                }
 
-                if (k75pOpen) K75PPage(onClose = { k75pOpen = false })
-                if (weatherOpen) WeatherPage(onClose = { weatherOpen = false })
-                detail?.let { d -> RouteDetailPage(item = d, onClose = { detail = null }) }
+                        if (adaptive.isExpanded) {
+                            // 展開態（MIX Fold 4 內屏 / 平板）：左側導航欄 + 內容區
+                            Row(Modifier.fillMaxSize()) {
+                                GlassRail(tab) { tab = it }
+                                Column(Modifier.weight(1f).fillMaxHeight()) {
+                                    TopBar(collapsed = false)
+                                    Box(Modifier.weight(1f)) { content() }
+                                }
+                            }
+                        } else {
+                            Column(Modifier.fillMaxSize()) {
+                                TopBar(collapsed = tab == 0 && homeScroll.value > 80)
+                                Box(Modifier.weight(1f)) { content() }
+                                BottomNav(tab) { tab = it }
+                            }
+                        }
+
+                        if (k75pOpen) K75PPage(onClose = { k75pOpen = false })
+                        if (weatherOpen) WeatherPage(onClose = { weatherOpen = false })
+                        detail?.let { d -> RouteDetailPage(item = d, onClose = { detail = null }) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScreenContent(
+    tab: Int,
+    homeScroll: androidx.compose.foundation.ScrollState,
+    onOpenK75P: () -> Unit,
+    onOpenRoute: (SearchItem) -> Unit,
+    onOpenWeather: () -> Unit,
+    settings: Settings,
+) {
+    when (tab) {
+        0 -> HomeScreen(
+            scroll = homeScroll,
+            onOpenK75P = onOpenK75P,
+            onOpenRoute = onOpenRoute,
+            onOpenWeather = onOpenWeather,
+        )
+        1 -> FavoritesScreen(onOpenRoute = onOpenRoute)
+        2 -> SushiScreen()
+        3 -> LineMapScreen()
+        else -> SettingsScreen(settings)
+    }
+}
+
+/** 展開態左側玻璃導航欄（替代底部導航） */
+@Composable
+private fun GlassRail(selected: Int, onSelect: (Int) -> Unit) {
+    val status = WindowInsets.statusBars.asPaddingValues()
+    val nav = WindowInsets.navigationBars.asPaddingValues()
+    GlassSurface(
+        modifier = Modifier
+            .width(104.dp)
+            .fillMaxHeight()
+            .padding(top = status.calculateTopPadding(), bottom = nav.calculateBottomPadding()),
+        shape = RoundedCornerShape(0.dp),
+        strong = true,
+    ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            TABS.forEachIndexed { i, t ->
+                val on = i == selected
+                Column(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(18.dp))
+                        .clickable { onSelect(i) }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(TAB_ICONS[i], color = if (on) V3.Text1 else V3.Text2, fontSize = 22.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(t, color = if (on) V3.Text1 else V3.Text2, fontSize = 12.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        Modifier
+                            .width(32.dp)
+                            .height(3.dp)
+                            .clip(CircleShape)
+                            .background(if (on) V3.Accent else Color.Transparent)
+                    )
+                }
             }
         }
     }
@@ -155,7 +248,7 @@ private fun TopBar(collapsed: Boolean) {
                     Text("森友", color = V3.Text1, fontSize = titleSize.sp, fontWeight = FontWeight.Light)
                     Text("出行", color = V3.Accent, fontSize = titleSize.sp, fontWeight = FontWeight.Light)
                 }
-                if (!collapsed) Text("原生 v3 · M4 真折射", color = V3.Text2, fontSize = 12.sp)
+                if (!collapsed) Text("原生 v3 · 大屏自適應", color = V3.Text2, fontSize = 12.sp)
             }
             GlassSurface(modifier = Modifier.size(if (collapsed) 36.dp else 40.dp), shape = CircleShape) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

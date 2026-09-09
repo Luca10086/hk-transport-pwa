@@ -13,8 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -68,9 +69,11 @@ fun SushiScreen() {
         if (loading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("載入中…", color = V3.Text2, fontSize = 14.sp) }
         } else {
-            LazyColumn(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(if (LocalAdaptive.current.isExpanded) 2 else 1),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(shown) { s ->
                     Row(
