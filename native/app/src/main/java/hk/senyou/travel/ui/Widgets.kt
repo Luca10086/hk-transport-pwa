@@ -129,12 +129,13 @@ private fun uPoint(t: Float, w: Float, h: Float): Offset {
 @Composable
 fun K75PMiniMap(modifier: Modifier = Modifier) {
     val trans = rememberInfiniteTransition(label = "k75p")
-    val t by trans.animateFloat(
+    val animated by trans.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(durationMillis = 14000, easing = LinearEasing)),
         label = "busT",
     )
+    val t = if (hk.senyou.travel.data.DebugFlags.staticUi) 0.35f else animated
     Canvas(modifier) {
         val w = size.width
         val h = size.height

@@ -64,6 +64,7 @@ fun HomeScreen(
 
     // K75P 實時
     LaunchedEffect(Unit) {
+        if (hk.senyou.travel.data.DebugFlags.staticUi) return@LaunchedEffect
         while (true) {
             val d = Api.mtrBusSchedule("K75P")
             val arr = d?.optJSONArray("busStop")
@@ -94,7 +95,7 @@ fun HomeScreen(
     LaunchedEffect(favs) {
         val w = Hko.fetch()
         weatherTemp = w.temp
-        weatherCap = buildString {
+        weatherCap = if (w.temp == null) "載入中…" else buildString {
             if (w.emoji.isNotBlank()) append(w.emoji).append(' ')
             append(w.days.joinToString(" ") { d -> d.label.take(1) + (d.max?.let { "$it°" } ?: "") })
             if (isEmpty()) append(w.desc)
@@ -147,8 +148,8 @@ fun HomeScreen(
             )
             Tile(
                 label = "天氣 · 三天",
-                value = weatherTemp?.toString() ?: "--",
-                unit = "°",
+                value = weatherTemp?.toString() ?: "—",
+                unit = if (weatherTemp != null) "°" else null,
                 cap = weatherCap,
                 modifier = Modifier.weight(1f),
                 onClick = onOpenWeather,

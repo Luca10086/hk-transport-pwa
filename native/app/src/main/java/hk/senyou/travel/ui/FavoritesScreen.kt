@@ -63,7 +63,13 @@ fun FavoritesScreen(onOpenRoute: (SearchItem) -> Unit) {
 
     if (favs.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("暫無收藏\n在搜尋結果點 ☆ 加入", color = V3.Text2, fontSize = 14.sp)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("☆", color = V3.Text2, fontSize = 54.sp)
+                Spacer(Modifier.height(14.dp))
+                Text("暫無收藏", color = V3.Text1, fontSize = 17.sp)
+                Spacer(Modifier.height(8.dp))
+                Text("在搜尋結果點 ☆ 加入", color = V3.Text2, fontSize = 13.sp)
+            }
         }
         return
     }

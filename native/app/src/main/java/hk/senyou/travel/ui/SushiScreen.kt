@@ -50,7 +50,8 @@ fun SushiScreen() {
     }
 
     val local = stores.filter { it.area.contains("元朗") || it.area.contains("屯門") || it.area.contains("天水圍") }
-    val shown = if (local.isNotEmpty()) local else stores
+    // 本地優先，其餘排在後面（列表不留大片空白）
+    val shown = local + stores.filter { s -> local.none { it.name == s.name } }
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {

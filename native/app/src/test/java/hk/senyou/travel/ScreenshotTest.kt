@@ -1,0 +1,158 @@
+package hk.senyou.travel
+
+import android.graphics.Bitmap
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onRoot
+import androidx.core.view.drawToBitmap
+import hk.senyou.travel.data.DebugFlags
+import hk.senyou.travel.data.SearchItem
+import hk.senyou.travel.data.Settings
+import hk.senyou.travel.data.StaticData
+import hk.senyou.travel.ui.FavoritesScreen
+import hk.senyou.travel.ui.GlassCfg
+import hk.senyou.travel.ui.HomeScreen
+import hk.senyou.travel.ui.K75PPage
+import hk.senyou.travel.ui.LineMapScreen
+import hk.senyou.travel.ui.LiquidBackgroundHost
+import hk.senyou.travel.ui.LocalGlassCfg
+import hk.senyou.travel.ui.SettingsScreen
+import hk.senyou.travel.ui.SushiScreen
+import hk.senyou.travel.ui.WeatherPage
+import hk.senyou.travel.ui.theme.SenyouTheme
+import hk.senyou.travel.ui.theme.V3
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import java.io.File
+
+/**
+ * 截圖測試：用 Robolectric 原生渲染（無需模擬器）把每個頁面輸出成 PNG，
+ * 供主工程師做像素分析 + MiMo 視覺審查。
+ * 產物目錄：app/build/screenshots/
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], qualifiers = "w411dp-h891dp-xxhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class ScreenshotTest {
+
+    @get:Rule
+    val rule = createAndroidComposeRule<ComponentActivity>()
+
+    private val outDir = File("build/screenshots").apply { mkdirs() }
+
+    @org.junit.Before
+    fun setup() {
+        DebugFlags.staticUi = true
+        DebugFlags.offline = true
+    }
+
+    private fun shoot(name: String) {
+        rule.waitForIdle()
+        Thread.sleep(400)
+        rule.waitForIdle()
+        // Robolectric 無真實窗口 → 直接把 decorView 畫到 Bitmap（繞過 PixelCopy）
+        val bmp = rule.activity.window.decorView.drawToBitmap(Bitmap.Config.ARGB_8888)
+        File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    @Composable
+    private fun Frame(glassLevel: Int = 2, content: @Composable () -> Unit) {
+        val alpha = when (glassLevel) {
+            0 -> 0f; 1 -> 0.03f; 2 -> 0.07f; 3 -> 0.10f; else -> 0.14f
+        }
+        val blur = when (glassLevel) {
+            0 -> 0f; 1 -> 12f; 2 -> 26f; 3 -> 36f; else -> 48f
+        }
+        SenyouTheme {
+            CompositionLocalProvider(
+                LocalGlassCfg provides GlassCfg(
+                    alpha = alpha, blurPx = blur,
+                    refractPx = if (glassLevel == 0) 0f else 20f,
+                    motion = false,
+                ),
+            ) {
+                LiquidBackgroundHost(
+                    modifier = Modifier.fillMaxSize().background(V3.Bg),
+                    deepNight = false,
+                    snapshot = glassLevel > 0,
+                ) {
+                    Box(Modifier.fillMaxSize()) { content() }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun home() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent {
+            Frame { HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {}) }
+        }
+        shoot("01-home")
+    }
+
+    @Test
+    fun homeGlassFallback() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent {
+            Frame(glassLevel = 0) {
+                HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
+            }
+        }
+        shoot("02-home-glass0")
+    }
+
+    @Test
+    fun k75pPage() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent { Frame { K75PPage(onClose = {}) } }
+        shoot("03-k75p")
+    }
+
+    @Test
+    fun favorites() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent { Frame { FavoritesScreen(onOpenRoute = {}) } }
+        shoot("04-favorites-empty")
+    }
+
+    @Test
+    fun sushi() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent { Frame { SushiScreen() } }
+        shoot("05-sushi")
+    }
+
+    @Test
+    fun lineMap() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent { Frame { LineMapScreen() } }
+        shoot("06-linemap")
+    }
+
+    @Test
+    fun settings() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent { Frame { SettingsScreen(Settings()) } }
+        shoot("07-settings")
+    }
+
+    @Test
+    fun weather() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent { Frame { WeatherPage(onClose = {}) } }
+        shoot("08-weather")
+    }
+}

@@ -128,10 +128,19 @@ private fun SegRow(title: String, cap: String, options: List<Pair<String, String
                     strong = on,
                 ) {
                     Box(
-                        Modifier.background(if (on) V3.Accent else Color.Transparent),
+                        Modifier
+                            .fillMaxSize()
+                            .background(if (on) V3.Accent else Color.Transparent)
+                            .padding(horizontal = 4.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(label, color = if (on) Color.White else V3.Text2, fontSize = 13.sp)
+                        Text(
+                            label,
+                            color = if (on) Color.White else V3.Text2,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                 }
             }
@@ -153,7 +162,7 @@ private fun SwitchRow(title: String, cap: String, on: Boolean, onChange: (Boolea
             Modifier
                 .size(width = 48.dp, height = 28.dp)
                 .clip(RoundedCornerShape(999.dp))
-                .background(if (on) V3.Accent.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.10f))
+                .background(if (on) V3.Accent.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.18f))
                 .clickable { onChange(!on) },
         ) {
             Box(
@@ -161,7 +170,7 @@ private fun SwitchRow(title: String, cap: String, on: Boolean, onChange: (Boolea
                     .padding(start = if (on) 22.dp else 3.dp, top = 3.dp)
                     .size(22.dp)
                     .clip(CircleShape)
-                    .background(if (on) V3.Accent else V3.Text2)
+                    .background(if (on) V3.Accent else Color.White.copy(alpha = 0.75f))
             )
         }
     }

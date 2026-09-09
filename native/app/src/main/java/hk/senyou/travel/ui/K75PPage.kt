@@ -64,9 +64,9 @@ private fun kPts(w: Float, h: Float): List<Offset> {
     val xL = w * 0.17f
     val xR = w * 0.83f
     val xM = w * 0.5f
-    val yT = h * 0.09f
-    val yA = h * 0.70f
-    val yC = h * 0.80f
+    val yT = h * 0.135f
+    val yA = h * 0.68f
+    val yC = h * 0.78f
     return List(KN) { i ->
         when {
             i == K_TURN -> Offset(xM, yC)
@@ -104,6 +104,7 @@ fun K75PPage(onClose: () -> Unit) {
     val status = WindowInsets.statusBars.asPaddingValues()
 
     LaunchedEffect(Unit) {
+        if (hk.senyou.travel.data.DebugFlags.staticUi) return@LaunchedEffect
         while (true) {
             val data = Api.mtrBusSchedule("K75P")
             val built = K75PModel.build(data, smooth.toMap())
@@ -161,7 +162,7 @@ fun K75PPage(onClose: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp)
-                    .height(340.dp),
+                    .height(470.dp),
             ) {
                 K75PBigMap(
                     buses = markers.filter { it.gps }.map { it.id to (smooth[it.id] ?: it.pos) },
@@ -232,10 +233,13 @@ private fun KCard(label: String, mins: String, sub: String, gps: Boolean, modifi
 @Composable
 private fun K75PBigMap(buses: List<Pair<String, Float>>, modifier: Modifier = Modifier) {
     val namePaint = remember {
-        Paint().apply { isAntiAlias = true; color = V3.Text2.toArgb() }
+        Paint().apply { isAntiAlias = true; color = Color.White.copy(alpha = 0.78f).toArgb() }
     }
     val mainPaint = remember {
         Paint().apply { isAntiAlias = true; color = Color.White.toArgb(); isFakeBoldText = true }
+    }
+    val tagPaint = remember {
+        Paint().apply { isAntiAlias = true; color = V3.Accent.toArgb(); isFakeBoldText = true }
     }
     Canvas(modifier) {
         val w = size.width
@@ -287,11 +291,12 @@ private fun K75PBigMap(buses: List<Pair<String, Float>>, modifier: Modifier = Mo
             }
         }
 
-        // 起點 / 終點標籤
-        mainPaint.textAlign = Paint.Align.RIGHT
-        drawContext.canvas.nativeCanvas.drawText("起點 天瑞", pts[0].x - 13.dp.toPx(), pts[0].y - 12.dp.toPx(), mainPaint)
-        mainPaint.textAlign = Paint.Align.LEFT
-        drawContext.canvas.nativeCanvas.drawText("終點 天瑞", pts[KN - 1].x + 13.dp.toPx(), pts[KN - 1].y - 12.dp.toPx(), mainPaint)
+        // 起點 / 終點標籤（加大與首站名的間距，避免重疊）
+        tagPaint.textSize = 11.dp.toPx()
+        tagPaint.textAlign = Paint.Align.RIGHT
+        drawContext.canvas.nativeCanvas.drawText("起點 天瑞", pts[0].x - 13.dp.toPx(), pts[0].y - 26.dp.toPx(), tagPaint)
+        tagPaint.textAlign = Paint.Align.LEFT
+        drawContext.canvas.nativeCanvas.drawText("終點 天瑞", pts[KN - 1].x + 13.dp.toPx(), pts[KN - 1].y - 26.dp.toPx(), tagPaint)
 
         // 實時巴士（僅 GPS 車上圖；重疊自動錯開）
         buses.sortedBy { it.second }.forEachIndexed { idx, (_, pos) ->

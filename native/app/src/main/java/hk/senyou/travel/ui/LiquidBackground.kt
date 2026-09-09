@@ -44,6 +44,20 @@ fun LiquidBackgroundHost(
     val layer = rememberGraphicsLayer()
     var bmp by remember { mutableStateOf<ImageBitmap?>(null) }
 
+    // 截圖測試（軟件渲染）：不走 GraphicsLayer / RenderNode，玻璃退回半透明填充
+    if (hk.senyou.travel.data.DebugFlags.staticUi) {
+        CompositionLocalProvider(
+            LocalBgLayer provides null,
+            LocalBgBitmap provides null,
+        ) {
+            Box(modifier) {
+                LiquidBackground(Modifier.fillMaxSize(), deepNight)
+                content()
+            }
+        }
+        return
+    }
+
     if (snapshot) {
         LaunchedEffect(Unit) {
             while (true) {
@@ -92,14 +106,16 @@ fun LiquidBackground(modifier: Modifier = Modifier, deepNight: Boolean = false) 
         List(54) { Star(rnd(0f, 1f), rnd(0f, 1f), rnd(0.6f, 2.2f), rnd(0f, 6.28f)) }
     }
     var t by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
-        var last = 0L
-        while (true) {
-            withFrameNanos { now ->
-                if (last == 0L) last = now
-                if (now - last >= 33_000_000L) {
-                    t = now / 1_000_000_000f
-                    last = now
+    if (!hk.senyou.travel.data.DebugFlags.staticUi) {
+        LaunchedEffect(Unit) {
+            var last = 0L
+            while (true) {
+                withFrameNanos { now ->
+                    if (last == 0L) last = now
+                    if (now - last >= 33_000_000L) {
+                        t = now / 1_000_000_000f
+                        last = now
+                    }
                 }
             }
         }

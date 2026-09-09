@@ -20,6 +20,7 @@ object Http {
         .build()
 
     suspend fun get(url: String): String? = withContext(Dispatchers.IO) {
+        if (DebugFlags.offline) return@withContext null
         try {
             val req = Request.Builder()
                 .url(url)

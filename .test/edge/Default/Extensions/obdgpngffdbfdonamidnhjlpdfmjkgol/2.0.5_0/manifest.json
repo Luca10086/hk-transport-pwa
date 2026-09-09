@@ -1,0 +1,45 @@
+{
+   "action": {
+      "default_icon": "./assets/icon-512.png",
+      "default_title": "__MSG_appName__"
+   },
+   "background": {
+      "service_worker": "./kdocs/background/index.mjs"
+   },
+   "commands": {
+      "collect": {
+         "description": "快捷键收藏",
+         "suggested_key": {
+            "default": "Alt+R",
+            "mac": "Alt+R"
+         }
+      }
+   },
+   "content_scripts": [ {
+      "js": [ "kdocs/contentScripts/index.global.js" ],
+      "matches": [ "\u003Call_urls>" ]
+   } ],
+   "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'"
+   },
+   "default_locale": "zh_CN",
+   "description": "__MSG_CreationDoc_Operation_AppStoreBrief__",
+   "homepage_url": "https://p.kdocs.cn/s/QSQISBAACM",
+   "host_permissions": [ "*://*/*" ],
+   "icons": {
+      "128": "./assets/icon-128.png",
+      "16": "./assets/icon-16.png",
+      "48": "./assets/icon-48.png"
+   },
+   "incognito": "not_allowed",
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtstiisS1gmS6bSjLNTKrZaJEhmC15Ly3HNCzbF8q2Kyaea8yLEzq150E0IRp9lCbKLWUAgRwxFrU6rcER8+re7lAoQngN4BGBiAIgO4Jfxewq+88Hr3b5WHcbwnkh279Oe9Tbtusf385OB6bjChzZ4U7Ym4aE5DPVXNCd0uJNCypQZE03RMt7FE6QWoXPPZKAGcpmOoGML3/C5AI30ll8xag78nStDMFwMkszqK64GnBsuj8vpvZE2jpJJ807KQqpkzrnUZx2rECGVOehcNMTdaRMeylbiyCHZB5c94t7p49gHAfoWUAqc9kJ+GWcxW2+5ha1kkx0wC282Cg9UXeeQIDAQAB",
+   "manifest_version": 3,
+   "name": "__MSG_appName__",
+   "permissions": [ "contextMenus", "tabs", "storage", "activeTab", "cookies", "scripting" ],
+   "update_url": "https://edge.microsoft.com/extensionwebstorebase/v1/crx",
+   "version": "2.0.5",
+   "web_accessible_resources": [ {
+      "matches": [ "\u003Call_urls>" ],
+      "resources": [ "kdocs/contentScripts/style.css", "kdocs/toast/index.html", "kdocs/path/index.html", "kdocs/options/index.html", "kdocs/notice/index.html", "kdocs/login/index.html", "kdocs/loading/index.html" ]
+   } ]
+}

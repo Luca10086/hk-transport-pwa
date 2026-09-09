@@ -51,6 +51,17 @@ app/src/main/java/hk/senyou/travel/
 
 靜態資料（港鐵各線/輕鐵站/K75P 站表與座標/壽司郎快照）由 `../tools/export-static-data.mjs` 從 Web 版導出到 `app/src/main/assets/static.json`。
 
+## 自測（無需模擬器/設備）
+
+```bash
+gradlew.bat :app:testDebugUnitTest      # 渲染 8 個頁面截圖 → app/build/screenshots/
+```
+
+原理：Robolectric 原生圖形 + `decorView.drawToBitmap()`（繞過 PixelCopy），逐頁輸出 1233×2673 PNG。
+測試期間 `DebugFlags.staticUi/offline = true`：關閉無限動畫（否則 Compose 永不 idle）、跳過 GraphicsLayer/RenderNode（軟件渲染不支持）、HTTP 直接返回 null（避免測試等待網絡）。
+
+截圖產物可交給視覺模型審查（本項目用 MiMo v2.5 讀圖），或做像素統計自動校驗。
+
 ## 版本歷程
 
 | 版本 | 里程碑 |

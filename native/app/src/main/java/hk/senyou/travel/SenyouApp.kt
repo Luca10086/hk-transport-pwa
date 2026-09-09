@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import androidx.work.Configuration
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -13,18 +14,24 @@ import hk.senyou.travel.data.AppCtx
 import hk.senyou.travel.work.RefreshWorker
 import java.util.concurrent.TimeUnit
 
-class SenyouApp : Application() {
+class SenyouApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         AppCtx.set(this)
         ensureChannel()
         // 背景刷新：每 30 分鐘（WorkManager 最小值 15 分鐘）
-        val req = PeriodicWorkRequestBuilder<RefreshWorker>(30, TimeUnit.MINUTES)
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        WorkManager.getInstance(this)
-            .enqueueUniquePeriodicWork("senyou_refresh", ExistingPeriodicWorkPolicy.KEEP, req)
+        runCatching {
+            val req = PeriodicWorkRequestBuilder<RefreshWorker>(30, TimeUnit.MINUTES)
+                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+                .build()
+            WorkManager.getInstance(this)
+                .enqueueUniquePeriodicWork("senyou_refresh", ExistingPeriodicWorkPolicy.KEEP, req)
+        }
     }
+
+    /** 按需初始化（也讓 JVM 測試環境可用） */
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder().setMinimumLoggingLevel(android.util.Log.INFO).build()
 
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
