@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "hk.senyou.travel.app-debug-46:/drawable_ic_launcher_fg.xml.flat",
+        "source": "hk.senyou.travel.app-main-48:/drawable/ic_launcher_fg.xml"
+    },
+    {
+        "merged": "hk.senyou.travel.app-debug-46:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "hk.senyou.travel.app-main-48:/mipmap-anydpi-v26/ic_launcher.xml"
+    }
+]
