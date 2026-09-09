@@ -32,11 +32,22 @@ data class AdaptiveInfo(
     val posture: FoldPosture = FoldPosture.Flat,
     val hingeTopPx: Int = 0,
     val hingeBottomPx: Int = 0,
+    val density: Float = 3f,
 ) {
     val isExpanded: Boolean get() = sizeClass == SizeClass.Expanded
     val isWide: Boolean get() = sizeClass != SizeClass.Compact
     /** 鉸鏈高度（px） */
     val hingeHeightPx: Int get() = (hingeBottomPx - hingeTopPx).coerceAtLeast(0)
+    /** 半折（Flex mode）：鉸鏈分隔且佔據可觀高度 → 上下分屏 */
+    val flexMode: Boolean get() = posture == FoldPosture.Separating && hingeHeightPx > 24
+    val hingeTopDp: Int get() = (hingeTopPx / density).toInt()
+    val hingeHeightDp: Int get() = (hingeHeightPx / density).toInt()
+    /** 列表列數：展開 3 列 / 中等 2 列 / 緊湊 1 列 */
+    val listColumns: Int get() = when (sizeClass) {
+        SizeClass.Expanded -> 3
+        SizeClass.Medium -> 2
+        else -> 1
+    }
 }
 
 val LocalAdaptive = compositionLocalOf { AdaptiveInfo() }

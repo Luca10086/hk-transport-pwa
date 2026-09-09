@@ -78,7 +78,7 @@ fun FavoritesScreen(onOpenRoute: (SearchItem) -> Unit) {
 
     val expanded = LocalAdaptive.current.isExpanded
     LazyVerticalGrid(
-        columns = GridCells.Fixed(if (expanded) 2 else 1),
+        columns = GridCells.Fixed(LocalAdaptive.current.listColumns),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),

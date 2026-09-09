@@ -70,7 +70,7 @@ fun SushiScreen() {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("載入中…", color = V3.Text2, fontSize = 14.sp) }
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(if (LocalAdaptive.current.isExpanded) 2 else 1),
+                columns = GridCells.Fixed(LocalAdaptive.current.listColumns),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),

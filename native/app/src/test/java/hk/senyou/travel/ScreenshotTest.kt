@@ -155,4 +155,14 @@ class ScreenshotTest {
         rule.setContent { Frame { WeatherPage(onClose = {}) } }
         shoot("08-weather")
     }
+
+    /** 聯網測試：真實港鐵數據（驗證站間連接線與上下行 ETA） */
+    @Test
+    fun lineMapLive() {
+        DebugFlags.offline = false
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent { Frame { LineMapScreen() } }
+        Thread.sleep(6000)   // 等待 MTR 各站班次載入
+        shoot("09-linemap-live")
+    }
 }

@@ -157,48 +157,54 @@ fun K75PPage(onClose: () -> Unit) {
                 }
             }
 
-            // U 形路線圖
-            GlassSurface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp)
-                    .height(470.dp),
-            ) {
-                K75PBigMap(
-                    buses = markers.filter { it.gps }.map { it.id to (smooth[it.id] ?: it.pos) },
-                    modifier = Modifier.fillMaxSize().padding(10.dp),
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // 班次卡（真實數據：前三班）
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                val labels = listOf("下一班", "再下一班", "第三班")
-                for (i in 0 until 3) {
-                    val m = markers.getOrNull(i)
-                    KCard(
-                        label = labels[i],
-                        mins = m?.mins?.toString() ?: "—",
-                        sub = m?.nextName ?: "暫無資料",
-                        gps = m?.gps == true,
-                        modifier = Modifier.weight(1f),
+            // U 形路線圖 + 班次（半折時上下分屏，鉸鏈處留空）
+            val adaptive = LocalAdaptive.current
+            val mapComposable: @Composable (Modifier) -> Unit = { m ->
+                GlassSurface(modifier = m.padding(horizontal = 14.dp)) {
+                    K75PBigMap(
+                        buses = markers.filter { it.gps }.map { it.id to (smooth[it.id] ?: it.pos) },
+                        modifier = Modifier.fillMaxSize().padding(10.dp),
                     )
                 }
             }
-            Spacer(Modifier.height(10.dp))
-            GlassSurface(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
-                Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(V3.Accent))
-                    Spacer(Modifier.size(8.dp))
-                    Text(
-                        lead?.let { "巴士 ${it.id} · 下一站 ${it.nextName}" } ?: "暫無實時班次",
-                        color = V3.Text1, fontSize = 13.sp, maxLines = 1,
-                    )
+            val cardsComposable: @Composable () -> Unit = {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val labels = listOf("下一班", "再下一班", "第三班")
+                    for (i in 0 until 3) {
+                        val m = markers.getOrNull(i)
+                        KCard(
+                            label = labels[i],
+                            mins = m?.mins?.toString() ?: "—",
+                            sub = m?.nextName ?: "暫無資料",
+                            gps = m?.gps == true,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
+                Spacer(Modifier.height(10.dp))
+                GlassSurface(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
+                    Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(V3.Accent))
+                        Spacer(Modifier.size(8.dp))
+                        Text(
+                            lead?.let { "巴士 ${it.id} · 下一站 ${it.nextName}" } ?: "暫無實時班次",
+                            color = V3.Text1, fontSize = 13.sp, maxLines = 1,
+                        )
+                    }
+                }
+            }
+
+            if (adaptive.flexMode) {
+                mapComposable(Modifier.fillMaxWidth().weight(0.42f))
+                Box(Modifier.height(adaptive.hingeHeightPx.dp))
+                Column(Modifier.fillMaxWidth().weight(0.58f).padding(top = 8.dp)) { cardsComposable() }
+            } else {
+                mapComposable(Modifier.fillMaxWidth().height(470.dp))
+                Spacer(Modifier.height(12.dp))
+                cardsComposable()
             }
         }
     }

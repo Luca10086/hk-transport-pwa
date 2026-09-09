@@ -1,5 +1,6 @@
 package hk.senyou.travel.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,16 +9,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -31,7 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -111,18 +116,33 @@ fun LineMapScreen() {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("載入中…", color = V3.Text2, fontSize = 14.sp) }
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(if (LocalAdaptive.current.isExpanded) 2 else 1),
+                    columns = GridCells.Fixed(LocalAdaptive.current.listColumns),
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(rows) { r ->
+                    itemsIndexed(rows) { idx, r ->
                         Row(Modifier.fillMaxWidth().height(58.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier.size(30.dp).clip(CircleShape).background(V3.CoMtr.copy(alpha = 0.22f)),
-                                contentAlignment = Alignment.Center,
-                            ) { Text(r.code.take(3), color = V3.Text1, fontSize = 9.sp) }
-                            Spacer(Modifier.size(12.dp))
+                            // 站間連接線（港鐵路線圖樣式）
+                            Box(Modifier.width(36.dp).fillMaxHeight()) {
+                                Canvas(Modifier.fillMaxSize()) {
+                                    val cx = size.width / 2f
+                                    val top = if (idx == 0) size.height / 2f else 0f
+                                    val bottom = if (idx == rows.lastIndex) size.height / 2f else size.height
+                                    drawLine(
+                                        color = V3.CoMtr,
+                                        start = Offset(cx, top),
+                                        end = Offset(cx, bottom),
+                                        strokeWidth = 4.dp.toPx(),
+                                        cap = StrokeCap.Round,
+                                    )
+                                }
+                                Box(
+                                    Modifier.size(28.dp).align(Alignment.Center).clip(CircleShape).background(V3.CoMtr),
+                                    contentAlignment = Alignment.Center,
+                                ) { Text(r.code.take(3), color = Color.White, fontSize = 8.sp) }
+                            }
+                            Spacer(Modifier.size(10.dp))
                             Text(r.name, color = V3.Text1, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1)
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
@@ -142,7 +162,7 @@ fun LineMapScreen() {
         } else {
             // 輕鐵
             LazyVerticalGrid(
-                columns = GridCells.Fixed(if (LocalAdaptive.current.isExpanded) 2 else 1),
+                columns = GridCells.Fixed(LocalAdaptive.current.listColumns),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -151,16 +171,30 @@ fun LineMapScreen() {
                     item(key = "g-$group", span = { GridItemSpan(maxLineSpan) }) {
                         Text(group, color = V3.Aux, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
                     }
-                    items(list, key = { "lrt-${it.id}" }) { s ->
+                    itemsIndexed(list, key = { _, s -> "lrt-${s.id}" }) { idx, s ->
                         Row(
                             Modifier.fillMaxWidth().height(52.dp).clickable { lrtSel = s.id to s.name },
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Box(
-                                Modifier.size(30.dp).clip(CircleShape).background(V3.CoLrt.copy(alpha = 0.22f)),
-                                contentAlignment = Alignment.Center,
-                            ) { Text("${s.id}", color = V3.Text1, fontSize = 9.sp) }
-                            Spacer(Modifier.size(12.dp))
+                            Box(Modifier.width(36.dp).fillMaxHeight()) {
+                                Canvas(Modifier.fillMaxSize()) {
+                                    val cx = size.width / 2f
+                                    val top = if (idx == 0) size.height / 2f else 0f
+                                    val bottom = if (idx == list.lastIndex) size.height / 2f else size.height
+                                    drawLine(
+                                        color = V3.CoLrt,
+                                        start = Offset(cx, top),
+                                        end = Offset(cx, bottom),
+                                        strokeWidth = 4.dp.toPx(),
+                                        cap = StrokeCap.Round,
+                                    )
+                                }
+                                Box(
+                                    Modifier.size(26.dp).align(Alignment.Center).clip(CircleShape).background(V3.CoLrt),
+                                    contentAlignment = Alignment.Center,
+                                ) { Text("${s.id}", color = Color.White, fontSize = 7.sp) }
+                            }
+                            Spacer(Modifier.size(10.dp))
                             Text(s.name, color = V3.Text1, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1)
                             Text("看班次 ›", color = V3.Text2, fontSize = 12.sp)
                         }

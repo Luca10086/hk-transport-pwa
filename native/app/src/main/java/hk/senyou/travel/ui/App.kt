@@ -101,6 +101,7 @@ fun SenyouApp() {
                 posture = posture,
                 hingeTopPx = hinge?.first ?: 0,
                 hingeBottomPx = hinge?.last ?: 0,
+                density = baseDensity.density,
             )
 
             CompositionLocalProvider(LocalAdaptive provides adaptive) {
@@ -130,11 +131,27 @@ fun SenyouApp() {
                                     Box(Modifier.weight(1f)) { content() }
                                 }
                             }
+                        } else if (adaptive.flexMode && tab != 0) {
+                            // 半折分屏：內容留在上半屏（避開鉸鏈），下半屏放提示
+                            Column(Modifier.fillMaxSize()) {
+                                TopBar(collapsed = false)
+                                Box(Modifier.weight(0.45f)) { content() }
+                                Box(Modifier.height(adaptive.hingeHeightPx.dp))
+                                Box(Modifier.weight(0.55f), contentAlignment = Alignment.Center) {
+                                    GlassSurface(modifier = Modifier.padding(24.dp)) {
+                                        Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("半折模式", color = V3.Text1, fontSize = 16.sp)
+                                            Spacer(Modifier.height(6.dp))
+                                            Text("展開內屏可獲得完整雙欄體驗", color = V3.Text2, fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             Column(Modifier.fillMaxSize()) {
                                 TopBar(collapsed = tab == 0 && homeScroll.value > 80)
                                 Box(Modifier.weight(1f)) { content() }
-                                BottomNav(tab) { tab = it }
+                                if (!adaptive.flexMode) BottomNav(tab) { tab = it }
                             }
                         }
 

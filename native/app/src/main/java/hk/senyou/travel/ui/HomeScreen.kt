@@ -3,6 +3,7 @@ package hk.senyou.travel.ui
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -157,7 +158,41 @@ fun HomeScreen(
         Spacer(Modifier.height(6.dp))
     }
 
-    if (adaptive.isExpanded) {
+    val resultRow: @Composable (SearchItem) -> Unit = { it ->
+        val starred = favs.any { f -> favKeyOf(f) == favKeyOfItem(it) }
+        ResultRow(
+            no = it.no, co = it.kind.toCo(), name = it.name, cap = it.cap,
+            etaMins = it.etaMins, star = starred,
+            onStar = {
+                scope.launch {
+                    val next = if (starred) favs.filterNot { f -> favKeyOf(f) == favKeyOfItem(it) }
+                    else favs + itemToFav(it)
+                    Store.saveFavorites(ctx, next)
+                }
+            },
+        ) { onOpenRoute(it) }
+        Spacer(Modifier.height(8.dp))
+    }
+
+    if (adaptive.flexMode) {
+        // 半折分屏：上半磁貼 / 下半搜索結果（鉸鏈處留空）
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(0.45f)) {
+                Column(Modifier.verticalScroll(scroll).padding(horizontal = 16.dp, vertical = 8.dp)) { tiles() }
+            }
+            Box(Modifier.height(adaptive.hingeHeightPx.dp))
+            Box(Modifier.weight(0.55f)) {
+                Column(Modifier.padding(horizontal = 16.dp)) {
+                    searchBox()
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        if (loading) item { Text("搜尋中…", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp)) }
+                        else if (query.isNotBlank() && items.isEmpty()) item { Text("沒有結果", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp)) }
+                        items(items, key = { "${it.kind}-${it.no}-${it.route}-${it.stationCode}" }) { it -> resultRow(it) }
+                    }
+                }
+            }
+        }
+    } else if (adaptive.isExpanded) {
         // 展開態：左磁貼 / 右搜索結果
         Row(
             Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
@@ -196,21 +231,7 @@ fun HomeScreen(
                 LazyColumn(Modifier.fillMaxSize()) {
                     if (loading) item { Text("搜尋中…", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp)) }
                     else if (query.isNotBlank() && items.isEmpty()) item { Text("沒有結果", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp)) }
-                    items(items, key = { "${it.kind}-${it.no}-${it.route}-${it.stationCode}" }) { it ->
-                        val starred = favs.any { f -> favKeyOf(f) == favKeyOfItem(it) }
-                        ResultRow(
-                            no = it.no, co = it.kind.toCo(), name = it.name, cap = it.cap,
-                            etaMins = it.etaMins, star = starred,
-                            onStar = {
-                                scope.launch {
-                                    val next = if (starred) favs.filterNot { f -> favKeyOf(f) == favKeyOfItem(it) }
-                                    else favs + itemToFav(it)
-                                    Store.saveFavorites(ctx, next)
-                                }
-                            },
-                        ) { onOpenRoute(it) }
-                        Spacer(Modifier.height(8.dp))
-                    }
+                    items(items, key = { "${it.kind}-${it.no}-${it.route}-${it.stationCode}" }) { it -> resultRow(it) }
                 }
             }
         }
@@ -228,21 +249,7 @@ fun HomeScreen(
             when {
                 loading -> Text("搜尋中…", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
                 query.isNotBlank() && items.isEmpty() -> Text("沒有結果", color = V3.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 18.dp))
-                else -> items.forEach { it ->
-                    val starred = favs.any { f -> favKeyOf(f) == favKeyOfItem(it) }
-                    ResultRow(
-                        no = it.no, co = it.kind.toCo(), name = it.name, cap = it.cap,
-                        etaMins = it.etaMins, star = starred,
-                        onStar = {
-                            scope.launch {
-                                val next = if (starred) favs.filterNot { f -> favKeyOf(f) == favKeyOfItem(it) }
-                                else favs + itemToFav(it)
-                                Store.saveFavorites(ctx, next)
-                            }
-                        },
-                    ) { onOpenRoute(it) }
-                    Spacer(Modifier.height(8.dp))
-                }
+                else -> items.forEach { it -> resultRow(it) }
             }
         }
     }
