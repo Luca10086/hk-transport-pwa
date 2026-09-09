@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_bg">
+
+    <TextView
+        android:id="@+id/wSub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="K75P · 天瑞 ↺ 洪水橋"
+        android:textColor="#AAB6C6"
+        android:textSize="11sp"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/wEta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="—"
+        android:textColor="#4FC3F7"
+        android:textSize="30sp"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/wFav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="收藏：暫無"
+        android:textColor="#E6ECF5"
+        android:textSize="13sp"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/wTime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="尚未更新"
+        android:textColor="#7C8A9C"
+        android:textSize="10sp"
+        android:maxLines="1" />
+</LinearLayout>

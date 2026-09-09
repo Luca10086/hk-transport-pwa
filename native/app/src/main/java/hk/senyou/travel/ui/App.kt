@@ -109,7 +109,7 @@ fun SenyouApp() {
                             )
                             1 -> FavoritesScreen(onOpenRoute = { detail = it })
                             2 -> SushiScreen()
-                            3 -> Placeholder("路線圖 · 語義色")
+                            3 -> LineMapScreen()
                             else -> SettingsScreen(settings)
                         }
                     }
