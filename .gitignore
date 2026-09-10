@@ -1,3 +1,6 @@
 
 # 測試臨時產物
 .test/
+
+# Kotlin daemon 錯誤日誌
+native/.kotlin/
