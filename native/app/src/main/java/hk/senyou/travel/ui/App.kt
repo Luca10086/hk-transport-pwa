@@ -258,7 +258,7 @@ private fun GlassRail(selected: Int, onSelect: (Int) -> Unit) {
                 Column(
                     modifier = Modifier
                         .clip(V3.Shape)
-                        .background(if (on) V3.Accent.copy(alpha = 0.16f) else Color.Transparent)
+                        .background(if (on) V3.Accent.copy(alpha = 0.30f) else Color.Transparent)
                         .semantics { contentDescription = t }
                         .clickable { onSelect(i) }
                         .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -346,7 +346,7 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                 Column(
                     modifier = Modifier
                         .clip(V3.Shape)
-                        .background(if (on) V3.Accent.copy(alpha = 0.16f) else Color.Transparent)
+                        .background(if (on) V3.Accent.copy(alpha = 0.30f) else Color.Transparent)
                         .semantics { contentDescription = t }
                         .clickable { onSelect(i) }
                         .padding(horizontal = 10.dp, vertical = 6.dp),

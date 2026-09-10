@@ -305,6 +305,14 @@ class ScreenshotTest {
         shoot("21-station-lrt-live")
     }
 
+    /** 完整 App 外殼（頂欄 + 底部導航；單頁截圖不含導航欄，故另截一張） */
+    @Test
+    fun appShell() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
+        shoot("25-app-shell")
+    }
+
     /** 大字體（模擬 MIUI 系統字體放大 1.5×）：驗證文字不被容器裁切 */
     @Test
     fun homeLargeFont() {
