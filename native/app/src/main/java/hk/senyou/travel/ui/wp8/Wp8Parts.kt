@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.size
@@ -51,6 +52,140 @@ val LocalWp8Busy = compositionLocalOf { mutableStateOf(false) }
 fun Wp8ReportBusy(busy: Boolean) {
     val s = LocalWp8Busy.current
     LaunchedEffect(busy) { s.value = busy }
+}
+
+/** 磁貼項目（key 用於版面持久化） */
+data class TileItem(val key: String, val span: Int, val content: @Composable (Modifier) -> Unit)
+
+/** 解析 / 序列化磁貼版面："key:span,key:span" */
+fun parseTileLayout(s: String, defaults: List<TileItem>): List<Pair<String, Int>> {
+    val parsed = s.split(',').mapNotNull { seg ->
+        val p = seg.split(':')
+        if (p.size != 2) return@mapNotNull null
+        val span = p[1].toIntOrNull() ?: return@mapNotNull null
+        if (defaults.none { it.key == p[0] }) null else p[0] to span.coerceIn(1, 4)
+    }
+    // 補上新增但尚未記錄的磁貼
+    val missing = defaults.filter { d -> parsed.none { it.first == d.key } }.map { it.key to it.span }
+    return parsed + missing
+}
+
+fun serializeTileLayout(layout: List<Pair<String, Int>>): String =
+    layout.joinToString(",") { "${it.first}:${it.second}" }
+
+/**
+ * WP8 開始畫面磁貼牆：4 格制，支援長按進入編輯（點按改尺寸、左右拖動換位），版面持久化。
+ */
+@Composable
+fun Wp8TileWall(
+    items: List<TileItem>,
+    layout: List<Pair<String, Int>>,
+    editMode: Boolean,
+    onCycleSize: (String) -> Unit,
+    onMove: (String, Int) -> Unit,
+) {
+    val ordered = layout.mapNotNull { (k, span) ->
+        items.firstOrNull { it.key == k }?.let { it to span.coerceIn(1, 4) }
+    }.ifEmpty { items.map { it to it.span.coerceIn(1, 4) } }
+
+    // 打包成每列 4 格
+    val rows = mutableListOf<List<Pair<TileItem, Int>>>()
+    var cur = mutableListOf<Pair<TileItem, Int>>()
+    var used = 0
+    ordered.forEach { pair ->
+        val s = pair.second
+        if (used + s > 4) { rows += cur; cur = mutableListOf(); used = 0 }
+        cur += pair; used += s
+        if (used == 4) { rows += cur; cur = mutableListOf(); used = 0 }
+    }
+    if (cur.isNotEmpty()) rows += cur
+
+    Column(Modifier.fillMaxWidth()) {
+        rows.forEach { row ->
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = Wp8.Gap),
+                horizontalArrangement = Arrangement.spacedBy(Wp8.Gap),
+            ) {
+                row.forEach { (item, span) ->
+                    Box(
+                        Modifier
+                            .weight(span.toFloat())
+                            .then(
+                                if (!editMode) Modifier
+                                else Modifier
+                                    .padding(2.dp)
+                                    .border(2.dp, Wp8.Accent)
+                                    .clickable { onCycleSize(item.key) },
+                            ),
+                    ) {
+                        item.content(Modifier.fillMaxWidth().heightIn(min = if (span >= 4) 96.dp else 104.dp))
+                    }
+                }
+            }
+        }
+        if (editMode) {
+            Text(
+                "點磁貼切換尺寸（1／2／4 格）· 左右拖動換位 · 長按空白處結束",
+                color = Wp8.Text2,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+}
+@Composable
+fun Wp8Toggle(checked: Boolean, label: String = "", onChecked: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (label.isNotBlank()) {
+            Text(label, color = Wp8.Text2, fontSize = 12.sp, modifier = Modifier.padding(end = 8.dp))
+        }
+        Box(
+            Modifier
+                .width(54.dp)
+                .height(28.dp)
+                .border(2.dp, Wp8.Text1)
+                .clickable { onChecked(!checked) },
+        ) {
+            Box(
+                Modifier
+                    .padding(start = if (checked) 28.dp else 2.dp, top = 2.dp)
+                    .size(20.dp)
+                    .background(if (checked) Wp8.Accent else Color.Transparent),
+            )
+        }
+    }
+}
+
+/**
+ * WP8 語意縮放（Semantic Zoom）：雙指捏合把磁貼牆縮小並列出分組標題，點標題縮放回該組。
+ * 這是 WP8 開始畫面最招牌的手勢。
+ */
+@Composable
+fun Wp8SemanticZoomOverlay(
+    groups: List<String>,
+    onPick: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.padding(horizontal = Wp8.Gutter)) {
+        Spacer(Modifier.height(8.dp))
+        groups.forEachIndexed { i, g ->
+            Text(
+                g,
+                color = Wp8.Text1,
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Light,
+                fontFamily = FontFamily.SansSerif,
+                letterSpacing = (-0.3).sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onPick(i) }
+                    .padding(vertical = 20.dp),
+            )
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+        }
+        Spacer(Modifier.height(12.dp))
+        Text("點分組標題回到該組 · 再次捏合可退出", color = Wp8.Text2, fontSize = 12.sp)
+    }
 }
 
 /**

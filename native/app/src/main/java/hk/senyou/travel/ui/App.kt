@@ -324,11 +324,13 @@ private fun PaneHost(
             when (page) {
                 0 -> Wp8HomePane(
                     refreshSec = refreshSec,
-                refreshTick = refreshTick,
-                onOpenK75P = onOpenK75P,
-                onGoPane = onGoPane,
-                onOpenDetail = onOpenDetail,
-            )
+                    refreshTick = refreshTick,
+                    settings = settings,
+                    onSettings = onSettings,
+                    onOpenK75P = onOpenK75P,
+                    onGoPane = onGoPane,
+                    onOpenDetail = onOpenDetail,
+                )
                 1 -> Wp8FavsPane(onOpenDetail = onOpenDetail)
                 2 -> Wp8SushiPane()
                 3 -> Wp8MapPane(onOpenDetail = onOpenDetail)

@@ -75,8 +75,6 @@ private val MODES = listOf("bus" to "公交", "mtrbus" to "港鐵巴士", "mtr" 
 fun Wp8HomePane(
     refreshSec: Int,
     refreshTick: Int,
-    settings: Settings,
-    onSettings: (Settings) -> Unit,
     onOpenK75P: () -> Unit,
     onGoPane: (Int) -> Unit,
     onOpenDetail: (SearchItem) -> Unit,
@@ -146,9 +144,6 @@ fun Wp8HomePane(
                     weather = weather,
                     k75pMins = k75pMins,
                     k75pLive = k75pLive,
-                    tileLayout = settings.tileLayout,
-                    settings = settings,
-                    onSettings = onSettings,
                     onOpenK75P = onOpenK75P,
                     onGoPane = onGoPane,
                 )
@@ -170,9 +165,6 @@ fun Wp8HomePane(
                             weather = weather,
                             k75pMins = k75pMins,
                             k75pLive = k75pLive,
-                            tileLayout = settings.tileLayout,
-                            settings = settings,
-                            onSettings = onSettings,
                             onOpenK75P = onOpenK75P,
                             onGoPane = onGoPane,
                         )
@@ -201,65 +193,6 @@ private fun PaneScroll(modifier: Modifier, content: @Composable () -> Unit) {
 
 /* ---------- 面板 1：Live Tiles 磁貼牆（概念版配色：cobalt/magenta/teal/cyan） ---------- */
 
-/** 首頁磁貼定義（key 作為版面持久化鍵；span = 佔幾格，4 格制） */
-@Composable
-private fun tileItems(
-    favCount: Int,
-    favEta: Int?,
-    favName: String,
-    weather: Weather?,
-    k75pMins: Int?,
-    k75pLive: Int,
-    weatherFlipped: Boolean,
-    onFlipWeather: () -> Unit,
-    onOpenK75P: () -> Unit,
-    onGoPane: (Int) -> Unit,
-): List<TileItem> = listOf(
-    TileItem("favs", 2) { m ->
-        Wp8Tile(m, Wp8.TileCobalt, "我的收藏", value = "$favCount", trailing = "條", sub = "點按查看全部", badge = if (favCount > 0) "$favCount" else null) { onGoPane(1) }
-    },
-    TileItem("sushi", 2) { m ->
-        Wp8Tile(m, Wp8.TileMagenta, "壽司郎", sub = "即時排隊組數") { onGoPane(2) }
-    },
-    TileItem("weather", 4) { m ->
-        Wp8Tile(
-            m, Wp8.TileTeal,
-            title = "天氣",
-            value = weather?.temp?.let { "$it°" } ?: "—",
-            sub = weather?.desc ?: "載入中…",
-            back = weather?.days?.take(3)?.joinToString("\n") { d -> "${d.label} ${d.emoji} ${d.min ?: "-"}~${d.max ?: "-"}°" } ?: "載入中…",
-            flipped = weatherFlipped,
-            onClick = onFlipWeather,
-        )
-    },
-    TileItem("k75p", 4) { m ->
-        Wp8Tile(
-            m, Wp8.TileCyan,
-            title = "K75P · 天瑞 ↺ 洪水橋",
-            value = k75pMins?.let { if (it <= 0) "即將" else "$it" } ?: "—",
-            trailing = if (k75pMins != null && k75pMins > 0) "分" else "",
-            sub = "實時 $k75pLive 班在路",
-            badge = if (k75pLive > 0) "$k75pLive" else null,
-            onClick = onOpenK75P,
-        )
-    },
-    TileItem("favlive", 4) { m ->
-        Wp8Tile(
-            m, Wp8.TileCyan,
-            title = if (favName.isBlank()) "收藏 · 下一班" else "收藏 · $favName",
-            value = favEta?.let { if (it <= 0) "即將" else "$it" } ?: "—",
-            trailing = if (favEta != null && favEta > 0) "分" else "",
-            sub = if (favName.isBlank()) "暫無收藏" else "下一班",
-        ) { onGoPane(1) }
-    },
-    TileItem("map", 1) { m ->
-        Wp8Tile(m, Wp8.TileCyan, title = "路線圖", sub = "全線候車") { onGoPane(3) }
-    },
-    TileItem("settings", 1) { m ->
-        Wp8Tile(m, Wp8.TileTeal, title = "設定", sub = "主題 · 強調色") { onGoPane(4) }
-    },
-)
-
 @Composable
 private fun TilesPanel(
     favCount: Int,
@@ -268,15 +201,10 @@ private fun TilesPanel(
     weather: Weather?,
     k75pMins: Int?,
     k75pLive: Int,
-    tileLayout: String,
-    settings: Settings,
-    onSettings: (Settings) -> Unit,
     onOpenK75P: () -> Unit,
     onGoPane: (Int) -> Unit,
 ) {
     var weatherFlipped by remember { mutableStateOf(false) }
-    // WP8 開始畫面編輯模式（長按磁貼進入）
-    var editMode by remember { mutableStateOf(false) }
     // WP8 語意縮放：捏合縮小 → 列出分組標題；雙擊亦可切換（便於無觸控/測試）
     var zoomedOut by remember { mutableStateOf(false) }
     val zoomScale by androidx.compose.animation.core.animateFloatAsState(
@@ -304,9 +232,6 @@ private fun TilesPanel(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = { zoomedOut = !zoomedOut },
-                    // 長按進入磁貼編輯模式（WP8 開始畫面）
-                    onLongPress = { editMode = true },
-                    onTap = { if (editMode) editMode = false },
                 )
             },
     ) {
@@ -321,31 +246,74 @@ private fun TilesPanel(
             },
     ) {
         Spacer(Modifier.height(10.dp))
-        val tileDefaults = tileItems(
-            favCount = favCount, favEta = favEta, favName = favName, weather = weather,
-            k75pMins = k75pMins, k75pLive = k75pLive, weatherFlipped = weatherFlipped,
-            onFlipWeather = { weatherFlipped = !weatherFlipped },
-            onOpenK75P = onOpenK75P, onGoPane = onGoPane,
+        Row(horizontalArrangement = Arrangement.spacedBy(Wp8.Gap)) {
+            Wp8Tile(
+                modifier = Modifier.weight(2f).heightIn(min = 104.dp),
+                color = Wp8.TileCobalt,
+                value = "$favCount", trailing = "條",
+                title = "我的收藏",
+                sub = "點按查看全部",
+                onClick = { onGoPane(1) },
+            )
+            Wp8Tile(
+                modifier = Modifier.weight(2f).heightIn(min = 104.dp),
+                color = Wp8.TileMagenta,
+                title = "壽司郎",
+                sub = "即時排隊組數",
+                onClick = { onGoPane(2) },
+            )
+        }
+        Spacer(Modifier.height(Wp8.Gap))
+        Wp8Tile(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
+            color = Wp8.TileTeal,
+            value = weather?.temp?.let { "$it°" } ?: "—",
+            title = "天氣",
+            sub = weather?.desc ?: "載入中…",
+            back = weather?.let { w ->
+                w.days.take(3).joinToString("\n") { d -> "${d.label} ${d.emoji} ${d.min ?: "-"}~${d.max ?: "-"}°" }
+            } ?: "載入中…",
+            flipped = weatherFlipped,
+            onClick = { weatherFlipped = !weatherFlipped },
         )
-        val tileOrder = parseTileLayout(tileLayout, tileDefaults)
-        Wp8TileWall(
-            items = tileDefaults,
-            layout = tileOrder,
-            editMode = editMode,
-            onCycleSize = { key ->
-                val next = tileOrder.map { (k, s) ->
-                    if (k != key) k to s else k to when (s) { 1 -> 2; 2 -> 4; else -> 1 }
-                }
-                onSettings(settings.copy(tileLayout = serializeTileLayout(next)))
-            },
-            onMove = { key, dir ->
-                val cur = tileOrder.toMutableList()
-                val i = cur.indexOfFirst { it.first == key }
-                val j = i + dir
-                if (i >= 0 && j in cur.indices) { val t = cur[i]; cur[i] = cur[j]; cur[j] = t }
-                onSettings(settings.copy(tileLayout = serializeTileLayout(cur)))
-            },
+        Spacer(Modifier.height(Wp8.Gap))
+        Wp8Tile(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
+            color = Wp8.TileCyan,
+            value = k75pMins?.let { if (it <= 0) "即將" else "$it" } ?: "—",
+            trailing = if (k75pMins != null && k75pMins > 0) "分" else "",
+            title = "K75P · 天瑞 ↺ 洪水橋",
+            sub = "實時 $k75pLive 班在路",
+            onClick = onOpenK75P,
         )
+        Spacer(Modifier.height(Wp8.Gap))
+        Wp8Tile(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
+            color = Wp8.TileCyan,
+            value = favEta?.let { if (it <= 0) "即將" else "$it" } ?: "—",
+            trailing = if (favEta != null && favEta > 0) "分" else "",
+            title = if (favName.isBlank()) "收藏 · 下一班" else "收藏 · $favName",
+            sub = if (favName.isBlank()) "暫無收藏" else "下一班",
+            onClick = { onGoPane(1) },
+        )
+        Spacer(Modifier.height(Wp8.Gap))
+        Row(horizontalArrangement = Arrangement.spacedBy(Wp8.Gap)) {
+            Wp8Tile(
+                modifier = Modifier.weight(1f).heightIn(min = 104.dp),
+                color = Wp8.TileCyan,
+                title = "路線圖",
+                sub = "全線候車",
+                onClick = { onGoPane(3) },
+            )
+            Wp8Tile(
+                modifier = Modifier.weight(1f).heightIn(min = 104.dp),
+                color = Wp8.TileTeal,
+                title = "設定",
+                sub = "主題 · 強調色",
+                onClick = { onGoPane(4) },
+            )
+        }
+    }
         // 語意縮放：分組標題層（蓋在縮小的磁貼牆上）
         if (zoomedOut) {
             Wp8SemanticZoomOverlay(
@@ -353,7 +321,6 @@ private fun TilesPanel(
                 onPick = { zoomedOut = false },
             )
         }
-    }
     }
 }
 

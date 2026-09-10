@@ -92,7 +92,7 @@ class ScreenshotExpandedTest {
         load()
         rule.setContent {
             Frame {
-                Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+                Wp8HomePane(refreshSec = 0, refreshTick = 0, settings = Settings(), onSettings = {}, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
             }
         }
         shoot("wp8-21-home-expanded")

@@ -26,6 +26,8 @@ data class Settings(
     val fontLevel: Int = 3,      // 0..7
     val refresh: Int = 30,       // 秒，0=關
     val contrast: Boolean = false, // WP 高對比（純黑底 / 純白字）
+    /** 磁貼牆版面（順序 + 尺寸），格式 key:span,key:span…；空 = 預設版面 */
+    val tileLayout: String = "",
 )
 
 /** 收藏項（對應 Web 版 favorite 結構） */
@@ -92,6 +94,7 @@ object Store {
             fontLevel = o?.optInt("fontLevel", 3) ?: 3,
             refresh = o?.optInt("refresh", 30) ?: 30,
             contrast = o?.optBoolean("contrast", false) ?: false,
+            tileLayout = o?.optString("tileLayout", "") ?: "",
         )
     }
 
@@ -100,7 +103,8 @@ object Store {
             val o = JSONObject()
                 .put("theme", s.theme)
                 .put("glass", s.glass).put("fx", s.fx).put("big", s.big).put("deep", s.deep)
-                .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh).put("contrast", s.contrast)
+                .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
+                .put("contrast", s.contrast).put("tileLayout", s.tileLayout)
             ctx.ds.edit { it[K_CFG] = o.toString() }
         }
     }

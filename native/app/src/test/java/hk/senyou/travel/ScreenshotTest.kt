@@ -107,6 +107,7 @@ class ScreenshotTest {
             Frame {
                 Wp8HomePane(
                     refreshSec = 0, refreshTick = 0, startPanel = 0,
+                    settings = Settings(), onSettings = {},
                     onOpenK75P = {}, onGoPane = {}, onOpenDetail = {},
                 )
             }
@@ -122,6 +123,7 @@ class ScreenshotTest {
             Frame {
                 Wp8HomePane(
                     refreshSec = 0, refreshTick = 0, startPanel = 1,
+                    settings = Settings(), onSettings = {},
                     onOpenK75P = {}, onGoPane = {}, onOpenDetail = {},
                 )
             }
@@ -136,6 +138,7 @@ class ScreenshotTest {
             Frame {
                 Wp8HomePane(
                     refreshSec = 0, refreshTick = 0, startPanel = 2,
+                    settings = Settings(), onSettings = {},
                     onOpenK75P = {}, onGoPane = {}, onOpenDetail = {},
                 )
             }
@@ -221,7 +224,7 @@ class ScreenshotTest {
         Wp8.light = true
         rule.setContent {
             Frame {
-                Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+                Wp8HomePane(refreshSec = 0, refreshTick = 0, settings = Settings(), onSettings = {}, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
             }
         }
         shoot("wp8-11-light")
@@ -233,7 +236,7 @@ class ScreenshotTest {
         Wp8.contrast = true
         rule.setContent {
             Frame {
-                Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+                Wp8HomePane(refreshSec = 0, refreshTick = 0, settings = Settings(), onSettings = {}, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
             }
         }
         shoot("wp8-12-contrast")
@@ -245,7 +248,7 @@ class ScreenshotTest {
         Wp8.accentIndex = 1
         rule.setContent {
             Frame {
-                Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+                Wp8HomePane(refreshSec = 0, refreshTick = 0, settings = Settings(), onSettings = {}, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
             }
         }
         shoot("wp8-13-accent-blue")
@@ -313,7 +316,7 @@ class ScreenshotTest {
                 androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(3f, 1.5f),
             ) {
                 Frame {
-                    Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+                    Wp8HomePane(refreshSec = 0, refreshTick = 0, settings = Settings(), onSettings = {}, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
                 }
             }
         }
@@ -330,7 +333,7 @@ class ScreenshotTest {
         rule.setContent {
             Frame {
                 when (page.intValue) {
-                    0 -> Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+                    0 -> Wp8HomePane(refreshSec = 0, refreshTick = 0, settings = Settings(), onSettings = {}, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
                     1 -> Wp8FavsPane(onOpenDetail = {})
                     2 -> Wp8SushiPane()
                     3 -> Wp8MapPane(onOpenDetail = {})

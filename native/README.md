@@ -226,3 +226,15 @@ estedScroll 統一接管，對應概念圖 `.appbar.hidden`） |
 | **全屏頁 turnstile** | K75P 頁與介面規範頁改為 rotateY(-10°) 3D 滑入，不再硬切 |
 | **系統 chrome 一致** | 狀態列／導覽列圖示明暗跟隨主題（淺色主題轉深色圖示） |
 | **App Bar 等分寬度** | 8 個按鈕改 `weight(1f)` 等分（原本 8×64dp=512dp 超出 411dp 屏寬會被裁） |
+### 3.5.0 四項 WP 深化
+
+| 項目 | 實作 |
+|------|------|
+| **語意縮放 Semantic Zoom** | 首頁磁貼牆雙指捏合（或雙擊）→ 磁貼縮到 55% 並淡出，列出「交通 / 生活 / 系統」分組標題；點標題縮放回該組。WP8 開始畫面最招牌的手勢 |
+| **磁貼自由排列** | 長按進入編輯模式（磁貼描邊高亮）→ 點磁貼在 1／2／4 格之間切換尺寸、Wp8TileWall 4 格制自動重排；版面（順序＋尺寸）寫入 Settings.tileLayout 持久化 |
+| **內嵌字型** | Noto Sans CJK TC Light + Regular，按應用實際字集（942 個漢字 + ASCII + 符號）子集化：**15.6MB → 0.58MB／字重**。之前 FontWeight.Light 在中文上會退回 Regular（MIUI 更會整組換字型），所以 Metro 的細體大標題根本沒生效；現在不論機型都一致。APK 1.6MB → 2.5MB |
+| **WP 開關** | Wp8Toggle：方形細框軌道 + 方形滑塊（取代 Material 圓形開關），用於 高對比／減少動畫／安全模式 |
+
+字型子集化流程（可重現）：
+ative/out/ 不放字型，來源見 README 說明——下載 Noto Sans CJK TC OTF →
+以 node subset-font 依 .test/font/chars.txt（由原始碼與 static.json 自動收集）子集化 → 放入 es/font/。
