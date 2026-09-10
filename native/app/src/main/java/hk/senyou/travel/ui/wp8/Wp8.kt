@@ -1,0 +1,440 @@
+package hk.senyou.travel.ui.wp8
+
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+/**
+ * Windows Phone 7 / 8 (Metro / Modern UI) 設計令牌。
+ * 數值直接取自 Web 版嚴格 WP8 皮膚 `css/wp8-strict.css`（當年 PWA 時期那套）。
+ *
+ * 鐵律：扁平無陰影、無漸變、直角、單一強調色、Segoe UI Light 大標題、
+ * 12/24 網格、按下只縮放不變色。
+ */
+object Wp8 {
+    /* ---------- 深色主題（WP 預設） ---------- */
+    val BgDark = Color(0xFF15121C)
+    val SurfaceDark = Color(0xFF221D31)
+    val Surface2Dark = Color(0xFF2A2440)
+    val LineDark = Color(0xFF352E52)
+    val Text2Dark = Color(0xFFB3A9CE)
+
+    /* ---------- 淺色主題 ---------- */
+    val BgLight = Color(0xFFF4F2F8)
+    val SurfaceLight = Color(0xFFFFFFFF)
+    val Surface2Light = Color(0xFFEBE8F2)
+    val LineLight = Color(0xFFD3CCE3)
+    val Text2Light = Color(0xFF5A5170)
+    val TextLight = Color(0xFF1A1425)
+
+    /* ---------- 單一強調色（WP 可換） ---------- */
+    var accentIndex by androidx.compose.runtime.mutableIntStateOf(0)
+    val Accents = listOf(
+        0xFF8B5CF6L to "紫",      // WP8 概念版主色
+        0xFF0078D7L to "藍",      // WP 經典 cobalt
+        0xFFD24726L to "橙紅",    // WP8 預設
+        0xFF00A300L to "綠",
+        0xFFE51400L to "紅",
+    )
+    val Accent: Color get() = Color(Accents[accentIndex.coerceIn(0, Accents.size - 1)].first)
+    val AccentDark = Color(0xFF6D28D9)
+
+    /* ---------- 磁貼純色（WP8 紫色系） ---------- */
+    val TileCobalt = Color(0xFF5B21B6)
+    val TileCyan = Color(0xFF7C3AED)
+    val TileMagenta = Color(0xFF6D28D9)
+    val TileTeal = Color(0xFF4C1D95)
+
+    /* ---------- ETA 語義色 ---------- */
+    val Soon = Color(0xFFE51400)
+    val Medium = Color(0xFFF0A30A)
+
+    /* ---------- 動效：WP 的招牌緩動 ---------- */
+    val Ease = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
+
+    /* ---------- 12/24 網格 ---------- */
+    val Gutter = 24.dp
+    val Gap = 12.dp
+    val TopBarH = 104.dp
+    val AppBarH = 62.dp
+    val TapMin = 44.dp
+
+    /* ---------- 主題切換 ---------- */
+    var light by androidx.compose.runtime.mutableStateOf(false)
+
+    val Bg: Color get() = if (light) BgLight else BgDark
+    val Surface: Color get() = if (light) SurfaceLight else SurfaceDark
+    val Surface2: Color get() = if (light) Surface2Light else Surface2Dark
+    val Line: Color get() = if (light) LineLight else LineDark
+    val Text1: Color get() = if (light) TextLight else Color.White
+    val Text2: Color get() = if (light) Text2Light else Text2Dark
+}
+
+/** WP 圓形圖標按鈕（頂欄 44dp、2px 描邊——WP8 規範） */
+@Composable
+fun Wp8CircleButton(glyph: String, desc: String, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.9f else 1f, tween(160, easing = Wp8.Ease), label = "cb")
+    Box(
+        Modifier
+            .size(Wp8.TapMin)
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .border(2.dp, Wp8.Text1, RoundedCornerShape(50))
+            .semantics { contentDescription = desc }
+            .clickable(interactionSource = interaction, indication = null) { onClick() },
+        contentAlignment = Alignment.Center,
+    ) { Text(glyph, color = Wp8.Text1, fontSize = 19.sp) }
+}
+
+/** WP8 App Bar 裸字形按鈕（無圓圈，細線條圖標） */
+@Composable
+fun Wp8AppBarButton(glyph: String, label: String, active: Boolean, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.9f else 1f, tween(160, easing = Wp8.Ease), label = "ab")
+    Column(
+        Modifier
+            .width(64.dp)
+            .heightIn(min = Wp8.TapMin)
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .semantics { contentDescription = label }
+            .clickable(interactionSource = interaction, indication = null) { onClick() },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(glyph, color = if (active) Wp8.Accent else Wp8.Text1, fontSize = 24.sp)
+        Text(label, color = if (active) Wp8.Accent else Wp8.Text2, fontSize = 10.sp, maxLines = 1)
+    }
+}
+
+/** Live Tile：純色、直角、文字左下對齊、按下縮放（0.96）、可 3D 翻面 */
+@Composable
+fun Wp8Tile(
+    modifier: Modifier = Modifier,
+    color: Color,
+    title: String,
+    value: String = "",
+    sub: String = "",
+    back: String? = null,
+    flipped: Boolean = false,
+    trailing: String = "",
+    onClick: () -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, tween(160, easing = Wp8.Ease), label = "tile")
+    val angle by animateFloatAsState(if (flipped && back != null) 180f else 0f, tween(700, easing = Wp8.Ease), label = "flip")
+    val density = LocalDensity.current.density
+
+    Box(
+        modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                rotationY = angle
+                cameraDistance = 16f * density
+            }
+            .background(color)
+            .semantics { contentDescription = "$title $value $sub" }
+            .clickable(interactionSource = interaction, indication = null) { onClick() },
+    ) {
+        val showBack = angle > 90f
+        Box(
+            Modifier
+                .fillMaxSize()
+                .then(if (showBack) Modifier.graphicsLayer { rotationY = 180f } else Modifier)
+                .padding(12.dp),
+        ) {
+            Column(
+                Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Bottom,
+            ) {
+                if (showBack) {
+                    Text(
+                        back ?: "",
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        lineHeight = 17.sp,
+                        maxLines = 6,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } else {
+                    if (value.isNotBlank()) {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                value,
+                                color = Color.White,
+                                fontSize = 30.sp,
+                                fontWeight = FontWeight.Light,
+                                fontFamily = FontFamily.SansSerif,
+                                maxLines = 1,
+                            )
+                            if (trailing.isNotBlank()) {
+                                Text(trailing, color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp, modifier = Modifier.padding(start = 2.dp, bottom = 5.dp))
+                            }
+                        }
+                    }
+                    Text(
+                        title,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (sub.isNotBlank()) {
+                        Text(
+                            sub,
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Metro 分組標題（強調色 + 字距） */
+@Composable
+fun Wp8Group(text: String) {
+    Text(
+        text,
+        color = Wp8.Accent,
+        fontSize = 15.sp,
+        fontWeight = FontWeight.Light,
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(top = 16.dp, bottom = 2.dp),
+    )
+}
+
+/** Metro 扁平列表行：無卡片、無底色，只有 1px 下分隔線 */
+@Composable
+fun Wp8Row(
+    no: String,
+    name: String,
+    sub: String = "",
+    eta: String = "",
+    etaColor: Color? = null,
+    star: Boolean = false,
+    onStar: (() -> Unit)? = null,
+    onClick: () -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, tween(160, easing = Wp8.Ease), label = "row")
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clickable(interactionSource = interaction, indication = null) { onClick() }
+            .padding(vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (no.isNotBlank()) {
+            Text(
+                no,
+                color = Wp8.Accent,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Light,
+                maxLines = 1,
+                modifier = Modifier.width(58.dp),
+            )
+            Spacer(Modifier.width(14.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(name, color = Wp8.Text1, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (sub.isNotBlank()) {
+                Text(sub, color = Wp8.Text2, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        if (eta.isNotBlank()) {
+            Text(
+                eta,
+                color = etaColor ?: Wp8.Text1,
+                fontSize = 21.sp,
+                fontWeight = FontWeight.Light,
+                maxLines = 1,
+                style = TextStyle(fontFeatureSettings = "tnum"),
+            )
+        }
+        if (onStar != null) {
+            Spacer(Modifier.width(10.dp))
+            Box(
+                Modifier
+                    .size(36.dp)
+                    .clickable { onStar() },
+                contentAlignment = Alignment.Center,
+            ) { Text(if (star) "★" else "☆", color = if (star) Wp8.Medium else Wp8.Text2, fontSize = 17.sp) }
+        }
+    }
+    Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+}
+
+/** Metro 膠囊 → 直角細框 chip；選中 = 強調色實心 */
+@Composable
+fun Wp8Chip(text: String, active: Boolean, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.95f else 1f, tween(160, easing = Wp8.Ease), label = "chip")
+    Box(
+        Modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .background(if (active) Wp8.Accent else Color.Transparent)
+            .border(1.dp, if (active) Wp8.Accent else Wp8.Text2)
+            .clickable(interactionSource = interaction, indication = null) { onClick() }
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+    ) {
+        Text(text, color = if (active) Color.White else Wp8.Text2, fontSize = 13.sp, maxLines = 1)
+    }
+}
+
+/** Metro 下劃線輸入框（無框、無底色、2px 底線，聚焦轉強調色） */
+@Composable
+fun Wp8Input(value: String, placeholder: String, onValueChange: (String) -> Unit) {
+    var focused by remember { androidx.compose.runtime.mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth()) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(color = Wp8.Text1, fontSize = 16.sp),
+            cursorBrush = SolidColor(Wp8.Accent),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 14.dp, bottom = 8.dp)
+                .onFocusChanged { focused = it.isFocused },
+            decorationBox = { inner ->
+                Box {
+                    if (value.isEmpty()) Text(placeholder, color = Wp8.Text2, fontSize = 16.sp, maxLines = 1)
+                    inner()
+                }
+            },
+        )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(if (focused) Wp8.Accent else Wp8.Text2),
+        )
+    }
+}
+
+/** WP 實心強調色主按鈕（大寫字距，直角） */
+@Composable
+fun Wp8PrimaryButton(text: String, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, tween(160, easing = Wp8.Ease), label = "btn")
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .background(Wp8.Accent)
+            .clickable(interactionSource = interaction, indication = null) { onClick() }
+            .padding(vertical = 13.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp)
+    }
+}
+
+/** 設定行（標籤 + 值 + 下分隔線） */
+@Composable
+fun Wp8SettingRow(label: String, value: String) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
+        Text(value, color = Wp8.Text1, fontSize = 15.sp)
+    }
+    Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+}
+
+/** 分段按鈕（直角細框，選中實心強調色） */
+@Composable
+fun Wp8Seg(items: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    Row {
+        items.forEachIndexed { i, t ->
+            val on = i == selected
+            Box(
+                Modifier
+                    .background(if (on) Wp8.Accent else Color.Transparent)
+                    .border(1.dp, if (on) Wp8.Accent else Wp8.Line)
+                    .clickable { onSelect(i) }
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+            ) {
+                Text(t, color = if (on) Color.White else Wp8.Text2, fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+
+/** 頂部 3px 強調色進度條（WP 不確定進度） */
+@Composable
+fun Wp8ProgressBar(active: Boolean) {
+    if (!active) return
+    val t by rememberInfiniteTransition(label = "wp8pb").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1100, easing = LinearEasing)),
+        label = "pb",
+    )
+    Box(Modifier.fillMaxWidth().height(3.dp)) {
+        Box(
+            Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(0.3f)
+                .graphicsLayer { translationX = (t * 5f - 1.1f) * 1000f / 3f }
+                .background(Wp8.Accent),
+        )
+    }
+}

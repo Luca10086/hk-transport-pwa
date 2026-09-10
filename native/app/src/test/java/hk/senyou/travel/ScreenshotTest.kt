@@ -313,6 +313,99 @@ class ScreenshotTest {
         shoot("25-app-shell")
     }
 
+    /** WP8 風格演示：Pivot 分頁 ×4（開始 / 收藏 / 路線 / 設定） */
+    @Test
+    fun wp8DemoPanes() {
+        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        StaticData.load(ctx)
+        hk.senyou.travel.data.Cache.k75pMins = 4
+        hk.senyou.travel.data.Cache.k75pLive = 2
+        hk.senyou.travel.ui.wp8.Wp8.accentIndex = 0
+        hk.senyou.travel.ui.wp8.Wp8.light = false
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(
+                Modifier.fillMaxSize().background(hk.senyou.travel.ui.wp8.Wp8.Bg),
+            ) {
+                hk.senyou.travel.ui.wp8.Wp8DemoScreen(onClose = {})
+            }
+        }
+        rule.waitForIdle()
+        Thread.sleep(500)
+        rule.waitForIdle()
+        shoot("26-wp8-start")
+    }
+
+    /** WP8 風格演示：淺色主題 + 換強調色 */
+    @Test
+    fun wp8DemoLightAccent() {
+        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        StaticData.load(ctx)
+        hk.senyou.travel.ui.wp8.Wp8.light = true
+        hk.senyou.travel.ui.wp8.Wp8.accentIndex = 1
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(
+                Modifier.fillMaxSize().background(hk.senyou.travel.ui.wp8.Wp8.Bg),
+            ) {
+                hk.senyou.travel.ui.wp8.Wp8DemoScreen(onClose = {})
+            }
+        }
+        rule.waitForIdle()
+        Thread.sleep(500)
+        rule.waitForIdle()
+        shoot("27-wp8-light-blue")
+        hk.senyou.travel.ui.wp8.Wp8.light = false
+        hk.senyou.travel.ui.wp8.Wp8.accentIndex = 0
+    }
+
+    /** WP8 元件畫廊：磁貼 / 列表行 / 膠囊 / 輸入框 / 按鈕 / App Bar */
+    @Test
+    fun wp8Gallery() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        hk.senyou.travel.ui.wp8.Wp8.light = false
+        rule.setContent {
+            hk.senyou.travel.ui.wp8.Wp8Gallery()
+        }
+        shoot("28-wp8-gallery")
+    }
+
+    /** WP8 演示：收藏分頁（Pivot 第 2 頁） */
+    @Test
+    fun wp8PaneFavourites() {
+        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        StaticData.load(ctx)
+        hk.senyou.travel.ui.wp8.Wp8.light = false
+        hk.senyou.travel.ui.wp8.Wp8.accentIndex = 0
+        val f1 = hk.senyou.travel.data.Fav(type = "bus", company = "kmb", route = "69X", dir = "outbound", stopName = "天瑞總站", alertMins = 5)
+        val f2 = hk.senyou.travel.data.Fav(type = "mtrbus", company = "mtrbus", route = "K75P", stopName = "天瑞")
+        val f3 = hk.senyou.travel.data.Fav(type = "mtr", company = "mtr", stationCode = "TIS", stationName = "天水圍", lineName = "屯馬線")
+        kotlinx.coroutines.runBlocking { hk.senyou.travel.data.Store.saveFavorites(ctx, listOf(f1, f2, f3)) }
+        hk.senyou.travel.data.Cache.putEtaCache(f1.key, 7)
+        hk.senyou.travel.data.Cache.putEtaCache(f2.key, 2)
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(
+                Modifier.fillMaxSize().background(hk.senyou.travel.ui.wp8.Wp8.Bg),
+            ) {
+                hk.senyou.travel.ui.wp8.Wp8DemoScreen(onClose = {}, startPage = 1)
+            }
+        }
+        shoot("29-wp8-favourites")
+    }
+
+    /** WP8 演示：路線分頁（Pivot 第 3 頁） */
+    @Test
+    fun wp8PaneRoutes() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        hk.senyou.travel.ui.wp8.Wp8.light = false
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(
+                Modifier.fillMaxSize().background(hk.senyou.travel.ui.wp8.Wp8.Bg),
+            ) {
+                hk.senyou.travel.ui.wp8.Wp8DemoScreen(onClose = {}, startPage = 2)
+            }
+        }
+        shoot("30-wp8-routes")
+    }
+
     /** 大字體（模擬 MIUI 系統字體放大 1.5×）：驗證文字不被容器裁切 */
     @Test
     fun homeLargeFont() {

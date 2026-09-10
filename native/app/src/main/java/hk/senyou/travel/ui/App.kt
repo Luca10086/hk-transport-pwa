@@ -73,6 +73,7 @@ fun SenyouApp() {
     var tab by remember { mutableIntStateOf(0) }
     var k75pOpen by remember { mutableStateOf(false) }
     var weatherOpen by remember { mutableStateOf(false) }
+    var wp8Open by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<SearchItem?>(null) }
     val homeScroll = rememberScrollState()
     val (posture, hinge) = rememberFoldInfo()
@@ -161,6 +162,7 @@ fun SenyouApp() {
                                 onOpenK75P = { k75pOpen = true },
                                 onOpenRoute = { openItem(it) },
                                 onOpenWeather = { weatherOpen = true },
+                                onOpenWp8Demo = { wp8Open = true },
                                 settings = settings,
                             )
                         }
@@ -200,6 +202,7 @@ fun SenyouApp() {
 
                         if (k75pOpen) K75PPage(onClose = { k75pOpen = false })
                         if (weatherOpen) WeatherPage(onClose = { weatherOpen = false })
+                        if (wp8Open) hk.senyou.travel.ui.wp8.Wp8DemoScreen(onClose = { wp8Open = false })
                         detail?.let { d -> RouteDetailPage(item = d, onClose = { detail = null }) }
                     }
                 }
@@ -217,6 +220,7 @@ private fun ScreenContent(
     onOpenK75P: () -> Unit,
     onOpenRoute: (SearchItem) -> Unit,
     onOpenWeather: () -> Unit,
+    onOpenWp8Demo: () -> Unit,
     settings: Settings,
 ) {
     when (tab) {
@@ -229,7 +233,7 @@ private fun ScreenContent(
         1 -> FavoritesScreen(onOpenRoute = onOpenRoute)
         2 -> SushiScreen()
         3 -> LineMapScreen()
-        else -> SettingsScreen(settings)
+        else -> SettingsScreen(settings, onOpenWp8Demo)
     }
 }
 

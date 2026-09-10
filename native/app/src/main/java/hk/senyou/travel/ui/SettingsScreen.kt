@@ -47,7 +47,7 @@ private val ACCENTS = listOf(
 
 /** 設定頁（v3 全項） */
 @Composable
-fun SettingsScreen(s: Settings) {
+fun SettingsScreen(s: Settings, onOpenWp8Demo: () -> Unit = {}) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     fun set(block: Settings.() -> Settings) = scope.launch { Store.save(ctx, s.block()) }
@@ -101,6 +101,18 @@ fun SettingsScreen(s: Settings) {
         GroupTitle("出行")
         SegRow("自動重新整理", "首頁磁貼",
             listOf("30" to "30s", "60" to "60s", "0" to "關"), s.refresh.toString()) { v -> set { copy(refresh = v.toInt()) } }
+
+        GroupTitle("風格")
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 12.dp).clickable { onOpenWp8Demo() },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("WP7 / WP8 風格演示", color = V3.Text1, fontSize = 15.sp)
+                Text("Pivot 大標題 · Live Tiles 磁貼牆 · App Bar 裸字形圖標", color = V3.Text2, fontSize = 12.sp)
+            }
+            Text("›", color = V3.Text2, fontSize = 20.sp)
+        }
 
         GroupTitle("診斷")
         // 閃退守護：連續異常自動進安全模式，可在這裡手動關閉

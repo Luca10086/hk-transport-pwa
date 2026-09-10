@@ -130,3 +130,27 @@ gradlew.bat :app:testDebugUnitTest      # 渲染 8 個頁面截圖 → app/build
 - 卡片、磁貼、膠囊、搜尋欄、按鈕、徽章、開關、導航項、彈窗全部使用 `V3.Shape`
 - 只有「圓點 / 站點 / 巴士標記」保留真圓形（語義上是點，不是圓角）
 - 要整體改成圓角：只改 `V3.Radius` 一行即可（例如 `2.dp`、`8.dp`）
+
+## WP7 / WP8 風格 demo（3.1.0）
+
+設定 → 風格 → 「WP7 / WP8 風格演示」可開啟；截圖在 `native/out/wp8-preview/`。
+
+數值逐項對應 Web 版 `css/wp8-strict.css`（PWA 時期那套嚴格 WP8 皮膚）：
+
+| 元素 | WP8 規範 | 原生實作 |
+|------|----------|----------|
+| 配色 | 深紫黑 `#15121C` / 表面 `#221D31` / 強調 `#8B5CF6` | `Wp8` 令牌，另備淺色與 5 色強調色切換 |
+| Pivot 標題 | 46sp Light、lowercase、負字距 | 頂欄大標題 |
+| 頂欄操作 | 44dp 圓形 + 2px 描邊 | `Wp8CircleButton` |
+| Live Tiles | 4 列網格、間距 12dp、純色直角、白字左下、可 3D 翻面 | `Wp8Tile`（rotateY + perspective） |
+| 輸入框 | 無框無底色，只有 2px 下劃線 | `Wp8Input` |
+| 膠囊 | 1px 細框直角，選中 = 強調色實心 | `Wp8Chip` |
+| 列表行 | 無卡片底色，只有 1px 下分隔線 | `Wp8Row` |
+| 路線號 | 強調色 22sp Light | `Wp8Row` 左側 |
+| ETA | 21sp Light 等寬數字；即將=`#E51400`、≤10 分=`#F0A30A` | `Wp8Row` |
+| App Bar | 62dp、裸字形圖標（無圓圈）、選中轉強調色 | `Wp8AppBarButton` |
+| 按壓回饋 | 縮放 0.96–0.98，**不變色** | 所有元件 |
+| 頁面轉場 | `rotateY(-12deg) translateX(26%)` → 0 | `Wp8DetailSheet` |
+| 緩動 | `cubic-bezier(.16,1,.3,1)` | `Wp8.Ease` |
+
+驗證：MiMo v2.5 讀圖 7 張 → 6 張判定 `very_wp`；「按鈕有漸變 / chip 有圓角」兩條經**像素檢測否證**（按鈕整行均勻 `(139,92,246)`、四角皆為強調色）；另外三個 Pivot 分頁（收藏 / 路線 / 畫廊 App Bar）判定 `ok`。
