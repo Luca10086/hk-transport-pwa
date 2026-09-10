@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -212,7 +213,7 @@ private fun TilesPanel(
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(Wp8.Gap)) {
             Wp8Tile(
-                modifier = Modifier.weight(2f).height(100.dp),
+                modifier = Modifier.weight(2f).heightIn(min = 104.dp),
                 color = Wp8.TileCobalt,
                 value = "$favCount", trailing = "條",
                 title = "我的收藏",
@@ -220,7 +221,7 @@ private fun TilesPanel(
                 onClick = { onGoPane(1) },
             )
             Wp8Tile(
-                modifier = Modifier.weight(2f).height(100.dp),
+                modifier = Modifier.weight(2f).heightIn(min = 104.dp),
                 color = Wp8.TileMagenta,
                 title = "壽司郎",
                 sub = "即時排隊組數",
@@ -229,7 +230,7 @@ private fun TilesPanel(
         }
         Spacer(Modifier.height(Wp8.Gap))
         Wp8Tile(
-            modifier = Modifier.fillMaxWidth().height(76.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
             color = Wp8.TileTeal,
             value = weather?.temp?.let { "$it°" } ?: "—",
             title = "天氣",
@@ -242,7 +243,7 @@ private fun TilesPanel(
         )
         Spacer(Modifier.height(Wp8.Gap))
         Wp8Tile(
-            modifier = Modifier.fillMaxWidth().height(76.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
             color = Wp8.TileCyan,
             value = k75pMins?.let { if (it <= 0) "即將" else "$it" } ?: "—",
             trailing = if (k75pMins != null && k75pMins > 0) "分" else "",
@@ -252,7 +253,7 @@ private fun TilesPanel(
         )
         Spacer(Modifier.height(Wp8.Gap))
         Wp8Tile(
-            modifier = Modifier.fillMaxWidth().height(76.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
             color = Wp8.TileCyan,
             value = favEta?.let { if (it <= 0) "即將" else "$it" } ?: "—",
             trailing = if (favEta != null && favEta > 0) "分" else "",
@@ -263,14 +264,14 @@ private fun TilesPanel(
         Spacer(Modifier.height(Wp8.Gap))
         Row(horizontalArrangement = Arrangement.spacedBy(Wp8.Gap)) {
             Wp8Tile(
-                modifier = Modifier.weight(1f).height(100.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 104.dp),
                 color = Wp8.TileCyan,
                 title = "路線圖",
                 sub = "全線候車",
                 onClick = { onGoPane(3) },
             )
             Wp8Tile(
-                modifier = Modifier.weight(1f).height(100.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 104.dp),
                 color = Wp8.TileTeal,
                 title = "設定",
                 sub = "主題 · 強調色",

@@ -212,16 +212,16 @@ fun Wp8Tile(
             .clickable(interactionSource = interaction, indication = null) { onClick() },
     ) {
         val showBack = angle > 90f
+        // 內容左下對齊（對應 CSS: justify-content:flex-end; align-items:flex-start）
+        // 磁貼高度用 heightIn(min=)，內容多時自然撐高，永不裁字
         Box(
             Modifier
-                .fillMaxSize()
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
                 .then(if (showBack) Modifier.graphicsLayer { rotationY = 180f } else Modifier)
                 .padding(12.dp),
         ) {
-            Column(
-                Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Bottom,
-            ) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Bottom) {
                 if (showBack) {
                     Text(
                         back ?: "",
@@ -237,7 +237,8 @@ fun Wp8Tile(
                             Text(
                                 value,
                                 color = Color.White,
-                                fontSize = 30.sp,
+                                fontSize = 26.sp,
+                                lineHeight = 30.sp,
                                 fontWeight = FontWeight.Light,
                                 fontFamily = FontFamily.SansSerif,
                                 maxLines = 1,
@@ -250,16 +251,18 @@ fun Wp8Tile(
                     Text(
                         title,
                         color = Color.White,
-                        fontSize = 14.sp,
-                        maxLines = 1,
+                        fontSize = 15.sp,
+                        lineHeight = 19.sp,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                     if (sub.isNotBlank()) {
                         Text(
                             sub,
                             color = Color.White.copy(alpha = 0.92f),
-                            fontSize = 11.sp,
-                            maxLines = 1,
+                            fontSize = 12.sp,
+                            lineHeight = 15.sp,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
