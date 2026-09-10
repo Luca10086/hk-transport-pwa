@@ -12,12 +12,11 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,18 +44,18 @@ fun WeatherPage(onClose: () -> Unit) {
     val status = WindowInsets.statusBars.asPaddingValues()
 
     LaunchedEffect(Unit) {
-        w = Hko.fetch()
+        runCatching { w = Hko.fetch() }
         loading = false
     }
 
     Box(Modifier.fillMaxSize().background(Color(0xF0090A0F))) {
         Column(Modifier.fillMaxSize().padding(top = status.calculateTopPadding())) {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp).height(56.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp).heightIn(min = 56.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("天氣 · 香港天文台", color = V3.Text1, fontSize = 20.sp, fontWeight = FontWeight.Light, modifier = Modifier.weight(1f))
-                GlassSurface(modifier = Modifier.size(40.dp).clickable { onClose() }, shape = CircleShape) {
+                GlassSurface(modifier = Modifier.size(40.dp).clickable { onClose() }, shape = V3.Shape) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("✕", color = V3.Text1, fontSize = 15.sp) }
                 }
             }
@@ -76,7 +75,7 @@ fun WeatherPage(onClose: () -> Unit) {
                         val severe = msg in w.severe
                         GlassSurface(
                             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            shape = RoundedCornerShape(14.dp),
+                            shape = V3.Shape,
                             strong = true,
                         ) {
                             Text(
@@ -114,7 +113,7 @@ fun WeatherPage(onClose: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         w.days.forEach { d ->
-                            GlassSurface(modifier = Modifier.weight(1f).height(150.dp)) {
+                            GlassSurface(modifier = Modifier.weight(1f).heightIn(min = 150.dp)) {
                                 Column(
                                     Modifier.fillMaxSize().padding(10.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,

@@ -2,24 +2,17 @@ package hk.senyou.travel.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.graphics.rememberGraphicsLayer
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -31,68 +24,43 @@ private class Star(val x: Float, val y: Float, val r: Float, val ph: Float)
 private fun rnd(a: Float, b: Float) = a + Random.nextFloat() * (b - a)
 
 /**
- * 液體背景宿主：把背景繪製進 GraphicsLayer，並提供給玻璃面板做真·backdrop blur / AGSL 折射。
- * 同時每 300ms 產出一張快照位圖（折射取樣用）。
+ * 液體背景宿主。
+ *
+ * 3.0.2 起移除了 GraphicsLayer 錄製 + 每 300ms `toImageBitmap()` 快照：
+ * 那會在每次取樣時配置一張全屏位圖（外屏 ~12MB、內屏 ~29MB），
+ * 並讓每個面板都重畫一次全屏背景層，是真機卡頓與閃退的主因。
+ * 現在只保留一個純 Canvas 背景，玻璃面板用色調 + 描邊（見 Glass.kt）。
  */
 @Composable
 fun LiquidBackgroundHost(
     modifier: Modifier = Modifier,
     deepNight: Boolean = false,
-    snapshot: Boolean = true,
+    snapshot: Boolean = true,   // 相容舊呼叫端，已無作用
     light: Boolean = false,
+    animate: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val layer = rememberGraphicsLayer()
-    var bmp by remember { mutableStateOf<ImageBitmap?>(null) }
-
-    // 截圖測試（軟件渲染）：不走 GraphicsLayer / RenderNode，玻璃退回半透明填充
-    if (hk.senyou.travel.data.DebugFlags.staticUi) {
-        CompositionLocalProvider(
-            LocalBgLayer provides null,
-            LocalBgBitmap provides null,
-        ) {
-            Box(modifier) {
-                LiquidBackground(Modifier.fillMaxSize(), deepNight, light)
-                content()
-            }
-        }
-        return
-    }
-
-    if (snapshot) {
-        LaunchedEffect(Unit) {
-            while (true) {
-                kotlinx.coroutines.delay(300)
-                bmp = runCatching { layer.toImageBitmap() }.getOrNull()
-            }
-        }
-    }
-
-    CompositionLocalProvider(
-        LocalBgLayer provides layer,
-        LocalBgBitmap provides bmp,
-    ) {
-        Box(modifier) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .drawWithContent {
-                        layer.record { this@drawWithContent.drawContent() }
-                        drawLayer(layer)
-                    },
-            ) {
-                LiquidBackground(Modifier.fillMaxSize(), deepNight, light)
-            }
-            content()
-        }
+    Box(modifier) {
+        LiquidBackground(
+            modifier = Modifier.matchParentSize(),
+            deepNight = deepNight,
+            light = light,
+            animate = animate,
+        )
+        content()
     }
 }
 
-/** 液體背景：7 團流動光斑 + 54 顆星野（~30fps，與 Web 版同參數；淺色主題用淺底 + 淡藍光暈） */
+/** 液體背景：6 團流動光斑 + 42 顆星野（低頻更新，降低 GPU 負載；淺色主題用淺底 + 淡藍光暈） */
 @Composable
-fun LiquidBackground(modifier: Modifier = Modifier, deepNight: Boolean = false, light: Boolean = false) {
+fun LiquidBackground(
+    modifier: Modifier = Modifier,
+    deepNight: Boolean = false,
+    light: Boolean = false,
+    animate: Boolean = true,
+) {
     val blobs = remember {
-        List(7) { i ->
+        List(6) { i ->
             Blob(
                 x = rnd(0.05f, 0.95f),
                 y = rnd(0.05f, 0.95f),
@@ -104,16 +72,18 @@ fun LiquidBackground(modifier: Modifier = Modifier, deepNight: Boolean = false, 
         }
     }
     val stars = remember {
-        List(54) { Star(rnd(0f, 1f), rnd(0f, 1f), rnd(0.6f, 2.2f), rnd(0f, 6.28f)) }
+        List(42) { Star(rnd(0f, 1f), rnd(0f, 1f), rnd(0.6f, 2.2f), rnd(0f, 6.28f)) }
     }
     var t by remember { mutableFloatStateOf(0f) }
-    if (!hk.senyou.travel.data.DebugFlags.staticUi) {
+
+    if (animate && !hk.senyou.travel.data.DebugFlags.staticUi) {
         LaunchedEffect(Unit) {
             var last = 0L
             while (true) {
                 withFrameNanos { now ->
                     if (last == 0L) last = now
-                    if (now - last >= 33_000_000L) {
+                    // 8fps：光斑移動緩慢，視覺上仍是流動的，但 GPU 負載降為 1/4
+                    if (now - last >= 125_000_000L) {
                         t = now / 1_000_000_000f
                         last = now
                     }
@@ -121,6 +91,7 @@ fun LiquidBackground(modifier: Modifier = Modifier, deepNight: Boolean = false, 
             }
         }
     }
+
     val tints = if (light) listOf(Color(0xFF3E7FD0), Color(0xFF2FA6C8), Color(0xFF6C8FE0))
     else listOf(Color(0xFF0078D7), Color(0xFF00B4D8), Color(0xFF0A5BD7))
     Canvas(modifier) {

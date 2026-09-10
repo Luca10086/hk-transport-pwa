@@ -15,11 +15,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,7 +61,7 @@ fun Tile(
     val haptic = LocalHapticFeedback.current
     GlassSurface(
         modifier = modifier
-            .height(120.dp)
+            .heightIn(min = 120.dp)
             .semantics {
                 contentDescription = "$label $value${unit ?: ""}" + (cap?.let { "，$it" } ?: "")
             }
@@ -76,7 +76,7 @@ fun Tile(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(14.dp)
-                    .height(92.dp),
+                    .heightIn(min = 92.dp),
                 verticalArrangement = Arrangement.Bottom,
             ) {
                 if (extra != null) {
@@ -192,7 +192,7 @@ fun K75PMiniMap(modifier: Modifier = Modifier) {
 
 @Composable
 fun SearchPill(placeholder: String, value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
-    GlassSurface(modifier = modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(999.dp)) {
+    GlassSurface(modifier = modifier.fillMaxWidth().heightIn(min = 50.dp), shape = V3.Shape) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -224,9 +224,9 @@ fun ChipRow(chips: List<String>, selected: Int, onSelect: (Int) -> Unit) {
             val on = i == selected
             GlassSurface(
                 modifier = Modifier
-                    .height(40.dp)
+                    .heightIn(min = 40.dp)
                     .clickable { onSelect(i) },
-                shape = RoundedCornerShape(999.dp),
+                shape = V3.Shape,
                 strong = on,
             ) {
                 Box(
@@ -258,7 +258,7 @@ fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star
     val haptic = LocalHapticFeedback.current
     GlassSurface(modifier = Modifier
         .fillMaxWidth()
-        .height(72.dp)
+        .heightIn(min = 72.dp)
         .semantics {
             contentDescription = "$no $name，${hk.senyou.travel.data.Api.etaText(etaMins).let { if (etaMins == null) "暫無班次" else it }}${if (star) "，已收藏" else ""}"
         }
@@ -271,7 +271,7 @@ fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                Modifier.size(42.dp).clip(CircleShape).background(coColor(co)),
+                Modifier.size(42.dp).clip(V3.Shape).background(coColor(co)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(no.take(4), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -303,7 +303,7 @@ fun ResultRow(no: String, co: Co, name: String, cap: String, etaMins: Int?, star
             Box(
                 Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
+                    .clip(V3.Shape)
                     .then(if (onStar != null) Modifier.clickable { onStar() } else Modifier),
                 contentAlignment = Alignment.Center,
             ) {

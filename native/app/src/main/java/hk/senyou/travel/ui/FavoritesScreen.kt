@@ -5,12 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -19,7 +21,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,10 +64,12 @@ fun FavoritesScreen(onOpenRoute: (SearchItem) -> Unit) {
 
     LaunchedEffect(favs) {
         if (favs.isEmpty()) { etas = emptyMap(); return@LaunchedEffect }
-        val res = favs.map { f -> async { f.key to SearchRepo.favEta(f) } }.awaitAll()
-        etas = res.toMap()
-        // 成功的 ETA 寫入離線緩存
-        res.forEach { (k, m) -> if (m != null) hk.senyou.travel.data.Cache.putEtaCache(k, m) }
+        runCatching {
+            val res = favs.map { f -> async { f.key to runCatching { SearchRepo.favEta(f) }.getOrNull() } }.awaitAll()
+            etas = res.toMap()
+            // 成功的 ETA 寫入離線緩存
+            res.forEach { (k, m) -> if (m != null) hk.senyou.travel.data.Cache.putEtaCache(k, m) }
+        }
     }
 
     if (favs.isEmpty()) {
@@ -147,12 +150,12 @@ private fun FavCard(
                 Spacer(Modifier.size(8.dp))
                 // 到站提醒門檻：關 → 3 → 5 → 10 分
                 GlassSurface(
-                    modifier = Modifier.widthIn(min = 62.dp).height(36.dp)
+                    modifier = Modifier.widthIn(min = 62.dp).heightIn(min = 36.dp)
                         .semantics {
                             contentDescription = if (fav.alertMins > 0) "到站提醒 ${fav.alertMins} 分鐘，點擊更改" else "開啟到站提醒"
                         }
                         .clickable { onCycleAlert() },
-                    shape = CircleShape,
+                    shape = V3.Shape,
                     strong = fav.alertMins > 0,
                 ) {
                     Box(Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
@@ -166,7 +169,7 @@ private fun FavCard(
                 Spacer(Modifier.size(8.dp))
                 GlassSurface(
                     modifier = Modifier.size(36.dp).semantics { contentDescription = "移除收藏" }.clickable { onRemove() },
-                    shape = CircleShape,
+                    shape = V3.Shape,
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("✕", color = V3.Text2, fontSize = 13.sp) }
                 }

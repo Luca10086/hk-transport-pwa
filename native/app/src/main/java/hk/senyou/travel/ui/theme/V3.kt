@@ -1,6 +1,7 @@
 package hk.senyou.travel.ui.theme
 
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -42,8 +43,21 @@ object V3 {
     val EasePress = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f)
     val EaseSheet = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
 
-    val RadiusTile = 18.dp
-    val RadiusSheet = 26.dp
+    /* ---------- 形狀：統一直角（WP / Metro / Fluent 風格） ---------- */
+
+    /**
+     * 全站唯一圓角令牌。
+     * 0.dp = 直角（Windows Phone / Metro 的招牌特徵，本站採用）。
+     * 若日後想整體改成圓角，只改這一行即可（例如 2.dp、8.dp）。
+     */
+    val Radius = 0.dp
+
+    /** 面板 / 卡片 / 膠囊 / 按鈕 / 徽章 的統一形狀 */
+    val Shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(Radius)
+
+    /** 相容舊呼叫端（皆指向同一直角令牌） */
+    val RadiusTile = Radius
+    val RadiusSheet = Radius
 
     /** 套用主題 + 強調色（在組樹重建前呼叫） */
     fun apply(theme: String, accentArgb: Long) {

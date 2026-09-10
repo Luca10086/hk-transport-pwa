@@ -5,19 +5,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,9 +44,11 @@ fun SushiScreen() {
     var loading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        val (list, isLive) = Sushiro.fetch()
-        stores = list.sortedByDescending { it.waiting }
-        live = isLive
+        runCatching {
+            val (list, isLive) = Sushiro.fetch()
+            stores = list.sortedByDescending { it.waiting }
+            live = isLive
+        }
         loading = false
     }
 
@@ -59,7 +61,7 @@ fun SushiScreen() {
             Text("壽司郎排隊", color = V3.Text1, fontSize = 22.sp, fontWeight = FontWeight.Light)
             Spacer(Modifier.weight(1f))
             Box(
-                Modifier.clip(RoundedCornerShape(999.dp))
+                Modifier.clip(V3.Shape)
                     .background(if (live) V3.Success.copy(alpha = 0.2f) else V3.Text2.copy(alpha = 0.15f))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
@@ -77,11 +79,11 @@ fun SushiScreen() {
             ) {
                 items(shown) { s ->
                     Row(
-                        Modifier.fillMaxWidth().height(64.dp),
+                        Modifier.fillMaxWidth().heightIn(min = 64.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
-                            Modifier.size(40.dp).clip(CircleShape).background(V3.Accent.copy(alpha = 0.18f)),
+                            Modifier.size(40.dp).clip(V3.Shape).background(V3.Accent.copy(alpha = 0.18f)),
                             contentAlignment = Alignment.Center,
                         ) { Text(s.name.take(1), color = V3.Text1, fontSize = 15.sp) }
                         Spacer(Modifier.size(12.dp))

@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
@@ -51,8 +53,14 @@ object Store {
     private val K_FAVS = stringPreferencesKey("favs")
     private val K_RECENT = stringPreferencesKey("recent")
 
+    /**
+     * DataStore 讀取失敗（IO 異常 / 檔案損毀）不可讓 App 崩潰：
+     * 一律退回空資料，等同「首次啟動」。
+     */
+    private fun DataStore<Preferences>.safe() = data.catch { emit(emptyPreferences()) }
+
     /** 最近搜尋（最多 10 條） */
-    fun recent(ctx: Context): Flow<List<String>> = ctx.ds.data.map { p ->
+    fun recent(ctx: Context): Flow<List<String>> = ctx.ds.safe().map { p ->
         val arr = p[K_RECENT]?.let { runCatching { JSONArray(it) }.getOrNull() } ?: return@map emptyList()
         (0 until arr.length()).map { arr.optString(it) }.filter { it.isNotBlank() }
     }
@@ -60,15 +68,17 @@ object Store {
     suspend fun pushRecent(ctx: Context, q: String) {
         val q2 = q.trim()
         if (q2.isEmpty()) return
-        val cur = recent(ctx).first().toMutableList()
-        cur.remove(q2)
-        cur.add(0, q2)
-        while (cur.size > 10) cur.removeAt(cur.size - 1)
-        val arr = JSONArray().apply { cur.forEach { put(it) } }
-        ctx.ds.edit { it[K_RECENT] = arr.toString() }
+        runCatching {
+            val cur = recent(ctx).first().toMutableList()
+            cur.remove(q2)
+            cur.add(0, q2)
+            while (cur.size > 10) cur.removeAt(cur.size - 1)
+            val arr = JSONArray().apply { cur.forEach { put(it) } }
+            ctx.ds.edit { it[K_RECENT] = arr.toString() }
+        }
     }
 
-    fun settings(ctx: Context): Flow<Settings> = ctx.ds.data.map { p ->
+    fun settings(ctx: Context): Flow<Settings> = ctx.ds.safe().map { p ->
         val o = p[K_CFG]?.let { runCatching { JSONObject(it) }.getOrNull() }
         Settings(
             theme = o?.optString("theme", "dark") ?: "dark",
@@ -84,45 +94,51 @@ object Store {
     }
 
     suspend fun save(ctx: Context, s: Settings) {
-        val o = JSONObject()
-            .put("theme", s.theme)
-            .put("glass", s.glass).put("fx", s.fx).put("big", s.big).put("deep", s.deep)
-            .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
-        ctx.ds.edit { it[K_CFG] = o.toString() }
+        runCatching {
+            val o = JSONObject()
+                .put("theme", s.theme)
+                .put("glass", s.glass).put("fx", s.fx).put("big", s.big).put("deep", s.deep)
+                .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
+            ctx.ds.edit { it[K_CFG] = o.toString() }
+        }
     }
 
-    fun favorites(ctx: Context): Flow<List<Fav>> = ctx.ds.data.map { p ->
+    fun favorites(ctx: Context): Flow<List<Fav>> = ctx.ds.safe().map { p ->
         val arr = p[K_FAVS]?.let { runCatching { JSONArray(it) }.getOrNull() } ?: return@map emptyList()
         (0 until arr.length()).mapNotNull { i ->
             val o = arr.optJSONObject(i) ?: return@mapNotNull null
-            Fav(
-                type = o.optString("type"),
-                company = o.optString("company", "kmb"),
-                route = o.optString("route"),
-                dir = o.optString("dir", "outbound"),
-                stopId = o.optString("stopId").ifBlank { null },
-                stopName = o.optString("stopName"),
-                stationCode = o.optString("stationCode").ifBlank { null },
-                stationName = o.optString("stationName"),
-                routeId = o.optString("routeId").ifBlank { null },
-                line = o.optString("line").ifBlank { null },
-                lineName = o.optString("lineName"),
-                alertMins = o.optInt("alertMins", 0),
-            )
+            runCatching {
+                Fav(
+                    type = o.optString("type"),
+                    company = o.optString("company", "kmb"),
+                    route = o.optString("route"),
+                    dir = o.optString("dir", "outbound"),
+                    stopId = o.optString("stopId").ifBlank { null },
+                    stopName = o.optString("stopName"),
+                    stationCode = o.optString("stationCode").ifBlank { null },
+                    stationName = o.optString("stationName"),
+                    routeId = o.optString("routeId").ifBlank { null },
+                    line = o.optString("line").ifBlank { null },
+                    lineName = o.optString("lineName"),
+                    alertMins = o.optInt("alertMins", 0),
+                )
+            }.getOrNull()
         }
     }
 
     suspend fun saveFavorites(ctx: Context, list: List<Fav>) {
-        val arr = JSONArray()
-        list.forEach { f ->
-            arr.put(
-                JSONObject().put("type", f.type).put("company", f.company).put("route", f.route)
-                    .put("dir", f.dir).put("stopId", f.stopId ?: "").put("stopName", f.stopName)
-                    .put("stationCode", f.stationCode ?: "").put("stationName", f.stationName)
-                    .put("routeId", f.routeId ?: "").put("line", f.line ?: "").put("lineName", f.lineName)
-                    .put("alertMins", f.alertMins)
-            )
+        runCatching {
+            val arr = JSONArray()
+            list.forEach { f ->
+                arr.put(
+                    JSONObject().put("type", f.type).put("company", f.company).put("route", f.route)
+                        .put("dir", f.dir).put("stopId", f.stopId ?: "").put("stopName", f.stopName)
+                        .put("stationCode", f.stationCode ?: "").put("stationName", f.stationName)
+                        .put("routeId", f.routeId ?: "").put("line", f.line ?: "").put("lineName", f.lineName)
+                        .put("alertMins", f.alertMins)
+                )
+            }
+            ctx.ds.edit { it[K_FAVS] = arr.toString() }
         }
-        ctx.ds.edit { it[K_FAVS] = arr.toString() }
     }
 }

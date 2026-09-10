@@ -21,8 +21,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,7 +64,7 @@ fun SettingsScreen(s: Settings) {
         GroupTitle("外觀")
         SegRow("主題", "深色 / 淺色",
             listOf("dark" to "深色", "light" to "淺色"), s.theme) { v -> set { copy(theme = v) } }
-        SegRow("玻璃強度", "0 無玻璃 → 4 濃郁",
+        SegRow("玻璃強度", "面板色調濃度（不再做 GPU 模糊，避免閃退）",
             listOf("0" to "無", "1" to "淡", "2" to "標準", "3" to "深", "4" to "濃"),
             s.glass.toString()) { v -> set { copy(glass = v.toInt()) } }
         SegRow("動效模式", "完整 / 簡約 / 關閉",
@@ -89,7 +87,7 @@ fun SettingsScreen(s: Settings) {
                     Box(
                         Modifier
                             .size(if (on) 34.dp else 30.dp)
-                            .clip(CircleShape)
+                            .clip(V3.Shape)
                             .background(Color(value))
                             .clickable { set { copy(accent = value) } },
                         contentAlignment = Alignment.Center,
@@ -105,6 +103,16 @@ fun SettingsScreen(s: Settings) {
             listOf("30" to "30s", "60" to "60s", "0" to "關"), s.refresh.toString()) { v -> set { copy(refresh = v.toInt()) } }
 
         GroupTitle("診斷")
+        // 閃退守護：連續異常自動進安全模式，可在這裡手動關閉
+        var safeMode by remember { mutableStateOf(hk.senyou.travel.data.CrashGuard.isSafeMode(ctx)) }
+        SwitchRow(
+            "安全模式",
+            if (safeMode) "已開啟：關閉玻璃與動效（連續閃退自動啟用）" else "關閉：保留玻璃與動效",
+            safeMode,
+        ) { on ->
+            hk.senyou.travel.data.CrashGuard.setSafeMode(ctx, on)
+            safeMode = on
+        }
         var crashCount by remember { mutableIntStateOf(hk.senyou.travel.data.CrashLog.count(ctx)) }
         var logText by remember { mutableStateOf<String?>(null) }
         Row(
@@ -119,18 +127,18 @@ fun SettingsScreen(s: Settings) {
                 )
             }
             if (crashCount > 0) {
-                GlassSurface(modifier = Modifier.height(38.dp).clickable {
+                GlassSurface(modifier = Modifier.heightIn(min = 38.dp).clickable {
                     logText = hk.senyou.travel.data.CrashLog.latestText(ctx) ?: "（讀取失敗）"
-                }, shape = RoundedCornerShape(999.dp)) {
+                }, shape = V3.Shape) {
                     Box(Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
                         Text("查看", color = V3.Text1, fontSize = 13.sp)
                     }
                 }
                 Spacer(Modifier.size(8.dp))
-                GlassSurface(modifier = Modifier.height(38.dp).clickable {
+                GlassSurface(modifier = Modifier.heightIn(min = 38.dp).clickable {
                     hk.senyou.travel.data.CrashLog.clear(ctx)
                     crashCount = 0
-                }, shape = RoundedCornerShape(999.dp)) {
+                }, shape = V3.Shape) {
                     Box(Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
                         Text("清除", color = V3.Text2, fontSize = 13.sp)
                     }
@@ -185,8 +193,8 @@ private fun SegRow(title: String, cap: String, options: List<Pair<String, String
             options.forEach { (value, label) ->
                 val on = value == current
                 GlassSurface(
-                    modifier = Modifier.weight(1f).height(38.dp).clickable { onPick(value) },
-                    shape = RoundedCornerShape(999.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 38.dp).clickable { onPick(value) },
+                    shape = V3.Shape,
                     strong = on,
                 ) {
                     Box(
@@ -223,7 +231,7 @@ private fun SwitchRow(title: String, cap: String, on: Boolean, onChange: (Boolea
         Box(
             Modifier
                 .size(width = 48.dp, height = 28.dp)
-                .clip(RoundedCornerShape(999.dp))
+                .clip(V3.Shape)
                 .background(if (on) V3.Accent.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.18f))
                 .clickable { onChange(!on) },
         ) {
@@ -231,7 +239,7 @@ private fun SwitchRow(title: String, cap: String, on: Boolean, onChange: (Boolea
                 Modifier
                     .padding(start = if (on) 22.dp else 3.dp, top = 3.dp)
                     .size(22.dp)
-                    .clip(CircleShape)
+                    .clip(V3.Shape)
                     .background(if (on) V3.Accent else Color.White.copy(alpha = 0.75f))
             )
         }

@@ -68,6 +68,58 @@ class ScreenshotTest {
         File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    /** 亮像素數量（近似「文字是否還看得見」）：亮度 > 150 的像素個數 */
+    private fun brightPixels(bmp: Bitmap): Int {
+        var n = 0
+        var y = 0
+        while (y < bmp.height) {
+            var x = 0
+            while (x < bmp.width) {
+                val p = bmp.getPixel(x, y)
+                val luma = (p shr 16 and 0xFF) * 299 + (p shr 8 and 0xFF) * 587 + (p and 0xFF) * 114
+                if (luma / 1000 > 150) n++
+                x += 2
+            }
+            y += 2
+        }
+        return n
+    }
+
+    /**
+     * 回歸測試（真機曾回報「開啟玻璃強度後所有文字消失」）：
+     * 玻璃 0–4 每一檔都必須保留足量文字像素，且不得隨強度上升而消失。
+     */
+    @Test
+    fun glassLevelsKeepTextVisible() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        val level = androidx.compose.runtime.mutableIntStateOf(0)
+        rule.setContent {
+            Frame(glassLevel = level.intValue) {
+                HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
+            }
+        }
+        val counts = mutableListOf<Int>()
+        for (l in 0..4) {
+            level.intValue = l
+            rule.waitForIdle()
+            Thread.sleep(250)
+            rule.waitForIdle()
+            val bmp = rule.activity.window.decorView.drawToBitmap(Bitmap.Config.ARGB_8888)
+            File(outDir, "22-glass-level-$l.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            counts += brightPixels(bmp)
+        }
+        println("glassLevels bright pixels: $counts")
+        // 文字被裝飾層蓋住時，亮像素會塌回「只有星空背景」的量級（實測 <300）
+        counts.forEachIndexed { l, c ->
+            org.junit.Assert.assertTrue("玻璃強度 $l 的文字像素過少（$c），裝飾層可能蓋住了內容", c > 800)
+        }
+        // 最濃的一檔不得比無玻璃時少一半以上（文字被遮住的典型特徵）
+        org.junit.Assert.assertTrue(
+            "玻璃 4 檔文字像素嚴重減少：${counts[0]} → ${counts[4]}",
+            counts[4] > counts[0] / 2,
+        )
+    }
+
     @Composable
     private fun Frame(glassLevel: Int = 2, light: Boolean = false, content: @Composable () -> Unit) {
         val alpha = when (glassLevel) {
@@ -251,5 +303,40 @@ class ScreenshotTest {
         rule.setContent { Frame { hk.senyou.travel.ui.RouteDetailPage(item = item, onClose = {}) } }
         Thread.sleep(5000)
         shoot("21-station-lrt-live")
+    }
+
+    /** 大字體（模擬 MIUI 系統字體放大 1.5×）：驗證文字不被容器裁切 */
+    @Test
+    fun homeLargeFont() {
+        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        rule.setContent {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(3f, 1.5f),
+            ) {
+                Frame {
+                    HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
+                }
+            }
+        }
+        shoot("23-home-font150")
+    }
+
+    /** 大字體 + 收藏卡片（34sp 大字最容易溢出） */
+    @Test
+    fun favoritesLargeFont() {
+        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        StaticData.load(ctx)
+        val f1 = hk.senyou.travel.data.Fav(type = "bus", company = "kmb", route = "69X", dir = "outbound", stopName = "天瑞總站", alertMins = 5)
+        val f2 = hk.senyou.travel.data.Fav(type = "mtr", company = "mtr", stationCode = "TIS", stationName = "天水圍", lineName = "屯馬線")
+        kotlinx.coroutines.runBlocking { hk.senyou.travel.data.Store.saveFavorites(ctx, listOf(f1, f2)) }
+        hk.senyou.travel.data.Cache.putEtaCache(f1.key, 7)
+        rule.setContent {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(3f, 1.5f),
+            ) {
+                Frame { FavoritesScreen(onOpenRoute = {}) }
+            }
+        }
+        shoot("24-favorites-font150")
     }
 }

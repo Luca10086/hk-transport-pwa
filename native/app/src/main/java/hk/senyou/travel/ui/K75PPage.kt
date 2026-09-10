@@ -14,11 +14,11 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -108,19 +108,21 @@ fun K75PPage(onClose: () -> Unit) {
     LaunchedEffect(Unit) {
         if (hk.senyou.travel.data.DebugFlags.staticUi) return@LaunchedEffect
         while (true) {
-            val data = Api.mtrBusSchedule("K75P")
-            val built = K75PModel.build(data, smooth.toMap())
-            markers = built
-            allMins = built.map { it.mins }.sorted()
-            // 平滑過渡到新位置（0.9s 線性），僅在有變動時跑
-            if (built.isNotEmpty()) {
-                val from = built.associate { it.id to (smooth[it.id] ?: it.pos) }
-                val t0 = System.currentTimeMillis()
-                while (true) {
-                    val t = ((System.currentTimeMillis() - t0) / 900.0).toFloat().coerceAtMost(1f)
-                    built.forEach { m -> smooth[m.id] = from.getValue(m.id) + (m.pos - from.getValue(m.id)) * t }
-                    if (t >= 1f) break
-                    withFrameNanos { }
+            runCatching {
+                val data = Api.mtrBusSchedule("K75P")
+                val built = K75PModel.build(data, smooth.toMap())
+                markers = built
+                allMins = built.map { it.mins }.sorted()
+                // 平滑過渡到新位置（0.9s 線性），僅在有變動時跑
+                if (built.isNotEmpty()) {
+                    val from = built.associate { it.id to (smooth[it.id] ?: it.pos) }
+                    val t0 = System.currentTimeMillis()
+                    while (true) {
+                        val t = ((System.currentTimeMillis() - t0) / 900.0).toFloat().coerceAtMost(1f)
+                        built.forEach { m -> smooth[m.id] = from.getValue(m.id) + (m.pos - from.getValue(m.id)) * t }
+                        if (t >= 1f) break
+                        withFrameNanos { }
+                    }
                 }
             }
             delay(20_000)
@@ -141,13 +143,13 @@ fun K75PPage(onClose: () -> Unit) {
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 10.dp)
-                    .height(56.dp),
+                    .heightIn(min = 56.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("K75P · 天瑞 ↺ 洪水橋", color = V3.Text1, fontSize = 20.sp, fontWeight = FontWeight.Light, modifier = Modifier.weight(1f))
                 Box(
                     Modifier
-                        .clip(RoundedCornerShape(999.dp))
+                        .clip(V3.Shape)
                         .background(V3.Accent)
                         .padding(horizontal = 12.dp, vertical = 5.dp),
                 ) { Text("實時 $live 班", color = Color.White, fontSize = 11.sp) }
@@ -161,12 +163,12 @@ fun K75PPage(onClose: () -> Unit) {
                                 } ?: "K75P，暫無實時班次"
                             )
                         },
-                    shape = CircleShape,
+                    shape = V3.Shape,
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("🔊", fontSize = 15.sp) }
                 }
                 Spacer(Modifier.size(8.dp))
-                GlassSurface(modifier = Modifier.size(40.dp).clickable { onClose() }, shape = CircleShape) {
+                GlassSurface(modifier = Modifier.size(40.dp).clickable { onClose() }, shape = V3.Shape) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("✕", color = V3.Text1, fontSize = 15.sp)
                     }
@@ -219,7 +221,7 @@ fun K75PPage(onClose: () -> Unit) {
                 Box(Modifier.height(adaptive.hingeHeightPx.dp))
                 Column(Modifier.fillMaxWidth().weight(0.58f).padding(top = 8.dp)) { cardsComposable() }
             } else {
-                mapComposable(Modifier.fillMaxWidth().height(470.dp))
+                mapComposable(Modifier.fillMaxWidth().weight(1f))
                 Spacer(Modifier.height(12.dp))
                 cardsComposable()
             }
@@ -229,7 +231,7 @@ fun K75PPage(onClose: () -> Unit) {
 
 @Composable
 private fun KCard(label: String, mins: String, sub: String, gps: Boolean, unit: String = " 分", modifier: Modifier = Modifier) {
-    GlassSurface(modifier = modifier.height(104.dp)) {
+    GlassSurface(modifier = modifier.heightIn(min = 104.dp)) {
         Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(label, color = V3.Text2, fontSize = 12.sp)
@@ -239,7 +241,7 @@ private fun KCard(label: String, mins: String, sub: String, gps: Boolean, unit: 
                     color = if (gps) V3.Accent else V3.Text2,
                     fontSize = 9.sp,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(V3.Shape)
                         .background(if (gps) V3.Accent.copy(alpha = 0.18f) else Color.Transparent)
                         .padding(horizontal = 4.dp),
                 )

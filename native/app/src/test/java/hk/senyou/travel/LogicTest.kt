@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import hk.senyou.travel.data.Api
 import hk.senyou.travel.data.Cache
+import hk.senyou.travel.data.CrashGuard
 import hk.senyou.travel.data.CrashLog
 import hk.senyou.travel.data.Fav
 import hk.senyou.travel.data.Kind
@@ -264,6 +265,37 @@ class LogicTest {
         assertNull(deepLinkItem("mtrbus", "", null, null, "mtrbus", null, null, null))
         // 站名缺失時退回站碼
         assertEquals("TIS", deepLinkItem("mtr", "", "TIS", "", "mtr", null, null, null)!!.stationName)
+    }
+
+    /* ---------- 閃退守護 ---------- */
+
+    @Test
+    fun crashGuard_entersSafeModeAfterRepeatedIncompleteLaunches() {
+        // Robolectric 已跑過一次 Application 啟動，先歸零成乾淨狀態
+        CrashGuard.onHealthy(ctx)
+        CrashGuard.setSafeMode(ctx, false)
+        // 第一次啟動（乾淨）：不進安全模式
+        CrashGuard.onAppCreate(ctx)
+        assertEquals(0, CrashGuard.crashStreak(ctx))
+        assertTrue(!CrashGuard.isSafeMode(ctx))
+        // 第二次啟動（上次未正常結束）：計數 1，仍未進安全模式
+        CrashGuard.onAppCreate(ctx)
+        assertEquals(1, CrashGuard.crashStreak(ctx))
+        assertTrue(!CrashGuard.isSafeMode(ctx))
+        // 第三次啟動（連續兩次異常）：自動進安全模式
+        CrashGuard.onAppCreate(ctx)
+        assertEquals(2, CrashGuard.crashStreak(ctx))
+        assertTrue(CrashGuard.isSafeMode(ctx))
+        // 穩定運行後清空計數，但安全模式保留（需使用者手動關閉）
+        CrashGuard.onHealthy(ctx)
+        assertEquals(0, CrashGuard.crashStreak(ctx))
+        assertTrue(CrashGuard.isSafeMode(ctx))
+        CrashGuard.setSafeMode(ctx, false)
+        assertTrue(!CrashGuard.isSafeMode(ctx))
+        // 正常結束後再次啟動不應誤判
+        CrashGuard.onAppCreate(ctx)
+        assertEquals(0, CrashGuard.crashStreak(ctx))
+        assertTrue(!CrashGuard.isSafeMode(ctx))
     }
 
     /* ---------- 語義色分級 ---------- */

@@ -12,14 +12,13 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -72,7 +71,7 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
         trains = emptyList()
         // 港鐵 / 輕鐵站：直接列上下行班次（收藏卡片與到站通知都走這裡）
         if (isStation) {
-            trains = SearchRepo.stationTrains(item)
+            trains = runCatching { SearchRepo.stationTrains(item) }.getOrDefault(emptyList())
             loading = false
             return@LaunchedEffect
         }
@@ -82,7 +81,7 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
             return@LaunchedEffect
         }
         val dir = if (tab == 0) "outbound" else "inbound"
-        rows = SearchRepo.routeStops(route, item.kind, dir, item.routeId)
+        rows = runCatching { SearchRepo.routeStops(route, item.kind, dir, item.routeId) }.getOrDefault(emptyList())
         loading = false
     }
 
@@ -96,11 +95,11 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 10.dp)
-                    .height(56.dp),
+                    .heightIn(min = 56.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    Modifier.size(40.dp).clip(CircleShape).background(coColor(item.kind.toCo())),
+                    Modifier.size(40.dp).clip(V3.Shape).background(coColor(item.kind.toCo())),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(item.no.take(4), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -136,7 +135,7 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                                 )
                             }
                         },
-                    shape = CircleShape,
+                    shape = V3.Shape,
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("🔊", fontSize = 15.sp)
@@ -154,7 +153,7 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                             Store.saveFavorites(ctx, next)
                         }
                     },
-                    shape = CircleShape,
+                    shape = V3.Shape,
                     strong = starred,
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -166,7 +165,7 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.size(8.dp))
-                GlassSurface(modifier = Modifier.size(40.dp).clickable { onClose() }, shape = CircleShape) {
+                GlassSurface(modifier = Modifier.size(40.dp).clickable { onClose() }, shape = V3.Shape) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("✕", color = V3.Text1, fontSize = 15.sp)
                     }
@@ -178,8 +177,8 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                     listOf("去程", "回程").forEachIndexed { i, label ->
                         val on = tab == i
                         GlassSurface(
-                            modifier = Modifier.height(40.dp).clickable { tab = i },
-                            shape = RoundedCornerShape(999.dp),
+                            modifier = Modifier.heightIn(min = 40.dp).clickable { tab = i },
+                            shape = V3.Shape,
                             strong = on,
                         ) {
                             Box(
@@ -210,12 +209,12 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                         ) {
                             itemsIndexed(trains) { _, t ->
                                 Row(
-                                    Modifier.fillMaxWidth().height(60.dp),
+                                    Modifier.fillMaxWidth().heightIn(min = 60.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Box(
-                                        Modifier.widthIn(min = 44.dp).height(26.dp)
-                                            .clip(RoundedCornerShape(999.dp))
+                                        Modifier.widthIn(min = 44.dp).heightIn(min = 26.dp)
+                                            .clip(V3.Shape)
                                             .background(V3.CoMtr.copy(alpha = 0.22f)),
                                         contentAlignment = Alignment.Center,
                                     ) {
@@ -261,11 +260,11 @@ fun RouteDetailPage(item: SearchItem, onClose: () -> Unit) {
                         Row(
                             Modifier
                                 .fillMaxWidth()
-                                .height(60.dp),
+                                .heightIn(min = 60.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Box(
-                                Modifier.size(32.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.08f)),
+                                Modifier.size(32.dp).clip(V3.Shape).background(Color.White.copy(alpha = 0.08f)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text("${r.seq}", color = V3.Text2, fontSize = 11.sp)

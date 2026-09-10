@@ -17,14 +17,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -48,6 +47,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hk.senyou.travel.data.CrashGuard
 import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.Settings
 import hk.senyou.travel.data.StaticData
@@ -61,7 +61,10 @@ private val TAB_ICONS = listOf("⌂", "♡", "◎", "⌖", "⚙")
 @Composable
 fun SenyouApp() {
     val ctx = LocalContext.current
-    LaunchedEffect(Unit) { StaticData.load(ctx); Tts.init(ctx) }
+    LaunchedEffect(Unit) {
+        runCatching { StaticData.load(ctx) }
+        runCatching { Tts.init(ctx) }
+    }
     val settings by Store.settings(ctx).collectAsStateWithLifecycle(initialValue = Settings())
 
     // 主題 + 強調色：在組樹重建前套用（key() 令切換時整體重組）
@@ -92,27 +95,37 @@ fun SenyouApp() {
         }
     }
 
-    val alpha = when (settings.glass) {
-        0 -> 0f; 1 -> 0.03f; 2 -> 0.07f; 3 -> 0.10f; else -> 0.14f
+    // 安全模式（連續閃退後自動開啟）：關閉玻璃與動效，只留最基本繪製
+    val safeMode = remember { CrashGuard.isSafeMode(ctx) }
+    LaunchedEffect(Unit) {
+        // 穩定運行 12 秒 = 本次啟動成功（清空閃退計數）
+        kotlinx.coroutines.delay(12_000)
+        CrashGuard.onHealthy(ctx)
     }
-    val blurPx = when (settings.glass) {
-        0 -> 0f; 1 -> 12f; 2 -> 26f; 3 -> 36f; else -> 48f
+
+    val alpha = when {
+        safeMode -> 0f
+        else -> when (settings.glass) {
+            0 -> 0f; 1 -> 0.03f; 2 -> 0.07f; 3 -> 0.10f; else -> 0.14f
+        }
     }
     val glassCfg = GlassCfg(
         alpha = alpha,
-        blurPx = blurPx,
-        refractPx = if (settings.glass == 0) 0f else 20f,
-        sheen = settings.fx != "off",
-        motion = settings.fx == "full",
+        blurPx = 0f,      // 不再做 GPU 模糊（真機閃退主因）
+        refractPx = 0f,   // 不再做 AGSL 折射（會蓋住文字）
+        sheen = !safeMode && settings.fx != "off",
+        motion = !safeMode && settings.fx == "full",
         light = V3.isLight,
     )
     val baseDensity = LocalDensity.current
+    // 尊重系統字體縮放（MIUI 字體大小），大字模式再乘 1.15；避免「字顯示不全」
+    val fontScale = baseDensity.fontScale * (if (settings.big) 1.15f else 1f)
 
     key(settings.theme, settings.accent) {
     SenyouTheme {
     CompositionLocalProvider(
         LocalDeepNight provides settings.deep,
-        LocalDensity provides Density(baseDensity.density, if (settings.big) 1.15f else 1f),
+        LocalDensity provides Density(baseDensity.density, fontScale),
     ) {
         BoxWithConstraints(Modifier.fillMaxSize().background(V3.Bg)) {
             val widthDp = maxWidth.value.toInt()
@@ -136,8 +149,9 @@ fun SenyouApp() {
                 LiquidBackgroundHost(
                     modifier = Modifier.fillMaxSize(),
                     deepNight = settings.deep,
-                    snapshot = settings.glass > 0,
+                    snapshot = false,
                     light = V3.isLight,
+                    animate = !safeMode && settings.fx != "off",
                 ) {
                     CompositionLocalProvider(LocalGlassCfg provides glassCfg) {
                         val content: @Composable () -> Unit = {
@@ -229,7 +243,7 @@ private fun GlassRail(selected: Int, onSelect: (Int) -> Unit) {
             .width(104.dp)
             .fillMaxHeight()
             .padding(top = status.calculateTopPadding(), bottom = nav.calculateBottomPadding()),
-        shape = RoundedCornerShape(0.dp),
+        shape = V3.Shape,
         strong = true,
     ) {
         Column(
@@ -243,7 +257,8 @@ private fun GlassRail(selected: Int, onSelect: (Int) -> Unit) {
                 val on = i == selected
                 Column(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(18.dp))
+                        .clip(V3.Shape)
+                        .background(if (on) V3.Accent.copy(alpha = 0.16f) else Color.Transparent)
                         .semantics { contentDescription = t }
                         .clickable { onSelect(i) }
                         .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -256,8 +271,8 @@ private fun GlassRail(selected: Int, onSelect: (Int) -> Unit) {
                     Box(
                         Modifier
                             .width(32.dp)
-                            .height(3.dp)
-                            .clip(CircleShape)
+                            .heightIn(min = 3.dp)
+                            .clip(V3.Shape)
                             .background(if (on) V3.Accent else Color.Transparent)
                     )
                 }
@@ -270,7 +285,6 @@ private fun GlassRail(selected: Int, onSelect: (Int) -> Unit) {
 private fun TopBar(collapsed: Boolean) {
     val status = WindowInsets.statusBars.asPaddingValues()
     val h by animateDpAsState(if (collapsed) 64.dp else 96.dp, tween(280, easing = V3.EasePress), label = "tbH")
-    val radius by animateDpAsState(if (collapsed) 20.dp else 0.dp, tween(280, easing = V3.EasePress), label = "tbR")
     val hPad by animateDpAsState(if (collapsed) 16.dp else 0.dp, tween(280, easing = V3.EasePress), label = "tbP")
     val titleSize by animateFloatAsState(if (collapsed) 22f else 32f, tween(280, easing = V3.EasePress), label = "tbT")
 
@@ -279,13 +293,14 @@ private fun TopBar(collapsed: Boolean) {
             .fillMaxWidth()
             .padding(top = status.calculateTopPadding())
             .padding(horizontal = hPad, vertical = if (collapsed) 6.dp else 0.dp)
-            .height(h),
-        shape = RoundedCornerShape(radius),
+            .heightIn(min = h),
+        shape = V3.Shape,
         strong = true,
     ) {
         Row(
             Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .heightIn(min = h - (if (collapsed) 12.dp else 0.dp))
                 .padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -299,7 +314,7 @@ private fun TopBar(collapsed: Boolean) {
                 }
                 if (!collapsed) Text("原生 v3 · 大屏自適應", color = V3.Text2, fontSize = 12.sp)
             }
-            GlassSurface(modifier = Modifier.size(if (collapsed) 36.dp else 40.dp), shape = CircleShape) {
+            GlassSurface(modifier = Modifier.size(if (collapsed) 36.dp else 40.dp), shape = V3.Shape) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("↻", color = V3.Text1, fontSize = 16.sp)
                 }
@@ -315,13 +330,13 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = nav.calculateBottomPadding()),
-        shape = RoundedCornerShape(0.dp),
+        shape = V3.Shape,
         strong = true,
     ) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(72.dp)
+                .heightIn(min = 72.dp)
                 .padding(horizontal = 6.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically,
@@ -330,7 +345,8 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                 val on = i == selected
                 Column(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(V3.Shape)
+                        .background(if (on) V3.Accent.copy(alpha = 0.16f) else Color.Transparent)
                         .semantics { contentDescription = t }
                         .clickable { onSelect(i) }
                         .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -343,8 +359,8 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                     Box(
                         Modifier
                             .width(28.dp)
-                            .height(3.dp)
-                            .clip(CircleShape)
+                            .heightIn(min = 3.dp)
+                            .clip(V3.Shape)
                             .background(if (on) V3.Accent else Color.Transparent)
                     )
                 }

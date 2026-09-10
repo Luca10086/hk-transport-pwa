@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -72,41 +73,46 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         if (hk.senyou.travel.data.DebugFlags.staticUi) return@LaunchedEffect
         while (true) {
-            val d = Api.mtrBusSchedule("K75P")
-            val arr = d?.optJSONArray("busStop")
-            var best: Int? = null
-            var live = 0
-            if (arr != null) {
-                for (i in 0 until arr.length()) {
-                    val buses = arr.optJSONObject(i)?.optJSONArray("bus") ?: continue
-                    for (j in 0 until buses.length()) {
-                        val b = buses.optJSONObject(j) ?: continue
-                        val sec = b.optInt("arrivalTimeInSecond", 0)
-                        if (sec in 1 until 108000) {
-                            val m = (sec + 59) / 60
-                            if (best == null || m < best) best = m
+            // 任何例外都不可讓 App 崩潰（真機隨機閃退防線）
+            runCatching {
+                val d = Api.mtrBusSchedule("K75P")
+                val arr = d?.optJSONArray("busStop")
+                var best: Int? = null
+                var live = 0
+                if (arr != null) {
+                    for (i in 0 until arr.length()) {
+                        val buses = arr.optJSONObject(i)?.optJSONArray("bus") ?: continue
+                        for (j in 0 until buses.length()) {
+                            val b = buses.optJSONObject(j) ?: continue
+                            val sec = b.optInt("arrivalTimeInSecond", 0)
+                            if (sec in 1 until 108000) {
+                                val m = (sec + 59) / 60
+                                if (best == null || m < best) best = m
+                            }
+                            val loc = b.optJSONObject("busLocation")
+                            if (loc != null && loc.optDouble("latitude", 0.0) != 0.0) live++
                         }
-                        val loc = b.optJSONObject("busLocation")
-                        if (loc != null && loc.optDouble("latitude", 0.0) != 0.0) live++
                     }
                 }
+                k75pMins = best
+                k75pLive = live
             }
-            k75pMins = best
-            k75pLive = live
             delay(30_000)
         }
     }
 
     LaunchedEffect(favs) {
-        val w = Hko.fetch()
-        weatherTemp = w.temp
-        weatherCap = if (w.temp == null) "載入中…" else buildString {
-            if (w.emoji.isNotBlank()) append(w.emoji).append(' ')
-            append(w.days.joinToString(" ") { d -> d.label.take(1) + (d.max?.let { "$it°" } ?: "") })
-            if (isEmpty()) append(w.desc)
+        runCatching {
+            val w = Hko.fetch()
+            weatherTemp = w.temp
+            weatherCap = if (w.temp == null) "載入中…" else buildString {
+                if (w.emoji.isNotBlank()) append(w.emoji).append(' ')
+                append(w.days.joinToString(" ") { d -> d.label.take(1) + (d.max?.let { "$it°" } ?: "") })
+                if (isEmpty()) append(w.desc)
+            }
+            val first = favs.firstOrNull()
+            favMins = first?.let { SearchRepo.favEta(it) }
         }
-        val first = favs.firstOrNull()
-        favMins = first?.let { SearchRepo.favEta(it) }
     }
 
     LaunchedEffect(query, mode) {
@@ -117,11 +123,13 @@ fun HomeScreen(
         }
         delay(350)
         loading = true
-        val base = SearchRepo.search(query, MODES[mode].first)
-        items = base
-        items = SearchRepo.fillEtas(base)
+        runCatching {
+            val base = SearchRepo.search(query, MODES[mode].first)
+            items = base
+            items = SearchRepo.fillEtas(base)
+            if (base.isNotEmpty()) Store.pushRecent(ctx, query)
+        }
         loading = false
-        if (base.isNotEmpty()) Store.pushRecent(ctx, query)
     }
 
     val tiles: @Composable () -> Unit = {
@@ -187,8 +195,8 @@ fun HomeScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 recent.take(5).forEach { q ->
                     GlassSurface(
-                        modifier = Modifier.height(38.dp).clickable { query = q },
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(999.dp),
+                        modifier = Modifier.heightIn(min = 38.dp).clickable { query = q },
+                        shape = V3.Shape,
                     ) {
                         Box(Modifier.padding(horizontal = 14.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
                             Text(q, color = V3.Text1, fontSize = 13.sp, maxLines = 1)
@@ -239,7 +247,7 @@ fun HomeScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("69X", "969", "K75P", "天水圍", "元朗").forEach { q ->
                             GlassSurface(
-                                modifier = Modifier.fillMaxWidth().height(52.dp)
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
                                     .clickable { query = q },
                             ) {
                                 Row(

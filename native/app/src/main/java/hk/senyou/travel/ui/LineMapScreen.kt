@@ -7,6 +7,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -63,7 +65,7 @@ fun LineMapScreen() {
         if (mode != 0) return@LaunchedEffect
         val code = lines.getOrNull(lineIdx) ?: return@LaunchedEffect
         loading = true
-        rows = MtrRepo.lineRows(code)
+        rows = runCatching { MtrRepo.lineRows(code) }.getOrDefault(emptyList())
         loading = false
     }
 
@@ -73,8 +75,8 @@ fun LineMapScreen() {
             listOf("港鐵", "輕鐵").forEachIndexed { i, label ->
                 val on = mode == i
                 GlassSurface(
-                    modifier = Modifier.height(40.dp).clickable { mode = i },
-                    shape = RoundedCornerShape(999.dp),
+                    modifier = Modifier.heightIn(min = 40.dp).clickable { mode = i },
+                    shape = V3.Shape,
                     strong = on,
                 ) {
                     Box(
@@ -97,8 +99,8 @@ fun LineMapScreen() {
                 lines.forEachIndexed { i, code ->
                     val on = i == lineIdx
                     GlassSurface(
-                        modifier = Modifier.height(38.dp).clickable { lineIdx = i },
-                        shape = RoundedCornerShape(999.dp),
+                        modifier = Modifier.heightIn(min = 38.dp).clickable { lineIdx = i },
+                        shape = V3.Shape,
                         strong = on,
                     ) {
                         Box(
@@ -124,7 +126,7 @@ fun LineMapScreen() {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     itemsIndexed(rows) { idx, r ->
-                        Row(Modifier.fillMaxWidth().height(58.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().heightIn(min = 58.dp), verticalAlignment = Alignment.CenterVertically) {
                             // 站間連接線（僅單列模式；多列時每格獨立，畫線會錯亂）
                             Box(Modifier.width(36.dp).fillMaxHeight()) {
                                 if (singleColumn) {
@@ -178,7 +180,7 @@ fun LineMapScreen() {
                     }
                     itemsIndexed(list, key = { _, s -> "lrt-${s.id}" }) { idx, s ->
                         Row(
-                            Modifier.fillMaxWidth().height(52.dp).clickable { lrtSel = s.id to s.name },
+                            Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { lrtSel = s.id to s.name },
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Box(Modifier.width(36.dp).fillMaxHeight()) {
@@ -226,7 +228,7 @@ private fun LrtEtaSheet(stationId: Int, name: String, onClose: () -> Unit) {
     var list by remember { mutableStateOf<List<Api.LrtEta>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     LaunchedEffect(stationId) {
-        list = Api.lrtEta(stationId)
+        list = runCatching { Api.lrtEta(stationId) }.getOrDefault(emptyList())
         loading = false
     }
     Box(
@@ -235,7 +237,7 @@ private fun LrtEtaSheet(stationId: Int, name: String, onClose: () -> Unit) {
     ) {
         GlassSurface(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
-            shape = RoundedCornerShape(V3.RadiusSheet),
+            shape = V3.Shape,
             strong = true,
         ) {
             Column(Modifier.padding(16.dp)) {
@@ -250,9 +252,9 @@ private fun LrtEtaSheet(stationId: Int, name: String, onClose: () -> Unit) {
                     Text("暫無到站資料", color = V3.Text2, fontSize = 13.sp)
                 } else {
                     list.take(6).forEach { e ->
-                        Row(Modifier.fillMaxWidth().height(46.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().heightIn(min = 46.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(
-                                Modifier.size(34.dp).clip(CircleShape).background(V3.CoLrt.copy(alpha = 0.25f)),
+                                Modifier.size(34.dp).clip(V3.Shape).background(V3.CoLrt.copy(alpha = 0.25f)),
                                 contentAlignment = Alignment.Center,
                             ) { Text(e.routeNo, color = V3.Text1, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
                             Spacer(Modifier.size(10.dp))
