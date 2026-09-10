@@ -154,3 +154,29 @@ gradlew.bat :app:testDebugUnitTest      # 渲染 8 個頁面截圖 → app/build
 | 緩動 | `cubic-bezier(.16,1,.3,1)` | `Wp8.Ease` |
 
 驗證：MiMo v2.5 讀圖 7 張 → 6 張判定 `very_wp`；「按鈕有漸變 / chip 有圓角」兩條經**像素檢測否證**（按鈕整行均勻 `(139,92,246)`、四角皆為強調色）；另外三個 Pivot 分頁（收藏 / 路線 / 畫廊 App Bar）判定 `ok`。
+## 3.2.0 全盤 WP8 化（依概念圖 wp8-concept.html）
+
+介面層整組換掉：刪除 v3 液態玻璃（Glass.kt / LiquidBackground.kt / Widgets.kt / V3.kt 與全部舊頁面），
+改為 ui/wp8/ 一套 Metro 元件 + 5 個 Pivot 分頁。
+
+| 概念圖元素 | 原生實作 |
+|------------|----------|
+| 頂欄 Pivot 大標題 + 圓形搜尋/重新整理 | `PivotTopBar`（46sp Light，切頁淡出左移） |
+| Pivot 橫滑 5 分頁：首頁 / 收藏 / 壽司郎 / 路線 / 設定 | `HorizontalPager` + `Wp8AppBarButton` |
+| 首頁 Panorama（磁貼 / 搜尋 / 天氣＋K75P） | `Wp8HomePane`（3 面板 + 圓點指示）**大屏同屏並列兩塊面板** |
+| Live Tiles：我的收藏 / 壽司郎 / 天氣 / K75P / 收藏① / 路線圖 / 設定 | `Wp8Tile`（純色直角、3D 翻面、按壓 0.96） |
+| Metro 輸入框 + chips + 搜尋按鈕 | `Wp8Input` / `Wp8Chip` / `Wp8PrimaryButton` |
+| 扁平行結果（強調色路線號 + 等寬 ETA） | `Wp8Row` |
+| App Bar 5 圖標 + ⋯ 選單 | `AppBar` + `Wp8MoreMenu` |
+| K75P 全屏實時頁 | `Wp8K75PPage`（U 形圖改平面配色） |
+| 詳情頁右側 3D 滑入 | `Wp8DetailSheet`（rotateY(-12°) → 0） |
+| 設定列表（主題/強調色/字體/高對比/減少動畫/自動重新整理/資料來源/版本） | `Wp8SettingsPane`（另加安全模式與崩潰日誌） |
+| 高對比模式 | 純黑底 + 磁貼改黑底白框白字 |
+| 大屏 44px 邊距 | `Wp8.Gutter` 隨 `AdaptiveInfo.isExpanded` 切換 |
+
+配色與尺寸逐項對應 css/wp8-strict.css：`#15121C` / `#221D31` / `#8B5CF6`、磁貼 `#5B21B6`/`#7C3AED`/`#6D28D9`/`#4C1D95`、
+ETA 紅 `#E51400` / 橙 `#F0A30A`、12dp 網格、62dp App Bar、`cubic-bezier(.16,1,.3,1)`。
+
+驗證：單元測試 + 25 張 WP8 截圖（含大屏、淺色、高對比、大字體、逐分頁文字可見性回歸）。
+MiMo v2.5 讀圖：首頁磁貼、收藏、設定、K75P、高對比、淺色、大屏雙面板均判定符合 Metro；
+其「按鈕/chip 有漸變、有圓角」等指控經**像素檢測四次否證**（全圖僅 4 個精確色值、角落像素與中心同色）。

@@ -22,9 +22,10 @@ data class Settings(
     val big: Boolean = false,    // 大字模式
     val deep: Boolean = false,   // 深夜模式
     val night: String = "auto",  // system / manual / auto(定時)
-    val accent: Long = 0xFF0078D7,
+    val accent: Long = 0xFF8B5CF6,
     val fontLevel: Int = 3,      // 0..7
     val refresh: Int = 30,       // 秒，0=關
+    val contrast: Boolean = false, // WP 高對比（純黑底 / 純白字）
 )
 
 /** 收藏項（對應 Web 版 favorite 結構） */
@@ -87,9 +88,10 @@ object Store {
             big = o?.optBoolean("big", false) ?: false,
             deep = o?.optBoolean("deep", false) ?: false,
             night = o?.optString("night", "auto") ?: "auto",
-            accent = o?.optLong("accent", 0xFF0078D7) ?: 0xFF0078D7,
+            accent = o?.optLong("accent", 0xFF8B5CF6) ?: 0xFF8B5CF6,
             fontLevel = o?.optInt("fontLevel", 3) ?: 3,
             refresh = o?.optInt("refresh", 30) ?: 30,
+            contrast = o?.optBoolean("contrast", false) ?: false,
         )
     }
 
@@ -98,7 +100,7 @@ object Store {
             val o = JSONObject()
                 .put("theme", s.theme)
                 .put("glass", s.glass).put("fx", s.fx).put("big", s.big).put("deep", s.deep)
-                .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
+                .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh).put("contrast", s.contrast)
             ctx.ds.edit { it[K_CFG] = o.toString() }
         }
     }

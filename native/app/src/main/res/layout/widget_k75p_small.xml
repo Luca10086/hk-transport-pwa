@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="K75P · 天瑞 ↺ 洪水橋"
-            android:textColor="#AAB6C6"
+            android:textColor="#E8E0FF"
             android:textSize="10sp"
             android:maxLines="1" />
 
@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="收藏：暫無"
-            android:textColor="#E6ECF5"
+            android:textColor="#FFFFFF"
             android:textSize="12sp"
             android:maxLines="1" />
     </LinearLayout>
@@ -38,7 +38,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="—"
-        android:textColor="#4FC3F7"
+        android:textColor="#FFFFFF"
         android:textSize="22sp"
         android:maxLines="1" />
 </LinearLayout>

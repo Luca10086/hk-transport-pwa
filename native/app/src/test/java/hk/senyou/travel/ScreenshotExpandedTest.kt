@@ -5,30 +5,24 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.core.view.drawToBitmap
 import hk.senyou.travel.data.DebugFlags
 import hk.senyou.travel.data.Settings
 import hk.senyou.travel.data.StaticData
 import hk.senyou.travel.ui.AdaptiveInfo
-import hk.senyou.travel.ui.FavoritesScreen
-import hk.senyou.travel.ui.GlassCfg
-import hk.senyou.travel.ui.HomeScreen
-import hk.senyou.travel.ui.LineMapScreen
-import hk.senyou.travel.ui.LiquidBackgroundHost
 import hk.senyou.travel.ui.LocalAdaptive
-import hk.senyou.travel.ui.LocalGlassCfg
-import hk.senyou.travel.ui.SenyouApp
-import hk.senyou.travel.ui.SettingsScreen
 import hk.senyou.travel.ui.SizeClass
-import hk.senyou.travel.ui.SushiScreen
 import hk.senyou.travel.ui.theme.SenyouTheme
-import hk.senyou.travel.ui.theme.V3
+import hk.senyou.travel.ui.wp8.Wp8
+import hk.senyou.travel.ui.wp8.Wp8Gallery
+import hk.senyou.travel.ui.wp8.Wp8HomePane
+import hk.senyou.travel.ui.wp8.Wp8MapPane
+import hk.senyou.travel.ui.wp8.Wp8SettingsPane
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +33,7 @@ import java.io.File
 
 /**
  * 大屏（MIX Fold 4 內屏 ≈ 953×852dp）截圖測試：
- * 驗證展開態的左側導航欄、首頁雙欄、列表雙列網格、設定頁限寬居中。
+ * 驗證 WP8 大屏邊距（44dp）、磁貼牆、Pivot 分頁、設定頁。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], qualifiers = "w953dp-h852dp-xxhdpi")
@@ -55,11 +49,15 @@ class ScreenshotExpandedTest {
     fun setup() {
         DebugFlags.staticUi = true
         DebugFlags.offline = true
+        Wp8.light = false
+        Wp8.contrast = false
+        Wp8.accentIndex = 0
+        Wp8.Gutter = 44.dp
     }
 
     private fun shoot(name: String) {
         rule.waitForIdle()
-        Thread.sleep(400)
+        Thread.sleep(300)
         rule.waitForIdle()
         val bmp = rule.activity.window.decorView.drawToBitmap(Bitmap.Config.ARGB_8888)
         File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -69,66 +67,55 @@ class ScreenshotExpandedTest {
     private fun Frame(content: @Composable () -> Unit) {
         SenyouTheme {
             CompositionLocalProvider(
-                LocalGlassCfg provides GlassCfg(alpha = 0.07f, blurPx = 26f, refractPx = 20f, motion = false),
-                // 關鍵：注入展開態自適應資訊（953×852dp 摺疊屏內屏）
                 LocalAdaptive provides AdaptiveInfo(
                     sizeClass = SizeClass.Expanded,
                     widthDp = 953,
                     heightDp = 852,
                 ),
             ) {
-                LiquidBackgroundHost(
-                    modifier = Modifier.fillMaxSize().background(V3.Bg),
-                    deepNight = false,
-                    snapshot = false,
-                ) {
-                    Box(Modifier.fillMaxSize()) { content() }
-                }
+                Box(Modifier.fillMaxSize().background(Wp8.Bg)) { content() }
             }
         }
     }
 
+    private fun load() = StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+
     @Test
     fun appExpanded() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { SenyouApp() } }
-        shoot("10-app-expanded")
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
+        shoot("wp8-20-app-expanded")
     }
 
     @Test
     fun homeExpanded() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        load()
         rule.setContent {
-            Frame { HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {}) }
+            Frame {
+                Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+            }
         }
-        shoot("11-home-expanded")
+        shoot("wp8-21-home-expanded")
     }
 
     @Test
-    fun favoritesExpanded() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { FavoritesScreen(onOpenRoute = {}) } }
-        shoot("12-favorites-expanded")
-    }
-
-    @Test
-    fun sushiExpanded() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { SushiScreen() } }
-        shoot("13-sushi-expanded")
-    }
-
-    @Test
-    fun lineMapExpanded() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { LineMapScreen() } }
-        shoot("14-linemap-expanded")
+    fun routesExpanded() {
+        load()
+        rule.setContent { Frame { Wp8MapPane(onOpenDetail = {}) } }
+        shoot("wp8-22-routes-expanded")
     }
 
     @Test
     fun settingsExpanded() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { SettingsScreen(Settings()) } }
-        shoot("15-settings-expanded")
+        load()
+        rule.setContent { Frame { Wp8SettingsPane(settings = Settings(), onSettings = {}, onOpenGallery = {}) } }
+        shoot("wp8-23-settings-expanded")
+    }
+
+    @Test
+    fun galleryExpanded() {
+        load()
+        rule.setContent { Frame { Wp8Gallery() } }
+        shoot("wp8-24-gallery-expanded")
     }
 }

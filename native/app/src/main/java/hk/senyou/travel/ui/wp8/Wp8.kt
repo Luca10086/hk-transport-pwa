@@ -92,12 +92,14 @@ object Wp8 {
     /* ---------- ETA 語義色 ---------- */
     val Soon = Color(0xFFE51400)
     val Medium = Color(0xFFF0A30A)
+    val Success = Color(0xFF60C060)
 
     /* ---------- 動效：WP 的招牌緩動 ---------- */
     val Ease = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
 
     /* ---------- 12/24 網格 ---------- */
-    val Gutter = 24.dp
+    /** 響應式邊距：手機 24dp、大屏 44dp（對應 css @media min-width 700px） */
+    var Gutter by androidx.compose.runtime.mutableStateOf(24.dp)
     val Gap = 12.dp
     val TopBarH = 104.dp
     val AppBarH = 62.dp
@@ -106,12 +108,35 @@ object Wp8 {
     /* ---------- 主題切換 ---------- */
     var light by androidx.compose.runtime.mutableStateOf(false)
 
-    val Bg: Color get() = if (light) BgLight else BgDark
-    val Surface: Color get() = if (light) SurfaceLight else SurfaceDark
-    val Surface2: Color get() = if (light) Surface2Light else Surface2Dark
-    val Line: Color get() = if (light) LineLight else LineDark
-    val Text1: Color get() = if (light) TextLight else Color.White
-    val Text2: Color get() = if (light) Text2Light else Text2Dark
+    /** WP 高對比：純黑底 + 純白字 */
+    var contrast by androidx.compose.runtime.mutableStateOf(false)
+
+    val Bg: Color get() = when {
+        contrast -> Color.Black
+        light -> BgLight
+        else -> BgDark
+    }
+    val Surface: Color get() = when {
+        contrast -> Color(0xFF101010)
+        light -> SurfaceLight
+        else -> SurfaceDark
+    }
+    val Surface2: Color get() = when {
+        contrast -> Color(0xFF1A1A1A)
+        light -> Surface2Light
+        else -> Surface2Dark
+    }
+    val Line: Color get() = when {
+        contrast -> Color(0xFF6A6A6A)
+        light -> LineLight
+        else -> LineDark
+    }
+    val Text1: Color get() = if (!contrast && light) TextLight else Color.White
+    val Text2: Color get() = when {
+        contrast -> Color(0xFFD0D0D0)
+        light -> Text2Light
+        else -> Text2Dark
+    }
 }
 
 /** WP 圓形圖標按鈕（頂欄 44dp、2px 描邊——WP8 規範） */
@@ -170,6 +195,8 @@ fun Wp8Tile(
     val scale by animateFloatAsState(if (pressed) 0.96f else 1f, tween(160, easing = Wp8.Ease), label = "tile")
     val angle by animateFloatAsState(if (flipped && back != null) 180f else 0f, tween(700, easing = Wp8.Ease), label = "flip")
     val density = LocalDensity.current.density
+    // WP 高對比：磁貼改為黑底白框白字（不保留彩色）
+    val hc = Wp8.contrast
 
     Box(
         modifier
@@ -179,7 +206,8 @@ fun Wp8Tile(
                 rotationY = angle
                 cameraDistance = 16f * density
             }
-            .background(color)
+            .background(if (hc) Color.Black else color)
+            .then(if (hc) Modifier.border(1.dp, Color.White) else Modifier)
             .semantics { contentDescription = "$title $value $sub" }
             .clickable(interactionSource = interaction, indication = null) { onClick() },
     ) {
@@ -215,7 +243,7 @@ fun Wp8Tile(
                                 maxLines = 1,
                             )
                             if (trailing.isNotBlank()) {
-                                Text(trailing, color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp, modifier = Modifier.padding(start = 2.dp, bottom = 5.dp))
+                                Text(trailing, color = Color.White.copy(alpha = 0.92f), fontSize = 12.sp, modifier = Modifier.padding(start = 2.dp, bottom = 5.dp))
                             }
                         }
                     }
@@ -229,7 +257,7 @@ fun Wp8Tile(
                     if (sub.isNotBlank()) {
                         Text(
                             sub,
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = Color.White.copy(alpha = 0.92f),
                             fontSize = 11.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,

@@ -7,28 +7,24 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onRoot
 import androidx.core.view.drawToBitmap
 import hk.senyou.travel.data.DebugFlags
 import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.Settings
 import hk.senyou.travel.data.StaticData
-import hk.senyou.travel.ui.FavoritesScreen
-import hk.senyou.travel.ui.GlassCfg
-import hk.senyou.travel.ui.HomeScreen
-import hk.senyou.travel.ui.K75PPage
-import hk.senyou.travel.ui.LineMapScreen
-import hk.senyou.travel.ui.LiquidBackgroundHost
-import hk.senyou.travel.ui.LocalGlassCfg
-import hk.senyou.travel.ui.SettingsScreen
-import hk.senyou.travel.ui.SushiScreen
-import hk.senyou.travel.ui.WeatherPage
 import hk.senyou.travel.ui.theme.SenyouTheme
-import hk.senyou.travel.ui.theme.V3
+import hk.senyou.travel.ui.wp8.Wp8
+import hk.senyou.travel.ui.wp8.Wp8FavsPane
+import hk.senyou.travel.ui.wp8.Wp8Gallery
+import hk.senyou.travel.ui.wp8.Wp8HomePane
+import hk.senyou.travel.ui.wp8.Wp8K75PPage
+import hk.senyou.travel.ui.wp8.Wp8MapPane
+import hk.senyou.travel.ui.wp8.Wp8SettingsPane
+import hk.senyou.travel.ui.wp8.Wp8SushiPane
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,8 +34,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
 /**
- * 截圖測試：用 Robolectric 原生渲染（無需模擬器）把每個頁面輸出成 PNG，
- * 供主工程師做像素分析 + MiMo 視覺審查。
+ * 截圖測試（WP8 / Metro）：Robolectric 原生渲染 → PNG，供像素分析 + MiMo 視覺審查。
  * 產物目錄：app/build/screenshots/
  */
 @RunWith(RobolectricTestRunner::class)
@@ -56,19 +51,21 @@ class ScreenshotTest {
     fun setup() {
         DebugFlags.staticUi = true
         DebugFlags.offline = true
-        V3.apply("dark", 0xFF0078D7)
+        Wp8.light = false
+        Wp8.contrast = false
+        Wp8.accentIndex = 0
+        Wp8.Gutter = 24.dp
     }
 
     private fun shoot(name: String) {
         rule.waitForIdle()
-        Thread.sleep(400)
+        Thread.sleep(300)
         rule.waitForIdle()
-        // Robolectric 無真實窗口 → 直接把 decorView 畫到 Bitmap（繞過 PixelCopy）
         val bmp = rule.activity.window.decorView.drawToBitmap(Bitmap.Config.ARGB_8888)
         File(outDir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
-    /** 亮像素數量（近似「文字是否還看得見」）：亮度 > 150 的像素個數 */
+    /** 亮像素數量（近似「文字是否看得見」） */
     private fun brightPixels(bmp: Bitmap): Int {
         var n = 0
         var y = 0
@@ -85,359 +82,228 @@ class ScreenshotTest {
         return n
     }
 
-    /**
-     * 回歸測試（真機曾回報「開啟玻璃強度後所有文字消失」）：
-     * 玻璃 0–4 每一檔都必須保留足量文字像素，且不得隨強度上升而消失。
-     */
-    @Test
-    fun glassLevelsKeepTextVisible() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        val level = androidx.compose.runtime.mutableIntStateOf(0)
-        rule.setContent {
-            Frame(glassLevel = level.intValue) {
-                HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
-            }
-        }
-        val counts = mutableListOf<Int>()
-        for (l in 0..4) {
-            level.intValue = l
-            rule.waitForIdle()
-            Thread.sleep(250)
-            rule.waitForIdle()
-            val bmp = rule.activity.window.decorView.drawToBitmap(Bitmap.Config.ARGB_8888)
-            File(outDir, "22-glass-level-$l.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
-            counts += brightPixels(bmp)
-        }
-        println("glassLevels bright pixels: $counts")
-        // 文字被裝飾層蓋住時，亮像素會塌回「只有星空背景」的量級（實測 <300）
-        counts.forEachIndexed { l, c ->
-            org.junit.Assert.assertTrue("玻璃強度 $l 的文字像素過少（$c），裝飾層可能蓋住了內容", c > 800)
-        }
-        // 最濃的一檔不得比無玻璃時少一半以上（文字被遮住的典型特徵）
-        org.junit.Assert.assertTrue(
-            "玻璃 4 檔文字像素嚴重減少：${counts[0]} → ${counts[4]}",
-            counts[4] > counts[0] / 2,
-        )
-    }
-
     @Composable
-    private fun Frame(glassLevel: Int = 2, light: Boolean = false, content: @Composable () -> Unit) {
-        val alpha = when (glassLevel) {
-            0 -> 0f; 1 -> 0.03f; 2 -> 0.07f; 3 -> 0.10f; else -> 0.14f
-        }
-        val blur = when (glassLevel) {
-            0 -> 0f; 1 -> 12f; 2 -> 26f; 3 -> 36f; else -> 48f
-        }
+    private fun Frame(content: @Composable () -> Unit) {
         SenyouTheme {
-            CompositionLocalProvider(
-                LocalGlassCfg provides GlassCfg(
-                    alpha = alpha, blurPx = blur,
-                    refractPx = if (glassLevel == 0) 0f else 20f,
-                    motion = false,
-                    light = light,
-                ),
-            ) {
-                LiquidBackgroundHost(
-                    modifier = Modifier.fillMaxSize().background(V3.Bg),
-                    deepNight = false,
-                    snapshot = false,
-                    light = light,
-                ) {
-                    Box(Modifier.fillMaxSize()) { content() }
-                }
-            }
+            Box(Modifier.fillMaxSize().background(Wp8.Bg)) { content() }
         }
     }
 
-    /** 淺色主題 */
-    @Test
-    fun homeLight() {
-        V3.apply("light", 0xFF0078D7)
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent {
-            Frame(light = true) {
-                HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
-            }
-        }
-        shoot("17-home-light")
-    }
+    private val ctx: android.content.Context
+        get() = androidx.test.core.app.ApplicationProvider.getApplicationContext()
 
-    /** 強調色（紫） */
-    @Test
-    fun homeAccentPurple() {
-        V3.apply("dark", 0xFFAA00FF)
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent {
-            Frame {
-                HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
-            }
-        }
-        shoot("18-home-accent-purple")
-    }
+    private fun load() = StaticData.load(ctx)
+
+    /* ---------------- 首頁全景三面板 ---------------- */
 
     @Test
-    fun home() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent {
-            Frame { HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {}) }
-        }
-        shoot("01-home")
-    }
-
-    @Test
-    fun homeGlassFallback() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent {
-            Frame(glassLevel = 0) {
-                HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
-            }
-        }
-        shoot("02-home-glass0")
-    }
-
-    @Test
-    fun k75pPage() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { K75PPage(onClose = {}) } }
-        shoot("03-k75p")
-    }
-
-    @Test
-    fun favorites() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { FavoritesScreen(onOpenRoute = {}) } }
-        shoot("04-favorites-empty")
-    }
-
-    @Test
-    fun sushi() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { SushiScreen() } }
-        shoot("05-sushi")
-    }
-
-    @Test
-    fun lineMap() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { LineMapScreen() } }
-        shoot("06-linemap")
-    }
-
-    @Test
-    fun settings() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { SettingsScreen(Settings()) } }
-        shoot("07-settings")
-    }
-
-    @Test
-    fun weather() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { WeatherPage(onClose = {}) } }
-        shoot("08-weather")
-    }
-
-    /** 有收藏內容的收藏頁（驗證提醒鈴鐺 + 離線緩存顯示） */
-    @Test
-    fun favoritesWithItems() {
-        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        StaticData.load(ctx)
-        val f1 = hk.senyou.travel.data.Fav(type = "bus", company = "kmb", route = "69X", dir = "outbound", stopName = "天瑞總站", alertMins = 5)
-        val f2 = hk.senyou.travel.data.Fav(type = "mtrbus", company = "mtrbus", route = "K75P", stopName = "天瑞")
-        val f3 = hk.senyou.travel.data.Fav(type = "mtr", company = "mtr", stationCode = "TIS", stationName = "天水圍", lineName = "屯馬線")
-        kotlinx.coroutines.runBlocking { hk.senyou.travel.data.Store.saveFavorites(ctx, listOf(f1, f2, f3)) }
-        // 預置離線緩存（離線時應顯示「（上次 HH:mm）」）
-        hk.senyou.travel.data.Cache.putEtaCache(f1.key, 7)
-        hk.senyou.travel.data.Cache.putEtaCache(f2.key, 2)
-        rule.setContent { Frame { FavoritesScreen(onOpenRoute = {}) } }
-        shoot("16-favorites-items")
-    }
-
-    /** 聯網測試：真實港鐵數據（驗證站間連接線與上下行 ETA） */
-    @Test
-    fun lineMapLive() {
-        DebugFlags.offline = false
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { LineMapScreen() } }
-        Thread.sleep(6000)   // 等待 MTR 各站班次載入
-        shoot("09-linemap-live")
-    }
-
-    /** 聯網測試：港鐵車站詳情（收藏卡片 / 到站通知點擊後的頁面） */
-    @Test
-    fun stationDetailLive() {
-        DebugFlags.offline = false
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        val item = SearchItem(
-            kind = hk.senyou.travel.data.Kind.MTR, no = "MTR", name = "天水圍",
-            cap = "屯馬線", stationCode = "TIS", stationName = "天水圍",
-        )
-        rule.setContent { Frame { hk.senyou.travel.ui.RouteDetailPage(item = item, onClose = {}) } }
-        Thread.sleep(6000)
-        shoot("19-station-mtr-live")
-    }
-
-    /** 聯網測試：港鐵巴士路線詳情（班次表） */
-    @Test
-    fun mtrBusDetailLive() {
-        DebugFlags.offline = false
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        val item = SearchItem(
-            kind = hk.senyou.travel.data.Kind.MTRBUS, no = "K75P", name = "K75P",
-            cap = "港鐵巴士", route = "K75P",
-        )
-        rule.setContent { Frame { hk.senyou.travel.ui.RouteDetailPage(item = item, onClose = {}) } }
-        Thread.sleep(5000)
-        shoot("20-mtrbus-detail-live")
-    }
-
-    /** 聯網測試：輕鐵車站詳情（各線到站） */
-    @Test
-    fun lrtStationLive() {
-        DebugFlags.offline = false
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        val item = SearchItem(
-            kind = hk.senyou.travel.data.Kind.LRT, no = "輕鐵", name = "天瑞", cap = "輕鐵",
-            stationCode = "460", stationName = "天瑞",
-        )
-        rule.setContent { Frame { hk.senyou.travel.ui.RouteDetailPage(item = item, onClose = {}) } }
-        Thread.sleep(5000)
-        shoot("21-station-lrt-live")
-    }
-
-    /** 完整 App 外殼（頂欄 + 底部導航；單頁截圖不含導航欄，故另截一張） */
-    @Test
-    fun appShell() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
-        shoot("25-app-shell")
-    }
-
-    /** WP8 風格演示：Pivot 分頁 ×4（開始 / 收藏 / 路線 / 設定） */
-    @Test
-    fun wp8DemoPanes() {
-        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        StaticData.load(ctx)
+    fun homeTiles() {
+        load()
         hk.senyou.travel.data.Cache.k75pMins = 4
         hk.senyou.travel.data.Cache.k75pLive = 2
-        hk.senyou.travel.ui.wp8.Wp8.accentIndex = 0
-        hk.senyou.travel.ui.wp8.Wp8.light = false
         rule.setContent {
-            androidx.compose.foundation.layout.Box(
-                Modifier.fillMaxSize().background(hk.senyou.travel.ui.wp8.Wp8.Bg),
-            ) {
-                hk.senyou.travel.ui.wp8.Wp8DemoScreen(onClose = {})
+            Frame {
+                Wp8HomePane(
+                    refreshSec = 0, refreshTick = 0, startPanel = 0,
+                    onOpenK75P = {}, onGoPane = {}, onOpenDetail = {},
+                )
             }
         }
-        rule.waitForIdle()
-        Thread.sleep(500)
-        rule.waitForIdle()
-        shoot("26-wp8-start")
+        shoot("wp8-01-home-tiles")
     }
 
-    /** WP8 風格演示：淺色主題 + 換強調色 */
     @Test
-    fun wp8DemoLightAccent() {
-        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        StaticData.load(ctx)
-        hk.senyou.travel.ui.wp8.Wp8.light = true
-        hk.senyou.travel.ui.wp8.Wp8.accentIndex = 1
+    fun homeSearch() {
+        load()
+        kotlinx.coroutines.runBlocking { hk.senyou.travel.data.Store.pushRecent(ctx, "69X") }
         rule.setContent {
-            androidx.compose.foundation.layout.Box(
-                Modifier.fillMaxSize().background(hk.senyou.travel.ui.wp8.Wp8.Bg),
-            ) {
-                hk.senyou.travel.ui.wp8.Wp8DemoScreen(onClose = {})
+            Frame {
+                Wp8HomePane(
+                    refreshSec = 0, refreshTick = 0, startPanel = 1,
+                    onOpenK75P = {}, onGoPane = {}, onOpenDetail = {},
+                )
             }
         }
-        rule.waitForIdle()
-        Thread.sleep(500)
-        rule.waitForIdle()
-        shoot("27-wp8-light-blue")
-        hk.senyou.travel.ui.wp8.Wp8.light = false
-        hk.senyou.travel.ui.wp8.Wp8.accentIndex = 0
+        shoot("wp8-02-home-search")
     }
 
-    /** WP8 元件畫廊：磁貼 / 列表行 / 膠囊 / 輸入框 / 按鈕 / App Bar */
     @Test
-    fun wp8Gallery() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        hk.senyou.travel.ui.wp8.Wp8.light = false
+    fun homeWeather() {
+        load()
         rule.setContent {
-            hk.senyou.travel.ui.wp8.Wp8Gallery()
+            Frame {
+                Wp8HomePane(
+                    refreshSec = 0, refreshTick = 0, startPanel = 2,
+                    onOpenK75P = {}, onGoPane = {}, onOpenDetail = {},
+                )
+            }
         }
-        shoot("28-wp8-gallery")
+        shoot("wp8-03-home-weather")
     }
 
-    /** WP8 演示：收藏分頁（Pivot 第 2 頁） */
+    /* ---------------- 其他 Pivot 分頁 ---------------- */
+
     @Test
-    fun wp8PaneFavourites() {
-        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        StaticData.load(ctx)
-        hk.senyou.travel.ui.wp8.Wp8.light = false
-        hk.senyou.travel.ui.wp8.Wp8.accentIndex = 0
+    fun favouritesPane() {
+        load()
         val f1 = hk.senyou.travel.data.Fav(type = "bus", company = "kmb", route = "69X", dir = "outbound", stopName = "天瑞總站", alertMins = 5)
         val f2 = hk.senyou.travel.data.Fav(type = "mtrbus", company = "mtrbus", route = "K75P", stopName = "天瑞")
-        val f3 = hk.senyou.travel.data.Fav(type = "mtr", company = "mtr", stationCode = "TIS", stationName = "天水圍", lineName = "屯馬線")
+        val f3 = hk.senyou.travel.data.Fav(type = "mtr", company = "mtr", stationCode = "TIS", stationName = "天水圍", lineName = "屯馬綫")
         kotlinx.coroutines.runBlocking { hk.senyou.travel.data.Store.saveFavorites(ctx, listOf(f1, f2, f3)) }
         hk.senyou.travel.data.Cache.putEtaCache(f1.key, 7)
         hk.senyou.travel.data.Cache.putEtaCache(f2.key, 2)
-        rule.setContent {
-            androidx.compose.foundation.layout.Box(
-                Modifier.fillMaxSize().background(hk.senyou.travel.ui.wp8.Wp8.Bg),
-            ) {
-                hk.senyou.travel.ui.wp8.Wp8DemoScreen(onClose = {}, startPage = 1)
-            }
-        }
-        shoot("29-wp8-favourites")
+        rule.setContent { Frame { Wp8FavsPane(onOpenDetail = {}) } }
+        shoot("wp8-04-favourites")
     }
 
-    /** WP8 演示：路線分頁（Pivot 第 3 頁） */
     @Test
-    fun wp8PaneRoutes() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
-        hk.senyou.travel.ui.wp8.Wp8.light = false
-        rule.setContent {
-            androidx.compose.foundation.layout.Box(
-                Modifier.fillMaxSize().background(hk.senyou.travel.ui.wp8.Wp8.Bg),
-            ) {
-                hk.senyou.travel.ui.wp8.Wp8DemoScreen(onClose = {}, startPage = 2)
-            }
-        }
-        shoot("30-wp8-routes")
+    fun sushiPane() {
+        load()
+        rule.setContent { Frame { Wp8SushiPane() } }
+        shoot("wp8-05-sushi")
     }
 
-    /** 大字體（模擬 MIUI 系統字體放大 1.5×）：驗證文字不被容器裁切 */
     @Test
-    fun homeLargeFont() {
-        StaticData.load(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+    fun mapPane() {
+        load()
+        rule.setContent { Frame { Wp8MapPane(onOpenDetail = {}) } }
+        shoot("wp8-06-routes")
+    }
+
+    @Test
+    fun settingsPane() {
+        load()
+        rule.setContent {
+            Frame {
+                Wp8SettingsPane(settings = Settings(), onSettings = {}, onOpenGallery = {})
+            }
+        }
+        shoot("wp8-07-settings")
+    }
+
+    /** 完整 App 外殼（Pivot 頂欄 + 分頁 + App Bar） */
+    @Test
+    fun appShell() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
+        shoot("wp8-08-app-shell")
+    }
+
+    /** K75P 全屏實時頁 */
+    @Test
+    fun k75pPage() {
+        load()
+        rule.setContent { Frame { Wp8K75PPage(onClose = {}) } }
+        shoot("wp8-09-k75p")
+    }
+
+    /** 詳情頁（3D 滑入）：路線站表（離線 → 空狀態） */
+    @Test
+    fun detailSheet() {
+        load()
+        val item = SearchItem(
+            kind = hk.senyou.travel.data.Kind.MTR, no = "MTR", name = "天水圍",
+            cap = "屯馬綫", stationCode = "TIS", stationName = "天水圍",
+        )
+        rule.setContent {
+            Frame { hk.senyou.travel.ui.wp8.Wp8DetailSheet(item = item, onClose = {}) }
+        }
+        shoot("wp8-10-detail")
+    }
+
+    /* ---------------- 主題變體 ---------------- */
+
+    @Test
+    fun lightTheme() {
+        load()
+        Wp8.light = true
+        rule.setContent {
+            Frame {
+                Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+            }
+        }
+        shoot("wp8-11-light")
+    }
+
+    @Test
+    fun highContrast() {
+        load()
+        Wp8.contrast = true
+        rule.setContent {
+            Frame {
+                Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+            }
+        }
+        shoot("wp8-12-contrast")
+    }
+
+    @Test
+    fun accentBlue() {
+        load()
+        Wp8.accentIndex = 1
+        rule.setContent {
+            Frame {
+                Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+            }
+        }
+        shoot("wp8-13-accent-blue")
+    }
+
+    /** 元件畫廊（規範對照） */
+    @Test
+    fun gallery() {
+        load()
+        rule.setContent { Frame { Wp8Gallery() } }
+        shoot("wp8-14-gallery")
+    }
+
+    /** 大字體（模擬系統字體 1.5×）：文字不得被裁 */
+    @Test
+    fun largeFont() {
+        load()
         rule.setContent {
             androidx.compose.runtime.CompositionLocalProvider(
                 androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(3f, 1.5f),
             ) {
                 Frame {
-                    HomeScreen(scroll = rememberScrollState(), onOpenK75P = {}, onOpenRoute = {}, onOpenWeather = {})
+                    Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
                 }
             }
         }
-        shoot("23-home-font150")
+        shoot("wp8-15-large-font")
     }
 
-    /** 大字體 + 收藏卡片（34sp 大字最容易溢出） */
+    /**
+     * 回歸測試：每個分頁都必須有足量文字像素（防「裝飾層蓋住內容」重演）。
+     */
     @Test
-    fun favoritesLargeFont() {
-        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        StaticData.load(ctx)
-        val f1 = hk.senyou.travel.data.Fav(type = "bus", company = "kmb", route = "69X", dir = "outbound", stopName = "天瑞總站", alertMins = 5)
-        val f2 = hk.senyou.travel.data.Fav(type = "mtr", company = "mtr", stationCode = "TIS", stationName = "天水圍", lineName = "屯馬線")
-        kotlinx.coroutines.runBlocking { hk.senyou.travel.data.Store.saveFavorites(ctx, listOf(f1, f2)) }
-        hk.senyou.travel.data.Cache.putEtaCache(f1.key, 7)
+    fun panesKeepTextVisible() {
+        load()
+        val page = androidx.compose.runtime.mutableIntStateOf(0)
         rule.setContent {
-            androidx.compose.runtime.CompositionLocalProvider(
-                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(3f, 1.5f),
-            ) {
-                Frame { FavoritesScreen(onOpenRoute = {}) }
+            Frame {
+                when (page.intValue) {
+                    0 -> Wp8HomePane(refreshSec = 0, refreshTick = 0, onOpenK75P = {}, onGoPane = {}, onOpenDetail = {})
+                    1 -> Wp8FavsPane(onOpenDetail = {})
+                    2 -> Wp8SushiPane()
+                    3 -> Wp8MapPane(onOpenDetail = {})
+                    else -> Wp8SettingsPane(settings = Settings(), onSettings = {}, onOpenGallery = {})
+                }
             }
         }
-        shoot("24-favorites-font150")
+        val counts = mutableListOf<Int>()
+        for (p in 0..4) {
+            page.intValue = p
+            rule.waitForIdle()
+            Thread.sleep(220)
+            rule.waitForIdle()
+            val bmp = rule.activity.window.decorView.drawToBitmap(Bitmap.Config.ARGB_8888)
+            File(outDir, "wp8-16-pane-$p.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            counts += brightPixels(bmp)
+        }
+        println("wp8 panes bright pixels: $counts")
+        counts.forEachIndexed { i, c ->
+            org.junit.Assert.assertTrue("分頁 $i 的文字像素過少（$c）", c > 500)
+        }
     }
 }
