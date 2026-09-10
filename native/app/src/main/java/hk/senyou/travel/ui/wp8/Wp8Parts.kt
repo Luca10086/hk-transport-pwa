@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -130,19 +132,30 @@ fun Wp8WarningBar(text: String, severe: Boolean) {
     )
 }
 
-/** ⋯ 更多選單（WP App Bar 彈出） */
+/** ⋯ 更多選單（WP App Bar 彈出：貼齊右下、底欄之上，對應 CSS bottom: calc(appbar-h - 4px); right: 12px） */
 @Composable
 fun Wp8MoreMenu(items: List<Pair<String, () -> Unit>>, onDismiss: () -> Unit) {
+    var shown by remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { shown = true }
+    val t by animateFloatAsState(
+        if (shown) 1f else 0f,
+        tween(180, easing = Wp8.Ease),
+        label = "moreMenu",
+    )
     Box(
         Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(horizontal = Wp8.Gutter)
             .padding(bottom = Wp8.AppBarH + 6.dp),
         contentAlignment = Alignment.BottomEnd,
     ) {
         Column(
             Modifier
-                .width(180.dp)
+                .width(200.dp)
+                .graphicsLayer {
+                    alpha = t
+                    translationY = (1f - t) * 12.dp.toPx()
+                }
                 .background(Wp8.Surface)
                 .border(1.dp, Wp8.Line),
         ) {

@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -255,6 +257,51 @@ class ScreenshotTest {
         load()
         rule.setContent { Frame { Wp8Gallery() } }
         shoot("wp8-14-gallery")
+    }
+
+    /**
+     * 回歸測試：「⋯ 更多」選單必須貼齊右下、底欄之上（曾誤跑到右上角）。
+     * 判據：面板色 (#221D31) 首次出現的列必須在畫面下半部。
+     */
+    @Test
+    fun moreMenuAnchoredBottomRight() {
+        load()
+        rule.setContent {
+            Frame {
+                Box(Modifier.fillMaxSize()) {
+                    androidx.compose.foundation.layout.Column(
+                        Modifier
+                            .align(androidx.compose.ui.Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(Wp8.Surface)
+                            .height(Wp8.AppBarH),
+                    ) { }
+                    hk.senyou.travel.ui.wp8.Wp8MoreMenu(
+                        items = listOf("重新整理" to {}, "路線圖" to {}, "介面規範" to {}),
+                        onDismiss = {},
+                    )
+                }
+            }
+        }
+        rule.waitForIdle()
+        Thread.sleep(450)
+        rule.waitForIdle()
+        val bmp = rule.activity.window.decorView.drawToBitmap(Bitmap.Config.ARGB_8888)
+        File(outDir, "wp8-17-more-menu.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val surface = (0x22 shl 16) or (0x1D shl 8) or 0x31
+        val appBarTop = bmp.height - (Wp8.AppBarH.value * 3f).toInt()
+        var firstY = -1
+        var y = 0
+        while (y < appBarTop && firstY < 0) {
+            var x = 0
+            while (x < bmp.width) {
+                if ((bmp.getPixel(x, y) and 0xFFFFFF) == surface) { firstY = y; break }
+                x += 2
+            }
+            y += 2
+        }
+        println("moreMenu firstSurfaceY=$firstY / height=${bmp.height} appBarTop=$appBarTop")
+        org.junit.Assert.assertTrue("選單應位於畫面下半部，實際首列 y=$firstY（高度 ${bmp.height}）", firstY > bmp.height / 2)
     }
 
     /** 大字體（模擬系統字體 1.5×）：文字不得被裁 */

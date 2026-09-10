@@ -65,12 +65,13 @@ class ModelTest {
         assertNull("已過時間應為 null（顯示 —），與 Web 版一致", Api.minsUntil(past))
     }
 
-    /* ---------- K75P 投影 ---------- */
+    /* ---------- K75P 投影（窗口錨定：以「下一班到站」為準） ---------- */
 
     @Test
     fun gpsPos_atStartStop_returnsZero() {
         val c = StaticData.k75pCoords["D010"]!!
-        val pos = K75PModel.gpsPos(LatLng(c.lat, c.lng), 0f)
+        // 下一站 = 站 1（D020 之前的站），公車在站 0 → 段 0 內
+        val pos = K75PModel.gpsPos(LatLng(c.lat, c.lng), 1, 0.0f, null)
         assertNotNull(pos)
         assertTrue("起點站應投影到 0 附近，實際 $pos", pos!! < 0.6f)
     }
@@ -80,15 +81,62 @@ class ModelTest {
         val a = StaticData.k75pCoords["D010"]!!
         val b = StaticData.k75pCoords["D020"]!!
         val mid = LatLng((a.lat + b.lat) / 2, (a.lng + b.lng) / 2)
-        val pos = K75PModel.gpsPos(mid, 0.5f)
+        val pos = K75PModel.gpsPos(mid, 1, 0.5f, null)
         assertNotNull(pos)
         assertTrue("段中點應投影到 0.5 附近，實際 $pos", pos!! in 0.2f..0.8f)
     }
 
     @Test
     fun gpsPos_farAway_rejected() {
-        // 遠離路線（香港島）→ 應被拒絕
-        assertNull(K75PModel.gpsPos(LatLng(22.28, 114.16), 0f))
+        // 遠離路線（香港島）→ 窗口內都找不到合理距離 → 拒絕（改用 ETA 推估）
+        assertNull(K75PModel.gpsPos(LatLng(22.28, 114.16), 1, 0f, null))
+    }
+
+    /** 回歸測試：U 形循環線的兩臂相距很近，GPS 不得跳到對面那條臂 */
+    @Test
+    fun gpsPos_neverJumpsToOppositeArm() {
+        // 取「回程臂」某站座標，但 AVL 說下一班是「去程」第 5 站 → 只能在 1..5 之間
+        val stop = StaticData.k75pStops[17]
+        val c = StaticData.k75pCoords[stop.id]!!
+        val pos = K75PModel.gpsPos(LatLng(c.lat, c.lng), 5, 4.5f, 4.0f)
+        // 回傳 null 亦可（窗口內無可信段 → 改用 ETA 推估），重點是絕不能落在對面臂（≈17）
+        if (pos != null) {
+            assertTrue("投影必須落在窗口 1..5 內（不得跳到站 17 的對面臂），實際 $pos", pos >= 0.9f && pos <= 5.1f)
+        }
+    }
+
+    /** 循環線首尾同點：站 22 應歸一到站 0，否則標記會畫到地圖另一端 */
+    @Test
+    fun gpsPos_loopEndNormalisedToStart() {
+        val last = StaticData.k75pStops[22]
+        val c = StaticData.k75pCoords[last.id]!!
+        val pos = K75PModel.gpsPos(LatLng(c.lat, c.lng), 1, 0.0f, null)
+        assertNotNull(pos)
+        assertTrue("天瑞應投影到起點 0 附近（或 21.x 進站），實際 $pos", pos!! < 0.6f || pos > 20.5f)
+    }
+
+    /** 回歸測試：GPS 為準，不得只走 55% 造成落後好幾站 */
+    @Test
+    fun build_gpsFollowsPromptly() {
+        val d = StaticData.k75pStops[10]
+        val c = StaticData.k75pCoords[d.id]!!
+        val payload = JSONObject().put(
+            "busStop",
+            JSONArray().put(
+                JSONObject().put("busStopId", "K75P-${d.id}").put(
+                    "bus",
+                    JSONArray().put(
+                        JSONObject()
+                            .put("busId", "GPS1")
+                            .put("arrivalTimeInSecond", 120)
+                            .put("busLocation", JSONObject().put("latitude", c.lat).put("longitude", c.lng)),
+                    ),
+                ),
+            ),
+        )
+        // 上次顯示在站 2，GPS 實測在站 10 → 一次更新應前進絕大部分（舊版只走 55%）
+        val m = K75PModel.build(payload, mapOf("GPS1" to 2f)).first()
+        assertTrue("GPS 實測位置應迅速跟上（實際 ${m.pos}）", m.pos > 8f)
     }
 
     @Test

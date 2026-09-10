@@ -285,7 +285,7 @@ fun Wp8Group(text: String) {
     )
 }
 
-/** Metro 扁平列表行：無卡片、無底色，只有 1px 下分隔線 */
+/** Metro 扁平列表行：無卡片、無底色，只有 1px 下分隔線（含 WP rowIn 交錯入場） */
 @Composable
 fun Wp8Row(
     no: String,
@@ -294,16 +294,30 @@ fun Wp8Row(
     eta: String = "",
     etaColor: Color? = null,
     star: Boolean = false,
+    index: Int = 0,
     onStar: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.98f else 1f, tween(160, easing = Wp8.Ease), label = "row")
+    // WP rowIn：初次渲染時交錯滑入（對應 CSS animation: rowIn .34s ... backwards + 35ms 遞增延遲）
+    var entered by remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { entered = true }
+    val enter by animateFloatAsState(
+        if (entered) 1f else 0f,
+        tween(340, delayMillis = (index.coerceIn(0, 10)) * 35, easing = Wp8.Ease),
+        label = "rowIn",
+    )
     Row(
         Modifier
             .fillMaxWidth()
-            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .graphicsLayer {
+                alpha = enter
+                translationY = (1f - enter) * 12.dp.toPx()
+                scaleX = scale
+                scaleY = scale
+            }
             .clickable(interactionSource = interaction, indication = null) { onClick() }
             .padding(vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,

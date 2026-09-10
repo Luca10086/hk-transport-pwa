@@ -192,3 +192,22 @@ MiMo v2.5 讀圖：首頁磁貼、收藏、設定、K75P、高對比、淺色、
 
 驗證（像素量測，非目測）：正常字體與 1.5× 大字的 5 塊磁貼「上留白 55–167px、下留白 45–52px」，無一處文字貼邊；
 大字下磁貼自動長高至 117–125dp（`min-height` 生效）。
+### 3.3.0 修復：更多選單位置 / WP 轉場動效 / K75P GPS 偏差
+
+**① ⋯ 更多選單跑到右上角**
+`Wp8MoreMenu` 外層 Box 用了 `fillMaxWidth()`（高度 wrap-content），被父 Box 以頂端對齊 → `BottomEnd` 只在該矮盒內生效。
+改 `fillMaxSize()` 後正確貼齊右下、底欄之上，並加入 12dp 上滑淡入。
+回歸測試 `moreMenuAnchoredBottomRight`：偵測面板色首次出現的列必須在畫面下半部。
+
+**② 頁面動畫沒有 WP 感**
+- 新增 **Pivot / Turnstile 轉場**：以 `currentPageOffsetFraction` 驅動內容視差（translationX 16%）、輕微 3D 旋轉（±9° rotateY）、透明度淡入淡出 —— 還原 WP 換頁時標題與內容分離滑動的感覺
+- 新增 **列表 rowIn 交錯入場**（`index × 35ms` 延遲、340ms、`cubic-bezier(.16,1,.3,1)`），對應概念圖 CSS 的 `.metro-row` 動畫
+- 更多選單、詳情頁 3D 滑入（`rotateY(-12°)`）、磁貼 3D 翻面、按壓縮放維持
+
+**③ K75P GPS 位置偏差過大（兩個真 bug）**
+- **拖尾**：`pos = last + d * 0.55f` 每 20 秒只走 55% 差距，誤差會累積 → 標記永遠落後好幾站。改為有 GPS 時 `0.9` + 3% 抖動死區（動畫平滑仍由頁面層負責）
+- **跳到對面臂**：`gpsPos` 用「全線最近段」，但 K75P 是天水圍 U 形循環線，去程與回程兩臂實際相距很近 → 公車會被吸到對面那條臂。改為**完全禁用全局最近段**，以港鐵 AVL 的「下一班到站」為錨，只在 `[nextIdx-2, nextIdx]`（必要時 -4）窗口內找最近段；窗口內無可信段則回傳 null，改用 ETA 推估（仍落在正確路段）
+- **首尾同點**：站 22 與站 0 同為天瑞，投影若落在 22 會畫到地圖另一端。已歸一到 `[0, 21]`
+- 另核實：站距與「均勻間距」的最大偏差僅 5.8%（7.5km 路線），故地圖等距排版不是偏差主因
+
+新增測試：`gpsPos_neverJumpsToOppositeArm`（不得跳到對面臂）、`gpsPos_loopEndNormalisedToStart`、`build_gpsFollowsPromptly`（GPS 實測須迅速跟上）。

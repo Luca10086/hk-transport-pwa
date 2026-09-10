@@ -40,6 +40,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -252,18 +254,34 @@ private fun PaneHost(
     onOpenGallery: () -> Unit,
 ) {
     HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
-        when (page) {
-            0 -> Wp8HomePane(
-                refreshSec = refreshSec,
+        // WP Pivot / Turnstile 轉場：內容視差 + 輕微 3D 旋轉進出（比單純滑動更有 WP 味）
+        val density = LocalDensity.current.density
+        val offset = (pager.currentPage - page) + pager.currentPageOffsetFraction
+        Box(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val o = offset.coerceIn(-1.2f, 1.2f)
+                    alpha = (1f - kotlin.math.abs(o) * 0.5f).coerceIn(0.15f, 1f)
+                    translationX = -o * size.width * 0.16f
+                    rotationY = -o * 9f
+                    transformOrigin = TransformOrigin(if (o > 0f) 1f else 0f, 0.5f)
+                    cameraDistance = 24f * density
+                },
+        ) {
+            when (page) {
+                0 -> Wp8HomePane(
+                    refreshSec = refreshSec,
                 refreshTick = refreshTick,
                 onOpenK75P = onOpenK75P,
                 onGoPane = onGoPane,
                 onOpenDetail = onOpenDetail,
             )
-            1 -> Wp8FavsPane(onOpenDetail = onOpenDetail)
-            2 -> Wp8SushiPane()
-            3 -> Wp8MapPane(onOpenDetail = onOpenDetail)
-            else -> Wp8SettingsPane(settings = settings, onSettings = onSettings, onOpenGallery = onOpenGallery)
+                1 -> Wp8FavsPane(onOpenDetail = onOpenDetail)
+                2 -> Wp8SushiPane()
+                3 -> Wp8MapPane(onOpenDetail = onOpenDetail)
+                else -> Wp8SettingsPane(settings = settings, onSettings = onSettings, onOpenGallery = onOpenGallery)
+            }
         }
     }
 }

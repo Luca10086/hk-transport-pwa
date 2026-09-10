@@ -326,7 +326,7 @@ private fun SearchPanel(onOpenDetail: (SearchItem) -> Unit) {
         if (query.isNotBlank()) {
             Wp8SectionTitle(if (items.isEmpty() && !searching) "沒有結果" else "搜尋結果")
         }
-        items.forEach { it ->
+        items.forEachIndexed { idx, it ->
             val starred = favs.any { f -> f.matchKey() == it.matchKey() }
             Wp8Row(
                 no = it.no.take(4),
@@ -335,6 +335,7 @@ private fun SearchPanel(onOpenDetail: (SearchItem) -> Unit) {
                 eta = etaText(it.etaMins),
                 etaColor = etaColor(it.etaMins),
                 star = starred,
+                index = idx,
                 onStar = {
                     scope.launch {
                         val next = if (starred) favs.filterNot { f -> f.matchKey() == it.matchKey() }
@@ -551,7 +552,7 @@ fun Wp8SushiPane() {
         }
         if (loading) Wp8Empty("載入中…")
         else if (shown.isEmpty()) Wp8Empty("暫無資料")
-        shown.forEach { s ->
+        shown.forEachIndexed { idx, s ->
             Wp8Row(
                 no = "",
                 name = s.name,
@@ -562,6 +563,7 @@ fun Wp8SushiPane() {
                     s.waiting >= 20 -> Wp8.Medium
                     else -> Wp8.Text1
                 },
+                index = idx,
             ) {}
         }
     }
@@ -613,7 +615,7 @@ fun Wp8MapPane(onOpenDetail: (SearchItem) -> Unit) {
                 }
             }
             if (loading) Wp8Empty("載入中…")
-            rows.forEach { r ->
+            rows.forEachIndexed { idx, r ->
                 Wp8Row(
                     no = r.code,
                     name = r.name,
@@ -622,6 +624,7 @@ fun Wp8MapPane(onOpenDetail: (SearchItem) -> Unit) {
                         append("  ·  下行 ").append(etaText(r.downMins))
                     },
                     eta = "",
+                    index = idx,
                 ) {
                     onOpenDetail(
                         SearchItem(
@@ -634,12 +637,13 @@ fun Wp8MapPane(onOpenDetail: (SearchItem) -> Unit) {
         } else {
             MtrRepo.lrtGroups().forEach { (group, list) ->
                 Wp8SectionTitle(group)
-                list.forEach { s ->
+                list.forEachIndexed { idx, s ->
                     Wp8Row(
                         no = "${s.id}",
                         name = s.name,
                         sub = "輕鐵站",
                         eta = "看班次 ›",
+                        index = idx,
                         onClick = {
                             onOpenDetail(
                                 SearchItem(
