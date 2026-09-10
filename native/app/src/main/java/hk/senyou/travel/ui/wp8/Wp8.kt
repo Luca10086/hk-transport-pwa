@@ -1,5 +1,11 @@
 package hk.senyou.travel.ui.wp8
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -34,6 +40,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -156,15 +168,20 @@ fun Wp8CircleButton(glyph: String, desc: String, onClick: () -> Unit) {
     ) { Text(glyph, color = Wp8.Text1, fontSize = 19.sp) }
 }
 
-/** WP8 App Bar 裸字形按鈕（無圓圈，細線條圖標） */
+/** WP8 App Bar 裸字形按鈕（無圓圈，細線條圖標）；寬度可覆寫（多按鈕時用 weight 等分，避免溢出被裁） */
 @Composable
-fun Wp8AppBarButton(glyph: String, label: String, active: Boolean, onClick: () -> Unit) {
+fun Wp8AppBarButton(
+    glyph: String,
+    label: String,
+    active: Boolean,
+    modifier: Modifier = Modifier.width(64.dp),
+    onClick: () -> Unit,
+) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.9f else 1f, tween(160, easing = Wp8.Ease), label = "ab")
     Column(
-        Modifier
-            .width(64.dp)
+        modifier
             .heightIn(min = Wp8.TapMin)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .semantics { contentDescription = label }
@@ -172,12 +189,18 @@ fun Wp8AppBarButton(glyph: String, label: String, active: Boolean, onClick: () -
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(glyph, color = if (active) Wp8.Accent else Wp8.Text1, fontSize = 24.sp)
-        Text(label, color = if (active) Wp8.Accent else Wp8.Text2, fontSize = 10.sp, maxLines = 1)
+        Text(glyph, color = if (active) Wp8.Accent else Wp8.Text1, fontSize = 22.sp)
+        Text(
+            label,
+            color = if (active) Wp8.Accent else Wp8.Text2,
+            fontSize = 9.5.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
-/** Live Tile：純色、直角、文字左下對齊、按下縮放（0.96）、可 3D 翻面 */
+/** Live Tile：純色、直角、文字左下對齊、按下 3D 傾斜（朝觸點）+ 觸感、可 3D 翻面、支援角標 */
 @Composable
 fun Wp8Tile(
     modifier: Modifier = Modifier,
@@ -188,13 +211,18 @@ fun Wp8Tile(
     back: String? = null,
     flipped: Boolean = false,
     trailing: String = "",
+    badge: String? = null,
     onClick: () -> Unit,
 ) {
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, tween(160, easing = Wp8.Ease), label = "tile")
-    val angle by animateFloatAsState(if (flipped && back != null) 180f else 0f, tween(700, easing = Wp8.Ease), label = "flip")
     val density = LocalDensity.current.density
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var pressed by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var tiltX by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+    var tiltY by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, tween(160, easing = Wp8.Ease), label = "tile")
+    val rx by animateFloatAsState(if (pressed) tiltX else 0f, tween(160, easing = Wp8.Ease), label = "tiltX")
+    val ry by animateFloatAsState(if (pressed) tiltY else 0f, tween(160, easing = Wp8.Ease), label = "tiltY")
+    val angle by animateFloatAsState(if (flipped && back != null) 180f else 0f, tween(700, easing = Wp8.Ease), label = "flip")
     // WP 高對比：磁貼改為黑底白框白字（不保留彩色）
     val hc = Wp8.contrast
 
@@ -203,15 +231,58 @@ fun Wp8Tile(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                rotationY = angle
+                rotationX = rx
+                rotationY = angle + ry
                 cameraDistance = 16f * density
             }
             .background(if (hc) Color.Black else color)
             .then(if (hc) Modifier.border(1.dp, Color.White) else Modifier)
-            .semantics { contentDescription = "$title $value $sub" }
-            .clickable(interactionSource = interaction, indication = null) { onClick() },
+            .semantics {
+                contentDescription = "$title $value $sub"
+                role = androidx.compose.ui.semantics.Role.Button
+                onClick(label = "開啟") { onClick(); true }
+            }
+            // WP 招牌：按下時磁貼朝觸點做 3D 傾斜（不只是縮放）
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = { pos ->
+                        val w = size.width.toFloat().coerceAtLeast(1f)
+                        val h = size.height.toFloat().coerceAtLeast(1f)
+                        tiltY = ((pos.x / w) - 0.5f) * 10f
+                        tiltX = -((pos.y / h) - 0.5f) * 10f
+                        pressed = true
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        try {
+                            awaitRelease()
+                        } finally {
+                            pressed = false
+                        }
+                    },
+                    onTap = { onClick() },
+                )
+            },
     ) {
         val showBack = angle > 90f
+        // 角標（WP Live Tile badge：右上角圓形數字）
+        if (badge != null && !showBack) {
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(if (hc) Color.White else Color.Black.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    badge,
+                    color = if (hc) Color.Black else Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                )
+            }
+        }
         // 內容左下對齊（對應 CSS: justify-content:flex-end; align-items:flex-start）
         // 磁貼高度用 heightIn(min=)，內容多時自然撐高，永不裁字
         Box(

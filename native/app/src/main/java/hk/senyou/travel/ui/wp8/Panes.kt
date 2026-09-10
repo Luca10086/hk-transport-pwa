@@ -294,6 +294,8 @@ private fun SearchPanel(onOpenDetail: (SearchItem) -> Unit) {
     val recent by Store.recent(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
     val favs by Store.favorites(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
 
+    Wp8ReportBusy(searching)
+
     LaunchedEffect(query, mode) {
         if (query.isBlank()) { items = emptyList(); searching = false; return@LaunchedEffect }
         delay(320)
@@ -521,6 +523,8 @@ fun Wp8SushiPane() {
     var live by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
 
+    Wp8ReportBusy(loading)
+
     LaunchedEffect(Unit) {
         runCatching {
             val (list, isLive) = Sushiro.fetch()
@@ -550,7 +554,7 @@ fun Wp8SushiPane() {
                 Text(if (live) "實時" else "快照", color = if (live) Wp8.Success else Wp8.Text2, fontSize = 11.sp)
             }
         }
-        if (loading) Wp8Empty("載入中…")
+        if (loading) Wp8LoadingDots("載入中")
         else if (shown.isEmpty()) Wp8Empty("暫無資料")
         shown.forEachIndexed { idx, s ->
             Wp8Row(
@@ -580,6 +584,8 @@ fun Wp8MapPane(onOpenDetail: (SearchItem) -> Unit) {
     var lineIdx by remember { mutableIntStateOf(0) }
     var rows by remember { mutableStateOf<List<MtrRepoRow>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
+
+    Wp8ReportBusy(loading)
 
     LaunchedEffect(mode, lineIdx) {
         if (mode != 0) return@LaunchedEffect
@@ -614,7 +620,7 @@ fun Wp8MapPane(onOpenDetail: (SearchItem) -> Unit) {
                     Wp8Chip(StaticData.mtrLines[code] ?: code, i == lineIdx) { lineIdx = i }
                 }
             }
-            if (loading) Wp8Empty("載入中…")
+            if (loading) Wp8LoadingDots("載入中")
             rows.forEachIndexed { idx, r ->
                 Wp8Row(
                     no = r.code,

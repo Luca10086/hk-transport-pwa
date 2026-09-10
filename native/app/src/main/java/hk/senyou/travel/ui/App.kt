@@ -1,5 +1,11 @@
 package hk.senyou.travel.ui
 
+import hk.senyou.travel.ui.wp8.Wp8PivotStrip
+
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+
+import androidx.compose.ui.draw.clipToBounds
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -105,12 +111,39 @@ fun SenyouApp() {
         CrashGuard.onHealthy(ctx)
     }
 
+    // 系統狀態列／導覽列圖示明暗跟隨主題（WP 的系統 chrome 一致性）
+    val view = androidx.compose.ui.platform.LocalView.current
+    LaunchedEffect(settings.theme) {
+        val act = view.context as? android.app.Activity ?: return@LaunchedEffect
+        val ctrl = androidx.core.view.WindowCompat.getInsetsController(act.window, view)
+        ctrl.isAppearanceLightStatusBars = Wp8.light
+        ctrl.isAppearanceLightNavigationBars = Wp8.light
+    }
+
     var pane by remember { mutableIntStateOf(0) }
     var k75pOpen by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<SearchItem?>(null) }
     var galleryOpen by remember { mutableStateOf(false) }
     var moreOpen by remember { mutableStateOf(false) }
     var refreshTick by remember { mutableIntStateOf(0) }
+    var barHidden by remember { mutableStateOf(false) }
+    val busy = remember { mutableStateOf(false) }
+    // App Bar 隨滾動自動隱藏／顯示（WP 行為：向下捲動收起、向上捲動回來）
+    val scrollConn = remember {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            private var acc = 0f
+            override fun onPreScroll(
+                available: androidx.compose.ui.geometry.Offset,
+                source: androidx.compose.ui.input.nestedscroll.NestedScrollSource,
+            ): androidx.compose.ui.geometry.Offset {
+                val dy = available.y
+                acc = if (acc * dy < 0f) dy else acc + dy
+                if (acc < -48f) { barHidden = true; acc = 0f }
+                else if (acc > 48f) { barHidden = false; acc = 0f }
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+        }
+    }
 
     val pager = rememberPagerState(pageCount = { PANE_KEYS.size })
     val (posture, hinge) = rememberFoldInfo()
@@ -152,12 +185,19 @@ fun SenyouApp() {
 
                 CompositionLocalProvider(LocalAdaptive provides adaptive) {
                     key(settings.theme, settings.contrast) {
+                    CompositionLocalProvider(
+                        hk.senyou.travel.ui.wp8.LocalWp8Busy provides busy,
+                    ) {
                     Column(Modifier.fillMaxSize()) {
                         PivotTopBar(
-                            title = PANE_KEYS[pager.currentPage],
+                            titles = PANE_KEYS,
+                            current = pager.currentPage,
+                            offsetFraction = pager.currentPageOffsetFraction,
+                            onSelect = { i -> scope.launch { pager.animateScrollToPage(i) } },
                             onBack = null,
                             onSearch = { scope.launch { pager.animateScrollToPage(0) } },
                             onRefresh = { refreshTick++ },
+                            busy = busy.value,
                         )
 
                         if (adaptive.flexMode) {
@@ -198,26 +238,38 @@ fun SenyouApp() {
                             AppBar(
                                 current = pager.currentPage,
                                 moreOpen = moreOpen,
+                                hidden = barHidden,
                                 onMore = { moreOpen = !moreOpen },
+                                onSearch = { scope.launch { pager.animateScrollToPage(0) } },
+                                onRefresh = { refreshTick++ },
                             ) { i -> scope.launch { pager.animateScrollToPage(i) } }
                         }
                     }
                     }
+                    }
                 }
 
-                // ---- 覆蓋層 ----
-                if (k75pOpen) Wp8K75PPage(onClose = { k75pOpen = false })
+                // ---- 覆蓋層（WP turnstile：全屏頁以 3D 滑入，而非硬切）----
+                if (k75pOpen) {
+                    Wp8Turnstile { Wp8K75PPage(onClose = { k75pOpen = false }) }
+                }
                 detail?.let { d -> Wp8DetailSheet(item = d) { detail = null } }
                 if (galleryOpen) {
-                    Box(Modifier.fillMaxSize().background(Wp8.Bg)) {
-                        Column(Modifier.fillMaxSize()) {
-                            PivotTopBar(
-                                title = "介面規範",
-                                onBack = { galleryOpen = false },
-                                onSearch = null,
-                                onRefresh = null,
-                            )
-                            Box(Modifier.weight(1f)) { Wp8Gallery() }
+                    Wp8Turnstile {
+                        Box(Modifier.fillMaxSize().background(Wp8.Bg)) {
+                            Column(Modifier.fillMaxSize()) {
+                                PivotTopBar(
+                                    titles = null,
+                                    current = 0,
+                                    offsetFraction = 0f,
+                                    onSelect = {},
+                                    onBack = { galleryOpen = false },
+                                    onSearch = null,
+                                    onRefresh = null,
+                                    busy = false,
+                                )
+                                Box(Modifier.weight(1f)) { Wp8Gallery() }
+                            }
                         }
                     }
                 }
@@ -286,87 +338,136 @@ private fun PaneHost(
     }
 }
 
-/** 頂欄：Pivot 大標題（切頁時淡出左移，與 WP 同款）＋ 圓形操作 */
+/** WP turnstile：全屏頁以 rotateY 3D 滑入（非硬切） */
+@Composable
+private fun Wp8Turnstile(content: @Composable () -> Unit) {
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { shown = true }
+    val t by androidx.compose.animation.core.animateFloatAsState(
+        if (shown) 1f else 0f,
+        tween(380, easing = Wp8.Ease),
+        label = "turnstile",
+    )
+    val density = LocalDensity.current.density
+    Box(
+        Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                rotationY = -10f * (1f - t)
+                translationX = size.width * 0.22f * (1f - t)
+                transformOrigin = TransformOrigin(0f, 0.5f)
+                cameraDistance = 30f * density
+            },
+    ) { content() }
+}
+
+/** 頂欄：WP8 Pivot 標題條（titles=null 時為單標題模式，用於覆蓋層）＋ WP 進度條 */
 @Composable
 private fun PivotTopBar(
-    title: String,
+    titles: List<String>?,
+    current: Int,
+    offsetFraction: Float,
+    onSelect: (Int) -> Unit,
     onBack: (() -> Unit)?,
     onSearch: (() -> Unit)?,
     onRefresh: (() -> Unit)?,
+    busy: Boolean,
 ) {
     val status = WindowInsets.statusBars.asPaddingValues()
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(
-                start = Wp8.Gutter,
-                end = Wp8.Gutter,
-                top = status.calculateTopPadding() + 22.dp,
-                bottom = 12.dp,
-            ),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        if (onBack != null) {
-            Text(
-                "‹",
-                color = Wp8.Text1,
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Light,
-                modifier = Modifier.clickable { onBack() }.padding(end = 10.dp),
-            )
+    Column {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = Wp8.Gutter,
+                    end = Wp8.Gutter,
+                    top = status.calculateTopPadding() + 22.dp,
+                    bottom = 12.dp,
+                ),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            if (onBack != null) {
+                Text(
+                    "‹",
+                    color = Wp8.Text1,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Light,
+                    modifier = Modifier.clickable { onBack() }.padding(end = 10.dp),
+                )
+            }
+            if (titles != null) {
+                Wp8PivotStrip(
+                    titles = titles,
+                    current = current,
+                    offsetFraction = offsetFraction,
+                    onSelect = onSelect,
+                    modifier = Modifier.weight(1f),
+                )
+            } else {
+                Text(
+                    "介面規範",
+                    color = Wp8.Text1,
+                    fontSize = 46.sp,
+                    fontWeight = FontWeight.Light,
+                    fontFamily = FontFamily.SansSerif,
+                    letterSpacing = (-0.5).sp,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
-        AnimatedContent(
-            targetState = title,
-            transitionSpec = {
-                (fadeIn(tween(300, easing = Wp8.Ease)) + slideInHorizontally(tween(300, easing = Wp8.Ease)) { -18 })
-                    .togetherWith(fadeOut(tween(120)))
-            },
-            label = "pivotTitle",
-            modifier = Modifier.weight(1f),
-        ) { t ->
-            Text(
-                t,
-                color = Wp8.Text1,
-                fontSize = 46.sp,
-                fontWeight = FontWeight.Light,
-                fontFamily = FontFamily.SansSerif,
-                letterSpacing = (-0.5).sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (onSearch != null) Wp8CircleButton("⌕", "搜尋") { onSearch() }
-            if (onRefresh != null) Wp8CircleButton("↻", "重新整理") { onRefresh() }
-        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+        // WP 不確定進度條（3px，載入時才出現）
+        hk.senyou.travel.ui.wp8.Wp8ProgressBar(active = busy)
     }
-    Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
 }
 
-/** App Bar：5 個裸字形圖標 ＋ ⋯ */
+/** App Bar：5 個裸字形圖標 ＋ ⋯；向下捲動時自動收起（WP 行為） */
 @Composable
-private fun AppBar(current: Int, moreOpen: Boolean, onMore: () -> Unit, onSelect: (Int) -> Unit) {
+private fun AppBar(
+    current: Int,
+    moreOpen: Boolean,
+    hidden: Boolean,
+    onMore: () -> Unit,
+    onSearch: () -> Unit,
+    onRefresh: () -> Unit,
+    onSelect: (Int) -> Unit,
+) {
     val nav = WindowInsets.navigationBars.asPaddingValues()
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(Wp8.Surface)
-            .padding(bottom = nav.calculateBottomPadding()),
-    ) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = Wp8.AppBarH),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically,
+    val density = LocalDensity.current
+    val barH by androidx.compose.animation.core.animateDpAsState(
+        if (hidden) 0.dp else Wp8.AppBarH,
+        tween(220, easing = Wp8.Ease),
+        label = "barH",
+    )
+    Box(Modifier.fillMaxWidth().height(barH).clipToBounds()) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .graphicsLayer { translationY = with(density) { (Wp8.AppBarH - barH).toPx() } }
+                .background(Wp8.Surface)
+                .padding(bottom = nav.calculateBottomPadding()),
         ) {
-            PANE_LABELS.forEachIndexed { i, label ->
-                Wp8AppBarButton(
-                    glyph = PANE_GLYPHS[i],
-                    label = label,
-                    active = current == i,
-                ) { onSelect(i) }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = Wp8.AppBarH),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PANE_LABELS.forEachIndexed { i, label ->
+                    Wp8AppBarButton(
+                        glyph = PANE_GLYPHS[i],
+                        label = label,
+                        active = current == i,
+                        modifier = Modifier.weight(1f),
+                    ) { onSelect(i) }
+                }
+                // WP8：搜尋 / 重新整理本來就在 App Bar（不是頂欄），也讓 Pivot 標題條拿回整行寬度；
+                // 8 個按鈕以 weight 等分，避免 8×64dp 超出窄屏寬度被裁
+                Wp8AppBarButton("⌕", "搜尋", false, Modifier.weight(1f), onSearch)
+                Wp8AppBarButton("↻", "重新整理", false, Modifier.weight(1f), onRefresh)
+                Wp8AppBarButton("⋯", "更多", moreOpen, Modifier.weight(1f), onMore)
             }
-            Wp8AppBarButton("⋯", "更多", moreOpen, onMore)
         }
     }
 }

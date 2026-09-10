@@ -1,5 +1,6 @@
 package hk.senyou.travel.ui.wp8
 
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -16,24 +17,120 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.abs
+
+/** 全域忙碌狀態（驅動頂部 WP 進度條）；各分頁把自己的載入中狀態寫進來 */
+val LocalWp8Busy = compositionLocalOf { mutableStateOf(false) }
+
+/** 標記本頁正在載入（自動跟著布林狀態進出） */
+@Composable
+fun Wp8ReportBusy(busy: Boolean) {
+    val s = LocalWp8Busy.current
+    LaunchedEffect(busy) { s.value = busy }
+}
+
+/**
+ * WP8 Pivot 標題條：當前頁大字標題，下一頁標題從右側探出（可點直接跳頁）。
+ * 這是 WP 導航最招牌的元素——只顯示當前標題是不夠的。
+ */
+@Composable
+fun Wp8PivotStrip(
+    titles: List<String>,
+    current: Int,
+    offsetFraction: Float,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier) {
+        val density = LocalDensity.current
+        val slot = maxWidth * 0.78f
+        val slotPx = with(density) { slot.toPx() }
+        val pos = current + offsetFraction
+        Row(
+            Modifier
+                .clipToBounds()
+                .graphicsLayer { translationX = -pos * slotPx },
+        ) {
+            titles.forEachIndexed { i, t ->
+                val o = abs(pos - i).coerceIn(0f, 1f)
+                Box(
+                    Modifier
+                        .width(slot)
+                        .clickable(enabled = i != current) { onSelect(i) },
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Text(
+                        t,
+                        color = Wp8.Text1.copy(alpha = 1f - 0.55f * o),
+                        fontSize = (46f - 24f * o).sp,
+                        fontWeight = FontWeight.Light,
+                        fontFamily = FontFamily.SansSerif,
+                        letterSpacing = (-0.5).sp,
+                        maxLines = 1,
+                        softWrap = false,
+                        // WP 的相鄰標題是被邊界自然裁掉，不是變成「favo…」
+                        overflow = TextOverflow.Clip,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** WP 載入點：五顆方點依序亮起（WP 沒有轉圈圈） */
+@Composable
+fun Wp8LoadingDots(label: String = "載入中") {
+    val t by androidx.compose.animation.core.rememberInfiniteTransition(label = "dots").animateFloat(
+        initialValue = 0f,
+        targetValue = 5f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            tween(1250, easing = androidx.compose.animation.core.LinearEasing),
+        ),
+        label = "dotT",
+    )
+    Row(
+        Modifier.padding(vertical = 22.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(label, color = Wp8.Text2, fontSize = 14.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            repeat(5) { i ->
+                val active = abs(t - i) < 0.55f
+                Box(
+                    Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(if (active) Wp8.Text1 else Wp8.Text2.copy(alpha = 0.35f)),
+                )
+            }
+        }
+    }
+}
 
 /** 分頁大標題（WP8 pane title：27sp Light） */
 @Composable
