@@ -26,6 +26,7 @@ data class Settings(
     val fontLevel: Int = 3,      // 0..7
     val refresh: Int = 30,       // 秒，0=關
     val contrast: Boolean = false, // WP 高對比（純黑底 / 純白字）
+    val standbyAuto: Boolean = true, // 折起立放即進入待機顯示（官方 iPhone Duo 行為）
     /** 磁貼牆版面（順序 + 尺寸），格式 key:span,key:span…；空 = 預設版面 */
     val tileLayout: String = "",
     /** MiMo AI 建議設定（僅存本機，不上傳） */
@@ -98,6 +99,7 @@ object Store {
             fontLevel = o?.optInt("fontLevel", 3) ?: 3,
             refresh = o?.optInt("refresh", 30) ?: 30,
             contrast = o?.optBoolean("contrast", false) ?: false,
+            standbyAuto = o?.optBoolean("standbyAuto", true) ?: true,
             tileLayout = o?.optString("tileLayout", "") ?: "",
             aiKey = o?.optString("aiKey", "") ?: "",
             aiBase = o?.optString("aiBase", "https://api.xiaomimimo.com/v1") ?: "https://api.xiaomimimo.com/v1",
@@ -112,6 +114,7 @@ object Store {
                 .put("glass", s.glass).put("fx", s.fx).put("big", s.big).put("deep", s.deep)
                 .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
                 .put("contrast", s.contrast).put("tileLayout", s.tileLayout)
+                .put("standbyAuto", s.standbyAuto)
                 .put("aiKey", s.aiKey).put("aiBase", s.aiBase).put("aiModel", s.aiModel)
             ctx.ds.edit { it[K_CFG] = o.toString() }
         }

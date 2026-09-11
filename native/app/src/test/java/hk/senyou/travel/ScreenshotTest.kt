@@ -280,6 +280,27 @@ class ScreenshotTest {
         rule.setContent { Frame { hk.senyou.travel.ui.DuoAlarmScreen(onStop = {}, onSnooze = {}) } }
         shoot("wp8-31-alarm-compact")
     }
+
+    /** 待機顯示模式：官方四種畫面（鬧鐘／日曆／天氣／音樂） */
+    @Test
+    fun standbyFaces() {
+        load()
+        val page = androidx.compose.runtime.mutableIntStateOf(0)
+        rule.setContent { Frame { hk.senyou.travel.ui.StandbyFace(page = page.intValue, onExit = {}) } }
+        for (p in 0..3) {
+            page.intValue = p
+            rule.waitForIdle()
+            shoot("wp8-34-standby-face-$p")
+        }
+    }
+
+    /** 官方半開合：內屏一半內容（路線圖）、一半控件（三班卡） */
+    @Test
+    fun k75pHalfOpen() {
+        load()
+        rule.setContent { Frame { Wp8K75PPage(onClose = {}, halfOpen = true) } }
+        shoot("wp8-35-k75p-halfopen")
+    }
     /**
      * 回歸測試：「⋯ 更多」選單必須貼齊右下、底欄之上（曾誤跑到右上角）。
      * 判據：面板色 (#221D31) 首次出現的列必須在畫面下半部。

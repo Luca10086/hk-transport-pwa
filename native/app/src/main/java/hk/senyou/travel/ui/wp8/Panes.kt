@@ -861,6 +861,13 @@ fun Wp8SettingsPane(
 
         Wp8SectionTitle("行為")
         Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("折起立放進入待機顯示", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
+            Wp8Toggle(settings.standbyAuto, if (settings.standbyAuto) "開" else "關") {
+                onSettings(settings.copy(standbyAuto = it))
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+        Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("減少動畫", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
             Wp8Toggle(settings.fx != "off", if (settings.fx != "off") "開" else "關") {
                 onSettings(settings.copy(fx = if (it) "full" else "off"))

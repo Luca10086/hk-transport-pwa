@@ -99,7 +99,10 @@ private fun kPos(pos: Float, w: Float, h: Float): Offset {
  * 幾何與數據沿用原生模型，視覺改為 Metro 純色平面。
  */
 @Composable
-fun Wp8K75PPage(onClose: () -> Unit) {
+/**
+ * @param halfOpen 官方半開合姿態：內容（路線圖）在上半、控件（三班卡）在下半
+ */
+fun Wp8K75PPage(onClose: () -> Unit, halfOpen: Boolean = false) {
     var markers by remember { mutableStateOf<List<BusMarker>>(emptyList()) }
     val smooth = remember { mutableStateMapOf<String, Float>() }
     val status = WindowInsets.statusBars.asPaddingValues()
@@ -158,56 +161,38 @@ fun Wp8K75PPage(onClose: () -> Unit) {
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
 
-        Row(
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Wp8.Gutter),
-        ) {
-            Column(Modifier.weight(1f)) {
-                /* U 形路線圖（Canvas，Metro 配色） */
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(320.dp)
-                        .background(Wp8.Surface),
-                ) {
+        val bodyMod = Modifier.weight(1f).fillMaxWidth()
+
+        if (halfOpen) {
+            /* 官方半開合：內屏一半顯示內容（路線圖）、一半顯示控件（三班卡），中間留出鉸鏈帶 */
+            Column(bodyMod) {
+                Box(Modifier.fillMaxWidth().weight(1f).background(Wp8.Surface)) {
                     K75PMap(
                         buses = markers.filter { it.gps }.map { it.id to (smooth[it.id] ?: it.pos) },
-                        modifier = Modifier.fillMaxSize().padding(6.dp),
+                        modifier = Modifier.fillMaxSize().padding(8.dp),
                     )
                 }
-                Spacer(Modifier.height(10.dp))
-
-                /* 三班卡（Metro 扁平行，非卡片） */
-                Wp8SectionTitle("下一班")
-                val labels = listOf("下一班", "再下一班", "第三班")
-                for (i in 0 until 3) {
-                    val m = markers.getOrNull(i)
-                    Wp8Row(
-                        no = labels[i].take(2),
-                        name = m?.nextName ?: "暫無資料",
-                        sub = if (m?.gps == true) "GPS 實時" else "定時預報",
-                        eta = m?.mins?.let { if (it <= 0) "即將" else "$it 分" } ?: "—",
-                        etaColor = etaColor(m?.mins),
-                    ) { selected = m }
+                Box(Modifier.fillMaxWidth().height(26.dp).background(Wp8.Bg))
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = Wp8.Gutter),
+                ) {
+                    K75PControls(markers, lead) { selected = it }
                 }
-
-                /* 狀態列 */
-                Wp8SectionTitle("狀態")
-                Text(
-                    lead?.let { "巴士 ${it.id} · 下一站 ${it.nextName}" } ?: "暫無實時班次",
-                    color = Wp8.Text1,
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(vertical = 6.dp),
-                )
-                Text(
-                    "全程 23 站 · 天水圍 · 循環線（天瑞 ↺ 洪水橋）",
-                    color = Wp8.Text2,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(bottom = 24.dp),
-                )
+            }
+        } else {
+            Row(
+                bodyMod
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = Wp8.Gutter),
+            ) {
+                Column(Modifier.weight(1f)) {
+                    K75PMapBlock(markers, smooth)
+                    K75PControls(markers, lead) { selected = it }
+                }
             }
         }
     }
@@ -452,4 +437,52 @@ private fun Modifier.graphicsLayer3d(t: Float, density: Float) = this.graphicsLa
     translationX = size.width * 0.26f * (1f - t)
     transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)
     cameraDistance = 30f * density
+}
+
+
+/** U 形路線圖區塊（半開合時作為「內容」置於上半） */
+@Composable
+private fun K75PMapBlock(markers: List<BusMarker>, smooth: Map<String, Float>) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(320.dp)
+            .background(Wp8.Surface),
+    ) {
+        K75PMap(
+            buses = markers.filter { it.gps }.map { it.id to (smooth[it.id] ?: it.pos) },
+            modifier = Modifier.fillMaxSize().padding(6.dp),
+        )
+    }
+    Spacer(Modifier.height(10.dp))
+}
+
+/** 三班卡 + 狀態列（半開合時作為「控件」置於下半） */
+@Composable
+private fun K75PControls(markers: List<BusMarker>, lead: BusMarker?, onSelect: (BusMarker?) -> Unit) {
+    Wp8SectionTitle("下一班")
+    val labels = listOf("下一班", "再下一班", "第三班")
+    for (i in 0 until 3) {
+        val m = markers.getOrNull(i)
+        Wp8Row(
+            no = labels[i].take(2),
+            name = m?.nextName ?: "暫無資料",
+            sub = if (m?.gps == true) "GPS 實時" else "定時預報",
+            eta = m?.mins?.let { if (it <= 0) "即將" else "$it 分" } ?: "—",
+            etaColor = etaColor(m?.mins),
+        ) { onSelect(m) }
+    }
+    Wp8SectionTitle("狀態")
+    Text(
+        lead?.let { "巴士 ${it.id} · 下一站 ${it.nextName}" } ?: "暫無實時班次",
+        color = Wp8.Text1,
+        fontSize = 15.sp,
+        modifier = Modifier.padding(vertical = 6.dp),
+    )
+    Text(
+        "全程 23 站 · 天水圍 · 循環線（天瑞 ↺ 洪水橋）",
+        color = Wp8.Text2,
+        fontSize = 12.sp,
+        modifier = Modifier.padding(bottom = 24.dp),
+    )
 }

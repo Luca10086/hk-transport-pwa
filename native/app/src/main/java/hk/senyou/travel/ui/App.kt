@@ -125,6 +125,8 @@ fun SenyouApp() {
     var galleryOpen by remember { mutableStateOf(false) }
     var win10Open by remember { mutableStateOf(false) }
     var alarmOpen by remember { mutableStateOf(false) }
+    /** 摺疊姿態（官方「折起立放自動進入待機顯示」） */
+    val fold = hk.senyou.travel.data.rememberFoldPosture()
     var refreshTick by remember { mutableIntStateOf(0) }
     var barHidden by remember { mutableStateOf(false) }
     val busy = remember { mutableStateOf(false) }
@@ -262,7 +264,7 @@ fun SenyouApp() {
                                         "重新整理" to { refreshTick++ },
                                         "介面規範（WP8 元件）" to { galleryOpen = true },
                                         "Windows 10 Mobile 演示" to { win10Open = true },
-                                        "待機顯示模式・鬧鐘（發表會展示）" to { alarmOpen = true },
+                                        "待機顯示模式（發表會展示）" to { alarmOpen = true },
                                         if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false) }
                                         else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true) },
                                     ),
@@ -292,18 +294,18 @@ fun SenyouApp() {
                     }
 
                     /* ---- 覆蓋層（官方 Drill）---- */
-                    if (k75pOpen) UwpDrill { Wp8K75PPage(onClose = { k75pOpen = false }) }
+                    if (k75pOpen) UwpDrill { Wp8K75PPage(onClose = { k75pOpen = false }, halfOpen = fold.halfOpen && fold.horizontalFold) }
                     if (!masterDetail) {
                         detail?.let { d -> UwpDrill { Wp8DetailSheet(item = d) { detail = null } } }
                     }
                     if (win10Open) UwpDrill { Win10DemoScreen(onClose = { win10Open = false }) }
+                    // 官方：折起立放（HALF_OPENED）即自動進入待機顯示；攤平後自動退出
+                    LaunchedEffect(fold.halfOpen, settings.standbyAuto) {
+                        if (settings.standbyAuto) alarmOpen = fold.halfOpen
+                    }
                     if (alarmOpen) {
                         UwpDrill {
-                            DuoAlarmScreen(
-                                greeting = "GOOD MORNING",
-                                onStop = { alarmOpen = false },
-                                onSnooze = { alarmOpen = false },
-                            )
+                            StandbyScreen(onExit = { alarmOpen = false })
                         }
                     }
                     if (galleryOpen) {
