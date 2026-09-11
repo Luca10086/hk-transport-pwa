@@ -27,6 +27,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -194,38 +195,103 @@ private fun AlarmFace(onExit: () -> Unit, settings: Settings, onSettings: (Setti
         }
     }
 
+    /* WP/UWP 風格時間選擇：不使用 Material3 對話框（真機 Android 16 曾於此路徑閃退） */
     if (pick) {
-        val st = rememberTimePickerState(
-            initialHour = settings.alarmHour,
-            initialMinute = settings.alarmMinute,
-            is24Hour = true,
-        )
-        AlertDialog(
-            onDismissRequest = { pick = false },
-            title = { Text("設定鬧鐘") },
-            text = { TimePicker(state = st) },
-            confirmButton = {
-                TextButton(onClick = {
-                    onSettings(settings.copy(alarmOn = true, alarmHour = st.hour, alarmMinute = st.minute))
-                    AlarmRepo.schedule(ctx, st.hour, st.minute)
-                    pick = false
-                }) { Text("確定") }
-            },
-            dismissButton = {
-                Row {
+        var hh by remember { mutableIntStateOf(settings.alarmHour) }
+        var mm by remember { mutableIntStateOf(settings.alarmMinute) }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.78f))
+                .clickable { pick = false },
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF1F1F1F))
+                    .padding(horizontal = 22.dp, vertical = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("設定鬧鐘", color = Standby.Text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height((12f).dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TimeStepper(hh, 24) { hh = it }
+                    Text(
+                        ":",
+                        color = Standby.Text,
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    )
+                    TimeStepper(mm, 60) { mm = it }
+                }
+                Spacer(Modifier.height((14f).dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (settings.alarmOn) {
-                        TextButton(onClick = {
+                        PillButton("關閉") {
                             onSettings(settings.copy(alarmOn = false))
                             AlarmRepo.cancel(ctx)
                             pick = false
-                        }) { Text("關閉") }
+                        }
                     }
-                    TextButton(onClick = { pick = false }) { Text("取消") }
+                    PillButton("取消") { pick = false }
+                    PillButton("確定", accent = true) {
+                        onSettings(settings.copy(alarmOn = true, alarmHour = hh, alarmMinute = mm))
+                        AlarmRepo.schedule(ctx, hh, mm)
+                        pick = false
+                    }
                 }
-            },
+            }
+        }
+    }
+}
+
+/** 時／分步進器（WP 風格：上下加減，無數字鍵盤、無對話框） */
+@Composable
+private fun TimeStepper(value: Int, modulo: Int, onChange: (Int) -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            "+",
+            color = Standby.Amber,
+            fontSize = 22.sp,
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .clickable { onChange((value + 1) % modulo) }
+                .padding(horizontal = 14.dp, vertical = 2.dp),
+        )
+        Text(
+            String.format(Locale.getDefault(), "%02d", value),
+            color = Standby.Text,
+            fontSize = 40.sp,
+            fontWeight = FontWeight.Medium,
+        )
+        Text(
+            "-",
+            color = Standby.Amber,
+            fontSize = 22.sp,
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .clickable { onChange((value - 1 + modulo) % modulo) }
+                .padding(horizontal = 14.dp, vertical = 2.dp),
         )
     }
 }
+
+/** 待機畫面用藥丸按鈕 */
+@Composable
+private fun PillButton(label: String, accent: Boolean = false, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (accent) Standby.Amber else Color.White.copy(alpha = 0.12f))
+            .clickable { onClick() }
+            .padding(horizontal = 18.dp, vertical = 9.dp),
+    ) {
+        Text(label, color = if (accent) Color.Black else Standby.Text, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
 
 /* ---------------- 共用小標頭 ---------------- */
 

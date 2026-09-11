@@ -34,10 +34,21 @@ object CrashLog {
         val body = buildString {
             appendLine("時間：${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}")
             appendLine("線程：$thread")
-            appendLine("版本：${Build.VERSION.SDK_INT} (${Build.MODEL})")
+            val pkg = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0) }.getOrNull()
+            appendLine("App：${ctx.packageName} ${pkg?.versionName ?: "?"}(${pkg?.longVersionCode ?: 0})")
+            appendLine("系統：Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}) / ${Build.MODEL}")
             appendLine("異常：${e.javaClass.name}: ${e.message}")
             appendLine()
             appendLine(e.stackTraceToString())
+            var cause = e.cause
+            var depth = 0
+            while (cause != null && depth < 5) {
+                appendLine()
+                appendLine("原因[$depth]：${cause.javaClass.name}: ${cause.message}")
+                appendLine(cause.stackTraceToString())
+                cause = cause.cause
+                depth++
+            }
         }
         f.writeText(body)
         // 只保留最近 KEEP 份

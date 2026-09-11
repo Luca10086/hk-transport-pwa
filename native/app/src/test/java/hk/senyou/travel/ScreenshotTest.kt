@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.core.view.drawToBitmap
 import hk.senyou.travel.data.DebugFlags
 import hk.senyou.travel.data.SearchItem
@@ -300,6 +302,19 @@ class ScreenshotTest {
         load()
         rule.setContent { Frame { Wp8K75PPage(onClose = {}, halfOpen = true) } }
         shoot("wp8-35-k75p-halfopen")
+    }
+
+    /** 回歸：待機鬧鐘的「設定鬧鐘」對話框（使用者回報閃退的可疑路徑） */
+    @Test
+    fun standbyAlarmDialog() {
+        load()
+        rule.setContent {
+            Frame { hk.senyou.travel.ui.StandbyFace(page = 0, onExit = {}, settings = hk.senyou.travel.data.Settings()) }
+        }
+        rule.onNodeWithText("⏰ 設定鬧鐘").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithText("確定").assertExists()
+        shoot("wp8-38-standby-alarm-dialog")
     }
     /**
      * 回歸測試：「⋯ 更多」選單必須貼齊右下、底欄之上（曾誤跑到右上角）。
