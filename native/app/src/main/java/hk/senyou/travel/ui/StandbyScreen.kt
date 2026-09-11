@@ -338,7 +338,7 @@ private fun StandbyWeatherFace() {
                         Text(
                             cur?.desc?.takeIf { it.isNotBlank() } ?: "香港天文台・天水圍",
                             color = Standby.Text,
-                            fontSize = (u * 0.055f).sp,
+                            fontSize = (u * 0.044f).sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
