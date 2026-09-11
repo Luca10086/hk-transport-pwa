@@ -120,7 +120,8 @@ object Wp8 {
     var Gutter by androidx.compose.runtime.mutableStateOf(24.dp)
     val Gap = 12.dp
     val TopBarH = 104.dp
-    val AppBarH = 62.dp
+    /** 官方：App Bar 高度固定 72px（不可修改） */
+    val AppBarH = 72.dp
     val TapMin = 44.dp
 
     /* ---------- 主題切換 ---------- */
@@ -174,13 +175,18 @@ fun Wp8CircleButton(glyph: String, desc: String, onClick: () -> Unit) {
     ) { Text(glyph, color = Wp8.Text1, fontSize = 19.sp) }
 }
 
-/** WP8 App Bar 裸字形按鈕（無圓圈，細線條圖標）；寬度可覆寫（多按鈕時用 weight 等分，避免溢出被裁） */
+/**
+ * WP8 App Bar 圖標按鈕（[官方 ff431806](https://learn.microsoft.com/en-us/previous-versions/windows/apps/ff431806(v=vs.105))）：
+ * · 圖標框 48×48，前景圖形置中於 **26×26**，**圓圈由 App Bar 繪製**（不是裸字形）
+ * · 標籤**平時隱藏**，使用者按 ⋯ 才顯示（[官方 ff431813](https://learn.microsoft.com/en-us/previous-versions/windows/apps/ff431813(v=vs.105))）
+ */
 @Composable
 fun Wp8AppBarButton(
     glyph: String,
     label: String,
     active: Boolean,
-    modifier: Modifier = Modifier.width(64.dp),
+    modifier: Modifier = Modifier.width(72.dp),
+    showLabel: Boolean = false,
     onClick: () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -195,14 +201,25 @@ fun Wp8AppBarButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(glyph, color = if (active) Wp8.Accent else Wp8.Text1, fontSize = 22.sp)
-        Text(
-            label,
-            color = if (active) Wp8.Accent else Wp8.Text2,
-            fontSize = 9.5.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        val col = if (active) Wp8.Accent else Wp8.Text1
+        // 官方：圓圈由 App Bar 繪製；前景字形置中於 26×26 範圍內，不與圓圈重疊
+        Box(
+            Modifier.size(48.dp).border(1.5.dp, col, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.size(26.dp), contentAlignment = Alignment.Center) {
+                Text(glyph, color = col, fontSize = 18.sp)
+            }
+        }
+        if (showLabel) {
+            Text(
+                label,
+                color = if (active) Wp8.Accent else Wp8.Text2,
+                fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

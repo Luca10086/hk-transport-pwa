@@ -111,3 +111,43 @@ App 內：**設定 → 介面規範 → 官方動效演示**，可逐項播放 T
 - [Tilt effect for Windows Phone controls](https://learn.microsoft.com/en-us/archive/blogs/ptorr/tilt-effect-for-windows-phone-controls)（官方 Tilt 公式）
 - [Animating page transitions (HTML)](https://learn.microsoft.com/en-us/previous-versions/windows/apps/jj655417(v=win.10))（enterPage / exitPage 概念）
 - 本專案 PWA 時期定稿：`css/wp8-strict.css`、`wp8-concept.html`
+
+---
+
+## 7. 官方合規審計（逐條對照，含出處）
+
+### 7.1 本輪修正（原本違規）
+
+| 項目 | 官方原文要求 | 之前 | 現在 |
+|------|--------------|------|------|
+| **App Bar 高度** | 「The App Bar height in portrait mode … **is fixed at 72 pixels and can't be modified**」 | 62dp ❌ | **72dp** ✅ |
+| **App Bar 圖標形狀** | 「**The circle displayed on each button is drawn by the app bar** and should not be included in the source image」「foreground graphic … fit in a **26×26** area in the center of the **48×48** image」 | 裸字形（無圓圈）❌ | 圓形圖標：48dp 圓 + 26dp 前景置中 ✅ |
+| **App Bar 標籤** | 「The user can click the ellipsis **to display the labels** for the icon buttons and menu items」 | 常駐顯示標籤 ❌ | 標籤平時隱藏，按 ⋯ 才顯示 ✅ |
+| **App Bar 按鈕數** | 「Use icon buttons for the **primary, most common** actions」；選單「**avoid using more than five** menu items」 | 8 個按鈕 ❌ | 4 個主導覽 + ⋯（選單 5 項：設定／搜尋／重新整理／介面規範／安全模式）✅ |
+| **返回鍵** | 「All Windows Phones have a **dedicated hardware Back button** that should be used for backward navigation」；且「Do **not** create a button that navigates backward」 | 未接系統返回鍵 → 按返回直接離開 App ❌ | 系統返回鍵／手勢逐層關閉覆蓋層（選單 → 介面規範 → 詳情 → K75P）✅ |
+
+出處：[App bar for Windows Phone (ff431813)](https://learn.microsoft.com/en-us/previous-versions/windows/apps/ff431813(v=vs.105))、[App bar icon buttons (ff431806)](https://learn.microsoft.com/en-us/previous-versions/windows/apps/ff431806(v=vs.105))
+
+### 7.2 已符合（官方要求）
+
+| 項目 | 官方要求 | 實作 |
+|------|----------|------|
+| 轉場時長 | 「**300 ms total is a good upper limit**」（in + out 合計） | Turnstile 260ms、Slide 180ms、rowIn 340ms（單獨進場動畫非頁面轉場） |
+| 頁面轉場型別 | Turnstile 為裝置預設，刻意「重」 | 全屏頁 `rotateY 90°→0` |
+| 暫時性 UI | 用 Slide / Swivel，不用 Turnstile | ⋯ 選單 = Slide（上滑淡入） |
+| 按壓傾斜 | 官方 asin/acos 公式 + TiltStrength | 磁貼 strength 0.34 |
+| App Bar 選單動畫 | 官方內建「選單上滑顯示」動畫 | 選單 12dp 上滑 + 淡入 |
+| App Bar 不透明度 | 建議只用 0.0 / 0.5 / 1.0 | 1.0（不透明純色面） |
+| 選單文字長度 | 建議 14–20 字元內 | 最長「安全模式：開」6 字 |
+| 磁貼網格 | 12px 間距 | 12dp |
+| 高對比 | 系統主題切換時圖標自動著色 | 高對比模式：純黑底 + 白框白字 |
+
+### 7.3 仍未符合 / 已知差異（誠實列出）
+
+| 項目 | 官方要求 | 現況 | 影響 |
+|------|----------|------|------|
+| **橫向時 App Bar 移至側邊** | 「When the phone is in landscape orientation, the Application Bar appears **on the side of the screen vertically**」，且圖標需旋轉保持正立 | 未實作（App 以直向為主） | 橫向使用時 App Bar 仍在底部 |
+| **App Bar mini 模式** | 「Use the mini size on pages where you want to **maximize screen space, such as on panorama pages**」 | 首頁（Panorama）未使用 mini | 首頁可再多出一點內容空間 |
+| **Turnstile 的離場動畫** | Turnstile 成對使用（ForwardIn / ForwardOut），合計 ≤300ms | 只做進入；關閉覆蓋層為瞬間 | 關閉時少了半個轉場 |
+| **字階（type ramp）** | 官方有既定字階 | 目前數值取自本專案 CSS（46/27/26/21/15sp） | **未查證**，未取得官方原文 |
+| **最小觸控目標** | 官方有最小觸控尺寸規定 | 圓形圖標 48dp、列表列 44dp 以上 | **未查證**，未取得官方原文 |

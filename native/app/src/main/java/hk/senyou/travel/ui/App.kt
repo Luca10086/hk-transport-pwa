@@ -249,7 +249,20 @@ fun SenyouApp() {
                     }
                 }
 
-                // ---- 覆蓋層（WP turnstile：全屏頁以 3D 滑入，而非硬切）----
+                // 官方精神：所有手機都有專用返回鍵，用於「向後導覽」而非離開 App。
+                // Android 對應系統返回鍵／返回手勢：依「最上層 UI」逐層關閉。
+                androidx.activity.compose.BackHandler(
+                    enabled = k75pOpen || detail != null || galleryOpen || moreOpen,
+                ) {
+                    when {
+                        moreOpen -> moreOpen = false
+                        galleryOpen -> galleryOpen = false
+                        detail != null -> detail = null
+                        k75pOpen -> k75pOpen = false
+                    }
+                }
+
+                // ---- 覆蓋層（WP Turnstile：全屏頁繞 Y 軸 90° 轉入，總時長 ≤ 300ms）----
                 if (k75pOpen) {
                     Wp8Turnstile { Wp8K75PPage(onClose = { k75pOpen = false }) }
                 }
@@ -277,8 +290,9 @@ fun SenyouApp() {
                     Box(Modifier.fillMaxSize().clickable { moreOpen = false }) {
                         Wp8MoreMenu(
                             items = listOf(
+                                "設定" to { scope.launch { pager.animateScrollToPage(4) } },
+                                "搜尋" to { scope.launch { pager.animateScrollToPage(0) } },
                                 "重新整理" to { refreshTick++ },
-                                "路線圖" to { scope.launch { pager.animateScrollToPage(3) } },
                                 "介面規範" to { galleryOpen = true },
                                 if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false) }
                                 else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true) },
@@ -456,19 +470,25 @@ private fun AppBar(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PANE_LABELS.forEachIndexed { i, label ->
+                // 官方：圖標按鈕只放「最主要、最常用」的動作；其餘放 ⋯ 選單。
+                // 因此只保留 4 個主導覽，設定與搜尋/重新整理移入選單（官方選單上限 5 項）。
+                listOf(0, 1, 2, 3).forEach { i ->
                     Wp8AppBarButton(
                         glyph = PANE_GLYPHS[i],
-                        label = label,
+                        label = PANE_LABELS[i],
                         active = current == i,
                         modifier = Modifier.weight(1f),
+                        showLabel = moreOpen,
                     ) { onSelect(i) }
                 }
-                // WP8：搜尋 / 重新整理本來就在 App Bar（不是頂欄），也讓 Pivot 標題條拿回整行寬度；
-                // 8 個按鈕以 weight 等分，避免 8×64dp 超出窄屏寬度被裁
-                Wp8AppBarButton("⌕", "搜尋", false, Modifier.weight(1f), onSearch)
-                Wp8AppBarButton("↻", "重新整理", false, Modifier.weight(1f), onRefresh)
-                Wp8AppBarButton("⋯", "更多", moreOpen, Modifier.weight(1f), onMore)
+                Wp8AppBarButton(
+                    glyph = "⋯",
+                    label = "更多",
+                    active = moreOpen,
+                    modifier = Modifier.weight(1f),
+                    showLabel = moreOpen,
+                    onClick = onMore,
+                )
             }
         }
     }
