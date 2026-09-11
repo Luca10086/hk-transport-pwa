@@ -87,15 +87,16 @@ fun DuoAlarmScreen(
 
         if (wide) {
             // 時間字級：同時受高度與寬度約束，位數增加時自動縮小（不會溢出到問候語上）
-            val availW = (boxW - 96.dp).value
+            // 先保留左側問候語（圖示 + 兩行字）所需寬度，避免大鐘擠掉它
+            val availW = (boxW - 96.dp - 230.dp).value
             val digitCount = hhmm.count { it.isDigit() }.coerceAtLeast(4)
             val byWidth = availW / (digitCount * 0.55f + 0.20f)
-            val clockSp = minOf(boxH.value * 0.42f, byWidth).coerceIn(40f, 420f)
+            val clockSp = minOf(boxH.value * 0.30f, byWidth).coerceIn(40f, 300f)
 
             Box(Modifier.fillMaxSize().padding(horizontal = 48.dp)) {
                 // ---- 圖示＋問候（左）與時間（右）共用同一垂直帶 ----
                 Row(
-                    Modifier.align(Alignment.TopStart).padding(top = boxH * 0.08f),
+                    Modifier.align(Alignment.Center).padding(bottom = boxH * 0.10f),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(horizontalAlignment = Alignment.Start) {
