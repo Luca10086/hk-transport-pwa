@@ -262,6 +262,17 @@ class ScreenshotTest {
         shoot("wp8-14-gallery")
     }
 
+    /** Windows 10 Mobile（UWP）演示：漢堡 NavigationView + CommandBar + 官方字階 */
+    @Test
+    fun win10Demo() {
+        load()
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+                hk.senyou.travel.ui.wp8.Win10DemoScreen(onClose = {})
+            }
+        }
+        shoot("wp8-30-win10-mobile")
+    }
     /**
      * 回歸測試：「⋯ 更多」選單必須貼齊右下、底欄之上（曾誤跑到右上角）。
      * 判據：面板色 (#221D31) 首次出現的列必須在畫面下半部。

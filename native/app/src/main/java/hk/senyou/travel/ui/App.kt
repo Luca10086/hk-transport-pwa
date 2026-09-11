@@ -124,6 +124,7 @@ fun SenyouApp() {
     var k75pOpen by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<SearchItem?>(null) }
     var galleryOpen by remember { mutableStateOf(false) }
+    var win10Open by remember { mutableStateOf(false) }
     var moreOpen by remember { mutableStateOf(false) }
     var refreshTick by remember { mutableIntStateOf(0) }
     var barHidden by remember { mutableStateOf(false) }
@@ -252,7 +253,7 @@ fun SenyouApp() {
                 // 官方精神：所有手機都有專用返回鍵，用於「向後導覽」而非離開 App。
                 // Android 對應系統返回鍵／返回手勢：依「最上層 UI」逐層關閉。
                 androidx.activity.compose.BackHandler(
-                    enabled = k75pOpen || detail != null || galleryOpen || moreOpen,
+                    enabled = k75pOpen || detail != null || galleryOpen || moreOpen || win10Open,
                 ) {
                     when {
                         moreOpen -> moreOpen = false
@@ -267,6 +268,9 @@ fun SenyouApp() {
                     Wp8Turnstile { Wp8K75PPage(onClose = { k75pOpen = false }) }
                 }
                 detail?.let { d -> Wp8DetailSheet(item = d) { detail = null } }
+                if (win10Open) {
+                    hk.senyou.travel.ui.wp8.Win10DemoScreen(onClose = { win10Open = false })
+                }
                 if (galleryOpen) {
                     Wp8Turnstile {
                         Box(Modifier.fillMaxSize().background(Wp8.Bg)) {
@@ -294,6 +298,7 @@ fun SenyouApp() {
                                 "搜尋" to { scope.launch { pager.animateScrollToPage(0) } },
                                 "重新整理" to { refreshTick++ },
                                 "介面規範" to { galleryOpen = true },
+                                "Win10 Mobile 演示" to { win10Open = true },
                                 if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false) }
                                 else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true) },
                             ),
