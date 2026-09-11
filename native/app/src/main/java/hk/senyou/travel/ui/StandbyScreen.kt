@@ -248,18 +248,22 @@ private fun AlarmFace(onExit: () -> Unit, settings: Settings, onSettings: (Setti
             )
             Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                W10Button("停止", primary = false) {
-                    AlarmRepo.ringing = false
-                    StandbyAudio.stopRing()
-                    onExit()
-                }
-                W10Button(if (ringing) "貪睡 10 分鐘" else "關閉", primary = ringing) {
-                    if (AlarmRepo.ringing) {
+                if (ringing) {
+                    /* 響鈴中：次要＝停止（外框）、主要＝貪睡（強調色實心，W10M 主要動作） */
+                    W10Button("停止", primary = false) {
+                        AlarmRepo.ringing = false
+                        StandbyAudio.stopRing()
+                        onExit()
+                    }
+                    W10Button("貪睡 10 分鐘", primary = true) {
                         AlarmRepo.ringing = false
                         StandbyAudio.stopRing()
                         AlarmRepo.snooze(ctx, 10)
+                        onExit()
                     }
-                    onExit()
+                } else {
+                    /* 平時只有一個離開動作（不再出現兩個同義按鈕） */
+                    W10Button("關閉", primary = false) { onExit() }
                 }
             }
             Spacer(Modifier.height(14.dp))
