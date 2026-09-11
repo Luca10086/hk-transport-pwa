@@ -1,6 +1,7 @@
 package hk.senyou.travel.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -39,15 +41,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hk.senyou.travel.data.AlarmRepo
 import hk.senyou.travel.data.DebugFlags
 import hk.senyou.travel.data.Hko
+import hk.senyou.travel.data.NowPlaying
 import hk.senyou.travel.data.Settings
 import hk.senyou.travel.data.StandbyAudio
 import hk.senyou.travel.data.Weather
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.Locale
 
@@ -443,26 +449,35 @@ private fun ForecastList(cur: Weather?, u: Float, modifier: Modifier = Modifier)
 
 @Composable
 private fun StandbyMusicFace() {
+    val ctx = LocalContext.current
+    var sys by remember { mutableStateOf<NowPlaying.Track?>(null) }
+    var access by remember { mutableStateOf(NowPlaying.hasAccess(ctx)) }
     var playing by remember { mutableStateOf(StandbyAudio.isPlaying) }
     var idx by remember { mutableStateOf(StandbyAudio.current) }
     var pos by remember { mutableStateOf(0L) }
 
     if (!DebugFlags.staticUi) {
         LaunchedEffect(Unit) {
+            var was = access
             while (true) {
-                delay(1000)
+                access = NowPlaying.hasAccess(ctx)
+                if (access && !was) NowPlaying.rebind(ctx)
+                was = access
+                sys = if (access) withContext(Dispatchers.IO) { NowPlaying.current(ctx) } else null
                 StandbyAudio.tick(1000)
-                playing = StandbyAudio.isPlaying
+                playing = sys?.playing ?: StandbyAudio.isPlaying
                 idx = StandbyAudio.current
-                pos = StandbyAudio.positionMs
+                pos = sys?.positionMs ?: StandbyAudio.positionMs
+                delay(1000)
             }
         }
     }
+    val t = sys
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val u = minOf(maxWidth.value, maxHeight.value)
         Column(Modifier.fillMaxSize().padding((u * 0.045f).dp)) {
             StandbyHeader(u)
-            Spacer(Modifier.weight(0.6f))
+            Spacer(Modifier.weight(0.5f))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
@@ -471,12 +486,22 @@ private fun StandbyMusicFace() {
                         .background(Color(0xFF1F1F1F)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("♪", color = Standby.Amber, fontSize = (u * 0.10f).sp)
+                    val art = t?.art
+                    if (art != null) {
+                        Image(
+                            bitmap = art.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Text("♪", color = Standby.Amber, fontSize = (u * 0.10f).sp)
+                    }
                 }
                 Spacer(Modifier.width((u * 0.045f).dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        StandbyAudio.titles.getOrElse(idx) { "-" },
+                        t?.title ?: StandbyAudio.titles.getOrElse(idx) { "-" },
                         color = Standby.Text,
                         fontSize = (u * 0.055f).sp,
                         fontWeight = FontWeight.SemiBold,
@@ -485,14 +510,16 @@ private fun StandbyMusicFace() {
                     )
                     Spacer(Modifier.height((u * 0.008f).dp))
                     Text(
-                        StandbyAudio.artists.getOrElse(idx) { "" },
+                        t?.let { it.artist.ifBlank { it.album.ifBlank { "系統播放器" } } }
+                            ?: StandbyAudio.artists.getOrElse(idx) { "" },
                         color = Standby.Dim,
                         fontSize = (u * 0.034f).sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(Modifier.height((u * 0.03f).dp))
-                    val frac = (pos.toFloat() / (StandbyAudio.NOMINAL_SECONDS * 1000f)).coerceIn(0f, 1f)
+                    val total = t?.durationMs?.takeIf { it > 0 } ?: (StandbyAudio.NOMINAL_SECONDS * 1000L)
+                    val frac = if (total > 0) (pos.toFloat() / total).coerceIn(0f, 1f) else 0f
                     Box(
                         Modifier
                             .fillMaxWidth()
@@ -504,31 +531,57 @@ private fun StandbyMusicFace() {
                     }
                     Spacer(Modifier.height((u * 0.014f).dp))
                     Row(Modifier.fillMaxWidth()) {
-                        Text(
-                            mmss(pos / 1000),
-                            color = Standby.Dim,
-                            fontSize = (u * 0.030f).sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text(
-                            "-" + mmss((StandbyAudio.NOMINAL_SECONDS * 1000L - pos) / 1000),
-                            color = Standby.Dim,
-                            fontSize = (u * 0.030f).sp,
-                        )
+                        Text(mmss(pos / 1000), color = Standby.Dim, fontSize = (u * 0.030f).sp, modifier = Modifier.weight(1f))
+                        Text("-" + mmss(((total - pos).coerceAtLeast(0)) / 1000), color = Standby.Dim, fontSize = (u * 0.030f).sp)
                     }
                 }
             }
             Spacer(Modifier.weight(0.4f))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                MusicButton("<<", u) { StandbyAudio.prev(); playing = StandbyAudio.isPlaying; idx = StandbyAudio.current }
-                MusicButton(if (playing) "||" else ">", u, accent = true) {
-                    StandbyAudio.toggle(); playing = StandbyAudio.isPlaying
+                MusicButton("<<", u) {
+                    if (t != null) NowPlaying.control(ctx, NowPlaying.Action.Prev)
+                    else {
+                        StandbyAudio.prev(); playing = StandbyAudio.isPlaying; idx = StandbyAudio.current
+                    }
                 }
-                MusicButton(">>", u) { StandbyAudio.next(); playing = StandbyAudio.isPlaying; idx = StandbyAudio.current }
+                MusicButton(if (playing) "||" else ">", u, accent = true) {
+                    if (t != null) {
+                        NowPlaying.control(ctx, NowPlaying.Action.Play)
+                        playing = !t.playing
+                    } else {
+                        StandbyAudio.toggle()
+                        playing = StandbyAudio.isPlaying
+                    }
+                }
+                MusicButton(">>", u) {
+                    if (t != null) NowPlaying.control(ctx, NowPlaying.Action.Next)
+                    else {
+                        StandbyAudio.next(); playing = StandbyAudio.isPlaying; idx = StandbyAudio.current
+                    }
+                }
             }
             Spacer(Modifier.height((u * 0.02f).dp))
+            if (!access) {
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.White.copy(alpha = 0.10f))
+                        .clickable { NowPlaying.requestAccess(ctx) }
+                        .padding(horizontal = 16.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "連接系統播放器（需授予通知使用權）",
+                        color = Standby.Amber,
+                        fontSize = (u * 0.030f).sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Spacer(Modifier.height((u * 0.014f).dp))
+            }
             Text(
-                "待機顯示 · 音樂（內建合成音，可實際播放）",
+                if (t != null) "系統播放器 · 正在播放" else "待機顯示 · 音樂（內建合成音）",
                 color = Standby.Dim,
                 fontSize = (u * 0.026f).sp,
                 maxLines = 1,
