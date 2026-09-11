@@ -302,7 +302,8 @@ class ScreenshotTest {
         rule.waitForIdle()
         val bmp = rule.activity.window.decorView.drawToBitmap(Bitmap.Config.ARGB_8888)
         File(outDir, "wp8-17-more-menu.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        val surface = (0x22 shl 16) or (0x1D shl 8) or 0x31
+        // 取當前主題的 Surface 色（不硬編碼，避免改主題後失效）
+        val surface = (Wp8.Surface.red * 255).toInt() shl 16 or ((Wp8.Surface.green * 255).toInt() shl 8) or (Wp8.Surface.blue * 255).toInt()
         val appBarTop = bmp.height - (Wp8.AppBarH.value * 3f).toInt()
         var firstY = -1
         var y = 0

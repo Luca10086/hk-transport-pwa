@@ -869,7 +869,7 @@ fun Wp8SettingsPane(
         }
 
         Wp8SectionTitle("關於")
-        Wp8LinkRow("介面規範", "WP7 / WP8 元件畫廊", onOpenGallery)
+        Wp8LinkRow("介面規範", "WP8 元件畫廊 · 動效演示", onOpenGallery)
         Row(Modifier.fillMaxWidth().padding(vertical = 11.dp)) {
             Text("資料來源", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
             Text("data.gov.hk", color = Wp8.Text1, fontSize = 15.sp)
@@ -877,7 +877,7 @@ fun Wp8SettingsPane(
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
         Row(Modifier.fillMaxWidth().padding(vertical = 11.dp)) {
             Text("版本", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
-            Text("3.2.0 · WP8", color = Wp8.Text1, fontSize = 15.sp)
+            Text("4.0.0 · Windows 10 Mobile", color = Wp8.Text1, fontSize = 14.sp)
         }
     }
 }

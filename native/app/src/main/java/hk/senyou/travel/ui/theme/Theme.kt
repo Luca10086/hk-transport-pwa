@@ -23,7 +23,8 @@ import hk.senyou.travel.ui.wp8.Wp8
  */
 val SenyouFontFamily = FontFamily(
     Font(R.font.senyou_regular, FontWeight.Normal),
-    Font(R.font.senyou_regular, FontWeight.Medium),
+    Font(R.font.senyou_semibold, FontWeight.SemiBold),
+    Font(R.font.senyou_semibold, FontWeight.Bold),
     Font(R.font.senyou_light, FontWeight.Light),
 )
 

@@ -69,37 +69,37 @@ import androidx.compose.ui.unit.sp
  */
 object Wp8 {
     /* ---------- 深色主題（WP 預設） ---------- */
-    val BgDark = Color(0xFF15121C)
-    val SurfaceDark = Color(0xFF221D31)
-    val Surface2Dark = Color(0xFF2A2440)
-    val LineDark = Color(0xFF352E52)
-    val Text2Dark = Color(0xFFB3A9CE)
+    val BgDark = Color(0xFF000000)      // Win10 深色：純黑
+    val SurfaceDark = Color(0xFF1F1F1F) // CommandBar / NavigationView Chrome
+    val Surface2Dark = Color(0xFF1A1A1A)
+    val LineDark = Color(0xFF3A3A3A)
+    val Text2Dark = Color(0x99FFFFFF)   // 官方次要文字 60% 白
 
     /* ---------- 淺色主題 ---------- */
-    val BgLight = Color(0xFFF4F2F8)
-    val SurfaceLight = Color(0xFFFFFFFF)
-    val Surface2Light = Color(0xFFEBE8F2)
-    val LineLight = Color(0xFFD3CCE3)
-    val Text2Light = Color(0xFF5A5170)
-    val TextLight = Color(0xFF1A1425)
+    val BgLight = Color(0xFFFFFFFF)
+    val SurfaceLight = Color(0xFFF2F2F2)
+    val Surface2Light = Color(0xFFE6E6E6)
+    val LineLight = Color(0xFFD6D6D6)
+    val Text2Light = Color(0x99000000)
+    val TextLight = Color(0xFF000000)
 
     /* ---------- 單一強調色（WP 可換） ---------- */
     var accentIndex by androidx.compose.runtime.mutableIntStateOf(0)
     val Accents = listOf(
-        0xFF8B5CF6L to "紫",      // WP8 概念版主色
-        0xFF0078D7L to "藍",      // WP 經典 cobalt
-        0xFFD24726L to "橙紅",    // WP8 預設
-        0xFF00A300L to "綠",
-        0xFFE51400L to "紅",
+        0xFF0078D7L to "藍",      // Win10 SystemAccentColor 預設
+        0xFF00B7C3L to "青",
+        0xFFE3008CL to "洋紅",
+        0xFF107C10L to "綠",
+        0xFF744DA9L to "紫",
     )
     val Accent: Color get() = Color(Accents[accentIndex.coerceIn(0, Accents.size - 1)].first)
     val AccentDark = Color(0xFF6D28D9)
 
     /* ---------- 磁貼純色（WP8 紫色系） ---------- */
-    val TileCobalt = Color(0xFF5B21B6)
-    val TileCyan = Color(0xFF7C3AED)
-    val TileMagenta = Color(0xFF6D28D9)
-    val TileTeal = Color(0xFF4C1D95)
+    val TileCobalt: Color get() = Accent
+    val TileCyan: Color get() = Accent.copy(alpha = 0.85f)
+    val TileMagenta: Color get() = Accent.copy(alpha = 0.93f)
+    val TileTeal: Color get() = Accent.copy(alpha = 0.78f)
 
     /* ---------- ETA 語義色 ---------- */
     val Soon = Color(0xFFE51400)
@@ -121,7 +121,7 @@ object Wp8 {
     val Gap = 12.dp
     val TopBarH = 104.dp
     /** 官方：App Bar 高度固定 72px（不可修改） */
-    val AppBarH = 72.dp
+    val AppBarH = 48.dp
     val TapMin = 44.dp
 
     /* ---------- 主題切換 ---------- */
@@ -340,7 +340,7 @@ fun Wp8Tile(
                                 color = Color.White,
                                 fontSize = 26.sp,
                                 lineHeight = 30.sp,
-                                fontWeight = FontWeight.Light,
+                                fontWeight = FontWeight.SemiBold,
                                 fontFamily = FontFamily.SansSerif,
                                 maxLines = 1,
                             )
@@ -380,7 +380,7 @@ fun Wp8Group(text: String) {
         text,
         color = Wp8.Accent,
         fontSize = 15.sp,
-        fontWeight = FontWeight.Light,
+        fontWeight = FontWeight.SemiBold,
         letterSpacing = 1.sp,
         modifier = Modifier.padding(top = 16.dp, bottom = 2.dp),
     )
@@ -428,14 +428,14 @@ fun Wp8Row(
                 no,
                 color = Wp8.Accent,
                 fontSize = 22.sp,
-                fontWeight = FontWeight.Light,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 modifier = Modifier.width(58.dp),
             )
             Spacer(Modifier.width(14.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(name, color = Wp8.Text1, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(name, color = Wp8.Text1, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (sub.isNotBlank()) {
                 Text(sub, color = Wp8.Text2, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -445,7 +445,7 @@ fun Wp8Row(
                 eta,
                 color = etaColor ?: Wp8.Text1,
                 fontSize = 21.sp,
-                fontWeight = FontWeight.Light,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 style = TextStyle(fontFeatureSettings = "tnum"),
             )

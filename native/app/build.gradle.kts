@@ -20,8 +20,8 @@ android {
         applicationId = "hk.senyou.travel"
         minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "3.8.0"
+        versionCode = 18
+        versionName = "4.0.0"
     }
 
     signingConfigs {
