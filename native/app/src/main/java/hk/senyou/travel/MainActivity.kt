@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         maybeAskNotifications()
         consumeDeepLink(intent)
+        consumeAlarm(intent)
         setContent {
             SenyouApp()
         }
@@ -33,6 +34,15 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         consumeDeepLink(intent)
+        consumeAlarm(intent)
+    }
+
+    /** 鬧鐘喚起：標記響鈴並要求打開待機畫面 */
+    private fun consumeAlarm(intent: Intent?) {
+        if (intent?.getBooleanExtra(hk.senyou.travel.data.AlarmRepo.EXTRA_RING, false) == true) {
+            hk.senyou.travel.data.AlarmRepo.ringing = true
+            hk.senyou.travel.data.AlarmRepo.openRequest = true
+        }
     }
 
     /** 通知點擊 → 直接打開對應路線 / 車站（依收藏類型分流） */

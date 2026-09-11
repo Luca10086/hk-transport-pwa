@@ -264,7 +264,6 @@ fun SenyouApp() {
                                         "重新整理" to { refreshTick++ },
                                         "介面規範（WP8 元件）" to { galleryOpen = true },
                                         "Windows 10 Mobile 演示" to { win10Open = true },
-                                        "待機顯示模式（發表會展示）" to { alarmOpen = true },
                                         if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false) }
                                         else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true) },
                                     ),
@@ -299,13 +298,40 @@ fun SenyouApp() {
                         detail?.let { d -> UwpDrill { Wp8DetailSheet(item = d) { detail = null } } }
                     }
                     if (win10Open) UwpDrill { Win10DemoScreen(onClose = { win10Open = false }) }
+                    // 待機顯示：隱藏系統狀態欄（沉浸式，官方待機畫面無狀態欄）
+                    val sbView = androidx.compose.ui.platform.LocalView.current
+                    androidx.compose.runtime.DisposableEffect(alarmOpen) {
+                        val act = hk.senyou.travel.data.FoldPosture.findActivity(sbView.context)
+                        val ctrl = act?.window?.let { w ->
+                            androidx.core.view.WindowCompat.getInsetsController(w, sbView)
+                        }
+                        if (alarmOpen) {
+                            ctrl?.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+                            ctrl?.systemBarsBehavior =
+                                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        } else {
+                            ctrl?.show(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+                        }
+                        onDispose { ctrl?.show(androidx.core.view.WindowInsetsCompat.Type.statusBars()) }
+                    }
+                    // 鬧鐘喚起：直接打開待機畫面
+                    LaunchedEffect(hk.senyou.travel.data.AlarmRepo.openRequest) {
+                        if (hk.senyou.travel.data.AlarmRepo.openRequest) {
+                            alarmOpen = true
+                            hk.senyou.travel.data.AlarmRepo.openRequest = false
+                        }
+                    }
                     // 官方：折起立放（HALF_OPENED）即自動進入待機顯示；攤平後自動退出
                     LaunchedEffect(fold.halfOpen, settings.standbyAuto) {
                         if (settings.standbyAuto) alarmOpen = fold.halfOpen
                     }
                     if (alarmOpen) {
                         UwpDrill {
-                            StandbyScreen(onExit = { alarmOpen = false })
+                            StandbyScreen(
+                                onExit = { alarmOpen = false },
+                                settings = settings,
+                                onSettings = { s -> scope.launch { Store.save(ctx, s) } },
+                            )
                         }
                     }
                     if (galleryOpen) {
@@ -591,7 +617,7 @@ private fun CommandBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PANE_LABELS.forEachIndexed { i, label ->
+                PANE_LABELS.take(5).forEachIndexed { i, label ->
                     Row(
                         Modifier
                             .height(48.dp)

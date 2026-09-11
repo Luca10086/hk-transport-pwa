@@ -7,6 +7,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <application
         android:name=".SenyouApp"
         android:allowBackup="true"
@@ -50,5 +54,12 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+            <receiver
+            android:name=".data.AlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="hk.senyou.travel.ALARM" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.core.view.drawToBitmap
 import hk.senyou.travel.data.DebugFlags
 import hk.senyou.travel.data.Settings
@@ -135,5 +136,29 @@ class ScreenshotExpandedTest {
         rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
         rule.onNodeWithText("待機鬧鐘").assertExists()
         shoot("wp8-33-standby-nav-entry")
+    }
+
+    /** 回歸：從漢堡選單點「待機鬧鐘」必須真的打得開（使用者回報一按就閃退） */
+    @Test
+    fun standbyOpensFromHamburgerMenu() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
+        rule.onNodeWithText("待機鬧鐘").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithText("snooze").assertExists()
+        shoot("wp8-36-standby-opened")
+    }
+
+    /** 使用者回報：橫向（半開合）時天氣三行顯示不全 → 橫向四畫面回歸截圖 */
+    @Test
+    fun standbyLandscapeFaces() {
+        load()
+        val page = androidx.compose.runtime.mutableIntStateOf(0)
+        rule.setContent { Frame { hk.senyou.travel.ui.StandbyFace(page = page.intValue, onExit = {}) } }
+        for (p in 0..3) {
+            page.intValue = p
+            rule.waitForIdle()
+            shoot("wp8-37-standby-landscape-$p")
+        }
     }
 }

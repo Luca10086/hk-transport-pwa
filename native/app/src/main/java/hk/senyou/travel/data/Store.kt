@@ -27,6 +27,9 @@ data class Settings(
     val refresh: Int = 30,       // 秒，0=關
     val contrast: Boolean = false, // WP 高對比（純黑底 / 純白字）
     val standbyAuto: Boolean = true, // 折起立放即進入待機顯示（官方 iPhone Duo 行為）
+    val alarmOn: Boolean = false,     // 真鬧鐘開關
+    val alarmHour: Int = 7,
+    val alarmMinute: Int = 0,
     /** 磁貼牆版面（順序 + 尺寸），格式 key:span,key:span…；空 = 預設版面 */
     val tileLayout: String = "",
     /** MiMo AI 建議設定（僅存本機，不上傳） */
@@ -86,6 +89,11 @@ object Store {
         }
     }
 
+    /** 同步讀取設定（給 BroadcastReceiver 等非協程環境） */
+    fun readBlocking(ctx: Context): Settings = runCatching {
+        kotlinx.coroutines.runBlocking { settings(ctx).first() }
+    }.getOrElse { Settings() }
+
     fun settings(ctx: Context): Flow<Settings> = ctx.ds.safe().map { p ->
         val o = p[K_CFG]?.let { runCatching { JSONObject(it) }.getOrNull() }
         Settings(
@@ -100,6 +108,9 @@ object Store {
             refresh = o?.optInt("refresh", 30) ?: 30,
             contrast = o?.optBoolean("contrast", false) ?: false,
             standbyAuto = o?.optBoolean("standbyAuto", true) ?: true,
+            alarmOn = o?.optBoolean("alarmOn", false) ?: false,
+            alarmHour = o?.optInt("alarmHour", 7) ?: 7,
+            alarmMinute = o?.optInt("alarmMinute", 0) ?: 0,
             tileLayout = o?.optString("tileLayout", "") ?: "",
             aiKey = o?.optString("aiKey", "") ?: "",
             aiBase = o?.optString("aiBase", "https://api.xiaomimimo.com/v1") ?: "https://api.xiaomimimo.com/v1",
@@ -115,6 +126,7 @@ object Store {
                 .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
                 .put("contrast", s.contrast).put("tileLayout", s.tileLayout)
                 .put("standbyAuto", s.standbyAuto)
+                .put("alarmOn", s.alarmOn).put("alarmHour", s.alarmHour).put("alarmMinute", s.alarmMinute)
                 .put("aiKey", s.aiKey).put("aiBase", s.aiBase).put("aiModel", s.aiModel)
             ctx.ds.edit { it[K_CFG] = o.toString() }
         }
