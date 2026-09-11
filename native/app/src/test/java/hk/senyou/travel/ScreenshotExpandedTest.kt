@@ -118,4 +118,12 @@ class ScreenshotExpandedTest {
         rule.setContent { Frame { Wp8Gallery() } }
         shoot("wp8-24-gallery-expanded")
     }
+
+    /** iPhone Duo 鬧鐘復刻（展開內屏 → 1:1 原圖橫向佈局） */
+    @Test
+    fun duoAlarmExpanded() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.DuoAlarmScreen(onStop = {}, onSnooze = {}) } }
+        shoot("wp8-32-alarm-expanded")
+    }
 }

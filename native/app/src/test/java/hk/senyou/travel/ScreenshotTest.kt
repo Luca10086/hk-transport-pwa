@@ -273,6 +273,13 @@ class ScreenshotTest {
         }
         shoot("wp8-30-win10-mobile")
     }
+    /** iPhone Duo 鬧鐘復刻（摺疊外屏／豎向堆疊版） */
+    @Test
+    fun duoAlarmCompact() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.DuoAlarmScreen(onStop = {}, onSnooze = {}) } }
+        shoot("wp8-31-alarm-compact")
+    }
     /**
      * 回歸測試：「⋯ 更多」選單必須貼齊右下、底欄之上（曾誤跑到右上角）。
      * 判據：面板色 (#221D31) 首次出現的列必須在畫面下半部。

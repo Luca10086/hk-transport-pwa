@@ -124,6 +124,7 @@ fun SenyouApp() {
     var detail by remember { mutableStateOf<SearchItem?>(null) }
     var galleryOpen by remember { mutableStateOf(false) }
     var win10Open by remember { mutableStateOf(false) }
+    var alarmOpen by remember { mutableStateOf(false) }
     var refreshTick by remember { mutableIntStateOf(0) }
     var barHidden by remember { mutableStateOf(false) }
     val busy = remember { mutableStateOf(false) }
@@ -157,11 +158,12 @@ fun SenyouApp() {
     }
 
     androidx.activity.compose.BackHandler(
-        enabled = navOpen || cmdOpen || k75pOpen || detail != null || galleryOpen || win10Open,
+        enabled = navOpen || cmdOpen || k75pOpen || detail != null || galleryOpen || win10Open || alarmOpen,
     ) {
         when {
             cmdOpen -> cmdOpen = false
             navOpen -> navOpen = false
+            alarmOpen -> alarmOpen = false
             win10Open -> win10Open = false
             galleryOpen -> galleryOpen = false
             detail != null -> detail = null
@@ -260,6 +262,7 @@ fun SenyouApp() {
                                         "重新整理" to { refreshTick++ },
                                         "介面規範（WP8 元件）" to { galleryOpen = true },
                                         "Windows 10 Mobile 演示" to { win10Open = true },
+                                        "鬧鐘（iPhone Duo 復刻）" to { alarmOpen = true },
                                         if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false) }
                                         else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true) },
                                     ),
@@ -294,6 +297,15 @@ fun SenyouApp() {
                         detail?.let { d -> UwpDrill { Wp8DetailSheet(item = d) { detail = null } } }
                     }
                     if (win10Open) UwpDrill { Win10DemoScreen(onClose = { win10Open = false }) }
+                    if (alarmOpen) {
+                        UwpDrill {
+                            DuoAlarmScreen(
+                                greeting = "GOOD MORNING",
+                                onStop = { alarmOpen = false },
+                                onSnooze = { alarmOpen = false },
+                            )
+                        }
+                    }
                     if (galleryOpen) {
                         UwpDrill {
                             Box(Modifier.fillMaxSize().background(Wp8.Bg)) {
