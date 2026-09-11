@@ -262,8 +262,14 @@ private fun AlarmFace(onExit: () -> Unit, settings: Settings, onSettings: (Setti
                         onExit()
                     }
                 } else {
-                    /* 平時只有一個離開動作（不再出現兩個同義按鈕） */
-                    W10Button("關閉", primary = false) { onExit() }
+                    W10Button("返回", primary = false) { onExit() }
+                    /* 已設定鬧鐘 → 直接提供關閉（先前只藏在面板裡，使用者找不到） */
+                    if (settings.alarmOn) {
+                        W10Button("關閉鬧鐘", primary = true) {
+                            onSettings(settings.copy(alarmOn = false))
+                            AlarmRepo.cancel(ctx)
+                        }
+                    }
                 }
             }
             Spacer(Modifier.height(14.dp))

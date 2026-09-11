@@ -68,7 +68,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val PANE_LABELS = listOf("首頁", "收藏", "壽司郎", "路線", "設定", "待機鬧鐘")
-private val PANE_GLYPHS = listOf("⌂", "♡", "◎", "⇄", "⚙", "⏰")
+private val PANE_GLYPHS = listOf("⌂", "♡", "◎", "⇄", "⚙", "")
 
 /** 官方 NavigationView：展開態完整面板寬 / 中等態圖標欄寬 */
 private val NAV_PANE_W = 268.dp
@@ -430,7 +430,7 @@ private fun NavPane(
                         .background(if (i == current) Wp8.Accent else Color.Transparent),
                 )
                 Spacer(Modifier.width(12.dp))
-                Text(PANE_GLYPHS[i], color = Wp8.Text1, fontSize = 16.sp)
+                PaneGlyph(i, 16, Wp8.Text1)
                 Spacer(Modifier.width(12.dp))
                 Text(label, color = Wp8.Text1, fontSize = 14.sp)
             }
@@ -473,13 +473,35 @@ private fun NavRail(current: Int, onSelect: (Int) -> Unit) {
                         .align(Alignment.CenterStart)
                         .background(if (i == current) Wp8.Accent else Color.Transparent),
                 )
-                Text(
-                    PANE_GLYPHS[i],
-                    color = if (i == current) Wp8.Accent else Wp8.Text1,
-                    fontSize = 18.sp,
-                )
+                PaneGlyph(i, 18, if (i == current) Wp8.Accent else Wp8.Text1)
             }
         }
+    }
+}
+
+/**
+ * 導覽圖標：前 5 項用文字字符；**第 6 項（待機鬧鐘）以 Canvas 繪製 W10M 線性鬧鐘圖標**。
+ * 不用 emoji —— emoji 是彩色圖像，違反 W10M 單色圖標規範（且與其他圖標不一致）。
+ */
+@Composable
+private fun PaneGlyph(index: Int, sizeSp: Int, color: Color) {
+    if (index != 5) {
+        Text(PANE_GLYPHS.getOrElse(index) { "" }, color = color, fontSize = sizeSp.sp)
+        return
+    }
+    androidx.compose.foundation.Canvas(Modifier.size((sizeSp + 6).dp)) {
+        val s = size.minDimension
+        val st = s * 0.085f
+        val cx = s / 2f
+        val cy = s * 0.57f
+        val r = s * 0.29f
+        drawCircle(color, radius = r, center = androidx.compose.ui.geometry.Offset(cx, cy), style = androidx.compose.ui.graphics.drawscope.Stroke(st))
+        drawLine(color, androidx.compose.ui.geometry.Offset(cx, cy), androidx.compose.ui.geometry.Offset(cx, cy - r * 0.6f), st, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, androidx.compose.ui.geometry.Offset(cx, cy), androidx.compose.ui.geometry.Offset(cx + r * 0.5f, cy), st, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, androidx.compose.ui.geometry.Offset(cx - r * 1.08f, cy - r * 0.78f), androidx.compose.ui.geometry.Offset(cx - r * 0.52f, cy - r * 1.16f), st, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, androidx.compose.ui.geometry.Offset(cx + r * 1.08f, cy - r * 0.78f), androidx.compose.ui.geometry.Offset(cx + r * 0.52f, cy - r * 1.16f), st, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, androidx.compose.ui.geometry.Offset(cx - r * 0.68f, cy + r * 0.78f), androidx.compose.ui.geometry.Offset(cx - r * 0.94f, cy + r * 1.14f), st, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, androidx.compose.ui.geometry.Offset(cx + r * 0.68f, cy + r * 0.78f), androidx.compose.ui.geometry.Offset(cx + r * 0.94f, cy + r * 1.14f), st, androidx.compose.ui.graphics.StrokeCap.Round)
     }
 }
 
@@ -598,7 +620,7 @@ private fun CommandBar(
                             .padding(horizontal = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(PANE_GLYPHS[i], color = if (i == current) Wp8.Accent else Wp8.Text1, fontSize = 17.sp)
+                        PaneGlyph(i, 17, if (i == current) Wp8.Accent else Wp8.Text1)
                         if (open) {
                             Spacer(Modifier.width(8.dp))
                             Text(label, color = if (i == current) Wp8.Accent else Wp8.Text1, fontSize = 12.sp, maxLines = 1)

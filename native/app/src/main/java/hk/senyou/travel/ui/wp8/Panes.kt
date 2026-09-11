@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hk.senyou.travel.data.Api
 import hk.senyou.travel.data.Cache
+import hk.senyou.travel.data.AlarmRepo
 import hk.senyou.travel.data.CrashGuard
 import hk.senyou.travel.data.CrashLog
 import hk.senyou.travel.data.DebugFlags
@@ -856,6 +857,34 @@ fun Wp8SettingsPane(
             Wp8Toggle(settings.contrast, if (settings.contrast) "開" else "關") {
                 onSettings(settings.copy(contrast = it))
             }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+
+        Wp8SectionTitle("鬧鐘")
+        Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("待機鬧鐘", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
+            Wp8Toggle(settings.alarmOn, if (settings.alarmOn) "開" else "關") { on ->
+                onSettings(settings.copy(alarmOn = on))
+                if (on) AlarmRepo.schedule(ctx, settings.alarmHour, settings.alarmMinute)
+                else AlarmRepo.cancel(ctx)
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+        Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (settings.alarmOn)
+                    "響鈴時間 ${String.format(java.util.Locale.getDefault(), "%02d:%02d", settings.alarmHour, settings.alarmMinute)}（每天）"
+                else "鬧鐘已關閉",
+                color = Wp8.Text2,
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+        Wp8LinkRow("開啟待機鬧鐘畫面", "調整時間與響鈴") {
+            ctx.startActivity(
+                android.content.Intent(ctx, hk.senyou.travel.ui.StandbyActivity::class.java),
+            )
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
 
