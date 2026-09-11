@@ -28,6 +28,10 @@ data class Settings(
     val contrast: Boolean = false, // WP 高對比（純黑底 / 純白字）
     /** 磁貼牆版面（順序 + 尺寸），格式 key:span,key:span…；空 = 預設版面 */
     val tileLayout: String = "",
+    /** MiMo AI 建議設定（僅存本機，不上傳） */
+    val aiKey: String = "",
+    val aiBase: String = "https://api.xiaomimimo.com/v1",
+    val aiModel: String = "mimo-v2.5",
 )
 
 /** 收藏項（對應 Web 版 favorite 結構） */
@@ -95,6 +99,9 @@ object Store {
             refresh = o?.optInt("refresh", 30) ?: 30,
             contrast = o?.optBoolean("contrast", false) ?: false,
             tileLayout = o?.optString("tileLayout", "") ?: "",
+            aiKey = o?.optString("aiKey", "") ?: "",
+            aiBase = o?.optString("aiBase", "https://api.xiaomimimo.com/v1") ?: "https://api.xiaomimimo.com/v1",
+            aiModel = o?.optString("aiModel", "mimo-v2.5") ?: "mimo-v2.5",
         )
     }
 
@@ -105,6 +112,7 @@ object Store {
                 .put("glass", s.glass).put("fx", s.fx).put("big", s.big).put("deep", s.deep)
                 .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
                 .put("contrast", s.contrast).put("tileLayout", s.tileLayout)
+                .put("aiKey", s.aiKey).put("aiBase", s.aiBase).put("aiModel", s.aiModel)
             ctx.ds.edit { it[K_CFG] = o.toString() }
         }
     }

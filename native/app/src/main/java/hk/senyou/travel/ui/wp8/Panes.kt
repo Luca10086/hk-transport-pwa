@@ -368,6 +368,12 @@ private fun SearchPanel(onOpenDetail: (SearchItem) -> Unit) {
     var items by remember { mutableStateOf<List<SearchItem>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     val recent by Store.recent(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
+    val appSettings by Store.settings(ctx).collectAsStateWithLifecycle(initialValue = Settings())
+    var aiQuery by remember { mutableStateOf("") }
+    var aiReply by remember { mutableStateOf("") }
+    var aiOptions by remember { mutableStateOf<List<hk.senyou.travel.data.AiOption>>(emptyList()) }
+    var aiError by remember { mutableStateOf<String?>(null) }
+    var aiLoading by remember { mutableStateOf(false) }
     val favs by Store.favorites(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
 
     Wp8ReportBusy(searching)
@@ -386,6 +392,46 @@ private fun SearchPanel(onOpenDetail: (SearchItem) -> Unit) {
 
     Column(Modifier.fillMaxWidth()) {
         Spacer(Modifier.height(10.dp))
+        Wp8SectionTitle("AI 建議 · MiMo v2.5")
+        Wp8Input(aiQuery, "用一句話問，例如「天水圍去銅鑼灣，唔想搭地鐵」") { aiQuery = it }
+        Spacer(Modifier.height(Wp8.Gap))
+        Wp8PrimaryButton(if (aiLoading) "思考中…" else "問 AI") {
+            if (aiQuery.isNotBlank() && !aiLoading) {
+                scope.launch {
+                    aiLoading = true
+                    aiError = null
+                    val r = runCatching { hk.senyou.travel.data.AiRepo.ask(aiQuery, appSettings) }.getOrNull()
+                    aiReply = r?.reply ?: ""
+                    aiOptions = r?.options ?: emptyList()
+                    aiError = r?.error
+                    aiLoading = false
+                }
+            }
+        }
+        if (aiLoading) Wp8LoadingDots("MiMo 思考中")
+        aiError?.let { Text(it, color = Wp8.Soon, fontSize = 12.sp, lineHeight = 18.sp, modifier = Modifier.padding(vertical = 6.dp)) }
+        if (aiReply.isNotBlank()) {
+            Text(aiReply, color = Wp8.Text1, fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(vertical = 8.dp))
+        }
+        aiOptions.forEach { o ->
+            Wp8Row(
+                no = o.keyword,
+                name = o.why.ifBlank { "點按用本機資料查班次" },
+                sub = when (o.mode) {
+                    "mtr" -> "港鐵車站"
+                    "lrt" -> "輕鐵站"
+                    "mrtbus" -> "港鐵巴士"
+                    else -> "巴士路線"
+                },
+                eta = "查班次 ›",
+                etaColor = Wp8.Accent,
+            ) {
+                query = o.keyword
+                mode = when (o.mode) { "mtr" -> 2; "lrt" -> 3; "mrtbus" -> 1; else -> 0 }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Wp8SectionTitle("手動搜尋")
         Wp8Input(query, "輸入巴士路線、站名或港鐵車站") { query = it }
         Spacer(Modifier.height(Wp8.Gap))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -831,6 +877,16 @@ fun Wp8SettingsPane(
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+
+        Wp8SectionTitle("AI 建議（MiMo v2.5）")
+        Text("API 金鑰僅儲存在本機，不會上傳。留空則停用 AI 建議。", color = Wp8.Text2, fontSize = 12.sp, lineHeight = 18.sp)
+        Spacer(Modifier.height(8.dp))
+        Wp8Input(settings.aiKey, "API 金鑰（api-key / Bearer）") { onSettings(settings.copy(aiKey = it)) }
+        Spacer(Modifier.height(8.dp))
+        Wp8Input(settings.aiBase, "API 位址") { onSettings(settings.copy(aiBase = it)) }
+        Spacer(Modifier.height(8.dp))
+        Wp8Input(settings.aiModel, "模型名稱") { onSettings(settings.copy(aiModel = it)) }
+        Spacer(Modifier.height(14.dp))
 
         Wp8SectionTitle("診斷")
         Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
