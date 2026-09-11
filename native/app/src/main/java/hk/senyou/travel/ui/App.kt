@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -36,7 +37,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +55,7 @@ import hk.senyou.travel.data.StaticData
 import hk.senyou.travel.data.Store
 import hk.senyou.travel.ui.theme.SenyouTheme
 import hk.senyou.travel.ui.wp8.Wp8
+import hk.senyou.travel.ui.wp8.Wp8DetailSheet
 import hk.senyou.travel.ui.wp8.Wp8FavsPane
 import hk.senyou.travel.ui.wp8.Wp8Gallery
 import hk.senyou.travel.ui.wp8.Wp8HomePane
@@ -66,14 +70,25 @@ import kotlinx.coroutines.launch
 private val PANE_LABELS = listOf("首頁", "收藏", "壽司郎", "路線", "設定")
 private val PANE_GLYPHS = listOf("⌂", "♡", "◎", "⇄", "⚙")
 
+/** 官方 NavigationView：展開態完整面板寬 / 中等態圖標欄寬 */
+private val NAV_PANE_W = 268.dp
+private val NAV_RAIL_W = 48.dp
+
+/** 超寬螢幕內容最大寬度（避免文字行過長） */
+private val CONTENT_MAX_W = 1080.dp
+
 /**
  * 森友出行 · **Windows 10 Mobile（UWP）** 外殼。
  *
  * 依官方 UWP 規範（見 native/WIN10-MOBILE-DESIGN.md）：
- * · 導覽＝**NavigationView 漢堡**（窄螢幕 LeftMinimal：面板 overlay + 煙霧層），取代 WP8 的 Pivot
- * · 底欄＝**CommandBar**（48px；平時只顯示圖標，按 ⋯ 顯示標籤並滑出次要命令），取代 WP8 的 72px 圓形 App Bar
- * · 分頁切換＝**Page refresh**（上滑＋淡入）；深入下一層＝**Drill**（右滑入＋淡入）——官方兩種頁面轉場
- * · 標題＝**Semibold**、Sentence case；深色主題純黑底；強調色 #0078D7
+ * · 導覽＝**NavigationView** 三種顯示模式：
+ *   Compact(<600dp) = **LeftMinimal**：只顯示漢堡，面板 overlay + 煙霧層
+ *   Medium(600–840dp) = **LeftCompact**：常駐 **48dp 圖標欄**，漢堡仍可開完整面板
+ *   Expanded(≥840dp) = **LeftMode**：常駐 **268dp 完整面板**，內容讓位、不畫煙霧
+ * · 大屏 **Master-Detail**：展開態點開詳情時左列表右詳情並排，不再全屏覆蓋
+ * · 超寬螢幕內容**最大寬度限制**並置中
+ * · 底欄＝**CommandBar**（48px；平時只顯示圖標，按 ⋯ 顯示標籤並滑出次要命令）
+ * · 分頁切換＝**Page refresh**（上滑＋淡入）；深入下一層＝**Drill**（右滑入＋淡入）
  */
 @Composable
 fun SenyouApp() {
@@ -94,7 +109,6 @@ fun SenyouApp() {
         delay(12_000)
         CrashGuard.onHealthy(ctx)
     }
-    // 系統狀態列／導覽列圖示明暗跟隨主題
     val view = androidx.compose.ui.platform.LocalView.current
     LaunchedEffect(settings.theme) {
         val act = view.context as? android.app.Activity ?: return@LaunchedEffect
@@ -176,9 +190,13 @@ fun SenyouApp() {
                 )
                 Wp8.Gutter = if (adaptive.isExpanded) 44.dp else 24.dp
 
+                val permanentPane = sizeClass == SizeClass.Expanded     // LeftMode
+                val rail = sizeClass == SizeClass.Medium                // LeftCompact
+                // 大屏 master-detail：展開態且已選詳情 → 左右並排
+                val masterDetail = permanentPane && detail != null
+
                 CompositionLocalProvider(LocalAdaptive provides adaptive) {
                     key(settings.theme, settings.contrast) {
-                    // 官方 Page refresh：切換左側導覽項時「上滑 + 淡入」
                     var refreshToken by remember { mutableIntStateOf(0) }
                     LaunchedEffect(pane) { refreshToken++ }
                     val refresh = remember { androidx.compose.animation.core.Animatable(1f) }
@@ -188,113 +206,93 @@ fun SenyouApp() {
                     }
 
                     CompositionLocalProvider(hk.senyou.travel.ui.wp8.LocalWp8Busy provides busy) {
-                        Column(Modifier.fillMaxSize()) {
-                            UwpTopBar(
-                                title = PANE_LABELS[pane],
-                                busy = busy.value,
-                                onMenu = { navOpen = true },
-                                onClose = null,
-                            )
-                            Box(Modifier.weight(1f).fillMaxWidth()) {
-                                Column(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .graphicsLayer {
-                                            alpha = refresh.value
-                                            translationY = (1f - refresh.value) * 40f
-                                        },
-                                ) {
-                                    PaneContent(
-                                        pane = pane,
-                                        refreshTick = refreshTick,
-                                        refreshSec = settings.refresh,
-                                        settings = settings,
-                                        onOpenK75P = { k75pOpen = true },
-                                        onGoPane = { pane = it },
-                                        onOpenDetail = { detail = it },
-                                        onSettings = { s -> scope.launch { Store.save(ctx, s) } },
-                                        onOpenGallery = { galleryOpen = true },
-                                    )
-                                }
+                        Row(Modifier.fillMaxSize()) {
+                            if (permanentPane) {
+                                NavPane(
+                                    current = pane,
+                                    width = NAV_PANE_W,
+                                    onSelect = { pane = it },
+                                    modifier = Modifier.fillMaxHeight(),
+                                )
+                            } else if (rail) {
+                                NavRail(current = pane) { pane = it }
                             }
-                            CommandBar(
-                                current = pane,
-                                open = cmdOpen && !barHidden,
-                                hidden = barHidden,
-                                onToggle = { cmdOpen = !cmdOpen },
-                                onSelect = { pane = it; cmdOpen = false },
-                                secondary = listOf(
-                                    "重新整理" to { refreshTick++ },
-                                    "介面規範（WP8 元件）" to { galleryOpen = true },
-                                    "Windows 10 Mobile 演示" to { win10Open = true },
-                                    if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false) }
-                                    else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true) },
-                                ),
-                            )
+
+                            Column(Modifier.weight(1f).fillMaxHeight()) {
+                                UwpTopBar(
+                                    title = PANE_LABELS[pane],
+                                    busy = busy.value,
+                                    onMenu = if (permanentPane) null else ({ navOpen = true }),
+                                    onClose = null,
+                                )
+                                Box(Modifier.weight(1f).fillMaxWidth()) {
+                                    if (masterDetail) {
+                                        Row(Modifier.fillMaxSize()) {
+                                            ContentArea(
+                                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                                                maxWidth = null,
+                                                dim = true,
+                                                refreshValue = 1f,
+                                                nested = scrollConn,
+                                            ) { PaneBody(pane, refreshTick, settings, scope, ctx, onDetail = { detail = it }, onGoPane = { pane = it }, onOpenK75P = { k75pOpen = true }, onOpenGallery = { galleryOpen = true }) }
+                                            Box(Modifier.width(1.dp).fillMaxHeight().background(Wp8.Line))
+                                            Box(Modifier.weight(1f).fillMaxHeight()) {
+                                                Wp8DetailSheet(item = detail!!) { detail = null }
+                                            }
+                                        }
+                                    } else {
+                                        ContentArea(
+                                            modifier = Modifier.fillMaxSize(),
+                                            maxWidth = if (permanentPane) CONTENT_MAX_W else null,
+                                            dim = false,
+                                            refreshValue = refresh.value,
+                                            nested = scrollConn,
+                                        ) { PaneBody(pane, refreshTick, settings, scope, ctx, onDetail = { detail = it }, onGoPane = { pane = it }, onOpenK75P = { k75pOpen = true }, onOpenGallery = { galleryOpen = true }) }
+                                    }
+                                }
+                                CommandBar(
+                                    current = pane,
+                                    open = cmdOpen && !barHidden,
+                                    hidden = barHidden,
+                                    onToggle = { cmdOpen = !cmdOpen },
+                                    onSelect = { pane = it; cmdOpen = false },
+                                    secondary = listOf(
+                                        "重新整理" to { refreshTick++ },
+                                        "介面規範（WP8 元件）" to { galleryOpen = true },
+                                        "Windows 10 Mobile 演示" to { win10Open = true },
+                                        if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false) }
+                                        else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true) },
+                                    ),
+                                )
+                            }
                         }
                     }
 
-                    // ---- NavigationView 左側面板（官方 LeftMinimal：overlay + 煙霧層）----
-                    if (navOpen) {
+                    /* ---- LeftMinimal / LeftCompact 的完整面板：overlay + 煙霧層 ---- */
+                    if (navOpen && !permanentPane) {
                         val status = WindowInsets.statusBars.asPaddingValues()
                         Box(Modifier.fillMaxSize()) {
                             Box(
                                 Modifier
                                     .fillMaxSize()
-                                    .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f))
+                                    .background(Color.Black.copy(alpha = 0.5f))
                                     .clickable { navOpen = false },
                             )
-                            Column(
-                                Modifier
-                                    .width(268.dp)
-                                    .fillMaxHeight()
-                                    .background(Wp8.Surface)
-                                    .padding(top = status.calculateTopPadding() + 12.dp),
-                            ) {
-                                Text(
-                                    "森友出行",
-                                    color = Wp8.Text1,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(start = 16.dp, bottom = 16.dp),
-                                )
-                                PANE_LABELS.forEachIndexed { i, label ->
-                                    Row(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .height(48.dp)
-                                            .background(if (i == pane) Wp8.Accent.copy(alpha = 0.35f) else androidx.compose.ui.graphics.Color.Transparent)
-                                            .clickable { pane = i; navOpen = false },
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Box(
-                                            Modifier
-                                                .width(4.dp)
-                                                .fillMaxHeight()
-                                                .background(if (i == pane) Wp8.Accent else androidx.compose.ui.graphics.Color.Transparent),
-                                        )
-                                        Spacer(Modifier.width(12.dp))
-                                        Text(PANE_GLYPHS[i], color = Wp8.Text1, fontSize = 16.sp)
-                                        Spacer(Modifier.width(12.dp))
-                                        Text(label, color = Wp8.Text1, fontSize = 14.sp)
-                                    }
-                                }
-                                Spacer(Modifier.height(12.dp))
-                                Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
-                                Spacer(Modifier.height(12.dp))
-                                Text(
-                                    "⋯ 更多可開啟 WP8 元件規範與 Win10 演示",
-                                    color = Wp8.Text2,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                )
-                            }
+                            NavPane(
+                                current = pane,
+                                width = NAV_PANE_W,
+                                onSelect = { pane = it; navOpen = false },
+                                modifier = Modifier.fillMaxHeight(),
+                                topInsetDp = status.calculateTopPadding(),
+                            )
                         }
                     }
 
-                    // ---- 覆蓋層（官方 Drill：右滑入 + 淡入）----
+                    /* ---- 覆蓋層（官方 Drill）---- */
                     if (k75pOpen) UwpDrill { Wp8K75PPage(onClose = { k75pOpen = false }) }
-                    detail?.let { d -> UwpDrill { hk.senyou.travel.ui.wp8.Wp8DetailSheet(item = d) { detail = null } } }
+                    if (!masterDetail) {
+                        detail?.let { d -> UwpDrill { Wp8DetailSheet(item = d) { detail = null } } }
+                    }
                     if (win10Open) UwpDrill { Win10DemoScreen(onClose = { win10Open = false }) }
                     if (galleryOpen) {
                         UwpDrill {
@@ -318,40 +316,156 @@ fun SenyouApp() {
     }
 }
 
-/** 官方 **Page refresh** 轉場容器（上滑 + 淡入），用於切換左側導覽項 */
+/** 目前分頁內容（供單欄與 master-detail 左欄共用） */
 @Composable
-private fun PaneContent(
+private fun PaneBody(
     pane: Int,
     refreshTick: Int,
-    refreshSec: Int,
     settings: Settings,
-    onOpenK75P: () -> Unit,
+    scope: kotlinx.coroutines.CoroutineScope,
+    ctx: android.content.Context,
+    onDetail: (SearchItem?) -> Unit,
     onGoPane: (Int) -> Unit,
-    onOpenDetail: (SearchItem) -> Unit,
-    onSettings: (Settings) -> Unit,
+    onOpenK75P: () -> Unit,
     onOpenGallery: () -> Unit,
 ) {
     when (pane) {
         0 -> Wp8HomePane(
-            refreshSec = refreshSec,
+            refreshSec = settings.refresh,
             refreshTick = refreshTick,
             settings = settings,
-            onSettings = onSettings,
+            onSettings = { s -> scope.launch { Store.save(ctx, s) } },
             onOpenK75P = onOpenK75P,
             onGoPane = onGoPane,
-            onOpenDetail = onOpenDetail,
+            onOpenDetail = onDetail,
         )
-        1 -> Wp8FavsPane(onOpenDetail = onOpenDetail)
+        1 -> Wp8FavsPane(onOpenDetail = onDetail)
         2 -> Wp8SushiPane()
-        3 -> Wp8MapPane(onOpenDetail = onOpenDetail)
-        else -> Wp8SettingsPane(settings = settings, onSettings = onSettings, onOpenGallery = onOpenGallery)
+        3 -> Wp8MapPane(onOpenDetail = onDetail)
+        else -> Wp8SettingsPane(
+            settings = settings,
+            onSettings = { s -> scope.launch { Store.save(ctx, s) } },
+            onOpenGallery = onOpenGallery,
+        )
     }
 }
 
-/**
- * 官方 **Drill** 轉場：使用者深入下一層時使用（右滑入 + 淡入）。
- * 對照 Page refresh（回到導覽堆疊頂部，上滑）。
- */
+/** 內容容器：Page refresh 動畫 +（大屏）最大寬度置中 + 滾動上報讓 CommandBar 自動收起 */
+@Composable
+private fun ContentArea(
+    modifier: Modifier,
+    maxWidth: androidx.compose.ui.unit.Dp?,
+    dim: Boolean,
+    refreshValue: Float,
+    nested: androidx.compose.ui.input.nestedscroll.NestedScrollConnection,
+    content: @Composable () -> Unit,
+) {
+    Box(modifier.nestedScroll(nested), contentAlignment = Alignment.TopCenter) {
+        Box(
+            Modifier
+                .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier.fillMaxWidth())
+                .fillMaxHeight()
+                .graphicsLayer {
+                    alpha = (if (dim) 0.55f else 1f) * refreshValue
+                    translationY = (1f - refreshValue) * 40f
+                },
+        ) { content() }
+    }
+}
+
+/** 官方 NavigationView 左側面板（LeftMode 常駐 / overlay 共用） */
+@Composable
+private fun NavPane(
+    current: Int,
+    width: androidx.compose.ui.unit.Dp,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    topInsetDp: androidx.compose.ui.unit.Dp = 0.dp,
+) {
+    Column(
+        modifier
+            .width(width)
+            .background(Wp8.Surface)
+            .padding(top = topInsetDp),
+    ) {
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "森友出行",
+            color = Wp8.Text1,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 16.dp, bottom = 16.dp),
+        )
+        PANE_LABELS.forEachIndexed { i, label ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .background(if (i == current) Wp8.Accent.copy(alpha = 0.35f) else Color.Transparent)
+                    .clickable { onSelect(i) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .background(if (i == current) Wp8.Accent else Color.Transparent),
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(PANE_GLYPHS[i], color = Wp8.Text1, fontSize = 16.sp)
+                Spacer(Modifier.width(12.dp))
+                Text(label, color = Wp8.Text1, fontSize = 14.sp)
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "⋯ 更多可開啟 WP8 元件規範與 Win10 演示",
+            color = Wp8.Text2,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+    }
+}
+
+/** 官方 LeftCompact：常駐 48dp 圖標欄（僅圖標，點按切頁） */
+@Composable
+private fun NavRail(current: Int, onSelect: (Int) -> Unit) {
+    Column(
+        Modifier
+            .width(NAV_RAIL_W)
+            .fillMaxHeight()
+            .background(Wp8.Surface),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.height(12.dp))
+        PANE_LABELS.forEachIndexed { i, _ ->
+            Box(
+                Modifier
+                    .width(NAV_RAIL_W)
+                    .height(48.dp)
+                    .clickable { onSelect(i) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .width(4.dp)
+                        .height(20.dp)
+                        .align(Alignment.CenterStart)
+                        .background(if (i == current) Wp8.Accent else Color.Transparent),
+                )
+                Text(
+                    PANE_GLYPHS[i],
+                    color = if (i == current) Wp8.Accent else Wp8.Text1,
+                    fontSize = 18.sp,
+                )
+            }
+        }
+    }
+}
+
+/** 官方 Drill 轉場：深入下一層（右滑入 + 淡入）；對照 Page refresh（上滑） */
 @Composable
 private fun UwpDrill(content: @Composable () -> Unit) {
     var shown by remember { mutableStateOf(false) }
@@ -367,7 +481,7 @@ private fun UwpDrill(content: @Composable () -> Unit) {
     ) { content() }
 }
 
-/** 頂欄：漢堡（官方 NavigationView LeftMinimal）+ 頁面標題（Subtitle 20 semibold） */
+/** 頂欄：漢堡（LeftMinimal 才需要）+ 頁面標題（Subtitle 20 semibold） */
 @Composable
 private fun UwpTopBar(
     title: String,
@@ -390,7 +504,7 @@ private fun UwpTopBar(
                     contentAlignment = Alignment.Center,
                 ) { Text("☰", color = Wp8.Text1, fontSize = 20.sp) }
             } else {
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(14.dp))
             }
             Spacer(Modifier.width(8.dp))
             Text(
@@ -412,10 +526,7 @@ private fun UwpTopBar(
     }
 }
 
-/**
- * 官方 **CommandBar**：平時只顯示圖標；按 ⋯ 後顯示標籤，次要命令由下往上滑出。
- * 高度 48px；向下捲動時自動收起（WP/Win10 皆然）。
- */
+/** 官方 CommandBar：平時只顯示圖標；按 ⋯ 顯示標籤，次要命令由下往上滑出 */
 @Composable
 private fun CommandBar(
     current: Int,
@@ -441,7 +552,6 @@ private fun CommandBar(
                 .padding(bottom = nav.calculateBottomPadding()),
         ) {
             Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
-            // 溢出：次要命令由下往上滑出（官方 CommandBar 行為）
             if (open) {
                 secondary.forEach { (label, action) ->
                     Row(
@@ -470,28 +580,15 @@ private fun CommandBar(
                             .padding(horizontal = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            PANE_GLYPHS[i],
-                            color = if (i == current) Wp8.Accent else Wp8.Text1,
-                            fontSize = 17.sp,
-                        )
+                        Text(PANE_GLYPHS[i], color = if (i == current) Wp8.Accent else Wp8.Text1, fontSize = 17.sp)
                         if (open) {
                             Spacer(Modifier.width(8.dp))
-                            Text(
-                                label,
-                                color = if (i == current) Wp8.Accent else Wp8.Text1,
-                                fontSize = 12.sp,
-                                maxLines = 1,
-                            )
+                            Text(label, color = if (i == current) Wp8.Accent else Wp8.Text1, fontSize = 12.sp, maxLines = 1)
                         }
                     }
                 }
                 Box(Modifier.size(48.dp).clickable { onToggle() }, contentAlignment = Alignment.Center) {
-                    Text(
-                        if (open) "⌄" else "⋯",
-                        color = if (open) Wp8.Accent else Wp8.Text1,
-                        fontSize = 18.sp,
-                    )
+                    Text(if (open) "⌄" else "⋯", color = if (open) Wp8.Accent else Wp8.Text1, fontSize = 18.sp)
                 }
             }
         }
