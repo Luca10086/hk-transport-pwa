@@ -133,6 +133,9 @@ fun Wp8Gallery() {
         /* ---- 進度條 ---- */
         Wp8Group("進度條 · 3px 強調色")
         Wp8ProgressBar(active = true)
+
+        /* ---- 官方動效演示（MSDN Magazine：Turnstile / Slide / Swivel / Continuum / Rotate） ---- */
+        Wp8MotionDemo()
         Spacer(Modifier.height(20.dp))
     }
 

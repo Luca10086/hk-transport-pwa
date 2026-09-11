@@ -342,7 +342,7 @@ private fun PaneHost(
 
 /** WP turnstile：全屏頁以 rotateY 3D 滑入（非硬切） */
 @Composable
-private fun Wp8Turnstile(content: @Composable () -> Unit) {
+private fun Wp8Turnstile(backward: Boolean = false, content: @Composable () -> Unit) {
     var shown by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { shown = true }
     val t by androidx.compose.animation.core.animateFloatAsState(
@@ -355,10 +355,10 @@ private fun Wp8Turnstile(content: @Composable () -> Unit) {
         Modifier
             .fillMaxSize()
             .graphicsLayer {
-                rotationY = -10f * (1f - t)
-                translationX = size.width * 0.22f * (1f - t)
-                transformOrigin = TransformOrigin(0f, 0.5f)
-                cameraDistance = 30f * density
+                rotationY = (if (backward) -90f else 90f) * (1f - t)
+                transformOrigin = TransformOrigin(if (backward) 1f else 0f, 0.5f)
+                cameraDistance = 10f * density
+                alpha = 0.4f + 0.6f * t
             },
     ) { content() }
 }

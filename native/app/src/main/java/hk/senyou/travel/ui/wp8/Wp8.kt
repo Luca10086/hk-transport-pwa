@@ -109,6 +109,12 @@ object Wp8 {
     /* ---------- 動效：WP 的招牌緩動 ---------- */
     val Ease = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
 
+    /** WP 官方轉場緩動（fast-out / slow-in）：cubic-bezier(0.1, 0.9, 0.2, 1) */
+    val EaseTurnstile = CubicBezierEasing(0.1f, 0.9f, 0.2f, 1f)
+
+    /** 官方建議：轉場（in + out 合計）總時長上限 */
+    const val TransitionMaxMs = 300
+
     /* ---------- 12/24 網格 ---------- */
     /** 響應式邊距：手機 24dp、大屏 44dp（對應 css @media min-width 700px） */
     var Gutter by androidx.compose.runtime.mutableStateOf(24.dp)
@@ -246,10 +252,17 @@ fun Wp8Tile(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = { pos ->
-                        val w = size.width.toFloat().coerceAtLeast(1f)
-                        val h = size.height.toFloat().coerceAtLeast(1f)
-                        tiltY = ((pos.x / w) - 0.5f) * 10f
-                        tiltX = -((pos.y / h) - 0.5f) * 10f
+                        // 官方 Tilt 公式（MSDN / Peter Torr）：
+                        //   xAngle = asin((y - halfH) / halfH)
+                        //   yAngle = acos((x - halfW) / halfW) - 90°
+                        // TiltStrength 控制幅度（官方 0..1；磁貼取 0.34，邊緣約 30°）
+                        val halfW = (size.width / 2f).coerceAtLeast(1f)
+                        val halfH = (size.height / 2f).coerceAtLeast(1f)
+                        val strength = 0.34f
+                        val dx = ((pos.x - halfW) / halfW).coerceIn(-1f, 1f)
+                        val dy = ((pos.y - halfH) / halfH).coerceIn(-1f, 1f)
+                        tiltX = (kotlin.math.asin(dy.toDouble()) * 180.0 / Math.PI).toFloat() * strength
+                        tiltY = ((kotlin.math.acos(dx.toDouble()) * 180.0 / Math.PI).toFloat() - 90f) * strength
                         pressed = true
                         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                         try {
