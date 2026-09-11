@@ -50,10 +50,12 @@ import java.util.Calendar
 import java.util.Locale
 
 /**
- * iPhone Duo 鬧鐘（1:1 復刻自使用者提供的設計圖）。
+ * iPhone Duo **待機顯示模式**鬧鐘（1:1 復刻 2026-09-10 Apple 秋季發表會官方展示）。
  *
  * 設計規格（逐項對應原圖）：
- * · 背景：**純黑 `#000000`**（原圖像素取樣為 (3,3,3)，非暖黑；修正自 v4.3.0 的 #0D0D0F）
+ * · 依據：發表會官方展示圖——使用者提供之圖與官方 08-standby 圖感知雜湊相關係數 **0.77**（其餘 ≤0.22），
+ *   並經兩次獨立中立判讀交叉驗證；官方未充電、折起立放即進入待機顯示（時間／天氣／日曆／音樂）
+ * · 背景：**純黑 `#000000`**（原圖像素取樣為 (3,3,3)）
  * · 左上：經典線性鬧鐘圖示（白描邊、帶兩側鈴鐺與兩支腳，約屏寬 3%）＋ 正下方兩行全大寫
  *   「GOOD / MORNING」琥珀 `#E8A630`，**Light 字重**（原圖字面偏細）、行距 1.27
  * · 右側：超大白色時間，Medium 字重、幾何圓潤；冒號為**小圓點**（間距收緊）
@@ -93,7 +95,7 @@ fun DuoAlarmScreen(
             Box(Modifier.fillMaxSize().padding(horizontal = 48.dp)) {
                 // ---- 圖示＋問候（左）與時間（右）共用同一垂直帶 ----
                 Row(
-                    Modifier.align(Alignment.Center).padding(bottom = boxH * 0.10f),
+                    Modifier.align(Alignment.TopStart).padding(top = boxH * 0.08f),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(horizontalAlignment = Alignment.Start) {
@@ -123,7 +125,7 @@ fun DuoAlarmScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     DuoPillButton("stop", DuoAlarm.StopBg, DuoAlarm.Text, boxH) { onStop() }
-                    DuoPillButton("snooze", DuoAlarm.Amber, DuoAlarm.Text, boxH, pulse = true) { onSnooze() }
+                    DuoPillButton("snooze", DuoAlarm.Amber, DuoAlarm.Text, boxH, 1.3f, pulse = true) { onSnooze() }
                 }
             }
         } else {
@@ -157,7 +159,7 @@ fun DuoAlarmScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     DuoPillButton("stop", DuoAlarm.StopBg, DuoAlarm.Text, boxH) { onStop() }
-                    DuoPillButton("snooze", DuoAlarm.Amber, DuoAlarm.Text, boxH, pulse = true) { onSnooze() }
+                    DuoPillButton("snooze", DuoAlarm.Amber, DuoAlarm.Text, boxH, 1.3f, pulse = true) { onSnooze() }
                 }
             }
         }
@@ -214,6 +216,7 @@ private fun RowScope.DuoPillButton(
     bg: Color,
     fg: Color,
     boxH: Dp,
+    weight: Float = 1f,
     pulse: Boolean = false,
     onClick: () -> Unit,
 ) {
@@ -229,7 +232,7 @@ private fun RowScope.DuoPillButton(
     val h = (boxH.value * 0.105f).dp
     Box(
         Modifier
-            .weight(1f)
+            .weight(weight)
             .height(h)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(RoundedCornerShape(h / 2))

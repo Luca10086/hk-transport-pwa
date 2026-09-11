@@ -67,8 +67,8 @@ import hk.senyou.travel.ui.wp8.Win10DemoScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val PANE_LABELS = listOf("首頁", "收藏", "壽司郎", "路線", "設定")
-private val PANE_GLYPHS = listOf("⌂", "♡", "◎", "⇄", "⚙")
+private val PANE_LABELS = listOf("首頁", "收藏", "壽司郎", "路線", "設定", "待機鬧鐘")
+private val PANE_GLYPHS = listOf("⌂", "♡", "◎", "⇄", "⚙", "⏰")
 
 /** 官方 NavigationView：展開態完整面板寬 / 中等態圖標欄寬 */
 private val NAV_PANE_W = 268.dp
@@ -213,11 +213,11 @@ fun SenyouApp() {
                                 NavPane(
                                     current = pane,
                                     width = NAV_PANE_W,
-                                    onSelect = { pane = it },
+                                    onSelect = { if (it == 5) alarmOpen = true else pane = it },
                                     modifier = Modifier.fillMaxHeight(),
                                 )
                             } else if (rail) {
-                                NavRail(current = pane) { pane = it }
+                                NavRail(current = pane) { if (it == 5) alarmOpen = true else pane = it }
                             }
 
                             Column(Modifier.weight(1f).fillMaxHeight()) {
@@ -257,12 +257,12 @@ fun SenyouApp() {
                                     open = cmdOpen && !barHidden,
                                     hidden = barHidden,
                                     onToggle = { cmdOpen = !cmdOpen },
-                                    onSelect = { pane = it; cmdOpen = false },
+                                    onSelect = { if (it == 5) alarmOpen = true else pane = it; cmdOpen = false },
                                     secondary = listOf(
                                         "重新整理" to { refreshTick++ },
                                         "介面規範（WP8 元件）" to { galleryOpen = true },
                                         "Windows 10 Mobile 演示" to { win10Open = true },
-                                        "鬧鐘（iPhone Duo 復刻）" to { alarmOpen = true },
+                                        "待機顯示模式・鬧鐘（發表會展示）" to { alarmOpen = true },
                                         if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false) }
                                         else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true) },
                                     ),
@@ -284,7 +284,7 @@ fun SenyouApp() {
                             NavPane(
                                 current = pane,
                                 width = NAV_PANE_W,
-                                onSelect = { pane = it; navOpen = false },
+                                onSelect = { if (it == 5) { alarmOpen = true; navOpen = false } else { pane = it; navOpen = false } },
                                 modifier = Modifier.fillMaxHeight(),
                                 topInsetDp = status.calculateTopPadding(),
                             )
@@ -409,6 +409,11 @@ private fun NavPane(
             modifier = Modifier.padding(start = 16.dp, bottom = 16.dp),
         )
         PANE_LABELS.forEachIndexed { i, label ->
+            if (i == 5) {
+                Spacer(Modifier.height(12.dp))
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+                Spacer(Modifier.height(4.dp))
+            }
             Row(
                 Modifier
                     .fillMaxWidth()

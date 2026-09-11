@@ -10,6 +10,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.core.view.drawToBitmap
 import hk.senyou.travel.data.DebugFlags
 import hk.senyou.travel.data.Settings
@@ -125,5 +126,14 @@ class ScreenshotExpandedTest {
         load()
         rule.setContent { Frame { hk.senyou.travel.ui.DuoAlarmScreen(onStop = {}, onSnooze = {}) } }
         shoot("wp8-32-alarm-expanded")
+    }
+
+    /** 需求驗證：「待機顯示模式鬧鐘」的入口必須在**漢堡選單**（左側 NavigationView）裡 */
+    @Test
+    fun standbyEntryInHamburgerMenu() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
+        rule.onNodeWithText("待機鬧鐘").assertExists()
+        shoot("wp8-33-standby-nav-entry")
     }
 }
