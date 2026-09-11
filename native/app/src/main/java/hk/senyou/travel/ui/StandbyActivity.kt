@@ -46,10 +46,7 @@ class StandbyActivity : ComponentActivity() {
             setTurnScreenOn(true)
         }
 
-        /* 官方待機畫面沒有狀態欄 → 隱藏（下滑可臨時喚出） */
-        val ctrl = WindowCompat.getInsetsController(window, window.decorView)
-        ctrl.hide(WindowInsetsCompat.Type.statusBars())
-        ctrl.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        /* W10M 全螢幕：狀態欄與觸控條（導航欄）一併隱藏；下滑可臨時喚出 */
 
         setContent {
             SenyouTheme {
@@ -64,6 +61,18 @@ class StandbyActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    /** 隱藏狀態欄 + 觸控條（沉浸式，滑動可臨時喚出） */
+    private fun hideSystemBars() {
+        val ctrl = WindowCompat.getInsetsController(window, window.decorView)
+        ctrl.hide(WindowInsetsCompat.Type.systemBars())
+        ctrl.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemBars()
     }
 
     override fun onNewIntent(intent: android.content.Intent) {

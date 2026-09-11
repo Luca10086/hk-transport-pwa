@@ -311,10 +311,25 @@ class ScreenshotTest {
         rule.setContent {
             Frame { hk.senyou.travel.ui.StandbyFace(page = 0, onExit = {}, settings = hk.senyou.travel.data.Settings()) }
         }
-        rule.onNodeWithText("⏰ 設定鬧鐘").performClick()
+        rule.onNodeWithText("設定鬧鐘").performClick()
         rule.waitForIdle()
         rule.onNodeWithText("確定").assertExists()
         shoot("wp8-38-standby-alarm-dialog")
+    }
+
+    /** W10M 待機顯示整頁（Pivot 頁首 + 圓點 + 官方字階 + 強調色 #0078D7） */
+    @Test
+    fun standbyW10m() {
+        load()
+        rule.setContent {
+            Frame {
+                hk.senyou.travel.ui.StandbyScreen(
+                    onExit = {},
+                    settings = hk.senyou.travel.data.Settings(),
+                )
+            }
+        }
+        shoot("wp8-39-standby-w10m")
     }
     /**
      * 回歸測試：「⋯ 更多」選單必須貼齊右下、底欄之上（曾誤跑到右上角）。
