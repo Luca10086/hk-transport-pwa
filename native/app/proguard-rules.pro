@@ -6,4 +6,4 @@
 # 只保留名稱，程式碼仍會被縮減/最佳化；函式庫維持混淆以控制體積。
 -keepnames class hk.senyou.travel.** { *; }
 -keepattributes SourceFile,LineNumberTable
--renamesourcefileattribute SourceFile
+# 保留原始檔名，崩潰日誌才看得出是哪個檔案

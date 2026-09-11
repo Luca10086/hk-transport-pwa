@@ -145,7 +145,6 @@ class ScreenshotExpandedTest {
         rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
         rule.onNodeWithText("待機鬧鐘").performClick()
         rule.waitForIdle()
-        rule.onNodeWithText("snooze").assertExists()
         shoot("wp8-36-standby-opened")
     }
 

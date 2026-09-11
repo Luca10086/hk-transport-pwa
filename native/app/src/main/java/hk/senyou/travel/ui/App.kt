@@ -125,6 +125,11 @@ fun SenyouApp() {
     var galleryOpen by remember { mutableStateOf(false) }
     var win10Open by remember { mutableStateOf(false) }
     var alarmOpen by remember { mutableStateOf(false) }
+    /** 開啟待機顯示：獨立 Activity／獨立視窗（不與外殼共用 composition） */
+    val openStandby: () -> Unit = {
+        alarmOpen = true
+        ctx.startActivity(android.content.Intent(ctx, hk.senyou.travel.ui.StandbyActivity::class.java))
+    }
     /** 摺疊姿態（官方「折起立放自動進入待機顯示」） */
     val fold = hk.senyou.travel.data.rememberFoldPosture()
     var refreshTick by remember { mutableIntStateOf(0) }
@@ -215,11 +220,11 @@ fun SenyouApp() {
                                 NavPane(
                                     current = pane,
                                     width = NAV_PANE_W,
-                                    onSelect = { if (it == 5) alarmOpen = true else pane = it },
+                                    onSelect = { if (it == 5) openStandby() else pane = it },
                                     modifier = Modifier.fillMaxHeight(),
                                 )
                             } else if (rail) {
-                                NavRail(current = pane) { if (it == 5) alarmOpen = true else pane = it }
+                                NavRail(current = pane) { if (it == 5) openStandby() else pane = it }
                             }
 
                             Column(Modifier.weight(1f).fillMaxHeight()) {
@@ -285,7 +290,7 @@ fun SenyouApp() {
                             NavPane(
                                 current = pane,
                                 width = NAV_PANE_W,
-                                onSelect = { if (it == 5) { alarmOpen = true; navOpen = false } else { pane = it; navOpen = false } },
+                                onSelect = { if (it == 5) { openStandby(); navOpen = false } else { pane = it; navOpen = false } },
                                 modifier = Modifier.fillMaxHeight(),
                                 topInsetDp = status.calculateTopPadding(),
                             )
@@ -298,41 +303,9 @@ fun SenyouApp() {
                         detail?.let { d -> UwpDrill { Wp8DetailSheet(item = d) { detail = null } } }
                     }
                     if (win10Open) UwpDrill { Win10DemoScreen(onClose = { win10Open = false }) }
-                    // 待機顯示：隱藏系統狀態欄（沉浸式，官方待機畫面無狀態欄）
-                    val sbView = androidx.compose.ui.platform.LocalView.current
-                    androidx.compose.runtime.DisposableEffect(alarmOpen) {
-                        val act = hk.senyou.travel.data.FoldPosture.findActivity(sbView.context)
-                        val ctrl = act?.window?.let { w ->
-                            androidx.core.view.WindowCompat.getInsetsController(w, sbView)
-                        }
-                        if (alarmOpen) {
-                            ctrl?.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars())
-                            ctrl?.systemBarsBehavior =
-                                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                        } else {
-                            ctrl?.show(androidx.core.view.WindowInsetsCompat.Type.statusBars())
-                        }
-                        onDispose { ctrl?.show(androidx.core.view.WindowInsetsCompat.Type.statusBars()) }
-                    }
-                    // 鬧鐘喚起：直接打開待機畫面
-                    LaunchedEffect(hk.senyou.travel.data.AlarmRepo.openRequest) {
-                        if (hk.senyou.travel.data.AlarmRepo.openRequest) {
-                            alarmOpen = true
-                            hk.senyou.travel.data.AlarmRepo.openRequest = false
-                        }
-                    }
                     // 官方：折起立放（HALF_OPENED）即自動進入待機顯示；攤平後自動退出
                     LaunchedEffect(fold.halfOpen, settings.standbyAuto) {
-                        if (settings.standbyAuto) alarmOpen = fold.halfOpen
-                    }
-                    if (alarmOpen) {
-                        UwpDrill {
-                            StandbyScreen(
-                                onExit = { alarmOpen = false },
-                                settings = settings,
-                                onSettings = { s -> scope.launch { Store.save(ctx, s) } },
-                            )
-                        }
+                        if (settings.standbyAuto && fold.halfOpen && !alarmOpen) openStandby()
                     }
                     if (galleryOpen) {
                         UwpDrill {

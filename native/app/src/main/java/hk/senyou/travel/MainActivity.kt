@@ -41,7 +41,10 @@ class MainActivity : ComponentActivity() {
     private fun consumeAlarm(intent: Intent?) {
         if (intent?.getBooleanExtra(hk.senyou.travel.data.AlarmRepo.EXTRA_RING, false) == true) {
             hk.senyou.travel.data.AlarmRepo.ringing = true
-            hk.senyou.travel.data.AlarmRepo.openRequest = true
+            startActivity(
+                Intent(this, hk.senyou.travel.ui.StandbyActivity::class.java)
+                    .putExtra(hk.senyou.travel.data.AlarmRepo.EXTRA_RING, true),
+            )
         }
     }
 
