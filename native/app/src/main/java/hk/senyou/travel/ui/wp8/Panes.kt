@@ -581,6 +581,18 @@ fun Wp8FavsPane(onOpenDetail: (SearchItem) -> Unit) {
         }
     }
 
+    /** 排序：以「上移／下移」調整收藏順序（W10M 編輯模式作法，取代 iOS 式長按拖拽），立即持久化 */
+    val moveFav: (Int, Int) -> Unit = { from, to ->
+        scope.launch {
+            val list = favs.toMutableList()
+            if (from in list.indices && to in list.indices) {
+                val moved = list.removeAt(from)
+                list.add(to, moved)
+                Store.saveFavorites(ctx, list)
+            }
+        }
+    }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -609,6 +621,8 @@ fun Wp8FavsPane(onOpenDetail: (SearchItem) -> Unit) {
                 stops = if (stopsFor == f.key) stops else emptyList(),
                 onOpen = { onOpenDetail(SearchRepo.favToSearchItem(f)) },
                 onPin = { togglePin(f) },
+                onMoveUp = if (i > 0) ({ moveFav(i, i - 1) }) else null,
+                onMoveDown = if (i < favs.size - 1) ({ moveFav(i, i + 1) }) else null,
                 onChangeStop = {
                     if (stopsFor == f.key) {
                         stopsFor = null
@@ -685,6 +699,8 @@ private fun FavBlock(
     onPin: () -> Unit,
     onChangeStop: () -> Unit,
     onPickStop: (StopRow) -> Unit,
+    onMoveUp: (() -> Unit)? = null,
+    onMoveDown: (() -> Unit)? = null,
     onCycleAlert: () -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -754,6 +770,8 @@ private fun FavBlock(
             // 港鐵巴士收藏代表整條路線，沒有「換站」概念
             if (fav.type != "mtrbus") {
                 Wp8Chip(if (stopsOpen) "收起站表" else "換站", stopsOpen) { onChangeStop() }
+                if (onMoveUp != null) Wp8Chip("上移", false) { onMoveUp() }
+                if (onMoveDown != null) Wp8Chip("下移", false) { onMoveDown() }
             }
         }
         // 換站：內嵌站表（巴士走 SearchRepo.routeStops，港鐵／輕鐵走 StaticData 站表）
