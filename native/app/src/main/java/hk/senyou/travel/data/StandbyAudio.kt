@@ -27,6 +27,9 @@ object StandbyAudio {
     private const val SR = 22050
 
     @Volatile private var thread: Thread? = null
+    /** 執行旗標：pump 迴圈以它為條件，releaseAll 後執行緒才會真正結束並釋放 AudioTrack */
+    @Volatile private var running = false
+    @Volatile private var trackRef: AudioTrack? = null
     @Volatile private var playing = false
     @Volatile private var index = 0
     @Volatile private var elapsedMs = 0L
@@ -40,11 +43,15 @@ object StandbyAudio {
     fun play() {
         if (playing) return
         playing = true
+        running = true
         if (thread?.isAlive != true) {
             val t = Thread({ pump() }, "standby-audio")
             t.isDaemon = true
             thread = t
             t.start()
+        } else {
+            /* 執行緒仍在：確認 AudioTrack 處於播放狀態（releaseAll 後由新執行緒重建） */
+            runCatching { trackRef?.play() }
         }
     }
 
@@ -120,12 +127,13 @@ object StandbyAudio {
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build()
             buffers += track
+            trackRef = track
             track.play()
             val block = ShortArray(1024)
             var step = 0
             var phase = 0.0
             var bassPhase = 0.0
-            while (thread?.isAlive == true) {
+            while (running) {
                 if (!playing) {
                     Thread.sleep(60)
                     continue
@@ -137,7 +145,7 @@ object StandbyAudio {
                 val lenSamples = (SR * stepMs[i] / 1000L).toInt()
                 val amp = if (ringing) 0.34 else 0.20
                 var n = 0
-                while (n < lenSamples && thread?.isAlive == true) {
+                while (n < lenSamples && running) {
                     val take = minOf(block.size, lenSamples - n)
                     for (k in 0 until take) {
                         val t = (n + k).toDouble() / SR
@@ -163,7 +171,7 @@ object StandbyAudio {
                             }
                             val beepFreq = if (rep == 0) 880.0 else 1174.0
                             var m = 0
-                            while (m < SR / 8 && thread?.isAlive == true) {
+                            while (m < SR / 8 && running) {
                                 val take = minOf(block.size, SR / 8 - m)
                                 for (k in 0 until take) {
                                     val t = (m + k).toDouble() / SR
@@ -184,6 +192,8 @@ object StandbyAudio {
         } finally {
             runCatching { track?.stop() }
             runCatching { track?.release() }
+            trackRef = null
+            thread = null
             buffers.remove(track)
         }
     }
@@ -204,6 +214,7 @@ object StandbyAudio {
     /** App 離開前景或關閉待機畫面時呼叫 */
     fun releaseAll() {
         playing = false
+        running = false
         ringing = false
         buffers.toList().forEach { b -> runCatching { b.stop() } }
     }

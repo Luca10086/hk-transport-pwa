@@ -82,6 +82,16 @@ fun StandbyScreen(
 ) {
     var page by remember { mutableStateOf(initialPage) }
     var drag by remember { mutableStateOf(0f) }
+    /* 每秒心跳：床頭鐘必須持續走動（否則畫面凍結在進入時刻） */
+    var tick by remember { mutableIntStateOf(0) }
+    if (!DebugFlags.staticUi) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(1000)
+                tick++
+            }
+        }
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(Wp8.Bg)) {
         val wp = maxWidth.value
@@ -107,7 +117,7 @@ fun StandbyScreen(
                     },
             ) {
                 Box(Modifier.fillMaxSize().graphicsLayer { translationX = drag }) {
-                    StandbyFace(page = page, onExit = onExit, settings = settings, onSettings = onSettings)
+                    StandbyFace(page = page, onExit = onExit, settings = settings, onSettings = onSettings, tick = tick)
                 }
             }
         }
@@ -155,10 +165,12 @@ fun StandbyFace(
     onExit: () -> Unit,
     settings: Settings = Settings(),
     onSettings: (Settings) -> Unit = {},
+    /** 每秒遞增的心跳，讓時鐘／日期跟著真實時間前進 */
+    tick: Int = 0,
 ) {
     when (page) {
-        0 -> AlarmFace(onExit, settings, onSettings)
-        1 -> CalendarFace()
+        0 -> AlarmFace(onExit, settings, onSettings, tick)
+        1 -> CalendarFace(tick)
         2 -> WeatherFace()
         else -> MusicFace()
     }
@@ -200,7 +212,7 @@ private fun W10Link(label: String, onClick: () -> Unit) {
 /* ---------------- 鬧鐘 ---------------- */
 
 @Composable
-private fun AlarmFace(onExit: () -> Unit, settings: Settings, onSettings: (Settings) -> Unit) {
+private fun AlarmFace(onExit: () -> Unit, settings: Settings, onSettings: (Settings) -> Unit, tick: Int = 0) {
     val ctx = LocalContext.current
     var pick by remember { mutableStateOf(false) }
     val ringing = AlarmRepo.ringing
@@ -228,8 +240,9 @@ private fun AlarmFace(onExit: () -> Unit, settings: Settings, onSettings: (Setti
             )
             Spacer(Modifier.weight(1f))
             /* 大鐘：Light（W10M 鎖屏時鐘識別），正常冒號，非 iOS 圓點 */
+            val clockNow = remember(tick) { hhmm() }
             Text(
-                hhmm(),
+                clockNow,
                 color = if (ringing) Wp8.Accent else Wp8.Text1,
                 fontSize = (u * (if (wide) 0.34f else 0.22f)).sp,
                 lineHeight = (u * (if (wide) 0.36f else 0.24f)).sp,
@@ -386,10 +399,10 @@ private fun StepButton(glyph: String, onClick: () -> Unit) {
 /* ---------------- 日曆 ---------------- */
 
 @Composable
-private fun CalendarFace() {
+private fun CalendarFace(tick: Int = 0) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val u = minOf(maxWidth.value, maxHeight.value)
-        val cal = remember { Calendar.getInstance() }
+        val cal = remember(tick / 30) { Calendar.getInstance() }
         val year = cal.get(Calendar.YEAR)
         val month = cal.get(Calendar.MONTH)
         val today = cal.get(Calendar.DAY_OF_MONTH)
