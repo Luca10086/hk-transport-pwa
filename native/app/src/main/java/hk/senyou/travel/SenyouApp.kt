@@ -21,6 +21,14 @@ class SenyouApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         AppCtx.set(this)
+        /* 地圖（osmdroid）初始化：OSM 使用政策要求設定 User-Agent；
+           且必須指定快取路徑，否則圖磚提供者會因路徑為 null 而建立失敗（開啟地圖時出錯）。 */
+        runCatching {
+            val cfg = org.osmdroid.config.Configuration.getInstance()
+            cfg.userAgentValue = packageName
+            cfg.osmdroidBasePath = java.io.File(cacheDir, "osmdroid")
+            cfg.osmdroidTileCache = java.io.File(cfg.osmdroidBasePath, "tiles")
+        }
         CrashLog.install(this)
         CrashGuard.onAppCreate(this)
         ensureChannel()

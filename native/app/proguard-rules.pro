@@ -7,3 +7,7 @@
 -keepnames class hk.senyou.travel.** { *; }
 -keepattributes SourceFile,LineNumberTable
 # 保留原始檔名，崩潰日誌才看得出是哪個檔案
+
+# ---- osmdroid（OpenStreetMap）：內部含反射與資源查找，混淆後易在執行期失敗 ----
+-keep class org.osmdroid.** { *; }
+-dontwarn org.osmdroid.**

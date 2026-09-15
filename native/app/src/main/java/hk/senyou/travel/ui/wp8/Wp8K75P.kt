@@ -255,14 +255,23 @@ private fun K75POsmMap(buses: List<Pair<String, Float>>, modifier: Modifier = Mo
     val pts = remember { k75pGeoPoints() }
     val busMarkers = remember { mutableMapOf<String, org.osmdroid.views.overlay.Marker>() }
     var mapRef by remember { mutableStateOf<org.osmdroid.views.MapView?>(null) }
+    /* 任何地圖建立失敗（無圖磚、快取路徑、OEM 差異）都退回示意圖，不讓整頁出錯 */
+    var mapFailed by remember { mutableStateOf(false) }
+    if (mapFailed) {
+        K75PMap(buses = buses, modifier = modifier)
+        return
+    }
 
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
-            /* OSM 使用政策要求設定 User-Agent */
-            runCatching { org.osmdroid.config.Configuration.getInstance().userAgentValue = ctx.packageName }
-            val mv = org.osmdroid.views.MapView(ctx)
             runCatching {
+                /* 保險：即使 Application 初始化被跳過，這裡也補上（OSM 政策 + 快取路徑） */
+                val cfg = org.osmdroid.config.Configuration.getInstance()
+                cfg.userAgentValue = ctx.packageName
+                if (cfg.osmdroidBasePath == null) cfg.osmdroidBasePath = java.io.File(ctx.cacheDir, "osmdroid")
+                if (cfg.osmdroidTileCache == null) cfg.osmdroidTileCache = java.io.File(cfg.osmdroidBasePath, "tiles")
+                val mv = org.osmdroid.views.MapView(ctx)
                 mv.setTileSource(org.osmdroid.tileprovider.tilesource.TileSourceFactory.MAPNIK)
                 mv.setMultiTouchControls(true)
                 mv.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
@@ -289,11 +298,18 @@ private fun K75POsmMap(buses: List<Pair<String, Float>>, modifier: Modifier = Mo
                     runCatching { mv.zoomToBoundingBox(org.osmdroid.util.BoundingBox.fromGeoPoints(pts), true, 56) }
                 }
                 mv.onResume()
+                mapRef = mv
+                mv
+            }.getOrElse {
+                android.util.Log.e("K75POsmMap", "OSM 地圖建立失敗，改回示意圖", it)
+                mapFailed = true
+                android.view.View(ctx)
             }
-            mapRef = mv
-            mv
         },
-        update = { mv ->
+        update = { v ->
+            /* factory 失敗時回傳占位 View：型別判斷後才操作地圖 */
+            if (v !is org.osmdroid.views.MapView) return@AndroidView
+            val mv = v
             runCatching {
                 val seen = mutableSetOf<String>()
                 buses.forEach { (id, pos) ->
