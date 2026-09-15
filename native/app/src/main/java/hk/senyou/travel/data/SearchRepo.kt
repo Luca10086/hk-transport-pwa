@@ -526,6 +526,32 @@ object SearchRepo {
      * 車站即時班次（港鐵上下行 / 輕鐵各線）。
      * 供收藏中的港鐵站、輕鐵站，以及到站提醒通知點擊後直接查看班次。
      */
+    /**
+     * 港鐵車站首班／尾班：由該站全日班表（UP+DOWN 全部班次）取時間極值推算，
+     * 與舊 WebView 版 renderMTRStationDetail 的做法一致（資料來源同 getSchedule.php）。
+     */
+    suspend fun stationFirstLast(item: SearchItem): Pair<String, String>? = coroutineScope {
+        if (item.kind != Kind.MTR) return@coroutineScope null
+        val code = item.stationCode ?: return@coroutineScope null
+        val all = StaticData.mtrLinesOf(code).map { line ->
+            async {
+                val dd = Api.mtrSchedule(line, code)?.optJSONObject("$line-$code")
+                    ?: return@async emptyList<String>()
+                buildList {
+                    for (key in listOf("UP", "DOWN")) {
+                        val arr = dd.optJSONArray(key) ?: continue
+                        for (i in 0 until arr.length()) {
+                            val t = arr.optJSONObject(i)?.optString("time").orEmpty()
+                            if (t.isNotBlank()) add(t)
+                        }
+                    }
+                }
+            }
+        }.awaitAll().flatten().mapNotNull { Api.hhmmHk(it) }
+        if (all.isEmpty()) return@coroutineScope null
+        all.minOrNull()!! to all.maxOrNull()!!
+    }
+
     suspend fun stationTrains(item: SearchItem): List<TrainRow> = coroutineScope {
         val code = item.stationCode ?: return@coroutineScope emptyList()
         when (item.kind) {

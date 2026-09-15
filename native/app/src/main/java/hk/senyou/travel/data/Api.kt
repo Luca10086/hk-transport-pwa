@@ -172,6 +172,27 @@ object Api {
     }
 
     /* ---------------- 港鐵 ---------------- */
+    /**
+     * 由班次時間字串取「HH:mm」。
+     * 九巴／港鐵開放資料的班表時間本身即香港本地時間（或帶 +08:00），故直接取時分；
+     * 若為 UTC（結尾 Z）才做時區換算，避免裝置時區造成偏移。
+     */
+    fun hhmmHk(t: String): String? {
+        val s = t.trim()
+        if (s.isBlank()) return null
+        if (s.endsWith("Z", ignoreCase = true)) {
+            val ms = parseIso(s) ?: return null
+            val fmt = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+            fmt.timeZone = java.util.TimeZone.getTimeZone("Asia/Hong_Kong")
+            return fmt.format(java.util.Date(ms))
+        }
+        val m = Regex("(\\d{1,2}):(\\d{2})").find(s) ?: return null
+        val h = m.groupValues[1].toIntOrNull() ?: return null
+        val mi = m.groupValues[2].toIntOrNull() ?: return null
+        if (h !in 0..23 || mi !in 0..59) return null
+        return String.format(java.util.Locale.getDefault(), "%02d:%02d", h, mi)
+    }
+
     suspend fun mtrSchedule(line: String, station: String): JSONObject? =
         Http.getJson("$MTR/getSchedule.php?line=$line&sta=$station")?.optJSONObject("data")
 

@@ -21,6 +21,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -173,7 +175,7 @@ fun Wp8K75PPage(onClose: () -> Unit, halfOpen: Boolean = false) {
             /* 官方半開合：內屏一半顯示內容（路線圖）、一半顯示控件（三班卡），中間留出鉸鏈帶 */
             Column(bodyMod) {
                 Box(Modifier.fillMaxWidth().weight(1f).background(Wp8.Surface)) {
-                    K75PMap(
+                    K75PRouteMap(
                         buses = markers.filter { it.gps }.map { it.id to (smooth[it.id] ?: it.pos) },
                         modifier = Modifier.fillMaxSize().padding(8.dp),
                     )
@@ -205,6 +207,124 @@ fun Wp8K75PPage(onClose: () -> Unit, halfOpen: Boolean = false) {
 }
 
 /** U 形路線圖：純色平面（無漸變、無陰影），站名沿用原本繪製 */
+/* ---------------- K75P 真地圖（OpenStreetMap，免 API key） ---------------- */
+
+/** 路線地理座標：依靜態資料站序取座標（缺座標者略過） */
+private fun k75pGeoPoints(): List<org.osmdroid.util.GeoPoint> =
+    StaticData.k75pStops.mapNotNull { s ->
+        StaticData.k75pCoords[s.id]?.let { org.osmdroid.util.GeoPoint(it.lat, it.lng) }
+    }
+
+/** 依浮點站序位置在地理折線上插值（與示意圖同一套 pos 語義，0=天瑞、22=洪水橋） */
+private fun k75pGeoAt(pos: Float, pts: List<org.osmdroid.util.GeoPoint>): org.osmdroid.util.GeoPoint? {
+    if (pts.isEmpty()) return null
+    val i = pos.toInt().coerceIn(0, pts.size - 1)
+    val fr = (pos - i).coerceIn(0f, 1f)
+    val a = pts[i]
+    val b = pts.getOrNull(i + 1) ?: a
+    return org.osmdroid.util.GeoPoint(
+        a.latitude + (b.latitude - a.latitude) * fr,
+        a.longitude + (b.longitude - a.longitude) * fr,
+    )
+}
+
+/** 圓點圖標（不依賴 osmdroid 內建 drawable，避免資源耦合） */
+private fun dotIcon(color: Int, sizeDp: Int): android.graphics.drawable.Drawable =
+    android.graphics.drawable.GradientDrawable().apply {
+        shape = android.graphics.drawable.GradientDrawable.OVAL
+        setColor(color)
+        setStroke(4, android.graphics.Color.WHITE)
+        setSize(sizeDp, sizeDp)
+    }
+
+/**
+ * 路線圖入口：**真地圖（OSM）優先**；測試環境（staticUi）或離線時退回原本的純色示意圖。
+ * 兩者使用同一組 pos 語義，因此 K75P 的 GPS 視窗錨定定位邏輯不受影響。
+ */
+@Composable
+private fun K75PRouteMap(buses: List<Pair<String, Float>>, modifier: Modifier = Modifier) {
+    if (DebugFlags.staticUi || DebugFlags.offline || StaticData.k75pCoords.isEmpty()) {
+        K75PMap(buses = buses, modifier = modifier)
+    } else {
+        K75POsmMap(buses = buses, modifier = modifier)
+    }
+}
+
+@Composable
+private fun K75POsmMap(buses: List<Pair<String, Float>>, modifier: Modifier = Modifier) {
+    val pts = remember { k75pGeoPoints() }
+    val busMarkers = remember { mutableMapOf<String, org.osmdroid.views.overlay.Marker>() }
+    var mapRef by remember { mutableStateOf<org.osmdroid.views.MapView?>(null) }
+
+    AndroidView(
+        modifier = modifier,
+        factory = { ctx ->
+            /* OSM 使用政策要求設定 User-Agent */
+            runCatching { org.osmdroid.config.Configuration.getInstance().userAgentValue = ctx.packageName }
+            val mv = org.osmdroid.views.MapView(ctx)
+            runCatching {
+                mv.setTileSource(org.osmdroid.tileprovider.tilesource.TileSourceFactory.MAPNIK)
+                mv.setMultiTouchControls(true)
+                mv.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
+                if (pts.size >= 2) {
+                    val line = org.osmdroid.views.overlay.Polyline()
+                    line.setPoints(pts)
+                    line.outlinePaint.color = android.graphics.Color.parseColor("#0078D7")
+                    line.outlinePaint.strokeWidth = 9f
+                    line.outlinePaint.strokeCap = android.graphics.Paint.Cap.ROUND
+                    mv.overlays.add(line)
+                }
+                listOf(0 to "起點 天瑞", 14 to "循環點 輕鐵洪水橋站", 22 to "洪水橋巴士廠").forEach { (i, label) ->
+                    pts.getOrNull(i)?.let { g ->
+                        val m = org.osmdroid.views.overlay.Marker(mv)
+                        m.position = g
+                        m.title = label
+                        m.icon = dotIcon(android.graphics.Color.parseColor("#0078D7"), 22)
+                        m.setAnchor(org.osmdroid.views.overlay.Marker.ANCHOR_CENTER, org.osmdroid.views.overlay.Marker.ANCHOR_CENTER)
+                        mv.overlays.add(m)
+                    }
+                }
+                mv.controller.setZoom(14.0)
+                if (pts.size >= 2) {
+                    runCatching { mv.zoomToBoundingBox(org.osmdroid.util.BoundingBox.fromGeoPoints(pts), true, 56) }
+                }
+                mv.onResume()
+            }
+            mapRef = mv
+            mv
+        },
+        update = { mv ->
+            runCatching {
+                val seen = mutableSetOf<String>()
+                buses.forEach { (id, pos) ->
+                    seen += id
+                    val g = k75pGeoAt(pos, pts) ?: return@forEach
+                    val m = busMarkers.getOrPut(id) {
+                        org.osmdroid.views.overlay.Marker(mv).apply {
+                            icon = dotIcon(android.graphics.Color.parseColor("#F0A30A"), 30)
+                            setAnchor(org.osmdroid.views.overlay.Marker.ANCHOR_CENTER, org.osmdroid.views.overlay.Marker.ANCHOR_CENTER)
+                            mv.overlays.add(this)
+                        }
+                    }
+                    m.position = g
+                    m.title = "巴士 $id"
+                }
+                busMarkers.keys.filter { it !in seen }.forEach { k ->
+                    busMarkers.remove(k)?.let { mv.overlays.remove(it) }
+                }
+                mv.invalidate()
+            }
+        },
+    )
+    DisposableEffect(Unit) {
+        onDispose {
+            runCatching { mapRef?.onPause(); mapRef?.onDetach() }
+            busMarkers.clear()
+            mapRef = null
+        }
+    }
+}
+
 @Composable
 private fun K75PMap(buses: List<Pair<String, Float>>, modifier: Modifier = Modifier) {
     val namePaint = remember {
@@ -423,6 +543,8 @@ fun Wp8DetailSheet(item: SearchItem, onClose: () -> Unit) {
     var rows by remember { mutableStateOf<List<StopRow>>(emptyList()) }
     var trains by remember { mutableStateOf<List<TrainRow>>(emptyList()) }
     var conns by remember { mutableStateOf<List<Wp8Conn>>(emptyList()) }
+    /* 港鐵車站首班／尾班（由全日班表推算） */
+    var span by remember { mutableStateOf<Pair<String, String>?>(null) }
     var dirEtas by remember { mutableStateOf<List<Wp8DirEta>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var tab by remember { mutableIntStateOf(0) }
@@ -447,6 +569,7 @@ fun Wp8DetailSheet(item: SearchItem, onClose: () -> Unit) {
                 } else {
                     emptyList()
                 }
+                span = runCatching { SearchRepo.stationFirstLast(item) }.getOrNull()
                 loading = false
                 sampledAt = System.currentTimeMillis()
                 ageMin = 0
@@ -562,6 +685,21 @@ fun Wp8DetailSheet(item: SearchItem, onClose: () -> Unit) {
                     .padding(horizontal = Wp8.Gutter)
                     .padding(bottom = 40.dp),
             ) {
+                /* 首班／尾班：舊 WebView 版車站詳情同款（資料同源，非估算） */
+                if (!loading && isStation && span != null) {
+                    val (firstTrain, lastTrain) = span!!
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("首班 $firstTrain", color = Wp8.Text1, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.width(14.dp))
+                        Text("尾班 $lastTrain", color = Wp8.Text1, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.weight(1f))
+                        Text("全日班表推算", color = Wp8.Text2, fontSize = 12.sp)
+                    }
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+                }
                 when {
                     loading -> Wp8Empty("載入中…")
                     isStation && trains.isEmpty() -> Wp8Empty("暫無班次資料")
@@ -648,7 +786,7 @@ private fun K75PMapBlock(markers: List<BusMarker>, smooth: Map<String, Float>) {
             .height(320.dp)
             .background(Wp8.Surface),
     ) {
-        K75PMap(
+        K75PRouteMap(
             buses = markers.filter { it.gps }.map { it.id to (smooth[it.id] ?: it.pos) },
             modifier = Modifier.fillMaxSize().padding(6.dp),
         )

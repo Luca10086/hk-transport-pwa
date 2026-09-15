@@ -3,6 +3,7 @@ package hk.senyou.travel
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import hk.senyou.travel.data.AlarmRepo
+import hk.senyou.travel.data.Api
 import hk.senyou.travel.data.CrashLog
 import hk.senyou.travel.data.Kind
 import hk.senyou.travel.data.MtrRepo
@@ -158,6 +159,19 @@ class AuditGuardTest {
         assertTrue("需含原始例外", text.contains("audit-guard"))
         assertTrue("需含堆疊", text.contains("IllegalStateException"))
         CrashLog.clear(ctx)
+    }
+
+    /* ---------------- 首班／尾班時間解析 ---------------- */
+
+    @Test
+    fun hhmmHkParsesBothScheduleFormats() {
+        // 九巴 ISO+08:00 與港鐵 yyyy-MM-dd HH:mm:ss 皆為香港本地時間
+        assertEquals("14:05", Api.hhmmHk("2026-09-15T14:05:00+08:00"))
+        assertEquals("06:05", Api.hhmmHk("2026-09-15 06:05:00"))
+        assertEquals("00:00", Api.hhmmHk("2026-09-15 00:00:00"))
+        assertEquals("23:59", Api.hhmmHk("2026-09-15T23:59:00+08:00"))
+        assertEquals(null, Api.hhmmHk(""))
+        assertEquals(null, Api.hhmmHk("沒有時間"))
     }
 
     /* ---------------- 內建合成音：離開待機後仍能再播 ---------------- */
