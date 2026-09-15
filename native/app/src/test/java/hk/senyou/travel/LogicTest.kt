@@ -74,8 +74,8 @@ class LogicTest {
     @Test
     fun settings_roundTrip() = runBlocking {
         val s = Settings(
-            theme = "light", glass = 4, fx = "simple", big = true, deep = true,
-            night = "manual", accent = 0xFFAA00FF, fontLevel = 7, refresh = 60,
+            theme = "light", fx = "simple", weatherPlace = "沙田",
+            accent = 0xFFAA00FF, fontLevel = 7, refresh = 60,
         )
         Store.save(ctx, s)
         assertEquals(s, Store.settings(ctx).first())
@@ -86,7 +86,7 @@ class LogicTest {
         Store.save(ctx, Settings())
         val d = Store.settings(ctx).first()
         assertEquals("dark", d.theme)
-        assertEquals(2, d.glass)
+        assertEquals("天水圍", d.weatherPlace)
         assertEquals(3, d.fontLevel)
         assertEquals(30, d.refresh)
     }

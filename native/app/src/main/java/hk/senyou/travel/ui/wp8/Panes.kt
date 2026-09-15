@@ -103,7 +103,7 @@ fun Wp8HomePane(
     // 週期刷新（磁貼數據）；釘選變更時重啟迴圈，令磁貼立即改用新釘選
     LaunchedEffect(refreshSec, refreshTick, settings.pinnedFav) {
         if (DebugFlags.staticUi || refreshSec <= 0) {
-            weather = runCatching { Hko.fetch() }.getOrNull()
+            weather = runCatching { Hko.fetch(prefer = settings.weatherPlace) }.getOrNull()
             return@LaunchedEffect
         }
         while (true) {
@@ -131,7 +131,7 @@ fun Wp8HomePane(
                 k75pLive = live
                 Cache.k75pMins = best
                 Cache.k75pLive = live
-                weather = Hko.fetch()
+                weather = Hko.fetch(prefer = settings.weatherPlace)
                 val first = favs.firstOrNull { it.key == settings.pinnedFav } ?: favs.firstOrNull()
                 favEta = first?.let { SearchRepo.favEta(it) }
                 updated = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
@@ -234,7 +234,7 @@ private fun tileItems(
     TileItem("weather", 4) { m ->
         Wp8Tile(
             m, Wp8.TileTeal,
-            title = "天氣",
+            title = weather?.place?.takeIf { it.isNotBlank() }?.let { "天氣 · $it" } ?: "天氣",
             value = weather?.temp?.let { "$it°" } ?: "—",
             sub = weather?.desc ?: "載入中…",
             // 天氣圖示為彩色 emoji，WP8 一律改用文字描述（desc），磁貼背面只留日期與溫度
@@ -521,8 +521,14 @@ private fun WeatherK75PPanel(weather: Weather?, updated: String, onOpenK75P: () 
                     if (w.uv != null) append("  UV ${w.uv}")
                 }
             } ?: "載入中…",
-            cap = weather?.let { "${it.desc}${if (updated.isNotBlank()) " · 更新 $updated" else ""}" } ?: "",
-        )
+                cap = weather?.let { w ->
+                    listOfNotNull(
+                        w.place.takeIf { it.isNotBlank() },
+                        w.desc.takeIf { it.isNotBlank() },
+                        if (updated.isNotBlank()) "更新 $updated" else null,
+                    ).joinToString(" · ")
+                } ?: "",
+            )
         if (weather != null && weather.days.isNotEmpty()) {
             Wp8SectionTitle("未來三天")
             weather.days.take(3).forEach { d ->
@@ -1003,6 +1009,25 @@ fun Wp8SettingsPane(
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
 
+        Wp8SectionTitle("天氣")
+        Text("顯示哪個實測站（香港天文台）", color = Wp8.Text2, fontSize = 12.sp, lineHeight = 18.sp)
+        Spacer(Modifier.height(8.dp))
+        val places = remember {
+            listOf(
+                "天水圍", "元朗公園", "屯門", "荃灣城門谷", "沙田", "大埔", "上水", "西貢",
+                "將軍澳", "觀塘", "黃大仙", "九龍城", "深水埗", "香港公園", "跑馬地", "赤鱲角", "長洲", "山頂",
+            )
+        }
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            places.forEach { p ->
+                Wp8Chip(p, settings.weatherPlace == p) { onSettings(settings.copy(weatherPlace = p)) }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
         Wp8SectionTitle("鬧鐘")
         Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("待機鬧鐘", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))

@@ -15,6 +15,10 @@ data class Weather(
     val mild: List<String> = emptyList(),
     val days: List<WeatherDay> = emptyList(),
     val updated: String = "",
+    /** 目前溫度來自哪個實測站（可選地區用） */
+    val place: String = "",
+    /** 香港天文台全部實測站（站名 → 溫度），供設定頁選擇地區 */
+    val places: List<Pair<String, Int>> = emptyList(),
 )
 
 /** 香港天文台開放數據（rhrread / fnd / uvindex） */
@@ -31,7 +35,7 @@ object Hko {
      * 三個端點逐一合併進上次快取：某個端點失敗時保留上一次的好資料（不再整份清空），
      * 且只有在至少一個端點成功時才覆寫快取（失敗不會把快取時間往前推）。
      */
-    suspend fun fetch(force: Boolean = false): Weather {
+    suspend fun fetch(force: Boolean = false, prefer: String? = null): Weather {
         val prev = cache
         prev?.let { if (!force && System.currentTimeMillis() - cacheAt < 5 * 60_000) return it }
         var w = prev ?: Weather()
@@ -39,17 +43,25 @@ object Hko {
 
         Http.getJson(RHRREAD)?.let { r ->
             val temps = r.optJSONObject("temperature")?.optJSONArray("data")
-            var temp: Int? = null
+            /* 收集天文台全部實測站：設定頁可選地區；prefer 命中則優先採用 */
+            val all = mutableListOf<Pair<String, Int>>()
             if (temps != null) {
                 for (i in 0 until temps.length()) {
                     val d = temps.optJSONObject(i) ?: continue
-                    val place = d.optString("place")
-                    if (place.contains("天水圍") || place.contains("元朗") || place.contains("屯門") || place.contains("荃灣")) {
-                        temp = d.optDouble("value", 0.0).roundToInt(); break
-                    }
-                    if (temp == null) temp = d.optDouble("value", 0.0).roundToInt()
+                    val name = d.optString("place")
+                    if (name.isBlank()) continue
+                    all += name to d.optDouble("value", 0.0).roundToInt()
                 }
             }
+            val want = prefer?.takeIf { it.isNotBlank() }
+            val hit = want?.let { p -> all.firstOrNull { it.first == p } ?: all.firstOrNull { it.first.contains(p) } }
+            val fallback = all.firstOrNull {
+                it.first.contains("天水圍") || it.first.contains("元朗") ||
+                    it.first.contains("屯門") || it.first.contains("荃灣")
+            } ?: all.firstOrNull()
+            val chosen = hit ?: fallback
+            val temp = chosen?.second
+            val placeName = chosen?.first ?: ""
             val humid = r.optJSONObject("humidity")?.optJSONArray("data")?.optJSONObject(0)?.optDouble("value")?.roundToInt()
             val rain = r.optJSONObject("rainfall")?.optJSONArray("data")?.optJSONObject(0)?.optString("max")?.toDoubleOrNull()
             val warn = r.optJSONArray("warningMessage")
@@ -71,6 +83,8 @@ object Hko {
                 severe = if (warn != null) severe else w.severe,
                 mild = if (warn != null) mild else w.mild,
                 updated = updated.ifBlank { w.updated },
+                place = placeName.ifBlank { w.place },
+                places = if (all.isNotEmpty()) all else w.places,
             )
         }
 

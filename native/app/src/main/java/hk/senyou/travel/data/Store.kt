@@ -17,15 +17,12 @@ import org.json.JSONObject
 /** 設定（對應 Web 版 wp2026_cfg） */
 data class Settings(
     val theme: String = "dark",  // dark / light
-    val glass: Int = 2,          // 0 無 → 4 濃郁
     val fx: String = "full",     // full / simple / off
-    val big: Boolean = false,    // 大字模式
-    val deep: Boolean = false,   // 深夜模式
-    val night: String = "auto",  // system / manual / auto(定時)
     val accent: Long = 0xFF8B5CF6,
     val fontLevel: Int = 3,      // 0..7
     val refresh: Int = 30,       // 秒，0=關
     val contrast: Boolean = false, // WP 高對比（純黑底 / 純白字）
+    val weatherPlace: String = "天水圍", // 天氣顯示地區（香港天文台實測站）
     val standbyAuto: Boolean = true, // 折起立放即進入待機顯示（官方 iPhone Duo 行為）
     val alarmOn: Boolean = false,     // 真鬧鐘開關
     val alarmHour: Int = 7,
@@ -95,15 +92,12 @@ object Store {
         val o = p[K_CFG]?.let { runCatching { JSONObject(it) }.getOrNull() }
         Settings(
             theme = o?.optString("theme", "dark") ?: "dark",
-            glass = o?.optInt("glass", 2) ?: 2,
             fx = o?.optString("fx", "full") ?: "full",
-            big = o?.optBoolean("big", false) ?: false,
-            deep = o?.optBoolean("deep", false) ?: false,
-            night = o?.optString("night", "auto") ?: "auto",
             accent = o?.optLong("accent", 0xFF8B5CF6) ?: 0xFF8B5CF6,
             fontLevel = o?.optInt("fontLevel", 3) ?: 3,
             refresh = o?.optInt("refresh", 30) ?: 30,
             contrast = o?.optBoolean("contrast", false) ?: false,
+            weatherPlace = o?.optString("weatherPlace", "天水圍") ?: "天水圍",
             standbyAuto = o?.optBoolean("standbyAuto", true) ?: true,
             alarmOn = o?.optBoolean("alarmOn", false) ?: false,
             alarmHour = o?.optInt("alarmHour", 7) ?: 7,
@@ -120,9 +114,10 @@ object Store {
         runCatching {
             val o = JSONObject()
                 .put("theme", s.theme)
-                .put("glass", s.glass).put("fx", s.fx).put("big", s.big).put("deep", s.deep)
-                .put("night", s.night).put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
+                .put("fx", s.fx)
+                .put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
                 .put("contrast", s.contrast).put("tileLayout", s.tileLayout)
+                .put("weatherPlace", s.weatherPlace)
                 .put("standbyAuto", s.standbyAuto)
                 .put("alarmOn", s.alarmOn).put("alarmHour", s.alarmHour).put("alarmMinute", s.alarmMinute)
                 .put("aiKey", s.aiKey).put("aiBase", s.aiBase).put("aiModel", s.aiModel)
