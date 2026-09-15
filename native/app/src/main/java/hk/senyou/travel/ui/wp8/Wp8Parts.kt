@@ -161,6 +161,7 @@ fun Wp8Toggle(checked: Boolean, label: String = "", onChecked: (Boolean) -> Unit
  * 這是 WP8 開始畫面最招牌的手勢。
  */
 @Composable
+/* 註：本元件屬 WP8（Windows Phone 8）語言，官方 WP8 標題即 Light；刻意不套用 W10M 字階。 */
 fun Wp8SemanticZoomOverlay(
     groups: List<String>,
     onPick: (Int) -> Unit,
@@ -193,6 +194,7 @@ fun Wp8SemanticZoomOverlay(
  * 這是 WP 導航最招牌的元素——只顯示當前標題是不夠的。
  */
 @Composable
+/* 註：WP8 Pivot 頁首，WP8 規範為 Light 大字；刻意不套用 W10M 字階。 */
 fun Wp8PivotStrip(
     titles: List<String>,
     current: Int,
@@ -267,15 +269,15 @@ fun Wp8LoadingDots(label: String = "載入中") {
     }
 }
 
-/** 分頁大標題（WP8 pane title：27sp Light） */
+/** 分頁大標題（W10M Title 字階 28/36 **Semibold**；官方強調一律 Semibold，排除 Light/Bold） */
 @Composable
 fun Wp8PaneTitle(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
         color = Wp8.Text1,
-        fontSize = 27.sp,
-        fontWeight = FontWeight.Light,
-        fontFamily = FontFamily.SansSerif,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
+        fontWeight = FontWeight.SemiBold,
         letterSpacing = (-0.3).sp,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -318,14 +320,15 @@ fun Wp8Tag(text: String) {
     }
 }
 
-/** 區塊小標（強調色、字距 1px） */
+/** 區塊小標（強調色、字距 1px；W10M Body strong 14/20 **Semibold**） */
 @Composable
 fun Wp8SectionTitle(text: String) {
     Text(
         text,
         color = Wp8.Accent,
         fontSize = 14.sp,
-        fontWeight = FontWeight.Light,
+        lineHeight = 20.sp,
+        fontWeight = FontWeight.SemiBold,
         letterSpacing = 1.sp,
         modifier = Modifier.padding(top = 18.dp, bottom = 4.dp),
     )
@@ -341,7 +344,7 @@ fun Wp8WeatherBar(text: String, cap: String) {
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text, color = Wp8.Text1, fontSize = 18.sp, fontWeight = FontWeight.Light)
+        Text(text, color = Wp8.Text1, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         if (cap.isNotBlank()) {
             Spacer(Modifier.height(4.dp))
             Text(cap, color = Wp8.Text2, fontSize = 12.sp)

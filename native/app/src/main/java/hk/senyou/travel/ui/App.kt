@@ -48,6 +48,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hk.senyou.travel.data.AlarmRepo
+import hk.senyou.travel.data.AlertScheduler
 import hk.senyou.travel.data.CrashGuard
 import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.Settings
@@ -65,6 +67,7 @@ import hk.senyou.travel.ui.wp8.Wp8SettingsPane
 import hk.senyou.travel.ui.wp8.Wp8SushiPane
 import hk.senyou.travel.ui.wp8.Win10DemoScreen
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 private val PANE_LABELS = listOf("首頁", "收藏", "壽司郎", "路線", "設定", "待機鬧鐘")
@@ -96,15 +99,18 @@ fun SenyouApp() {
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         runCatching { StaticData.load(ctx) }
-        runCatching { Tts.init(ctx) }
+        // 開機／更新／行程重啟後補排鬧鐘（讀設定在背景協程，不阻塞主執行緒）
+        runCatching { AlarmRepo.rearmFromSettings(ctx) }
     }
     val settings by Store.settings(ctx).collectAsStateWithLifecycle(initialValue = Settings())
 
     Wp8.light = settings.theme == "light"
     Wp8.contrast = settings.contrast
     Wp8.accentIndex = Wp8.Accents.indexOfFirst { it.first == settings.accent }.takeIf { it >= 0 } ?: 0
+    // 減少動畫：安全模式或設定 fx=="off" → 轉場／磁貼動畫直接跳到最終狀態（不再只是個沒人讀的設定）
+    Wp8.reduceMotion = CrashGuard.reduceMotion(ctx, settings.fx)
 
-    val safeMode = remember { CrashGuard.isSafeMode(ctx) }
+    var safeMode by remember { mutableStateOf(CrashGuard.isSafeMode(ctx)) }
     LaunchedEffect(Unit) {
         delay(12_000)
         CrashGuard.onHealthy(ctx)
@@ -118,6 +124,8 @@ fun SenyouApp() {
     }
 
     var pane by remember { mutableIntStateOf(0) }
+    // 從設定頁返回時重讀安全模式（設定頁的開關直接寫 CrashGuard，不經過 settings 流）
+    LaunchedEffect(pane) { safeMode = CrashGuard.isSafeMode(ctx) }
     var navOpen by remember { mutableStateOf(false) }
     var cmdOpen by remember { mutableStateOf(false) }
     var k75pOpen by remember { mutableStateOf(false) }
@@ -125,10 +133,19 @@ fun SenyouApp() {
     var galleryOpen by remember { mutableStateOf(false) }
     var win10Open by remember { mutableStateOf(false) }
     var alarmOpen by remember { mutableStateOf(false) }
+    /**
+     * 待機 Activity 自行結束時解除 [alarmOpen] 鎖定；
+     * 否則旗標會一直停在 true，BackHandler 之後就永遠吃掉第一次返回鍵。
+     */
+    val standbyResult = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+    ) { alarmOpen = false }
     /** 開啟待機顯示：獨立 Activity／獨立視窗（不與外殼共用 composition） */
     val openStandby: () -> Unit = {
         alarmOpen = true
-        ctx.startActivity(android.content.Intent(ctx, hk.senyou.travel.ui.StandbyActivity::class.java))
+        runCatching {
+            standbyResult.launch(android.content.Intent(ctx, hk.senyou.travel.ui.StandbyActivity::class.java))
+        }
     }
     /** 摺疊姿態（官方「折起立放自動進入待機顯示」） */
     val fold = hk.senyou.travel.data.rememberFoldPosture()
@@ -161,6 +178,17 @@ fun SenyouApp() {
         deep?.let {
             detail = it
             DeepLink.flow.value = null
+        }
+    }
+
+    /*
+     * 到站提醒的精確排程：收藏的提醒門檻是 3／5／10 分鐘，而背景 worker 最短 15 分鐘
+     * （實際 30 分鐘），所以有提醒需求時改用鬧鐘鏈（AlertScheduler），沒有就取消。
+     * 提醒開關在收藏頁（Panes.kt）直接寫 Store.favorites，因此這裡監聽收藏流本身。
+     */
+    LaunchedEffect(Unit) {
+        Store.favorites(ctx).collect { favs ->
+            AlertScheduler.sync(ctx, enabled = favs.any { it.alertMins > 0 })
         }
     }
 
@@ -209,9 +237,14 @@ fun SenyouApp() {
                     var refreshToken by remember { mutableIntStateOf(0) }
                     LaunchedEffect(pane) { refreshToken++ }
                     val refresh = remember { androidx.compose.animation.core.Animatable(1f) }
-                    LaunchedEffect(refreshToken) {
-                        refresh.snapTo(0f)
-                        refresh.animateTo(1f, tween(300, easing = Wp8.EaseTurnstile))
+                    LaunchedEffect(refreshToken, Wp8.reduceMotion) {
+                        // 減少動畫：不做 Page refresh 補間，直接停在最終狀態
+                        if (Wp8.reduceMotion) {
+                            refresh.snapTo(1f)
+                        } else {
+                            refresh.snapTo(0f)
+                            refresh.animateTo(1f, tween(300, easing = Wp8.EaseTurnstile))
+                        }
                     }
 
                     CompositionLocalProvider(hk.senyou.travel.ui.wp8.LocalWp8Busy provides busy) {
@@ -264,13 +297,14 @@ fun SenyouApp() {
                                     open = cmdOpen && !barHidden,
                                     hidden = barHidden,
                                     onToggle = { cmdOpen = !cmdOpen },
-                                    onSelect = { if (it == 5) alarmOpen = true else pane = it; cmdOpen = false },
+                                    onSelect = { if (it == 5) openStandby() else pane = it; cmdOpen = false },
                                     secondary = listOf(
                                         "重新整理" to { refreshTick++ },
                                         "介面規範（WP8 元件）" to { galleryOpen = true },
                                         "Windows 10 Mobile 演示" to { win10Open = true },
-                                        if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false) }
-                                        else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true) },
+                                        // 安全模式也會強制 reduceMotion（見上方 Wp8.reduceMotion）
+                                        if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false); safeMode = false }
+                                        else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true); safeMode = true },
                                     ),
                                 )
                             }
@@ -505,12 +539,17 @@ private fun PaneGlyph(index: Int, sizeSp: Int, color: Color) {
     }
 }
 
-/** 官方 Drill 轉場：深入下一層（右滑入 + 淡入）；對照 Page refresh（上滑） */
+/** 官方 Drill 轉場：深入下一層（右滑入 + 淡入）；對照 Page refresh（上滑）；減少動畫時直接到位 */
 @Composable
 private fun UwpDrill(content: @Composable () -> Unit) {
     var shown by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { shown = true }
-    val t by animateFloatAsState(if (shown) 1f else 0f, tween(300, easing = Wp8.EaseTurnstile), label = "drill")
+    val reduce = Wp8.reduceMotion
+    val t by animateFloatAsState(
+        if (shown || reduce) 1f else 0f,
+        tween(if (reduce) 0 else 300, easing = Wp8.EaseTurnstile),
+        label = "drill",
+    )
     Box(
         Modifier
             .fillMaxSize()

@@ -92,6 +92,11 @@ fun StandbyScreen(
             }
         }
     }
+    /* 響鈴控制放在這一層（不在 AlarmFace 內）：切換 Pivot 頁面不會把響鈴／內建合成音停掉 */
+    LaunchedEffect(AlarmRepo.ringing) {
+        if (DebugFlags.staticUi) return@LaunchedEffect
+        if (AlarmRepo.ringing) StandbyAudio.startRing() else StandbyAudio.stopRing()
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(Wp8.Bg)) {
         val wp = maxWidth.value
@@ -216,10 +221,6 @@ private fun AlarmFace(onExit: () -> Unit, settings: Settings, onSettings: (Setti
     val ctx = LocalContext.current
     var pick by remember { mutableStateOf(false) }
     val ringing = AlarmRepo.ringing
-
-    LaunchedEffect(ringing) {
-        if (ringing && !DebugFlags.staticUi) StandbyAudio.startRing() else StandbyAudio.stopRing()
-    }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val u = minOf(maxWidth.value, maxHeight.value)
@@ -479,13 +480,13 @@ private fun WeatherFace() {
             if (landscape) {
                 Row(Modifier.fillMaxWidth().weight(1f)) {
                     Column(Modifier.weight(1f)) {
-                        WeatherNow(cur, u)
+                        WeatherNow(cur)
                     }
                     Spacer(Modifier.width(20.dp))
                     ForecastList(cur, Modifier.weight(1.15f))
                 }
             } else {
-                WeatherNow(cur, u)
+                WeatherNow(cur)
                 Spacer(Modifier.height(16.dp))
                 ForecastList(cur, Modifier.weight(1f))
             }
@@ -496,10 +497,8 @@ private fun WeatherFace() {
 }
 
 @Composable
-private fun WeatherNow(cur: Weather?, u: Float) {
+private fun WeatherNow(cur: Weather?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(cur?.emoji?.takeIf { it.isNotBlank() } ?: "☁", color = Wp8.Text1, fontSize = 40.sp)
-        Spacer(Modifier.width(12.dp))
         Text(
             cur?.temp?.let { "$it°" } ?: "--",
             color = Wp8.Text1,
@@ -548,7 +547,6 @@ private fun ForecastList(cur: Weather?, modifier: Modifier = Modifier) {
                     maxLines = 1,
                     modifier = Modifier.width(56.dp),
                 )
-                Text(d?.emoji ?: "-", color = Wp8.Text1, fontSize = 16.sp, maxLines = 1, modifier = Modifier.width(34.dp))
                 Text(
                     d?.let { "${it.min ?: "-"}° ~ ${it.max ?: "-"}°" } ?: "-",
                     color = Wp8.Text1,
@@ -611,9 +609,11 @@ private fun MusicFace() {
                     contentAlignment = Alignment.Center,
                 ) {
                     val art = t?.art
-                    if (art != null) {
+                    /* 只在曲目／封面變更時轉換，避免每秒 recomposition 重新配置 Bitmap */
+                    val artImage = remember(art) { art?.asImageBitmap() }
+                    if (artImage != null) {
                         Image(
-                            bitmap = art.asImageBitmap(),
+                            bitmap = artImage,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize(),

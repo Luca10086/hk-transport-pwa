@@ -36,6 +36,8 @@ data class Settings(
     val aiKey: String = "",
     val aiBase: String = "https://api.xiaomimimo.com/v1",
     val aiModel: String = "mimo-v2.5",
+    /** 釘選到首頁磁貼的收藏（存 Fav.key；空 = 用收藏列表第一條） */
+    val pinnedFav: String = "",
 )
 
 /** 收藏項（對應 Web 版 favorite 結構） */
@@ -89,11 +91,6 @@ object Store {
         }
     }
 
-    /** 同步讀取設定（給 BroadcastReceiver 等非協程環境） */
-    fun readBlocking(ctx: Context): Settings = runCatching {
-        kotlinx.coroutines.runBlocking { settings(ctx).first() }
-    }.getOrElse { Settings() }
-
     fun settings(ctx: Context): Flow<Settings> = ctx.ds.safe().map { p ->
         val o = p[K_CFG]?.let { runCatching { JSONObject(it) }.getOrNull() }
         Settings(
@@ -115,6 +112,7 @@ object Store {
             aiKey = o?.optString("aiKey", "") ?: "",
             aiBase = o?.optString("aiBase", "https://api.xiaomimimo.com/v1") ?: "https://api.xiaomimimo.com/v1",
             aiModel = o?.optString("aiModel", "mimo-v2.5") ?: "mimo-v2.5",
+            pinnedFav = o?.optString("pinnedFav", "") ?: "",
         )
     }
 
@@ -128,6 +126,7 @@ object Store {
                 .put("standbyAuto", s.standbyAuto)
                 .put("alarmOn", s.alarmOn).put("alarmHour", s.alarmHour).put("alarmMinute", s.alarmMinute)
                 .put("aiKey", s.aiKey).put("aiBase", s.aiBase).put("aiModel", s.aiModel)
+                .put("pinnedFav", s.pinnedFav)
             ctx.ds.edit { it[K_CFG] = o.toString() }
         }
     }

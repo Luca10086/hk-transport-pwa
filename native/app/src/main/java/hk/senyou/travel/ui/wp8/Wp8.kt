@@ -130,6 +130,12 @@ object Wp8 {
     /** WP 高對比：純黑底 + 純白字 */
     var contrast by androidx.compose.runtime.mutableStateOf(false)
 
+    /**
+     * 減少動效：安全模式（CrashGuard）或設定「減少動畫」（fx = off）時由 ui/App.kt 設為 true。
+     * 為 true 時動畫一律**跳到最終狀態**（不是移除元件）—— 見磁貼傾斜／翻面與頁面轉場。
+     */
+    var reduceMotion by androidx.compose.runtime.mutableStateOf(false)
+
     val Bg: Color get() = when {
         contrast -> Color.Black
         light -> BgLight
@@ -242,10 +248,14 @@ fun Wp8Tile(
     var pressed by remember { androidx.compose.runtime.mutableStateOf(false) }
     var tiltX by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     var tiltY by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
-    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, tween(160, easing = Wp8.Ease), label = "tile")
-    val rx by animateFloatAsState(if (pressed) tiltX else 0f, tween(160, easing = Wp8.Ease), label = "tiltX")
-    val ry by animateFloatAsState(if (pressed) tiltY else 0f, tween(160, easing = Wp8.Ease), label = "tiltY")
-    val angle by animateFloatAsState(if (flipped && back != null) 180f else 0f, tween(700, easing = Wp8.Ease), label = "flip")
+    // 減少動效：按下不傾斜縮放、翻面直接到位（時長 0），但內容與元件都保留
+    val reduce = Wp8.reduceMotion
+    val tiltMs = if (reduce) 0 else 160
+    val flipMs = if (reduce) 0 else 700
+    val scale by animateFloatAsState(if (!reduce && pressed) 0.97f else 1f, tween(tiltMs, easing = Wp8.Ease), label = "tile")
+    val rx by animateFloatAsState(if (!reduce && pressed) tiltX else 0f, tween(tiltMs, easing = Wp8.Ease), label = "tiltX")
+    val ry by animateFloatAsState(if (!reduce && pressed) tiltY else 0f, tween(tiltMs, easing = Wp8.Ease), label = "tiltY")
+    val angle by animateFloatAsState(if (flipped && back != null) 180f else 0f, tween(flipMs, easing = Wp8.Ease), label = "flip")
     // WP 高對比：磁貼改為黑底白框白字（不保留彩色）
     val hc = Wp8.contrast
 

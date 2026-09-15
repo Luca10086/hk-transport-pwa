@@ -10,6 +10,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import hk.senyou.travel.data.AlarmRepo
 import hk.senyou.travel.data.AppCtx
 import hk.senyou.travel.data.CrashGuard
 import hk.senyou.travel.data.CrashLog
@@ -38,6 +39,8 @@ class SenyouApp : Application(), Configuration.Provider {
         get() = Configuration.Builder().setMinimumLoggingLevel(android.util.Log.INFO).build()
 
     private fun ensureChannel() {
+        // 鬧鐘響鈴通路（全螢幕意圖用）由 AlarmRepo 管理，重複呼叫是安全的
+        AlarmRepo.ensureChannel(this)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val mgr = getSystemService(NotificationManager::class.java) ?: return
         val ch = NotificationChannel(

@@ -93,12 +93,40 @@
 | 項目 | 官方 | 現況 |
 |------|------|------|
 | Connected animation | 跨頁面帶動同一個元素（清單項 → 詳情標題） | 未實作 |
-| NavigationView 的 LeftCompact / LeftMode 自適應（寬螢幕固定展開面板） | 依視窗寬度切換模式 | 未實作（僅 LeftMinimal overlay） |
 | CommandBar 橫向時移到側邊、CommandBar 的 `IsOpen` 焦點管理 | 官方有規定 | 未實作 |
-| 摺疊／大屏的 NavigationView 常駐面板 | 官方建議寬螢幕改為常駐 | 未實作 |
-| Light 主題 | 官方提供深/淺兩套 | 只做深色 demo |
+| NavigationView 的 LeftCompact / LeftMode 自適應 | 依視窗寬度切換模式 | **已實作**（≥600dp 常駐 48dp 圖標欄、≥840dp 常駐 268dp 面板） |
+| 摺疊／大屏的 NavigationView 常駐面板 + Master-Detail | 官方建議寬螢幕改為常駐 | **已實作**（展開態清單／詳情並排） |
+| Light 主題 | 官方提供深/淺兩套 | **已實作**（`Wp8.light`，設定頁可切換，含狀態欄外觀同步） |
 
-## 7. 參考出處
+---
+
+## 7. 合規現況與已知偏離（2026-09 評審後更新）
+
+完整評審見 `native/REVIEW-2026-09.md`。此處只記與本規範直接相關的處置。
+
+### 已修正為合規
+| 項目 | 修正 |
+|---|---|
+| 分頁大標題 `Wp8PaneTitle` | 27sp Light + 硬編碼系統字型 → **Title 28/36 Semibold**，改用內嵌 Noto（`ui/wp8/Wp8Parts.kt`） |
+| 區塊小標 `Wp8SectionTitle` | 14sp Light → **Body strong 14/20 Semibold** |
+| 天氣條 `Wp8WeatherBar` | Light → Semibold |
+| 待機顯示四頁 | Pivot 頁首 + 官方字階 + 強調色 `#0078D7` + 直角控制項；移除琥珀色與 iOS 慣例（見 `ui/StandbyScreen.kt` 檔頭註解） |
+| 導覽／設定／命令列圖標 | 移除彩色 emoji（`⏰`），第 6 項改以 Canvas 繪製單色線性圖標（`PaneGlyph`） |
+| 待機天氣頁 | 移除 `☁`（U+2601 具 emoji presentation）與預報列 emoji 欄 |
+
+### 刻意偏離（有理由，非遺漏）
+| 項目 | 理由 |
+|---|---|
+| 待機大鐘使用 **Light** 字重 | Windows 10 Mobile 鎖屏時鐘本體即 Segoe UI Light 極細大字，為該平台視覺識別；其餘一律依字階 |
+| `Wp8SemanticZoomOverlay`、`Wp8PivotStrip` 維持 Light + 系統字型 | 兩者屬 **WP8** 語言（WP8 標題本即 Light），僅存在於元件畫廊／演示，非產品路徑 |
+| `ui/DuoAlarmScreen.kt` 保留 | 使用者指定之 iPhone Duo 發表會展示圖 1:1 復刻；生產待機頁已改為 W10M，此檔作為該需求的參考實作保留（目前無入口） |
+
+### 仍待處理
+- 天氣與收藏清單的彩色 emoji（HKO 圖示對應、收藏鈴鐺）
+- `ui/wp8/Wp8.kt` 磁貼數值仍硬編碼 `FontFamily.SansSerif`（應改用內嵌 Noto）
+- 搜尋面板 AI 區與手動搜尋區視覺權重相同，待以 1px 分隔線與次要按鈕樣式區分
+
+## 8. 參考出處
 
 - [Typography in Windows](https://learn.microsoft.com/en-us/windows/apps/design/style/typography)（字階、Sentence case、截斷規則、最小字級）
 - [Page transitions](https://learn.microsoft.com/en-us/windows/apps/develop/motion/page-transitions)（Page refresh / Drill / Slide / Suppress）

@@ -10,8 +10,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import hk.senyou.travel.data.Kind
-import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.ui.DeepLink
 import hk.senyou.travel.ui.SenyouApp
 
@@ -37,10 +35,17 @@ class MainActivity : ComponentActivity() {
         consumeAlarm(intent)
     }
 
-    /** 鬧鐘喚起：標記響鈴並要求打開待機畫面 */
+    /**
+     * 鬧鐘喚起：標記響鈴並要求打開待機畫面。
+     * 讀到後**立刻移除 extra**：Activity 因設定變更／記憶體不足重建時會沿用同一個 Intent，
+     * 不移除就會反覆重入響鈴狀態。
+     */
     private fun consumeAlarm(intent: Intent?) {
-        if (intent?.getBooleanExtra(hk.senyou.travel.data.AlarmRepo.EXTRA_RING, false) == true) {
-            hk.senyou.travel.data.AlarmRepo.ringing = true
+        val i = intent ?: return
+        if (!i.getBooleanExtra(hk.senyou.travel.data.AlarmRepo.EXTRA_RING, false)) return
+        i.removeExtra(hk.senyou.travel.data.AlarmRepo.EXTRA_RING)
+        hk.senyou.travel.data.AlarmRepo.ringing = true
+        runCatching {
             startActivity(
                 Intent(this, hk.senyou.travel.ui.StandbyActivity::class.java)
                     .putExtra(hk.senyou.travel.data.AlarmRepo.EXTRA_RING, true),

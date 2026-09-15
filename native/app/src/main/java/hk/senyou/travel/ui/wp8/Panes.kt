@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +56,7 @@ import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.SearchRepo
 import hk.senyou.travel.data.Settings
 import hk.senyou.travel.data.StaticData
+import hk.senyou.travel.data.StopRow
 import hk.senyou.travel.data.Store
 import hk.senyou.travel.data.Sushiro
 import hk.senyou.travel.data.SushiroStore
@@ -64,9 +66,13 @@ import hk.senyou.travel.data.matchKey
 import hk.senyou.travel.data.toFav
 import hk.senyou.travel.ui.LocalAdaptive
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-private val MODES = listOf("bus" to "公交", "mtrbus" to "港鐵巴士", "mtr" to "港鐵", "lrt" to "輕鐵")
+/** 搜尋模式（順序 = 模式選擇器的順序；"overnight" = 通宵路線） */
+private val MODES = listOf(
+    "bus" to "公交", "mtrbus" to "港鐵巴士", "mtr" to "港鐵", "lrt" to "輕鐵", "overnight" to "通宵",
+)
 
 /* ==================================================================
    首頁全景（Panorama）：面板 1 磁貼牆 / 面板 2 搜尋 / 面板 3 天氣 + K75P
@@ -94,8 +100,8 @@ fun Wp8HomePane(
     var favEta by remember { mutableStateOf<Int?>(null) }
     var updated by remember { mutableStateOf("") }
 
-    // 週期刷新（磁貼數據）
-    LaunchedEffect(refreshSec, refreshTick) {
+    // 週期刷新（磁貼數據）；釘選變更時重啟迴圈，令磁貼立即改用新釘選
+    LaunchedEffect(refreshSec, refreshTick, settings.pinnedFav) {
         if (DebugFlags.staticUi || refreshSec <= 0) {
             weather = runCatching { Hko.fetch() }.getOrNull()
             return@LaunchedEffect
@@ -126,7 +132,7 @@ fun Wp8HomePane(
                 Cache.k75pMins = best
                 Cache.k75pLive = live
                 weather = Hko.fetch()
-                val first = favs.firstOrNull()
+                val first = favs.firstOrNull { it.key == settings.pinnedFav } ?: favs.firstOrNull()
                 favEta = first?.let { SearchRepo.favEta(it) }
                 updated = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
                     .format(java.util.Date())
@@ -134,6 +140,9 @@ fun Wp8HomePane(
             delay(refreshSec * 1000L)
         }
     }
+
+    // 首頁磁貼的「收藏 · 下一班」：釘選優先，否則第一條
+    val homeFav = favs.firstOrNull { it.key == settings.pinnedFav } ?: favs.firstOrNull()
 
     val expanded = LocalAdaptive.current.isExpanded
     if (expanded) {
@@ -143,7 +152,7 @@ fun Wp8HomePane(
                 TilesPanel(
                     favCount = favs.size,
                     favEta = favEta,
-                    favName = favs.firstOrNull()?.displayName() ?: "",
+                    favName = homeFav?.displayName() ?: "",
                     weather = weather,
                     k75pMins = k75pMins,
                     k75pLive = k75pLive,
@@ -167,7 +176,7 @@ fun Wp8HomePane(
                         TilesPanel(
                             favCount = favs.size,
                             favEta = favEta,
-                            favName = favs.firstOrNull()?.displayName() ?: "",
+                            favName = homeFav?.displayName() ?: "",
                             weather = weather,
                             k75pMins = k75pMins,
                             k75pLive = k75pLive,
@@ -228,7 +237,8 @@ private fun tileItems(
             title = "天氣",
             value = weather?.temp?.let { "$it°" } ?: "—",
             sub = weather?.desc ?: "載入中…",
-            back = weather?.days?.take(3)?.joinToString("\n") { d -> "${d.label} ${d.emoji} ${d.min ?: "-"}~${d.max ?: "-"}°" } ?: "載入中…",
+            // 天氣圖示為彩色 emoji，WP8 一律改用文字描述（desc），磁貼背面只留日期與溫度
+            back = weather?.days?.take(3)?.joinToString("\n") { d -> "${d.label} ${d.min ?: "-"}~${d.max ?: "-"}°" } ?: "載入中…",
             flipped = weatherFlipped,
             onClick = onFlipWeather,
         )
@@ -379,16 +389,26 @@ private fun SearchPanel(onOpenDetail: (SearchItem) -> Unit) {
 
     Wp8ReportBusy(searching)
 
+    /** 手動搜尋與 AI 建議共用同一條查詢流程（AI 只是代填關鍵字與模式） */
+    val runSearch: suspend (String, String) -> Unit = { q, m ->
+        if (q.isBlank()) {
+            items = emptyList()
+            searching = false
+        } else {
+            searching = true
+            runCatching {
+                val base = SearchRepo.search(q, m)
+                items = SearchRepo.fillEtas(base)
+                if (base.isNotEmpty()) Store.pushRecent(ctx, q)
+            }
+            searching = false
+        }
+    }
+
     LaunchedEffect(query, mode) {
         if (query.isBlank()) { items = emptyList(); searching = false; return@LaunchedEffect }
         delay(320)
-        searching = true
-        runCatching {
-            val base = SearchRepo.search(query, MODES[mode].first)
-            items = SearchRepo.fillEtas(base)
-            if (base.isNotEmpty()) Store.pushRecent(ctx, query)
-        }
-        searching = false
+        runSearch(query, MODES[mode].first)
     }
 
     Column(Modifier.fillMaxWidth()) {
@@ -396,7 +416,7 @@ private fun SearchPanel(onOpenDetail: (SearchItem) -> Unit) {
         Wp8SectionTitle("AI 建議 · MiMo v2.5")
         Wp8Input(aiQuery, "用一句話問，例如「天水圍去銅鑼灣，唔想搭地鐵」") { aiQuery = it }
         Spacer(Modifier.height(Wp8.Gap))
-        Wp8PrimaryButton(if (aiLoading) "思考中…" else "問 AI") {
+        PaneGhostButton(if (aiLoading) "思考中…" else "問 AI") {
             if (aiQuery.isNotBlank() && !aiLoading) {
                 scope.launch {
                     aiLoading = true
@@ -431,15 +451,21 @@ private fun SearchPanel(onOpenDetail: (SearchItem) -> Unit) {
                 mode = when (o.mode) { "mtr" -> 2; "lrt" -> 3; "mrtbus" -> 1; else -> 0 }
             }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(24.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
         Wp8SectionTitle("手動搜尋")
         Wp8Input(query, "輸入巴士路線、站名或港鐵車站") { query = it }
         Spacer(Modifier.height(Wp8.Gap))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             MODES.forEachIndexed { i, (_, label) -> Wp8Chip(label, i == mode) { mode = i } }
         }
         Spacer(Modifier.height(Wp8.Gap))
-        Wp8PrimaryButton(if (searching) "搜尋中…" else "搜尋") { }
+        Wp8PrimaryButton(if (searching) "搜尋中…" else "搜尋") {
+            scope.launch { runSearch(query, MODES[mode].first) }
+        }
 
         if (query.isBlank() && recent.isNotEmpty()) {
             Wp8SectionTitle("最近搜尋")
@@ -452,6 +478,11 @@ private fun SearchPanel(onOpenDetail: (SearchItem) -> Unit) {
             Wp8SectionTitle(if (items.isEmpty() && !searching) "沒有結果" else "搜尋結果")
         }
         items.forEachIndexed { idx, it ->
+            // 分組標題：只在連續結果換組時出現；group 空白 = 不顯示
+            val group = it.group
+            if (group.isNotBlank() && group != items.getOrNull(idx - 1)?.group.orEmpty()) {
+                Wp8SectionTitle(group)
+            }
             val starred = favs.any { f -> f.matchKey() == it.matchKey() }
             Wp8Row(
                 no = it.no.take(4),
@@ -484,7 +515,7 @@ private fun WeatherK75PPanel(weather: Weather?, updated: String, onOpenK75P: () 
         Wp8WeatherBar(
             text = weather?.let { w ->
                 buildString {
-                    if (w.emoji.isNotBlank()) append(w.emoji).append(' ')
+                    // 不再輸出彩色 emoji；天氣描述一律走下方 cap 的中文 desc
                     append(w.temp?.let { "$it°" } ?: "—")
                     if (w.humid != null) append("  濕度 ${w.humid}%")
                     if (w.uv != null) append("  UV ${w.uv}")
@@ -496,7 +527,8 @@ private fun WeatherK75PPanel(weather: Weather?, updated: String, onOpenK75P: () 
             Wp8SectionTitle("未來三天")
             weather.days.take(3).forEach { d ->
                 Wp8Row(
-                    no = d.emoji.ifBlank { "·" },
+                    // 原本放彩色 emoji，改用日期（中性文字）；無日期則用「·」
+                    no = d.date.ifBlank { "·" },
                     name = "${d.label} ${d.week}",
                     sub = d.desc,
                     eta = "${d.min ?: "-"}~${d.max ?: "-"}°",
@@ -517,7 +549,12 @@ fun Wp8FavsPane(onOpenDetail: (SearchItem) -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val favs by Store.favorites(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
+    val cfg by Store.settings(ctx).collectAsStateWithLifecycle(initialValue = Settings())
     var etas by remember { mutableStateOf<Map<String, Int?>>(emptyMap()) }
+    // 「換站」：正在展開站表的收藏 key + 該路線站表
+    var stopsFor by remember { mutableStateOf<String?>(null) }
+    var stops by remember { mutableStateOf<List<StopRow>>(emptyList()) }
+    var stopsLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(favs) {
         if (favs.isEmpty()) { etas = emptyMap(); return@LaunchedEffect }
@@ -527,6 +564,14 @@ fun Wp8FavsPane(onOpenDetail: (SearchItem) -> Unit) {
             favs.forEach { f -> map[f.key] = runCatching { SearchRepo.favEta(f) }.getOrNull() }
             etas = map
             map.forEach { (k, m) -> if (m != null) Cache.putEtaCache(k, m) }
+        }
+    }
+
+    /** 釘選切換：重新讀取設定再寫入，避免覆蓋同時改動的其他欄位 */
+    val togglePin: (Fav) -> Unit = { f ->
+        scope.launch {
+            val cur = runCatching { Store.settings(ctx).first() }.getOrDefault(cfg)
+            Store.save(ctx, cur.copy(pinnedFav = if (cur.pinnedFav == f.key) "" else f.key))
         }
     }
 
@@ -541,13 +586,71 @@ fun Wp8FavsPane(onOpenDetail: (SearchItem) -> Unit) {
         if (favs.isEmpty()) {
             Wp8Empty("暫無收藏，在搜尋結果按 ☆ 加入")
         }
-        favs.forEach { f ->
+        favs.forEachIndexed { i, f ->
+            // 公司分組標題（SearchRepo.favGroup 原本沒有呼叫端）
+            val group = SearchRepo.favGroup(f)
+            if (i == 0 || group != SearchRepo.favGroup(favs[i - 1])) {
+                Wp8SectionTitle(favGroupTitle(group))
+            }
             FavBlock(
                 fav = f,
                 mins = etas[f.key] ?: Cache.etaCache(f.key)?.first,
                 stale = etas[f.key] == null && Cache.etaCache(f.key) != null,
                 cachedAt = Cache.etaCache(f.key)?.second ?: 0L,
+                pinned = cfg.pinnedFav == f.key,
+                stopsOpen = stopsFor == f.key,
+                stopsLoading = stopsLoading && stopsFor == f.key,
+                stops = if (stopsFor == f.key) stops else emptyList(),
                 onOpen = { onOpenDetail(SearchRepo.favToSearchItem(f)) },
+                onPin = { togglePin(f) },
+                onChangeStop = {
+                    if (stopsFor == f.key) {
+                        stopsFor = null
+                        stops = emptyList()
+                    } else {
+                        stopsFor = f.key
+                        val local = f.localStationChoices()
+                        if (local != null) {
+                            // 港鐵 / 輕鐵：站表在本機（StaticData），即時展開
+                            stops = local
+                            stopsLoading = false
+                        } else {
+                            stops = emptyList()
+                            stopsLoading = true
+                            scope.launch {
+                                stops = runCatching {
+                                    SearchRepo.routeStops(f.route, f.favKind(), f.dir, f.routeId)
+                                }.getOrDefault(emptyList())
+                                stopsLoading = false
+                            }
+                        }
+                    }
+                },
+                onPickStop = { row ->
+                    val updated = when (f.type) {
+                        "mtr" -> {
+                            // 轉站後所屬綫路可能改變，標籤跟著更新（無資料則沿用原值）
+                            val ln = StaticData.mtrLinesOf(row.stopId).firstOrNull()
+                            f.copy(
+                                stationCode = row.stopId,
+                                stationName = row.name,
+                                line = ln ?: f.line,
+                                lineName = ln?.let { StaticData.mtrLines[it] }?.takeIf { it.isNotBlank() }
+                                    ?: f.lineName,
+                            )
+                        }
+                        "lrt" -> f.copy(stationCode = row.stopId, stationName = row.name, stopName = row.name)
+                        else -> f.copy(stopId = row.stopId, stopName = row.name)
+                    }
+                    stopsFor = null
+                    stops = emptyList()
+                    scope.launch {
+                        Store.saveFavorites(ctx, favs.map { if (it.key == f.key) updated else it })
+                        // 站名變更會改變 Fav.key，釘選要跟著搬
+                        val cur = runCatching { Store.settings(ctx).first() }.getOrDefault(cfg)
+                        if (cur.pinnedFav == f.key) Store.save(ctx, cur.copy(pinnedFav = updated.key))
+                    }
+                },
                 onCycleAlert = {
                     scope.launch {
                         val next = when (f.alertMins) {
@@ -568,7 +671,14 @@ private fun FavBlock(
     mins: Int?,
     stale: Boolean,
     cachedAt: Long,
+    pinned: Boolean,
+    stopsOpen: Boolean,
+    stopsLoading: Boolean,
+    stops: List<StopRow>,
     onOpen: () -> Unit,
+    onPin: () -> Unit,
+    onChangeStop: () -> Unit,
+    onPickStop: (StopRow) -> Unit,
     onCycleAlert: () -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -595,7 +705,7 @@ private fun FavBlock(
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             ) {
                 Text(
-                    if (fav.alertMins > 0) "🔔 ${fav.alertMins}分" else "🔕",
+                    if (fav.alertMins > 0) "提示 ${fav.alertMins} 分" else "提示 關",
                     color = if (fav.alertMins > 0) Wp8.Medium else Wp8.Text2,
                     fontSize = 13.sp,
                 )
@@ -631,6 +741,32 @@ private fun FavBlock(
         if (fav.type == "bus") {
             Spacer(Modifier.height(3.dp))
             Text(if (fav.dir == "inbound") "回程" else "去程", color = Wp8.Text2, fontSize = 12.sp)
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Wp8Chip(if (pinned) "已釘選" else "釘選", pinned) { onPin() }
+            // 港鐵巴士收藏代表整條路線，沒有「換站」概念
+            if (fav.type != "mtrbus") {
+                Wp8Chip(if (stopsOpen) "收起站表" else "換站", stopsOpen) { onChangeStop() }
+            }
+        }
+        // 換站：內嵌站表（巴士走 SearchRepo.routeStops，港鐵／輕鐵走 StaticData 站表）
+        if (stopsOpen) {
+            Spacer(Modifier.height(8.dp))
+            when {
+                stopsLoading -> Wp8LoadingDots("載入站表")
+                stops.isEmpty() -> Text("暫無站表資料", color = Wp8.Text2, fontSize = 12.sp)
+                else -> stops.take(60).forEachIndexed { i, s ->
+                    Wp8Row(
+                        no = s.seq.toString(),
+                        name = s.name,
+                        sub = if (s.stopId == fav.currentStopId()) "目前選用" else "",
+                        eta = s.mins?.let { etaText(it) } ?: "",
+                        etaColor = etaColor(s.mins),
+                        index = i,
+                    ) { onPickStop(s) }
+                }
+            }
         }
     }
     Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
@@ -804,6 +940,13 @@ fun Wp8SettingsPane(
     var crashCount by remember { mutableIntStateOf(CrashLog.count(ctx)) }
     var logText by remember { mutableStateOf<String?>(null) }
     var safeMode by remember { mutableStateOf(CrashGuard.isSafeMode(ctx)) }
+    val favs by Store.favorites(ctx).collectAsStateWithLifecycle(initialValue = emptyList())
+    var exported by remember { mutableStateOf(false) }
+    // 版本號取自 PackageManager（讀取失敗退回「—」，不因查詢失敗崩潰）
+    val versionName = remember(ctx) {
+        runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0) }.getOrNull()
+            ?.versionName?.takeIf { it.isNotBlank() } ?: "—"
+    }
 
     Column(
         Modifier
@@ -881,6 +1024,11 @@ fun Wp8SettingsPane(
             )
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+        if (!AlarmRepo.canScheduleExact(ctx)) {
+            /* 系統未授權精確鬧鐘（API 31+）：提供一鍵前往設定，否則排程會退化为不精確 */
+            Wp8LinkRow("允許精確鬧鐘", "系統尚未授權") { AlarmRepo.requestExactPermission(ctx) }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+        }
         Wp8LinkRow("開啟待機鬧鐘畫面", "調整時間與響鈴") {
             ctx.startActivity(
                 android.content.Intent(ctx, hk.senyou.travel.ui.StandbyActivity::class.java),
@@ -913,6 +1061,27 @@ fun Wp8SettingsPane(
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+
+        Wp8SectionTitle("收藏")
+        Wp8LinkRow(
+            "匯出收藏",
+            when {
+                exported -> "已複製"
+                favs.isEmpty() -> "暫無"
+                else -> "${favs.size} 條"
+            },
+        ) {
+            val text = buildString {
+                append("森友出行 收藏（").append(favs.size.toString()).append(" 條）")
+                favs.forEach { f -> append('\n').append(f.exportLine()) }
+            }
+            val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                as? android.content.ClipboardManager
+            if (cm != null) {
+                runCatching { cm.setPrimaryClip(android.content.ClipData.newPlainText("森友出行 收藏", text)) }
+                exported = true
+            }
+        }
 
         Wp8SectionTitle("AI 建議（MiMo v2.5）")
         Text("API 金鑰僅儲存在本機，不會上傳。留空則停用 AI 建議。", color = Wp8.Text2, fontSize = 12.sp, lineHeight = 18.sp)
@@ -969,8 +1138,74 @@ fun Wp8SettingsPane(
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
         Row(Modifier.fillMaxWidth().padding(vertical = 11.dp)) {
             Text("版本", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
-            Text("4.0.0 · Windows 10 Mobile", color = Wp8.Text1, fontSize = 14.sp)
+            Text("$versionName · Windows 10 Mobile", color = Wp8.Text1, fontSize = 14.sp)
         }
+    }
+}
+
+/* ---------- 共用：收藏分組 / 匯出 / 次要按鈕 ---------- */
+
+/** SearchRepo.favGroup 代碼 → 顯示用分組標題 */
+private fun favGroupTitle(group: String): String = when (group) {
+    "kmb" -> "九巴"
+    "ctb" -> "城巴"
+    "nlb" -> "嶼巴"
+    "mtrbus" -> "港鐵巴士"
+    "mtr" -> "港鐵"
+    "lrt" -> "輕鐵"
+    else -> "其他"
+}
+
+/** 收藏 → SearchRepo.routeStops 需要的公司分流（mtr / lrt 無站表） */
+private fun Fav.favKind(): Kind = if (type == "mtrbus") Kind.MTRBUS else when (company) {
+    "ctb" -> Kind.CTB
+    "nlb" -> Kind.NLB
+    else -> Kind.KMB
+}
+
+/** 目前選用的站碼（巴士用 stopId，港鐵／輕鐵用 stationCode） */
+private fun Fav.currentStopId(): String? = if (type == "mtr" || type == "lrt") stationCode else stopId
+
+/**
+ * 免網絡的換站候選：港鐵 = 同綫各站，輕鐵 = 全部輕鐵站。
+ * 巴士路線站表需查 API，回傳 null 交由呼叫端以 SearchRepo.routeStops 取得。
+ */
+private fun Fav.localStationChoices(): List<StopRow>? = when (type) {
+    "mtr" -> StaticData.mtrLinesOf(stationCode.orEmpty())
+        .flatMap { StaticData.mtrLineStops[it].orEmpty() }
+        .distinctBy { it.code }
+        .mapIndexed { i, st -> StopRow(i + 1, st.name, st.code, null) }
+    "lrt" -> StaticData.lrtStations.entries.sortedBy { it.key }
+        .mapIndexed { i, (id, name) -> StopRow(i + 1, name, id.toString(), null) }
+    else -> null
+}
+
+/** 匯出用單行文案：公司路線 · 站名（重複欄位去重） */
+private fun Fav.exportLine(): String {
+    /* 以「子字串包含」去重：巴士站收藏的 favMeta 已是「九巴 · 天瑞總站」，
+       若再附上 stopName 會出現「…天瑞總站 · 天瑞總站」 */
+    val parts = mutableListOf<String>()
+    for (raw in listOf(SearchRepo.favMeta(this), stopName, stationName)) {
+        val s = raw.trim()
+        if (s.isEmpty()) continue
+        if (parts.any { it.contains(s) }) continue
+        parts += s
+    }
+    return parts.joinToString(" · ")
+}
+
+/** WP 次要按鈕：細框透明底（與實心強調色主按鈕區分 AI / 手動兩條流程） */
+@Composable
+private fun PaneGhostButton(text: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .border(1.dp, Wp8.Accent)
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, color = Wp8.Accent, fontSize = 14.sp, letterSpacing = 1.sp)
     }
 }
 

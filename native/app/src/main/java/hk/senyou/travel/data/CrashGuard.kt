@@ -8,6 +8,8 @@ import android.content.Context
  * 真機回報「一天閃退 5 次」，而模擬器/截圖測試無法重現，因此在應用內加一層自保：
  * - 啟動時若偵測到「上次啟動沒有正常結束」，累計失敗次數；
  * - 連續 2 次異常 → 自動開啟安全模式（關閉玻璃與動效，改用最樸素的繪製路徑）；
+ *   安全模式會經 [reduceMotion] 強制開啟 [hk.senyou.travel.ui.wp8.Wp8.reduceMotion]，
+ *   由 ui/App.kt 套用到頁面轉場與磁貼動畫（見設定「減少動畫」）；
  * - 啟動後穩定運行 12 秒即視為成功，清空計數；
  * - 使用者可在「設定 → 診斷」手動關閉安全模式。
  */
@@ -40,6 +42,12 @@ object CrashGuard {
     }
 
     fun isSafeMode(ctx: Context): Boolean = runCatching { prefs(ctx).getBoolean("safe_mode", false) }.getOrDefault(false)
+
+    /**
+     * 是否要走「減少動效」路徑：安全模式**或**設定把動效關掉（`fx == "off"`）。
+     * 實際旗標寫在 [hk.senyou.travel.ui.wp8.Wp8.reduceMotion]，由 ui/App.kt 設定。
+     */
+    fun reduceMotion(ctx: Context, fx: String): Boolean = isSafeMode(ctx) || fx == "off"
 
     fun setSafeMode(ctx: Context, on: Boolean) {
         runCatching { prefs(ctx).edit().putBoolean("safe_mode", on).apply() }

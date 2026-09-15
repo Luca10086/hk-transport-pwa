@@ -18,9 +18,11 @@ fun Fav.matchKey(): String =
 fun SearchItem.matchKey(): String = toFav().matchKey()
 
 fun Fav.displayName(): String = when {
-    type == "bus" || type == "mtrbus" -> route
+    // 站牌收藏沒有路線號 → 退回站名，否則清單會出現空白標題
+    (type == "bus" || type == "mtrbus") && route.isNotBlank() -> route
     stationName.isNotBlank() -> stationName
     stopName.isNotBlank() -> stopName
+    route.isNotBlank() -> route
     else -> "收藏"
 }
 
@@ -45,14 +47,14 @@ fun deepLinkItem(
     return when (type) {
         "mtr" -> if (code.isBlank()) null else SearchItem(
             kind = Kind.MTR, no = "MTR", name = name,
-            stationCode = code, stationName = name,
+            stationCode = code, stationName = name, group = "港鐵",
         )
         "lrt" -> if (code.isBlank()) null else SearchItem(
             kind = Kind.LRT, no = "輕鐵", name = name, cap = "輕鐵",
-            stationCode = code, stationName = name,
+            stationCode = code, stationName = name, group = "輕鐵",
         )
         "mtrbus" -> if (r.isBlank()) null else SearchItem(
-            kind = Kind.MTRBUS, no = r, name = r, cap = "港鐵巴士", route = r,
+            kind = Kind.MTRBUS, no = r, name = r, cap = "港鐵巴士", route = r, group = "港鐵巴士",
         )
         else -> if (r.isBlank()) null else SearchItem(
             kind = when (company) {
@@ -67,6 +69,11 @@ fun deepLinkItem(
             dir = dir?.ifBlank { null } ?: "outbound",
             stopId = stopId?.ifBlank { null },
             routeId = routeId?.ifBlank { null },
+            group = when (company) {
+                "ctb" -> "城巴"
+                "nlb" -> "嶼巴"
+                else -> "九巴"
+            },
         )
     }
 }

@@ -1,26 +1,23 @@
 package hk.senyou.travel.work
 
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import hk.senyou.travel.MainActivity
-import hk.senyou.travel.R
-import hk.senyou.travel.SenyouApp
+import hk.senyou.travel.data.AlertScheduler
 import hk.senyou.travel.data.Api
 import hk.senyou.travel.data.Cache
-import hk.senyou.travel.data.Fav
-import hk.senyou.travel.data.SearchRepo
 import hk.senyou.travel.data.Store
 import hk.senyou.travel.widget.SenyouWidgetProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 
 /**
  * 背景刷新：K75P + 全部收藏 ETA → 離線緩存 → 小組件 → 逐條到站提醒。
  * 每 30 分鐘執行一次（Android WorkManager 最小值 15 分鐘）。
+ *
+ * 注意：30 分鐘的節奏**不可能**滿足 3／5／10 分鐘的到站門檻，
+ * 精確提醒改由 [AlertScheduler] 的鬧鐘鏈負責；本 worker 只負責緩存與小組件刷新，
+ * 並順帶呼叫同一條評估路徑（[AlertScheduler.evaluate]）以免資料不一致。
  */
 class RefreshWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
 
@@ -31,6 +28,9 @@ class RefreshWorker(appContext: Context, params: WorkerParameters) : CoroutineWo
             Cache.updatedAt = System.currentTimeMillis()
             SenyouWidgetProvider.refreshAll(applicationContext)
             Result.success()
+        } catch (e: CancellationException) {
+            // 協程取消必須往外丟，否則會違反 CoroutineWorker 契約（原本被當成一般錯誤 retry）
+            throw e
         } catch (e: Exception) {
             Result.retry()
         }
@@ -60,63 +60,24 @@ class RefreshWorker(appContext: Context, params: WorkerParameters) : CoroutineWo
         Cache.k75pLive = live
     }
 
-    /** 刷新每條收藏的 ETA：寫入離線緩存 + 按各自門檻發到站提醒 */
+    /** 刷新每條收藏的 ETA：寫入離線緩存 + 依各自門檻發到站提醒（與精確提醒共用同一條路徑） */
     private suspend fun refreshFavorites() {
-        val favs = runCatching { Store.favorites(applicationContext).first() }.getOrDefault(emptyList())
+        val favs = try {
+            Store.favorites(applicationContext).first()
+        } catch (e: CancellationException) {
+            throw e          // 協程取消不可被吞掉（同上）
+        } catch (e: Exception) {
+            emptyList()
+        }
         if (favs.isEmpty()) {
             Cache.favLine = ""
             Cache.favMins = null
             return
         }
-        val now = System.currentTimeMillis()
-        favs.take(12).forEach { f ->
-            val mins = runCatching { SearchRepo.favEta(f) }.getOrNull() ?: return@forEach
-            Cache.putEtaCache(f.key, mins)
-            if (f.alertMins > 0 && mins <= f.alertMins && now - Cache.alertSentAt(f.key) > 15 * 60_000) {
-                notifyArrival(f, mins)
-                Cache.markAlertSent(f.key)
-            }
-        }
+        AlertScheduler.evaluate(applicationContext)
         // 小組件顯示首條收藏
         val first = favs.first()
-        Cache.favLine = labelOf(first)
+        Cache.favLine = AlertScheduler.labelOf(first)
         Cache.favMins = Cache.etaCache(first.key)?.first
-    }
-
-    private fun labelOf(f: Fav): String = when {
-        f.route.isNotBlank() -> f.route
-        f.stationName.isNotBlank() -> f.stationName
-        f.stopName.isNotBlank() -> f.stopName
-        else -> "收藏"
-    }
-
-    private fun notifyArrival(f: Fav, mins: Int) {
-        val label = labelOf(f)
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
-            // 依收藏類型分流（港鐵/輕鐵站需帶車站代碼，否則通知點了沒反應）
-            putExtra("deep_link_type", f.type)
-            putExtra("deep_link_route", f.route)
-            putExtra("deep_link_company", f.company)
-            putExtra("deep_link_dir", f.dir)
-            putExtra("deep_link_stop", f.stopId ?: "")
-            putExtra("deep_link_route_id", f.routeId ?: "")
-            putExtra("deep_link_station", f.stationCode ?: "")
-            putExtra("deep_link_station_name", if (f.type == "lrt") f.stopName.ifBlank { f.stationName } else f.stationName)
-        }
-        val pi = PendingIntent.getActivity(
-            applicationContext, label.hashCode(), intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val n = NotificationCompat.Builder(applicationContext, SenyouApp.CHANNEL_ARRIVAL)
-            .setSmallIcon(R.drawable.ic_launcher_fg)
-            .setContentTitle("$label 即將到站")
-            .setContentText(if (mins <= 0) "已經到站" else "還有 $mins 分鐘")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setContentIntent(pi)
-            .build()
-        runCatching {
-            NotificationManagerCompat.from(applicationContext).notify(f.key.hashCode(), n)
-        }
     }
 }

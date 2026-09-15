@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +44,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,8 +55,12 @@ import hk.senyou.travel.data.DebugFlags
 import hk.senyou.travel.data.K75PModel
 import hk.senyou.travel.data.SearchItem
 import hk.senyou.travel.data.SearchRepo
+import hk.senyou.travel.data.StaticData
 import hk.senyou.travel.data.TrainRow
 import hk.senyou.travel.data.StopRow
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 
 private val K75P_NAMES = listOf(
@@ -294,6 +300,112 @@ private fun K75PMap(buses: List<Pair<String, Float>>, modifier: Modifier = Modif
 }
 
 /* ==================================================================
+   詳情頁輔助：上下行（去程／回程）即時倒數、車站接駁（輕鐵 / 港鐵巴士）
+   ================================================================== */
+
+/** 單一方向（上行／下行或去程／回程）的最近一班；mins = null 表示無資料 */
+private data class Wp8DirEta(val label: String, val mins: Int?)
+
+/** 車站接駁一列：section = 區塊標題，no = 路線號，dest = 目的地 */
+private data class Wp8Conn(val section: String, val no: String, val dest: String, val sub: String, val mins: Int?)
+
+/**
+ * 取樣當下的分鐘數 → 現在的剩餘分鐘數（每過一分鐘遞減一格）。
+ * 已過取樣時刻（負數）回傳 null → 顯示「—」，不假裝「即將到站」。
+ */
+private fun liveMins(mins: Int?, ageMin: Int): Int? {
+    if (mins == null) return null
+    val left = mins - ageMin
+    return if (left < 0) null else left
+}
+
+/** 車站上下行（港鐵為上行／下行，輕鐵為各路線）最近一班；供詳情頁頂部倒數列 */
+private fun stationDirEtas(trains: List<TrainRow>): List<Wp8DirEta> =
+    trains.groupBy { it.dirLabel }
+        .map { (label, list) -> Wp8DirEta(label, list.mapNotNull { it.mins }.minOrNull()) }
+        .sortedBy { it.mins ?: Int.MAX_VALUE }
+        .take(2)
+
+/**
+ * 路線某方向起點站的最近一班（與搜尋卡同一取樣方式：起點站 → 最近到站），
+ * 只佔 1–2 個請求，故可每分鐘重新取樣；無資料回傳 null。
+ */
+private suspend fun dirNextMins(item: SearchItem, dir: String): Int? = runCatching {
+    val route = item.route ?: return@runCatching null
+    val want = if (dir == "inbound") "I" else "O"
+    if (item.kind == hk.senyou.travel.data.Kind.CTB) {
+        val first = Api.ctbStops(route, dir).firstOrNull()
+        val sid = first?.optString("stop").orEmpty().ifBlank { first?.optString("stop_id").orEmpty() }
+        if (sid.isBlank()) return@runCatching null
+        Api.ctbEta(sid, route)
+            .filter { it.optString("dir").uppercase() == want }
+            .mapNotNull { Api.minsUntil(it.optString("eta")) }
+            .minOrNull()
+    } else {
+        val sid = Api.kmbStops(route, dir).firstOrNull()?.optString("stop").orEmpty()
+        if (sid.isBlank()) return@runCatching null
+        Api.kmbEta(sid)
+            .filter { it.optString("route") == route && it.optString("dir").uppercase() == want }
+            .mapNotNull { Api.minsUntil(it.optString("eta")) }
+            .minOrNull()
+    }
+}.getOrNull()
+
+/** 去程／回程雙向最近一班（同一輪取樣，供詳情頁頂部倒數） */
+private suspend fun bothDirEtas(item: SearchItem): List<Wp8DirEta> = coroutineScope {
+    listOf("outbound" to "去程", "inbound" to "回程").map { (dir, label) ->
+        async { Wp8DirEta(label, dirNextMins(item, dir)) }
+    }.awaitAll()
+}
+
+/**
+ * 車站接駁：輕鐵（站名完全相同）+ 港鐵巴士（路線起訖站名相符），對應舊 WebView 版
+ * render.js 的 buildMTRConnections（舊版用 emoji，原生版一律純色無圖示）。
+ * 只用既有靜態表與既有 API；取不到資料回傳空清單，不編造。
+ */
+private suspend fun stationConnections(station: String): List<Wp8Conn> {
+    val name = station.trim()
+    if (name.isBlank()) return emptyList()
+    val out = mutableListOf<Wp8Conn>()
+
+    /* 輕鐵：站名完全相同（與舊版同規則；例：港鐵屯門 ↔ 輕鐵屯門），取該站最近 4 班 */
+    val lrtId = StaticData.lrtStations.entries.firstOrNull { it.value.trim() == name }?.key
+    if (lrtId != null) {
+        runCatching { Api.lrtEta(lrtId) }.getOrDefault(emptyList()).take(4).forEach {
+            out += Wp8Conn(
+                section = "輕鐵接駁 · $name",
+                no = it.routeNo,
+                dest = it.dest,
+                sub = "輕鐵 · 月台 ${it.platformId}" + if (it.departing) " · 正在離開" else "",
+                mins = it.mins,
+            )
+        }
+    }
+
+    /* 港鐵巴士：起點或終點站名與本站相符（去掉「站」後綴，與舊版一致），取最近一班有實時資料者 */
+    val base = name.removeSuffix("站").trim()
+    if (base.isBlank()) return out
+    val routes = StaticData.mtrBusRoutes.entries.filter { (_, info) ->
+        listOf(info["orig"], info["dest"]).any { raw ->
+            val s = raw.orEmpty().removeSuffix("站").trim()
+            s.isNotBlank() && (s == base || s.contains(base) || base.contains(s))
+        }
+    }.take(4)
+    for ((no, info) in routes) {
+        val mins = SearchRepo.routeStops(no, hk.senyou.travel.data.Kind.MTRBUS, "outbound")
+            .mapNotNull { it.mins }.minOrNull() ?: continue   // 無實時班次的路線不顯示
+        out += Wp8Conn(
+            section = "港鐵巴士接駁",
+            no = no,
+            dest = "${info["orig"]} → ${info["dest"]}",
+            sub = "",
+            mins = mins,
+        )
+    }
+    return out
+}
+
+/* ==================================================================
    詳情頁（WP8 3D 滑入）：路線站表 / 車站班次
    ================================================================== */
 
@@ -310,8 +422,13 @@ fun Wp8DetailSheet(item: SearchItem, onClose: () -> Unit) {
     val status = WindowInsets.statusBars.asPaddingValues()
     var rows by remember { mutableStateOf<List<StopRow>>(emptyList()) }
     var trains by remember { mutableStateOf<List<TrainRow>>(emptyList()) }
+    var conns by remember { mutableStateOf<List<Wp8Conn>>(emptyList()) }
+    var dirEtas by remember { mutableStateOf<List<Wp8DirEta>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var tab by remember { mutableIntStateOf(0) }
+    /* 取樣時刻 + 已過分鐘數：頂部上下行倒數隨真實時間遞減（同 K75P 標記的每秒推進做法） */
+    var sampledAt by remember { mutableLongStateOf(0L) }
+    var ageMin by remember { mutableIntStateOf(0) }
     val isStation = item.kind == hk.senyou.travel.data.Kind.MTR || item.kind == hk.senyou.travel.data.Kind.LRT
     val twoWay = item.kind == hk.senyou.travel.data.Kind.KMB || item.kind == hk.senyou.travel.data.Kind.CTB
 
@@ -319,16 +436,56 @@ fun Wp8DetailSheet(item: SearchItem, onClose: () -> Unit) {
         loading = true
         rows = emptyList()
         trains = emptyList()
+        conns = emptyList()
+        dirEtas = emptyList()
+        /* 車站（港鐵／輕鐵）：班次 + 輕鐵・港鐵巴士接駁（舊 WebView 版車站詳情已有）；30 秒重新取樣 */
         if (isStation) {
-            trains = runCatching { SearchRepo.stationTrains(item) }.getOrDefault(emptyList())
-            loading = false
-            return@LaunchedEffect
+            while (true) {
+                trains = runCatching { SearchRepo.stationTrains(item) }.getOrDefault(emptyList())
+                conns = if (item.kind == hk.senyou.travel.data.Kind.MTR) {
+                    runCatching { stationConnections(item.stationName ?: item.name) }.getOrDefault(emptyList())
+                } else {
+                    emptyList()
+                }
+                loading = false
+                sampledAt = System.currentTimeMillis()
+                ageMin = 0
+                delay(30_000)
+            }
+        }
+        /* 巴士站（Kind.BUSSTOP）：列出該站各路線的下一班 —— 舊 WebView 版站詳情行為。
+           資料層的 SearchRepo.stopArrivals 一次呼叫即回傳整站班次；30 秒重新取樣。 */
+        if (item.kind == hk.senyou.travel.data.Kind.BUSSTOP) {
+            while (true) {
+                rows = runCatching { SearchRepo.stopArrivals(item) }.getOrDefault(rows)
+                loading = false
+                sampledAt = System.currentTimeMillis()
+                ageMin = 0
+                delay(30_000)
+            }
         }
         val route = item.route
         if (route.isNullOrBlank()) { loading = false; return@LaunchedEffect }
         val dir = if (tab == 0) "outbound" else "inbound"
-        rows = runCatching { SearchRepo.routeStops(route, item.kind, dir, item.routeId) }.getOrDefault(emptyList())
-        loading = false
+        /* 路線：站表 + 去程／回程雙向最近一班；站表較貴故 60 秒重新取樣 */
+        while (true) {
+            rows = runCatching { SearchRepo.routeStops(route, item.kind, dir, item.routeId) }.getOrDefault(rows)
+            if (twoWay) dirEtas = bothDirEtas(item)
+            loading = false
+            sampledAt = System.currentTimeMillis()
+            ageMin = 0
+            delay(60_000)
+        }
+    }
+
+    /* 每秒心跳：只在整分鐘變化時改狀態，倒數即時但不每秒重繪整張站表 */
+    LaunchedEffect(sampledAt) {
+        if (sampledAt == 0L) return@LaunchedEffect
+        while (true) {
+            delay(1000)
+            val m = ((System.currentTimeMillis() - sampledAt) / 60_000L).toInt()
+            if (m != ageMin) ageMin = m
+        }
     }
 
     Box(
@@ -372,6 +529,32 @@ fun Wp8DetailSheet(item: SearchItem, onClose: () -> Unit) {
                 }
             }
 
+            /* 上下行（車站）／去程・回程（路線）最近一班的即時倒數：舊版只有單一靜態列 */
+            val headEtas = if (isStation) stationDirEtas(trains) else dirEtas
+            if (headEtas.isNotEmpty()) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Wp8.Gutter)
+                        .padding(bottom = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    headEtas.forEachIndexed { i, d ->
+                        if (i > 0) {
+                            Text("·", color = Wp8.Text2, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp))
+                        }
+                        Text("${d.label} ", color = Wp8.Text2, fontSize = 13.sp)
+                        Text(
+                            etaText(liveMins(d.mins, ageMin)),
+                            color = etaColor(liveMins(d.mins, ageMin)),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Light,
+                            style = TextStyle(fontFeatureSettings = "tnum"),
+                        )
+                    }
+                }
+            }
+
             Column(
                 Modifier
                     .fillMaxSize()
@@ -400,8 +583,8 @@ fun Wp8DetailSheet(item: SearchItem, onClose: () -> Unit) {
                                 }
                             }
                             Text(
-                                etaText(tr.mins),
-                                color = etaColor(tr.mins),
+                                etaText(liveMins(tr.mins, ageMin)),
+                                color = etaColor(liveMins(tr.mins, ageMin)),
                                 fontSize = 19.sp,
                                 fontWeight = FontWeight.Light,
                             )
@@ -417,13 +600,29 @@ fun Wp8DetailSheet(item: SearchItem, onClose: () -> Unit) {
                             Text("${r.seq}", color = Wp8.Text2, fontSize = 13.sp, modifier = Modifier.width(30.dp))
                             Text(r.name, color = Wp8.Text1, fontSize = 15.sp, maxLines = 1, modifier = Modifier.weight(1f))
                             Text(
-                                etaText(r.mins),
-                                color = etaColor(r.mins),
+                                etaText(liveMins(r.mins, ageMin)),
+                                color = etaColor(liveMins(r.mins, ageMin)),
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Light,
                             )
                         }
                         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+                    }
+                }
+
+                /* 車站接駁（輕鐵 / 港鐵巴士）：沿用 Wp8SectionTitle + Wp8Row，純色無圖示；
+                   取不到資料時整段不顯示（不編造班次） */
+                conns.groupBy { it.section }.forEach { (section, list) ->
+                    Wp8SectionTitle(section)
+                    list.forEachIndexed { i, c ->
+                        Wp8Row(
+                            no = c.no,
+                            name = c.dest,
+                            sub = c.sub,
+                            eta = etaText(liveMins(c.mins, ageMin)),
+                            etaColor = etaColor(liveMins(c.mins, ageMin)),
+                            index = i,
+                        ) {}
                     }
                 }
             }

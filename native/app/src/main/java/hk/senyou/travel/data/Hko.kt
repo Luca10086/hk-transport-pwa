@@ -24,12 +24,18 @@ object Hko {
     private const val UV = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=uvindex&lang=tc"
     private val SEVERE = Regex("雨|颱風|風暴|雷暴|山泥|酷熱|寒冷|霜凍|海嘯|水浸")
 
-    private var cache: Weather? = null
-    private var cacheAt = 0L
+    @Volatile private var cache: Weather? = null
+    @Volatile private var cacheAt = 0L
 
+    /**
+     * 三個端點逐一合併進上次快取：某個端點失敗時保留上一次的好資料（不再整份清空），
+     * 且只有在至少一個端點成功時才覆寫快取（失敗不會把快取時間往前推）。
+     */
     suspend fun fetch(force: Boolean = false): Weather {
-        cache?.let { if (!force && System.currentTimeMillis() - cacheAt < 5 * 60_000) return it }
-        var w = Weather()
+        val prev = cache
+        prev?.let { if (!force && System.currentTimeMillis() - cacheAt < 5 * 60_000) return it }
+        var w = prev ?: Weather()
+        var ok = false
 
         Http.getJson(RHRREAD)?.let { r ->
             val temps = r.optJSONObject("temperature")?.optJSONArray("data")
@@ -54,19 +60,24 @@ object Hko {
                 if (msg.isNotBlank()) (if (SEVERE.containsMatchIn(msg)) severe else mild).add(msg)
             }
             val icon = r.optString("icon")
+            val desc = StaticData.hkoIcons[icon] ?: ""
+            val emoji = StaticData.hkoEmoji[icon] ?: ""
+            val updated = hhmm(r.optString("updateTime"))
+            ok = true
+            // 逐欄位合併：新資料為空時保留舊值
             w = w.copy(
-                temp = temp, humid = humid, rain = rain,
-                desc = StaticData.hkoIcons[icon] ?: "",
-                emoji = StaticData.hkoEmoji[icon] ?: "",
-                severe = severe, mild = mild,
-                updated = r.optString("updateTime").takeLast(8).take(5),
+                temp = temp ?: w.temp, humid = humid ?: w.humid, rain = rain ?: w.rain,
+                desc = desc.ifBlank { w.desc }, emoji = emoji.ifBlank { w.emoji },
+                severe = if (warn != null) severe else w.severe,
+                mild = if (warn != null) mild else w.mild,
+                updated = updated.ifBlank { w.updated },
             )
         }
 
         Http.getJson(UV)?.let { u ->
             val v = u.optJSONArray("data")?.optJSONObject(0)?.optDouble("value")?.roundToInt()
                 ?: u.optDouble("value", 0.0).roundToInt()
-            if (v > 0) w = w.copy(uv = v)
+            if (v > 0) { w = w.copy(uv = v); ok = true }   // 0 = 夜間無紫外線指數，保留舊值
         }
 
         Http.getJson(FND)?.let { f ->
@@ -93,13 +104,28 @@ object Hko {
                         )
                     )
                 }
-                w = w.copy(days = days)
+                if (days.isNotEmpty()) { w = w.copy(days = days); ok = true }
             }
         }
 
+        // 全部端點失敗：回傳舊快取（可能為首次啟動的空資料）但不覆寫快取時間
+        if (!ok) return prev ?: w
         cache = w
         cacheAt = System.currentTimeMillis()
         return w
+    }
+
+    /**
+     * 天文台 updateTime（如 2026-05-01T14:02:00+08:00）→ "HH:mm"。
+     * 舊寫法 takeLast(8).take(5) 會取出 "00+08"，故改為抓 T 後的時分。
+     */
+    private val HHMM = Regex("T(\\d{2}):(\\d{2})")
+    private val HHMM_ONLY = Regex("^\\d{2}:\\d{2}$")
+    private fun hhmm(s: String?): String {
+        val t = s?.trim().orEmpty()
+        if (t.isEmpty()) return ""
+        HHMM.find(t)?.let { return it.groupValues[1] + ":" + it.groupValues[2] }
+        return if (HHMM_ONLY.matches(t)) t else ""
     }
 }
 

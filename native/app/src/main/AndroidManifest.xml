@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 鬧鐘響鈴需要在背景啟動全螢幕畫面（Android 10+ 可能被系統攔下，故另備通知） -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- 重開機後補排鬧鐘與到站提醒（否則 AlarmManager 的排程不會存活） -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
@@ -59,6 +63,30 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="hk.senyou.travel.ALARM" />
+            </intent-filter>
+        </receiver>
+            <!-- 開機／解鎖前開機／時區或時間變更／App 更新後補排鬧鐘（見 AlarmBootReceiver）。
+                 刻意**不**宣告 directBootAware：設定存在認證加密儲存（CE），未解鎖前讀不到，
+                 排程也用不上；而且未解鎖就碰 DataStore／WorkManager 會把它們綁到裝置加密儲存。
+                 LOCKED_BOOT_COMPLETED 仍列在 filter 內（接收器一律處理），解鎖後的
+                 BOOT_COMPLETED 才是實際生效的那一次 -->
+            <receiver
+            android:name=".data.AlarmBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+            <!-- 到站提醒的精確鬧鐘鏈（每次觸發後自行排下一次） -->
+            <receiver
+            android:name=".data.AlertTickReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="hk.senyou.travel.ALERT_TICK" />
             </intent-filter>
         </receiver>
             <service

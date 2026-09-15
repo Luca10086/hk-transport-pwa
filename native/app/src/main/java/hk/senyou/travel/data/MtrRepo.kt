@@ -39,16 +39,38 @@ object MtrRepo {
         }
     }
 
-    /** 輕鐵分區站表（屯門 / 天水圍 / 元朗） */
+    /**
+     * 輕鐵分區站表（屯門 / 天水圍 / 元朗 / 其他）。
+     * 分區完全由車站編號推導（見 [lrtGroupOf]），未歸類者落「其他」，
+     * 保證每個站只出現一次、不會因編號斷層被漏掉。
+     */
     fun lrtGroups(): List<Pair<String, List<LrtRow>>> {
-        val all = StaticData.lrtStations.entries
+        val buckets = linkedMapOf<String, MutableList<LrtRow>>()
+        LRT_AREA_RANGES.forEach { (name, _) -> buckets[name] = mutableListOf() }
+        buckets["其他"] = mutableListOf()
+        StaticData.lrtStations.entries
             .map { LrtRow(it.key, it.value) }
             .sortedBy { it.id }
-        val tm = all.filter { it.id in 1..300 }
-        val tsw = all.filter { it.id in 425..560 }
-        val yl = all.filter { it.id in 560..920 }
-        return listOf("屯門" to tm, "天水圍" to tsw, "元朗" to yl).filter { it.second.isNotEmpty() }
+            .forEach { row -> buckets.getOrPut(lrtGroupOf(row.id) ?: "其他") { mutableListOf() }.add(row) }
+        return buckets.entries.filter { it.value.isNotEmpty() }.map { it.key to it.value.toList() }
     }
+
+    /** 輕鐵分區範圍（官方車站編號分段；資料驅動，非猜測的魔術數字） */
+    private val LRT_AREA_RANGES = listOf(
+        "屯門" to 1..400,       // 屯門碼頭 … 屏山（含 310–400 一段）
+        "天水圍" to 425..550,   // 坑尾村 … 天逸
+        "元朗" to 560..600,     // 水邊圍 … 元朗
+    )
+
+    /** 零星站點歸屬（920 三聖站位於屯門區，不在編號主段內） */
+    private val LRT_AREA_EXTRA = mapOf(920 to "屯門")
+
+    /**
+     * 輕鐵車站編號 → 分區名（屯門 / 天水圍 / 元朗）；不屬任何分區回傳 null。
+     * 純編號判斷，不依賴 StaticData 是否已載入（測試可直接呼叫）。
+     */
+    fun lrtGroupOf(id: Int): String? =
+        LRT_AREA_RANGES.firstOrNull { id in it.second }?.first ?: LRT_AREA_EXTRA[id]
 }
 
 /** 背景刷新緩存（WorkManager 寫入，UI / 小組件 / 通知讀取） */

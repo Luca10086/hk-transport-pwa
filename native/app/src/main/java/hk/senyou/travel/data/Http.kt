@@ -5,6 +5,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
@@ -19,37 +20,35 @@ object Http {
         .retryOnConnectionFailure(true)
         .build()
 
-    suspend fun get(url: String): String? = withContext(Dispatchers.IO) {
-        if (DebugFlags.offline) return@withContext null
-        try {
-            val req = Request.Builder()
-                .url(url)
-                .header("User-Agent", "SenyouTravel/3.0 (Android)")
-                .build()
-            client.newCall(req).execute().use { r -> if (r.isSuccessful) r.body?.string() else null }
-        } catch (e: Exception) {
-            null
-        }
+    /** 實際網路請求（阻塞，只能在 IO 執行緒呼叫）；body 為 null 時用 GET */
+    private fun call(url: String, body: RequestBody? = null): String? = try {
+        val b = Request.Builder()
+            .url(url)
+            .header("User-Agent", "SenyouTravel/3.0 (Android)")
+        if (body != null) b.post(body)
+        client.newCall(b.build()).execute().use { r -> if (r.isSuccessful) r.body?.string() else null }
+    } catch (e: Exception) {
+        null
     }
 
-    suspend fun getJson(url: String): JSONObject? =
-        get(url)?.let { runCatching { JSONObject(it) }.getOrNull() }
+    suspend fun get(url: String): String? = withContext(Dispatchers.IO) {
+        if (DebugFlags.offline) return@withContext null
+        call(url)
+    }
 
-    suspend fun getArray(url: String): JSONArray? =
-        get(url)?.let { runCatching { JSONArray(it) }.getOrNull() }
+    /** 取得並解析 JSON：請求與解析都在 IO 執行緒（KMB /stop/ 等大回應不再佔用主執行緒） */
+    suspend fun getJson(url: String): JSONObject? = withContext(Dispatchers.IO) {
+        if (DebugFlags.offline) return@withContext null
+        call(url)?.let { runCatching { JSONObject(it) }.getOrNull() }
+    }
+
+    suspend fun getArray(url: String): JSONArray? = withContext(Dispatchers.IO) {
+        if (DebugFlags.offline) return@withContext null
+        call(url)?.let { runCatching { JSONArray(it) }.getOrNull() }
+    }
 
     suspend fun postJson(url: String, body: JSONObject): JSONObject? = withContext(Dispatchers.IO) {
-        try {
-            val req = Request.Builder()
-                .url(url)
-                .post(body.toString().toRequestBody(JSON))
-                .header("User-Agent", "SenyouTravel/3.0 (Android)")
-                .build()
-            client.newCall(req).execute().use { r ->
-                if (r.isSuccessful) r.body?.string()?.let { s -> runCatching { JSONObject(s) }.getOrNull() } else null
-            }
-        } catch (e: Exception) {
-            null
-        }
+        if (DebugFlags.offline) return@withContext null
+        call(url, body.toString().toRequestBody(JSON))?.let { runCatching { JSONObject(it) }.getOrNull() }
     }
 }

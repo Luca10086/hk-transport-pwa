@@ -30,75 +30,139 @@ data class TrainRow(val dirLabel: String, val dest: String, val plat: String, va
 /** 搜索 + ETA 補全（對應 Web 版 doSearch / renderSearch） */
 object SearchRepo {
 
+    /**
+     * 搜尋入口。mode：bus（預設）/ mtrbus / mtr / lrt / overnight（通宵）。
+     * 查詢一律以「原文 + 繁體 + 簡體」三種寫法比對（沿用 Web 版 qList 做法），
+     * 因此簡體輸入也能找到繁體站名。
+     */
     suspend fun search(qRaw: String, mode: String): List<SearchItem> {
         val q = qRaw.trim()
         if (q.isEmpty()) return emptyList()
+        val qs = queryVariants(q)
+        val upper = q.uppercase()
+
+        // 港鐵／輕鐵路線搜尋（荃灣綫 / TWL / 輕鐵）優先於車站與路線號搜尋
+        if (mode != "mtrbus") lineSearch(qs)?.let { return it }
+
+        val night = mode == "overnight" || upper.startsWith("N")
         return when (mode) {
-            "mtrbus" -> mtrBus(q)
-            "mtr" -> mtr(q)
-            "lrt" -> lrt(q)
-            else -> bus(q)
+            "mtrbus" -> mtrBus(qs)
+            "mtr" -> mtr(qs, upper)
+            "lrt" -> lrt(qs)
+            else -> bus(qs, night)
         }
     }
 
-    /* ---------------- 公交（九巴 + 城巴 + 嶼巴） ---------------- */
-    private suspend fun bus(q: String): List<SearchItem> = coroutineScope {
-        val out = mutableListOf<SearchItem>()
-        val upper = q.uppercase()
+    /** 原文 + 簡繁轉換結果（去重）；供各分支同時比對 */
+    private fun queryVariants(q: String): List<String> =
+        listOf(q, TradSimp.toTrad(q), TradSimp.toSimp(q)).distinct()
 
-        // 九巴：一個路線號只出一張卡（優先 service_type=1 + 去程）
-        val kmb = Api.kmbRoutes(upper)
-            .sortedWith(compareBy({ if (it.optString("service_type", "1") == "1") 0 else 1 }, { if (it.optString("bound") == "O") 0 else 1 }))
-        val seen = mutableSetOf<String>()
-        for (r in kmb) {
-            val key = r.optString("route").uppercase()
-            if (!seen.add(key)) continue
-            val dir = if (r.optString("bound") == "I") "inbound" else "outbound"
-            out += SearchItem(
-                kind = Kind.KMB, no = r.optString("route"),
-                name = r.optString("orig_tc") + " → " + r.optString("dest_tc"),
-                cap = "九巴 · " + if (dir == "inbound") "回程" else "去程",
-                route = r.optString("route"), dir = dir, group = "九巴 KMB",
-            )
-            if (out.count { it.kind == Kind.KMB } >= 6) break
-        }
+    /** 通宵路線（路線號 N 字頭，對應 Web 版 renderResults 的 /^N\d/i 過濾） */
+    fun isOvernightRoute(no: String): Boolean = no.trim().uppercase().startsWith("N")
 
-        // 站名搜索（非純路線號時）
-        if (q.any { !it.isLetterOrDigit() } || q.length >= 2) {
-            val stops = Api.kmbStopsByName(q).take(6)
-            stops.forEach { s ->
-                val nm = s.optString("name_tc").ifBlank { s.optString("name_en") }
-                out += SearchItem(
-                    kind = Kind.BUSSTOP, no = "站", name = nm,
-                    cap = "九巴站牌", stopId = s.optString("stop"), group = "巴士站",
+    /**
+     * 路線名（荃灣綫 / 荃灣線）或 3 字母線路代碼（TWL）→ 該線全部車站；
+     * 「輕鐵」/ LRT → 輕鐵全網車站。非路線查詢回傳 null（交回一般搜尋）。
+     */
+    private fun lineSearch(qs: List<String>): List<SearchItem>? {
+        // 異體字正規化：靜態站表用「線」，使用者常打「綫」
+        val keys = qs.map { it.replace('綫', '線').uppercase() }.distinct()
+        val code = StaticData.mtrLines.keys.firstOrNull { it in keys }
+            ?: StaticData.mtrLines.entries.firstOrNull { it.value.replace('綫', '線').uppercase() in keys }?.key
+        if (code != null) {
+            val stations = StaticData.mtrLineStops[code] ?: return emptyList()   // 站表缺失：略過不崩
+            val cap = "全線 ${stations.size} 站候車"
+            return stations.map { st ->
+                SearchItem(
+                    kind = Kind.MTR, no = "MTR", name = st.name, cap = cap,
+                    stationCode = st.code, stationName = st.name, group = "港鐵",
                 )
             }
         }
-
-        // 城巴
-        Api.ctbRoutes(upper).take(4).forEach { r ->
-            out += SearchItem(
-                kind = Kind.CTB, no = r.optString("route"),
-                name = r.optString("orig_tc") + " → " + r.optString("dest_tc"),
-                cap = "城巴", route = r.optString("route"), dir = "outbound", group = "城巴 CTB",
-            )
+        if (keys.any { it == "輕鐵" || it == "LRT" }) {
+            val lrt = StaticData.lrtStations.entries.sortedBy { it.key }
+            if (lrt.isEmpty()) return emptyList()
+            val cap = "全線 ${lrt.size} 站候車"
+            return lrt.map { (id, name) ->
+                SearchItem(
+                    kind = Kind.LRT, no = "輕鐵", name = name, cap = cap,
+                    stationCode = id.toString(), stationName = name, group = "輕鐵",
+                )
+            }
         }
-
-        // 嶼巴
-        Api.nlbRoutes(upper).take(4).forEach { r ->
-            val nm = r.optString("routeName_c").replace(" > ", " → ")
-            out += SearchItem(
-                kind = Kind.NLB, no = r.optString("routeNo"),
-                name = nm, cap = "嶼巴",
-                routeId = r.optString("routeId"), route = r.optString("routeId"), group = "嶼巴 NLB",
-            )
-        }
-        out
+        return null
     }
 
-    private fun mtrBus(q: String): List<SearchItem> =
+    /* ---------------- 公交（九巴 + 城巴 + 嶼巴） ---------------- */
+    private suspend fun bus(qs: List<String>, night: Boolean = false): List<SearchItem> = coroutineScope {
+        val out = mutableListOf<SearchItem>()
+        val seen = mutableSetOf<String>()
+        // 通宵：查 N… 之餘，輸入 969 亦一併查 N969（只保留 N 字頭路線）
+        val probes = if (night && qs.none { it.uppercase().startsWith("N") }) qs + qs.map { "N$it" } else qs
+
+        for (probe in probes.map { it.uppercase() }.distinct()) {
+            // 九巴：一個路線號只出一張卡（優先 service_type=1 + 去程）
+            val kmb = Api.kmbRoutes(probe)
+                .sortedWith(compareBy({ if (it.optString("service_type", "1") == "1") 0 else 1 }, { if (it.optString("bound") == "O") 0 else 1 }))
+            for (r in kmb) {
+                if (out.count { it.kind == Kind.KMB } >= 6) break
+                if (!seen.add("KMB|" + r.optString("route").uppercase())) continue
+                val dir = if (r.optString("bound") == "I") "inbound" else "outbound"
+                out += SearchItem(
+                    kind = Kind.KMB, no = r.optString("route"),
+                    name = r.optString("orig_tc") + " → " + r.optString("dest_tc"),
+                    cap = "九巴 · " + if (dir == "inbound") "回程" else "去程",
+                    route = r.optString("route"), dir = dir, group = "九巴",
+                )
+            }
+
+            // 城巴
+            Api.ctbRoutes(probe).take(4).forEach { r ->
+                if (out.count { it.kind == Kind.CTB } < 4 && seen.add("CTB|" + r.optString("route").uppercase())) {
+                    out += SearchItem(
+                        kind = Kind.CTB, no = r.optString("route"),
+                        name = r.optString("orig_tc") + " → " + r.optString("dest_tc"),
+                        cap = "城巴", route = r.optString("route"), dir = "outbound", group = "城巴",
+                    )
+                }
+            }
+
+            // 嶼巴
+            Api.nlbRoutes(probe).take(4).forEach { r ->
+                if (out.count { it.kind == Kind.NLB } < 4 && seen.add("NLB|" + r.optString("routeNo").uppercase())) {
+                    out += SearchItem(
+                        kind = Kind.NLB, no = r.optString("routeNo"),
+                        name = r.optString("routeName_c").replace(" > ", " → "), cap = "嶼巴",
+                        routeId = r.optString("routeId"), route = r.optString("routeId"), group = "嶼巴",
+                    )
+                }
+            }
+        }
+
+        // 站名搜索：只在含中日韓字元或非英數輸入時啟用（純路線號不必下載全量站牌）
+        val text = qs.first()
+        if (!night && (text.any { it.code >= 0x2E80 } || text.none { it.isLetterOrDigit() })) {
+            val seenStop = mutableSetOf<String>()
+            qs.flatMap { Api.kmbStopsByName(it) }
+                .filter { it.optString("stop").isNotBlank() && seenStop.add(it.optString("stop")) }
+                .take(6)
+                .forEach { s ->
+                    out += SearchItem(
+                        kind = Kind.BUSSTOP, no = "站",
+                        name = s.optString("name_tc").ifBlank { s.optString("name_en") },
+                        // cap 留空：由 fillEtas 惰性補上「未來 3 班」摘要（不拖慢搜尋）
+                        cap = "", stopId = s.optString("stop"), group = "巴士站",
+                    )
+                }
+        }
+
+        // 通宵模式：只保留 N 字頭路線
+        if (night) out.filter { isOvernightRoute(it.no) } else out
+    }
+
+    private fun mtrBus(qs: List<String>): List<SearchItem> =
         StaticData.mtrBusRoutes.entries
-            .filter { it.key.contains(q, ignoreCase = true) }
+            .filter { (no, _) -> qs.any { no.contains(it, ignoreCase = true) } }
             .take(8)
             .map { (no, info) ->
                 SearchItem(
@@ -108,34 +172,35 @@ object SearchRepo {
                 )
             }
 
-    private fun mtr(q: String): List<SearchItem> {
-        val upper = q.uppercase()
+    private fun mtr(qs: List<String>, upper: String): List<SearchItem> {
         val out = mutableListOf<SearchItem>()
         val seen = mutableSetOf<String>()
         for ((_, stations) in StaticData.mtrLineStops) {
             for (st in stations) {
-                if (!(st.name.contains(q) || q.contains(st.name) || st.code == upper)) continue
+                if (st.name.isBlank()) continue
+                if (!(qs.any { st.name.contains(it) || it.contains(st.name) } || st.code == upper)) continue
                 if (!seen.add(st.code)) continue
                 val lines = StaticData.mtrLinesOf(st.code).mapNotNull { StaticData.mtrLines[it] }
                 out += SearchItem(
                     kind = Kind.MTR, no = "MTR", name = st.name,
                     cap = lines.joinToString(" · "),   // 線名已含「線」字，勿再拼後綴
-                    stationCode = st.code, stationName = st.name, group = "港鐵車站",
+                    stationCode = st.code, stationName = st.name, group = "港鐵",
                 )
             }
         }
         return out.take(10)
     }
 
-    private fun lrt(q: String): List<SearchItem> =
+    private fun lrt(qs: List<String>): List<SearchItem> =
         StaticData.lrtStations.entries
-            .filter { it.value.contains(q) }
+            .filter { (_, name) -> name.isNotBlank() && qs.any { name.contains(it) || it.contains(name) } }
+            .sortedBy { it.key }
             .take(8)
             .map { (id, name) ->
                 SearchItem(
                     kind = Kind.LRT, no = "輕鐵", name = name,
                     cap = "輕鐵站 · 編號 $id",
-                    stationCode = id.toString(), stationName = name, group = "輕鐵車站",
+                    stationCode = id.toString(), stationName = name, group = "輕鐵",
                 )
             }
 
@@ -224,7 +289,8 @@ object SearchRepo {
 
     private suspend fun capFor(it: SearchItem): String = when (it.kind) {
         Kind.BUSSTOP -> {
-            val sid = it.stopId ?: return ""
+            // 下次 3 班摘要（沿用 station 級 stop-eta，一次請求覆蓋全站路線）
+            val sid = it.stopId ?: return "九巴站牌"
             val byRoute = mutableMapOf<String, Int>()
             Api.kmbEta(sid).forEach { e ->
                 val m = Api.minsUntil(e.optString("eta")) ?: return@forEach
@@ -233,14 +299,63 @@ object SearchRepo {
             }
             byRoute.entries.sortedBy { it.value }.take(3)
                 .joinToString(" · ") { (r, m) -> "$r " + if (m <= 1) "即將" else "$m 分" }
+                .ifBlank { "九巴站牌" }
         }
         Kind.MTRBUS -> "港鐵巴士"
         else -> it.cap
     }
 
+    /** 站牌（無路線號）各路線最近到站；供站牌收藏詳情頁列出各班次 */
+    suspend fun stopArrivals(item: SearchItem): List<StopRow> {
+        val sid = item.stopId?.takeIf { it.isNotBlank() } ?: return emptyList()
+        val byRoute = linkedMapOf<String, Pair<String, Int>>()
+        Api.kmbEta(sid).forEach { e ->
+            val m = Api.minsUntil(e.optString("eta")) ?: return@forEach
+            val r = e.optString("route")
+            val dest = e.optString("dest_tc")
+            val cur = byRoute[r]
+            if (cur == null || m < cur.second) byRoute[r] = dest to m
+        }
+        return byRoute.entries.sortedBy { it.value.second }
+            .mapIndexed { i, (route, dm) ->
+                StopRow(i + 1, if (dm.first.isBlank()) route else "$route → ${dm.first}", route, dm.second)
+            }
+    }
+
     /* ---------------- 收藏 ETA ---------------- */
+
+    /** 站牌（無路線號）最早到站：路線號 + 分鐘 */
+    data class StopEta(val route: String, val mins: Int)
+
+    /**
+     * 站牌收藏（route 為空，僅有 stopId）→ 該站最早到站班次。
+     * 九巴 stop-eta 一次回傳全站路線，故一次請求便能取最早一班；
+     * 嶼巴/城巴的 ETA 接口必須帶路線號，缺路線時無資料。
+     */
+    suspend fun favStopEta(f: Fav): StopEta? {
+        if (f.company == "nlb") return null
+        val sid = f.stopId?.takeIf { it.isNotBlank() } ?: return null
+        var best: StopEta? = null
+        Api.kmbEta(sid).forEach { e ->
+            val m = Api.minsUntil(e.optString("eta")) ?: return@forEach
+            val cur = best
+            if (cur == null || m < cur.mins) best = StopEta(e.optString("route"), m)
+        }
+        return best
+    }
+
+    /** 站牌收藏的即時標籤（如「69X 3 分」）；非站牌收藏或無資料回傳 "" */
+    suspend fun favEtaLabel(f: Fav): String {
+        if (f.type != "bus" || f.route.isNotBlank()) return ""
+        val e = favStopEta(f) ?: return ""
+        return e.route + " " + if (e.mins <= 1) "即將" else "${e.mins} 分"
+    }
+
     suspend fun favEta(f: Fav): Int? = when (f.type) {
-        "bus" -> if (f.company == "ctb") {
+        "bus" -> if (f.route.isBlank()) {
+            // 站牌收藏：不按路線過濾，取該站最早到站
+            favStopEta(f)?.mins
+        } else if (f.company == "ctb") {
             val sid = f.stopId ?: Api.ctbStops(f.route, f.dir).firstOrNull()?.optString("stop")
             if (sid == null) null else Api.ctbEta(sid, f.route)
                 .filter { it.optString("dir").uppercase() == (if (f.dir == "inbound") "I" else "O") }
@@ -292,17 +407,25 @@ object SearchRepo {
     }
 
     fun favMeta(f: Fav): String = when (f.type) {
-        "bus" -> when (f.company) {
-            "ctb" -> "城巴 ${f.route}"
-            "nlb" -> "嶼巴 ${f.route}"
-            else -> "九巴 ${f.route}"
+        "bus" -> {
+            val co = when (f.company) {
+                "ctb" -> "城巴"
+                "nlb" -> "嶼巴"
+                else -> "九巴"
+            }
+            when {
+                f.route.isNotBlank() -> "$co ${f.route}"
+                // 站牌收藏（無路線號）：改用站名，不留尾隨空格
+                f.stopName.isNotBlank() -> "$co · ${f.stopName}"
+                else -> co
+            }
         }
         "mtr" -> {
             val n = f.lineName.ifBlank { f.line ?: "港鐵" }
             if (n.endsWith("綫") || n.endsWith("線")) n else "$n 綫"
         }
         "lrt" -> f.stopName.ifBlank { "輕鐵站" }
-        "mtrbus" -> "港鐵巴士 ${f.route}"
+        "mtrbus" -> if (f.route.isNotBlank()) "港鐵巴士 ${f.route}" else "港鐵巴士"
         else -> "收藏"
     }
 
@@ -315,14 +438,23 @@ object SearchRepo {
     }
 
     fun favToSearchItem(f: Fav): SearchItem = when (f.type) {
-        "bus" -> SearchItem(
+        // 站牌收藏：無路線號 → 以站牌呈現（詳情頁可列該站各班次）
+        "bus" -> if (f.route.isBlank()) SearchItem(
+            kind = Kind.BUSSTOP, no = "站", name = f.stopName.ifBlank { "巴士站" },
+            cap = favMeta(f), stopId = f.stopId, group = "巴士站",
+        ) else SearchItem(
             kind = if (f.company == "ctb") Kind.CTB else if (f.company == "nlb") Kind.NLB else Kind.KMB,
             no = f.route, name = f.stopName.ifBlank { f.route }, cap = favMeta(f),
             route = f.route, dir = f.dir, stopId = f.stopId, routeId = f.routeId,
+            group = when (f.company) {
+                "ctb" -> "城巴"
+                "nlb" -> "嶼巴"
+                else -> "九巴"
+            },
         )
-        "mtrbus" -> SearchItem(kind = Kind.MTRBUS, no = f.route, name = f.stopName.ifBlank { f.route }, cap = "港鐵巴士", route = f.route)
-        "mtr" -> SearchItem(kind = Kind.MTR, no = "MTR", name = f.stationName, cap = favMeta(f), stationCode = f.stationCode, stationName = f.stationName)
-        "lrt" -> SearchItem(kind = Kind.LRT, no = "輕鐵", name = f.stopName, cap = favMeta(f), stationCode = f.stationCode, stationName = f.stationName)
+        "mtrbus" -> SearchItem(kind = Kind.MTRBUS, no = f.route, name = f.stopName.ifBlank { f.route }, cap = "港鐵巴士", route = f.route, group = "港鐵巴士")
+        "mtr" -> SearchItem(kind = Kind.MTR, no = "MTR", name = f.stationName, cap = favMeta(f), stationCode = f.stationCode, stationName = f.stationName, group = "港鐵")
+        "lrt" -> SearchItem(kind = Kind.LRT, no = "輕鐵", name = f.stopName, cap = favMeta(f), stationCode = f.stationCode, stationName = f.stationName, group = "輕鐵")
         else -> SearchItem(kind = Kind.KMB, no = f.route, name = f.stopName)
     }
 
@@ -430,4 +562,28 @@ object SearchRepo {
             else -> emptyList()
         }
     }
+}
+
+/**
+ * 簡繁轉換（港鐵／巴士站名常見用字，移植自 Web 版 js/util.js 的 SIMP2TRAD）。
+ * 目的是搜尋兼容：簡體輸入（观塘、铜锣湾）也要能找到繁體站名。
+ * 反向表由正向表推導，與 Web 版一致。
+ */
+object TradSimp {
+    private val SIMP2TRAD: Map<Char, Char> = mapOf(
+        '环' to '環', '铜' to '銅', '锣' to '鑼', '湾' to '灣', '钟' to '鐘', '观' to '觀', '龙' to '龍', '围' to '圍', '东' to '東',
+        '将' to '將', '军' to '軍', '宝' to '寶', '黄' to '黃', '钻' to '鑽', '乐' to '樂', '启' to '啟', '红' to '紅', '长' to '長',
+        '蓝' to '藍', '调' to '調', '岭' to '嶺', '窝' to '窩', '荫' to '蔭', '显' to '顯', '车' to '車', '门' to '門', '恒' to '恆',
+        '乌' to '烏', '湿' to '濕', '头' to '頭', '铁' to '鐵', '线' to '線', '码' to '碼', '学' to '學', '罗' to '羅', '马' to '馬',
+        '庙' to '廟', '径' to '徑', '园' to '園', '鲗' to '鰂', '鱼' to '魚', '营' to '營', '盘' to '盤', '坚' to '堅', '台' to '臺',
+        '灵' to '靈', '场' to '場', '际' to '際', '馆' to '館', '图' to '圖', '华' to '華', '凤' to '鳳', '丽' to '麗', '凯' to '凱',
+        '伟' to '偉', '侨' to '僑', '汇' to '匯', '宁' to '寧', '卫' to '衛', '发' to '發', '达' to '達', '运' to '運', '逊' to '遜',
+        '尔' to '爾', '时' to '時', '间' to '間', '问' to '問', '广' to '廣', '边' to '邊', '让' to '讓', '议' to '議', '认' to '認',
+        '证' to '證', '记' to '記', '计' to '計', '说' to '說', '语' to '語', '邮' to '郵', '银' to '銀', '农' to '農',
+    )
+    private val TRAD2SIMP: Map<Char, Char> = SIMP2TRAD.entries.associate { (s, t) -> t to s }
+
+    fun toTrad(s: String): String = buildString(s.length) { for (c in s) append(SIMP2TRAD[c] ?: c) }
+
+    fun toSimp(s: String): String = buildString(s.length) { for (c in s) append(TRAD2SIMP[c] ?: c) }
 }
