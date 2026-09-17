@@ -206,6 +206,12 @@ private fun M3AlarmFace(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            longDate(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Spacer(Modifier.weight(1f))
         Text(
             clock,
@@ -488,4 +494,10 @@ private fun greeting(): String {
         h < 18 -> "午安"
         else -> "晚安"
     }
+}
+
+private fun longDate(): String {
+    val c = Calendar.getInstance()
+    val w = listOf("星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六")[c.get(Calendar.DAY_OF_WEEK) - 1]
+    return "${c.get(Calendar.YEAR)} 年 ${c.get(Calendar.MONTH) + 1} 月 ${c.get(Calendar.DAY_OF_MONTH)} 日 · $w"
 }

@@ -97,7 +97,7 @@ fun MaterialK75PPage() {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                FilledTonalIconButton(onClick = { tick++ }) {
+                androidx.compose.material3.FilledIconButton(onClick = { tick++ }) {
                     Icon(Icons.Filled.Refresh, contentDescription = "重新整理")
                 }
             }
