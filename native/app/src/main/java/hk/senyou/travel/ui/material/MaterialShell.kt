@@ -33,6 +33,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -82,9 +83,30 @@ fun MaterialApp() {
     var pane by remember { mutableIntStateOf(0) }
     var k75pOpen by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
+    var searchMode by remember { mutableIntStateOf(0) }
     var results by remember { mutableStateOf<List<hk.senyou.travel.data.SearchItem>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     val drawer = rememberDrawerState(DrawerValue.Open)
+
+    // 手動輸入、模式切換與 AI 建議共用同一條查詢流程（含即時 ETA 補齊與最近搜尋記錄）
+    LaunchedEffect(query, searchMode) {
+        val q = query.trim()
+        if (q.isBlank()) {
+            results = emptyList()
+            searching = false
+            return@LaunchedEffect
+        }
+        searching = true
+        runCatching {
+            val base = hk.senyou.travel.data.SearchRepo.search(
+                q,
+                M3_SEARCH_MODES.getOrElse(searchMode) { M3_SEARCH_MODES.first() }.first,
+            )
+            results = hk.senyou.travel.data.SearchRepo.fillEtas(base)
+            if (base.isNotEmpty()) Store.pushRecent(ctx, q)
+        }
+        searching = false
+    }
 
     androidx.activity.compose.BackHandler(enabled = k75pOpen) { k75pOpen = false }
     SenyouMaterialTheme(dark = settings.theme != "light") {
@@ -154,19 +176,17 @@ fun MaterialApp() {
                             0 -> MaterialHomePane(
                                 settings = settings,
                                 query = query,
-                                onQuery = { q ->
-                                    query = q
-                                    if (q.isBlank()) {
-                                        results = emptyList()
-                                    } else {
-                                        scope.launch {
-                                            searching = true
-                                            results = runCatching { hk.senyou.travel.data.SearchRepo.search(q, "bus") }
-                                                .getOrDefault(emptyList())
-                                            searching = false
-                                        }
+                                onQuery = { q -> query = q },
+                                modeIndex = searchMode,
+                                onMode = { searchMode = it },
+                                // AI 只是代填關鍵字與模式，之後走同一條查詢流程
+                                onAiPick = { keyword, mode ->
+                                    query = keyword
+                                    searchMode = when (mode) {
+                                        "mtr" -> 2; "lrt" -> 3; "mtrbus" -> 1; else -> 0
                                     }
                                 },
+                                onOpenSettings = { pane = M3_DESTS.lastIndex },
                                 results = results,
                                 searching = searching,
                                 onOpenStandby = {

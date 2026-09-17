@@ -12,9 +12,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.core.view.drawToBitmap
 import hk.senyou.travel.data.DebugFlags
 import hk.senyou.travel.data.SearchItem
@@ -373,6 +377,87 @@ class ScreenshotTest {
             }
         }
         shoot("wp8-44-material-k75p")
+    }
+
+    /** Material 3 收藏頁：以假資料驗證完整操作列（釘選／換站／上移／下移／提示／移除）與 ETA */
+    @Test
+    fun materialFavourites() {
+        load()
+        val f1 = hk.senyou.travel.data.Fav(type = "bus", company = "kmb", route = "69X", dir = "outbound", stopName = "天瑞總站", alertMins = 5)
+        val f2 = hk.senyou.travel.data.Fav(type = "mtrbus", company = "mtrbus", route = "K75P", stopName = "天瑞")
+        val f3 = hk.senyou.travel.data.Fav(type = "mtr", company = "mtr", stationCode = "TIS", stationName = "天水圍", lineName = "屯馬綫")
+        kotlinx.coroutines.runBlocking { hk.senyou.travel.data.Store.saveFavorites(ctx, listOf(f1, f2, f3)) }
+        hk.senyou.travel.data.Cache.putEtaCache(f1.key, 7)
+        hk.senyou.travel.data.Cache.putEtaCache(f2.key, 2)
+        rule.setContent {
+            Frame {
+                hk.senyou.travel.ui.material.SenyouMaterialTheme(dark = false) {
+                    hk.senyou.travel.ui.material.MaterialFavsPane(Settings())
+                }
+            }
+        }
+        shoot("wp8-45-material-favourites")
+    }
+
+    /**
+     * Material 3 AI 建議：`ModalBottomSheet` 在 M3 是**獨立視窗**，decorView 截圖抓不到，
+     * 因此這裡 (1) 用節點斷言證明面板真的開了（內容齊全），(2) 另外直接截圖面板內容。
+     */
+    @Test
+    fun materialAiSheet() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.material.MaterialApp() } }
+        rule.onNodeWithText("問 AI（MiMo v2.5）").performClick()
+        rule.waitForIdle()
+        // 面板在獨立視窗，節點仍可查詢：確認標題、輸入框、按鈕都在
+        rule.onNodeWithText("AI 行程建議").assertIsDisplayed()
+        rule.onNodeWithText("取得建議").assertIsDisplayed()
+        rule.onNodeWithText("AI 設定").assertIsDisplayed()
+        shoot("wp8-46-material-ai-open")
+    }
+
+    /** Material 3 設定頁下半：驗證重新整理間隔／精確鬧鐘／待機入口／收藏匯出／診斷都真的渲染出來
+     *  （鬧鐘卡內的新列已完整出現在 `materialShell` 的 wp8-41 截圖中，故不另拍） */
+    @Test
+    fun materialSettingsLower() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.material.MaterialApp() } }
+        rule.onNodeWithText("設定").performClick()
+        rule.waitForIdle()
+        rule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("崩潰日誌"))
+        rule.waitForIdle()
+        shoot("wp8-48-material-settings-lower")
+    }
+
+    /** Material 3 AI 建議面板內容（直接渲染，供像素審查：標題／輸入框／按鈕／建議清單） */
+    @Test
+    fun materialAiSheetBody() {
+        load()
+        rule.setContent {
+            Frame {
+                hk.senyou.travel.ui.material.SenyouMaterialTheme(dark = false) {
+                    androidx.compose.material3.Surface(
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerLow,
+                    ) {
+                        hk.senyou.travel.ui.material.MaterialAiSheetBody(
+                            query = "天水圍去機場通宵點去？",
+                            onQuery = {},
+                            reply = "可以搭 N30 通宵巴士，於天水圍站上車直達機場。",
+                            options = listOf(
+                                hk.senyou.travel.data.AiOption("N30", "overnight", "通宵路線，直達機場"),
+                                hk.senyou.travel.data.AiOption("E34A", "bus", "日間往機場的替代路線"),
+                            ),
+                            error = null,
+                            loading = false,
+                            onAsk = {},
+                            onOpenSettings = {},
+                            onPick = {},
+                        )
+                    }
+                }
+            }
+        }
+        shoot("wp8-47-material-ai-sheet-body")
     }
     /**
      * 回歸測試：「⋯ 更多」選單必須貼齊右下、底欄之上（曾誤跑到右上角）。

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 自動備份排除：DataStore（含使用者填寫的 AI API 金鑰）與地圖圖磚快取不應上傳 -->
+<!-- 自動備份排除：DataStore（含使用者填寫的 AI API 金鑰）不應上傳。
+     地圖圖磚放在 cacheDir/osmdroid（見 SenyouApp），而 cache 目錄平台本來就不納入備份，
+     因此不需（也不允許）列 domain="cache" —— 先前列了會讓 lint 的 FullBackupContent 報錯。 -->
 <full-backup-content>
     <exclude domain="file" path="datastore/" />
     <exclude domain="sharedpref" path="senyou.preferences_pb" />
-    <exclude domain="cache" path="osmdroid/" />
 </full-backup-content>

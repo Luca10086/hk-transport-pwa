@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+ 備份／轉移規則：同樣排除 DataStore（含 AI 金鑰）與圖磚快取 -->
+<!-- Android 12+ 備份／轉移規則：同樣排除 DataStore（含 AI 金鑰）。
+     圖磚快取位於 cacheDir，平台本就不備份，故不列 domain="cache"（該值不合法）。 -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="datastore/" />
         <exclude domain="sharedpref" path="senyou.preferences_pb" />
-        <exclude domain="cache" path="osmdroid/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="datastore/" />
