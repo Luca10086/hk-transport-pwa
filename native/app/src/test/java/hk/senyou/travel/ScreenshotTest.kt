@@ -331,6 +331,17 @@ class ScreenshotTest {
         }
         shoot("wp8-39-standby-w10m")
     }
+
+    /** Material 3 風格（與 W10M 完全獨立的實作）：外殼首頁 → 點導覽切到設定 */
+    @Test
+    fun materialShell() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.material.MaterialApp() } }
+        shoot("wp8-40-material-home")
+        rule.onNodeWithText("設定").performClick()
+        rule.waitForIdle()
+        shoot("wp8-41-material-settings")
+    }
     /**
      * 回歸測試：「⋯ 更多」選單必須貼齊右下、底欄之上（曾誤跑到右上角）。
      * 判據：面板色 (#221D31) 首次出現的列必須在畫面下半部。

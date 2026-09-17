@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- 自用 App：保留 USE_EXACT_ALARM 以確保鬧鐘精確（不需通過 Play 政策審查） -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 +
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />

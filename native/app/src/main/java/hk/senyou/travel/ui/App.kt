@@ -233,6 +233,11 @@ fun SenyouApp() {
                 val masterDetail = permanentPane && detail != null
 
                 CompositionLocalProvider(LocalAdaptive provides adaptive) {
+                    /* ---- Material 3 風格：完全獨立實作，不經任何 W10M UI 程式碼 ---- */
+                    if (settings.uiStyle == "material") {
+                        hk.senyou.travel.ui.material.MaterialApp()
+                        return@CompositionLocalProvider
+                    }
                     key(settings.theme, settings.contrast) {
                     var refreshToken by remember { mutableIntStateOf(0) }
                     LaunchedEffect(pane) { refreshToken++ }
@@ -292,26 +297,20 @@ fun SenyouApp() {
                                         ) { PaneBody(pane, refreshTick, settings, scope, ctx, onDetail = { detail = it }, onGoPane = { pane = it }, onOpenK75P = { k75pOpen = true }, onOpenGallery = { galleryOpen = true }) }
                                     }
                                 }
-                                val devCommands: List<Pair<String, () -> Unit>> =
-                                    if (hk.senyou.travel.BuildConfig.DEBUG) {
-                                        /* 設計參考畫面：僅 debug 建置可見，上市版本不含 */
-                                        listOf(
-                                            "介面規範（WP8 元件）" to { galleryOpen = true },
-                                            "Windows 10 Mobile 演示" to { win10Open = true },
-                                        )
-                                    } else emptyList()
                                 CommandBar(
                                     current = pane,
                                     open = cmdOpen && !barHidden,
                                     hidden = barHidden,
                                     onToggle = { cmdOpen = !cmdOpen },
                                     onSelect = { if (it == 5) openStandby() else pane = it; cmdOpen = false },
-                                    secondary = listOf<Pair<String, () -> Unit>>(
+                                    secondary = listOf(
                                         "重新整理" to { refreshTick++ },
+                                        "介面規範（WP8 元件）" to { galleryOpen = true },
+                                        "Windows 10 Mobile 演示" to { win10Open = true },
                                         // 安全模式也會強制 reduceMotion（見上方 Wp8.reduceMotion）
                                         if (safeMode) "安全模式：開" to { CrashGuard.setSafeMode(ctx, false); safeMode = false }
                                         else "安全模式：關" to { CrashGuard.setSafeMode(ctx, true); safeMode = true },
-                                    ) + devCommands,
+                                    ),
                                 )
                             }
                         }

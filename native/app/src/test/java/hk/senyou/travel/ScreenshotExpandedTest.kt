@@ -138,6 +138,14 @@ class ScreenshotExpandedTest {
         shoot("wp8-33-standby-nav-entry")
     }
 
+    /** Material 3（大屏）：M3 自適應導覽 → 常駐導覽抽屜 */
+    @Test
+    fun materialExpanded() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.material.MaterialApp() } }
+        shoot("wp8-42-material-expanded")
+    }
+
     /** 回歸：從漢堡選單點「待機鬧鐘」必須真的打得開（使用者回報一按就閃退） */
     @Test
     fun standbyOpensFromHamburgerMenu() {

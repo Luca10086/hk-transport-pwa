@@ -23,6 +23,7 @@ data class Settings(
     val refresh: Int = 30,       // 秒，0=關
     val contrast: Boolean = false, // WP 高對比（純黑底 / 純白字）
     val weatherPlace: String = "天水圍", // 天氣顯示地區（香港天文台實測站）
+    val uiStyle: String = "w10m",      // 介面風格：w10m / material（兩套獨立實作）
     val standbyAuto: Boolean = true, // 折起立放即進入待機顯示（官方 iPhone Duo 行為）
     val alarmOn: Boolean = false,     // 真鬧鐘開關
     val alarmHour: Int = 7,
@@ -98,6 +99,7 @@ object Store {
             refresh = o?.optInt("refresh", 30) ?: 30,
             contrast = o?.optBoolean("contrast", false) ?: false,
             weatherPlace = o?.optString("weatherPlace", "天水圍") ?: "天水圍",
+            uiStyle = o?.optString("uiStyle", "w10m") ?: "w10m",
             standbyAuto = o?.optBoolean("standbyAuto", true) ?: true,
             alarmOn = o?.optBoolean("alarmOn", false) ?: false,
             alarmHour = o?.optInt("alarmHour", 7) ?: 7,
@@ -118,6 +120,7 @@ object Store {
                 .put("accent", s.accent).put("fontLevel", s.fontLevel).put("refresh", s.refresh)
                 .put("contrast", s.contrast).put("tileLayout", s.tileLayout)
                 .put("weatherPlace", s.weatherPlace)
+                .put("uiStyle", s.uiStyle)
                 .put("standbyAuto", s.standbyAuto)
                 .put("alarmOn", s.alarmOn).put("alarmHour", s.alarmHour).put("alarmMinute", s.alarmMinute)
                 .put("aiKey", s.aiKey).put("aiBase", s.aiBase).put("aiModel", s.aiModel)

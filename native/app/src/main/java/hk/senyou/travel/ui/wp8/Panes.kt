@@ -989,6 +989,13 @@ fun Wp8SettingsPane(
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+            Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("介面風格", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                Wp8Seg(listOf("W10M", "Material"), if (settings.uiStyle == "material") 1 else 0) {
+                    onSettings(settings.copy(uiStyle = if (it == 1) "material" else "w10m"))
+                }
+            }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
 
         Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("強調色", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
@@ -1173,10 +1180,7 @@ fun Wp8SettingsPane(
         }
 
         Wp8SectionTitle("關於")
-            /* 設計參考畫面：僅 debug 建置可見（上市版本不暴露開發者內容） */
-            if (hk.senyou.travel.BuildConfig.DEBUG) {
-                Wp8LinkRow("介面規範", "WP8 元件畫廊 · 動效演示", onOpenGallery)
-            }
+            Wp8LinkRow("介面規範", "WP8 元件畫廊 · 動效演示", onOpenGallery)
             Row(Modifier.fillMaxWidth().padding(vertical = 11.dp)) {
                 Text("地圖資料", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
                 Text("© OpenStreetMap contributors", color = Wp8.Text1, fontSize = 14.sp)
