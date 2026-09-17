@@ -232,7 +232,7 @@ fun MaterialHomePane(
                             )
                         },
                         trailingContent = {
-                            TextButton(onClick = onOpenStandby) { Text("開啟") }
+                            androidx.compose.material3.FilledTonalButton(onClick = onOpenStandby) { Text("開啟") }
                         },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     )

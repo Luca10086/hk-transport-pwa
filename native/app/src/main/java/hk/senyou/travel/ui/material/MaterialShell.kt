@@ -173,35 +173,28 @@ fun MaterialApp() {
         }
 
         if (adaptive.isExpanded) {
-            /* Expanded：常駐導覽抽屜（M3 PermanentNavigationDrawer 語意，抽屜固定在左側不可關閉） */
-            ModalNavigationDrawer(
-                drawerState = drawer,
-                gesturesEnabled = false,
-                drawerContent = {
-                    androidx.compose.material3.PermanentDrawerSheet {
-                        Text(
-                            "森友出行",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(
-                                start = 28.dp,
-                                top = 24.dp,
-                                bottom = 16.dp,
-                            ),
+            /* Expanded：M3 **常駐導覽抽屜** —— 抽屜與內容並排，內容讓位而非被覆蓋
+               （先前誤用 ModalNavigationDrawer，抽屜會蓋住內容左半，導致文字整片看不到） */
+            Row(Modifier.fillMaxSize()) {
+                androidx.compose.material3.PermanentDrawerSheet {
+                    Text(
+                        "森友出行",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(start = 28.dp, top = 24.dp, bottom = 16.dp),
+                    )
+                    M3_DESTS.forEachIndexed { i, d ->
+                        NavigationDrawerItem(
+                            label = { Text(d.label) },
+                            icon = { Icon(d.icon, contentDescription = null) },
+                            selected = i == pane,
+                            onClick = { pane = i },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                         )
-                        M3_DESTS.forEachIndexed { i, d ->
-                            NavigationDrawerItem(
-                                label = { Text(d.label) },
-                                icon = { Icon(d.icon, contentDescription = null) },
-                                selected = i == pane,
-                                onClick = { pane = i },
-                                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                            )
-                        }
                     }
-                },
-            ) { scaffold() }
+                }
+                Box(Modifier.weight(1f)) { scaffold() }
+            }
         } else {
             scaffold()
-        }
-    }
+        }    }
 }
