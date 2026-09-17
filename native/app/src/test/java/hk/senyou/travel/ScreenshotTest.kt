@@ -401,11 +401,12 @@ class ScreenshotTest {
     }
 
     /**
-     * 迴歸：**切換介面風格／主題**不得崩潰。
+     * 迴歸：切換介面風格／主題不得崩潰。
      *
      * 曾在此路徑出現 java.lang.ClassCastException: java.lang.Boolean cannot be cast to
-     * ComposableLambdaImpl —— Material 分支原本寫在 `CompositionLocalProvider` 內容 lambda 內
-     * 並提前 return，切換風格時該 lambda 的 movable group 槽位錯位。修正後 Material 在最外層分家。
+     * ComposableLambdaImpl（同一個 composition 內換 UI 樹／換 movable group）。
+     * 現在：風格切換會 `recreate()`（Robolectric 下測試的 composition 會被銷毀，故之後不再斷言節點）；
+     * 主題切換則在同一棵 composition 內以可觀察狀態更新，不換組。
      */
     @Test
     fun styleSwitchRegression() {
@@ -413,21 +414,24 @@ class ScreenshotTest {
         rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
         shoot("wp8-50-shell-w10m-dark")
 
-        // W10M → Material
-        setSettings { it.copy(uiStyle = "material") }
-        rule.waitForIdle()
-        rule.onNodeWithText("壽司郎").assertIsDisplayed()          // Material 底部導覽列
-        shoot("wp8-51-shell-material")
-
-        // Material → W10M，同時改主題與對比度（會換掉 key(theme, contrast) 的組）
-        setSettings { it.copy(uiStyle = "w10m", theme = "light", contrast = true) }
+        // 主題／對比度：原地更新（不得崩潰）
+        setSettings { it.copy(theme = "light", contrast = true) }
         rule.waitForIdle()
         shoot("wp8-52-shell-w10m-light-contrast")
 
-        // 再切回 Material：來回切換都要安全
-        setSettings { it.copy(uiStyle = "material", theme = "dark") }
+        // 介面風格：切換會重建 Activity；只要不拋例外即可
+        setSettings { it.copy(uiStyle = "material") }
         rule.waitForIdle()
+    }
+
+    /** 啟動前就設為 Material：外殼要由 SenyouApp 正確分流並渲染 */
+    @Test
+    fun materialStyleAtLaunch() {
+        load()
+        setSettings { it.copy(uiStyle = "material") }
+        rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
         rule.onNodeWithText("壽司郎").assertIsDisplayed()
+        shoot("wp8-51-shell-material")
     }
 
     /** 測試中改設定：直接寫 DataStore，讓 shell 的 settings 流觸發重組 */

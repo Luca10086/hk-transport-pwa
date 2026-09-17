@@ -28,11 +28,19 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Senyou">
 
+        <!--
+            只保留 keyboardHidden|uiMode：
+            · 螢幕尺寸／方向／密度（摺疊、展開、旋轉、顯示大小變更）交還系統重建 Activity，
+              讓自適應版面與 composition 一起重建。先前自行處理這些變更，會在同一棵
+              composition 內原地翻轉 sizeClass 相關分支（movable group 換組），
+              是 java.lang.ClassCastException: Boolean cannot be cast to ComposableLambdaImpl 的高風險情境。
+            · 目前分頁以 rememberSaveable 保存，重建後不會跳回第一頁。
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Senyou"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density|keyboardHidden|uiMode"
+            android:configChanges="keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

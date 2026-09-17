@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -102,13 +103,41 @@ fun SenyouApp() {
         // 開機／更新／行程重啟後補排鬧鐘（讀設定在背景協程，不阻塞主執行緒）
         runCatching { AlarmRepo.rearmFromSettings(ctx) }
     }
-    val settings by Store.settings(ctx).collectAsStateWithLifecycle(initialValue = Settings())
+    /** 設定流（尚未載入完成時為 null，用來避免把「啟動載入」誤判成使用者切換） */
+    val settingsOrNull by Store.settings(ctx).collectAsStateWithLifecycle(initialValue = null)
+    val settings = settingsOrNull ?: Settings()
 
-    Wp8.light = settings.theme == "light"
-    Wp8.contrast = settings.contrast
-    Wp8.accentIndex = Wp8.Accents.indexOfFirst { it.first == settings.accent }.takeIf { it >= 0 } ?: 0
-    // 減少動畫：安全模式或設定 fx=="off" → 轉場／磁貼動畫直接跳到最終狀態（不再只是個沒人讀的設定）
-    Wp8.reduceMotion = CrashGuard.reduceMotion(ctx, settings.fx)
+    /*
+     * 主題相關全域改為「組合後寫入」的可觀察狀態（Wp8.light/contrast/reduceMotion 是 snapshot state）：
+     * · 先前是在組合過程中直接寫，且靠 `key(settings.theme, settings.contrast) { ... }` 強制換組，
+     *   那個 key() 會產生 movable group；換主題時整組被替換，正是 slot 錯位（Boolean 被當成
+     *   ComposableLambdaImpl）的高風險來源。改為可觀察狀態後，主題變更自然重組，不需要換組。
+     */
+    SideEffect {
+        Wp8.light = settings.theme == "light"
+        Wp8.contrast = settings.contrast
+        Wp8.accentIndex = Wp8.Accents.indexOfFirst { it.first == settings.accent }.takeIf { it >= 0 } ?: 0
+        // 減少動畫：安全模式或設定 fx=="off" → 轉場／磁貼動畫直接跳到最終狀態
+        Wp8.reduceMotion = CrashGuard.reduceMotion(ctx, settings.fx)
+    }
+
+    /*
+     * 介面風格是兩棵完全不同的 UI 樹（W10M／Material）。切換時重建 Activity，
+     * 讓框架整棵 composition 重新建立，而不是在同一棵樹裡換分支——
+     * 後者正是 5.1.0／5.1.1 兩次崩潰的共同情境。
+     *
+     * 只在「設定已載入後才武裝」：啟動時 DataStore 第一次發射會由預設值變成已存值，
+     * 那不是使用者切換，不應重建（否則每次啟動都會多一次 recreate）。
+     * （尺寸類別改變＝摺疊／旋轉，交由系統重建，見 AndroidManifest 的 configChanges。）
+     */
+    val hostActivity = androidx.compose.ui.platform.LocalView.current.context as? android.app.Activity
+    var appliedStyle by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(settingsOrNull) {
+        val style = settingsOrNull?.uiStyle ?: return@LaunchedEffect
+        val prev = appliedStyle
+        appliedStyle = style
+        if (prev != null && prev != style) hostActivity?.recreate()
+    }
 
     var safeMode by remember { mutableStateOf(CrashGuard.isSafeMode(ctx)) }
     LaunchedEffect(Unit) {
@@ -123,7 +152,7 @@ fun SenyouApp() {
         ctrl.isAppearanceLightNavigationBars = Wp8.light
     }
 
-    var pane by remember { mutableIntStateOf(0) }
+    var pane by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(0) }
     // 從設定頁返回時重讀安全模式（設定頁的開關直接寫 CrashGuard，不經過 settings 流）
     LaunchedEffect(pane) { safeMode = CrashGuard.isSafeMode(ctx) }
     var navOpen by remember { mutableStateOf(false) }
@@ -248,7 +277,12 @@ fun SenyouApp() {
                 val masterDetail = permanentPane && detail != null
 
                 CompositionLocalProvider(LocalAdaptive provides adaptive) {
-                    key(settings.theme, settings.contrast) {
+                    /*
+                     * 這裡原本是 `key(settings.theme, settings.contrast) { ... }`：
+                     * key() 會建立 movable group，切換主題時整組被替換，是 slot 錯位
+                     * （Boolean 被當成 ComposableLambdaImpl）的可疑來源。
+                     * 主題現在透過可觀察狀態傳遞（見上方 SideEffect），不需要換組。
+                     */
                     var refreshToken by remember { mutableIntStateOf(0) }
                     LaunchedEffect(pane) { refreshToken++ }
                     val refresh = remember { androidx.compose.animation.core.Animatable(1f) }
@@ -370,7 +404,6 @@ fun SenyouApp() {
                                 }
                             }
                         }
-                    }
                     }
                 }
             }

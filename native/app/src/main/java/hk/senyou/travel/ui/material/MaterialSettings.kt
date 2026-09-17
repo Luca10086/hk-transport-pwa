@@ -358,6 +358,22 @@ fun MaterialSettingsPane(settings: Settings, onSettings: (Settings) -> Unit) {
                             },
                             modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
                         ) { Text("清除日誌") }
+                        /* 分享日誌：以文字送出完整堆疊（Material 端獨立實作） */
+                        TextButton(
+                            onClick = {
+                                runCatching {
+                                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_SUBJECT, "森友出行 崩潰日誌")
+                                        putExtra(android.content.Intent.EXTRA_TEXT, text)
+                                    }
+                                    ctx.startActivity(
+                                        android.content.Intent.createChooser(send, "分享崩潰日誌"),
+                                    )
+                                }
+                            },
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        ) { Text("分享日誌") }
                     }
                 }
             }

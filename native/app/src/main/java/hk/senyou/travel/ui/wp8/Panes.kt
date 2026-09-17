@@ -1177,6 +1177,17 @@ fun Wp8SettingsPane(
                 crashCount = 0
                 logText = null
             }
+            /* 分享日誌：直接以文字送出，方便把完整堆疊貼給開發者（不必拍照猜字） */
+            Wp8Chip("分享日誌", false) {
+                runCatching {
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, "森友出行 崩潰日誌")
+                        putExtra(android.content.Intent.EXTRA_TEXT, text)
+                    }
+                    ctx.startActivity(android.content.Intent.createChooser(send, "分享崩潰日誌"))
+                }
+            }
         }
 
         Wp8SectionTitle("關於")
