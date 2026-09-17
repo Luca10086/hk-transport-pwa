@@ -90,7 +90,7 @@ mode 只能是 bus / mtrbus / mtr / lrt 其中之一。options 最多 4 個。""
             .header("api-key", key)
             .header("Authorization", "Bearer $key")
             .header("Content-Type", "application/json")
-            .header("User-Agent", "SenyouTravel/4.0 (Android)")
+            .header("User-Agent", "SenyouTravel/${hk.senyou.travel.BuildConfig.VERSION_NAME} (Android)")
             .build()
         client.newCall(req).execute().use { r ->
             val s = r.body?.string() ?: return null

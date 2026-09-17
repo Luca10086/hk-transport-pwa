@@ -20,8 +20,8 @@ android {
         applicationId = "hk.senyou.travel"
         minSdk = 26
         targetSdk = 35
-        versionCode = 31
-        versionName = "4.8.1"
+        versionCode = 32
+        versionName = "4.9.0"
     }
 
     signingConfigs {
@@ -49,7 +49,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        // 產生 BuildConfig：User-Agent 版本字串與「開發者畫面僅 debug 可見」都靠它
+        buildConfig = true
+    }
     lint { abortOnError = false }
     testOptions {
         unitTests.isIncludeAndroidResources = true

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 自動備份排除：DataStore（含使用者填寫的 AI API 金鑰）與地圖圖磚快取不應上傳 -->
+<full-backup-content>
+    <exclude domain="file" path="datastore/" />
+    <exclude domain="sharedpref" path="senyou.preferences_pb" />
+    <exclude domain="cache" path="osmdroid/" />
+</full-backup-content>

@@ -24,7 +24,7 @@ object Http {
     private fun call(url: String, body: RequestBody? = null): String? = try {
         val b = Request.Builder()
             .url(url)
-            .header("User-Agent", "SenyouTravel/3.0 (Android)")
+            .header("User-Agent", "SenyouTravel/${hk.senyou.travel.BuildConfig.VERSION_NAME} (Android)")
         if (body != null) b.post(body)
         client.newCall(b.build()).execute().use { r -> if (r.isSuccessful) r.body?.string() else null }
     } catch (e: Exception) {

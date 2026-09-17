@@ -25,7 +25,8 @@ object Api {
             ?: runCatching { OffsetDateTime.parse(t).toInstant().toEpochMilli() }.getOrNull()
             ?: runCatching {
                 java.time.LocalDateTime.parse(t, FMT_SPACE)
-                    .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    /* 港鐵班表為香港本地時間且不帶時區：固定 Asia/Hong_Kong，避免旅客裝置時區造成 ETA 偏移 */
+                    .atZone(java.time.ZoneId.of("Asia/Hong_Kong")).toInstant().toEpochMilli()
             }.getOrNull()
     }
 

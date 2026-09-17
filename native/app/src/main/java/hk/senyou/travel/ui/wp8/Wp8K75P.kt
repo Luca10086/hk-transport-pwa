@@ -332,6 +332,17 @@ private fun K75POsmMap(buses: List<Pair<String, Float>>, modifier: Modifier = Mo
             }
         },
     )
+    /* ODbL 法定要求：地圖必須顯示版權標示 */
+    Box(modifier, contentAlignment = Alignment.BottomEnd) {
+        Text(
+            "© OpenStreetMap contributors",
+            color = Wp8.Text2,
+            fontSize = 10.sp,
+            modifier = Modifier
+                .background(Wp8.Bg.copy(alpha = 0.7f))
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
     DisposableEffect(Unit) {
         onDispose {
             runCatching { mapRef?.onPause(); mapRef?.onDetach() }

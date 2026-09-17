@@ -1173,7 +1173,25 @@ fun Wp8SettingsPane(
         }
 
         Wp8SectionTitle("關於")
-        Wp8LinkRow("介面規範", "WP8 元件畫廊 · 動效演示", onOpenGallery)
+            /* 設計參考畫面：僅 debug 建置可見（上市版本不暴露開發者內容） */
+            if (hk.senyou.travel.BuildConfig.DEBUG) {
+                Wp8LinkRow("介面規範", "WP8 元件畫廊 · 動效演示", onOpenGallery)
+            }
+            Row(Modifier.fillMaxWidth().padding(vertical = 11.dp)) {
+                Text("地圖資料", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                Text("© OpenStreetMap contributors", color = Wp8.Text1, fontSize = 14.sp)
+            }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+            Row(Modifier.fillMaxWidth().padding(vertical = 11.dp)) {
+                Text("天氣資料", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                Text("香港天文台（HKO）", color = Wp8.Text1, fontSize = 14.sp)
+            }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
+            Row(Modifier.fillMaxWidth().padding(vertical = 11.dp)) {
+                Text("授權", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                Text("data.gov.hk 開放數據", color = Wp8.Text1, fontSize = 14.sp)
+            }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Wp8.Line))
         Row(Modifier.fillMaxWidth().padding(vertical = 11.dp)) {
             Text("資料來源", color = Wp8.Text2, fontSize = 15.sp, modifier = Modifier.weight(1f))
             Text("data.gov.hk", color = Wp8.Text1, fontSize = 15.sp)
