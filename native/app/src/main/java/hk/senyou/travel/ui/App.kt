@@ -380,32 +380,77 @@ fun SenyouApp() {
                         }
                     }
 
-                    /* ---- 覆蓋層（官方 Drill）---- */
-                    if (k75pOpen) UwpDrill { Wp8K75PPage(onClose = { k75pOpen = false }, halfOpen = fold.halfOpen && fold.horizontalFold) }
-                    if (!masterDetail) {
-                        detail?.let { d -> UwpDrill { Wp8DetailSheet(item = d) { detail = null } } }
+                    /*
+                     * ---- 覆蓋層（官方 Drill）----
+                     *
+                     * 這裡**不**寫成 `if (flag) UwpDrill { 頁面() }`：那會在這個大 lambda 內
+                     * 「依條件建立 composable lambda」，也就是條件式產生 movable group。
+                     * 點 K75P 開啟時就是在此處崩潰（Boolean 被當成 ComposableLambdaImpl）——
+                     * 條件成立的那一刻才插入的 lambda 群組，可能對到既有群組的槽位。
+                     * 改為呼叫獨立 composable（每個覆蓋層自己的 lambda 在穩定的組合範圍內建立）。
+                     */
+                    if (k75pOpen) {
+                        K75POverlay(
+                            halfOpen = fold.halfOpen && fold.horizontalFold,
+                            onClose = { k75pOpen = false },
+                        )
                     }
-                    if (win10Open) UwpDrill { Win10DemoScreen(onClose = { win10Open = false }) }
+                    if (!masterDetail) {
+                        detail?.let { d ->
+                            DetailOverlay(item = d, onClose = { detail = null })
+                        }
+                    }
+                    if (win10Open) Win10DemoOverlay(onClose = { win10Open = false })
                     // 官方：折起立放（HALF_OPENED）即自動進入待機顯示；攤平後自動退出
                     LaunchedEffect(fold.halfOpen, settings.standbyAuto) {
                         if (settings.standbyAuto && fold.halfOpen && !alarmOpen) openStandby()
                     }
                     if (galleryOpen) {
-                        UwpDrill {
-                            Box(Modifier.fillMaxSize().background(Wp8.Bg)) {
-                                Column(Modifier.fillMaxSize()) {
-                                    UwpTopBar(
-                                        title = "介面規範",
-                                        busy = false,
-                                        onMenu = null,
-                                        onClose = { galleryOpen = false },
-                                    )
-                                    Box(Modifier.weight(1f)) { Wp8Gallery() }
-                                }
-                            }
-                        }
+                        GalleryOverlay(onClose = { galleryOpen = false })
                     }
                 }
+            }
+        }
+    }
+}
+
+/** K75P 實時路線覆蓋層（獨立 composable，避免在外殼大 lambda 內條件式建立 lambda） */
+@Composable
+private fun K75POverlay(halfOpen: Boolean, onClose: () -> Unit) {
+    UwpDrill {
+        Wp8K75PPage(onClose = onClose, halfOpen = halfOpen)
+    }
+}
+
+/** 路線／站點詳情覆蓋層 */
+@Composable
+private fun DetailOverlay(item: SearchItem, onClose: () -> Unit) {
+    UwpDrill {
+        Wp8DetailSheet(item = item, onClose = onClose)
+    }
+}
+
+/** Windows 10 Mobile 示範頁覆蓋層 */
+@Composable
+private fun Win10DemoOverlay(onClose: () -> Unit) {
+    UwpDrill {
+        Win10DemoScreen(onClose = onClose)
+    }
+}
+
+/** WP8 元件畫廊覆蓋層 */
+@Composable
+private fun GalleryOverlay(onClose: () -> Unit) {
+    UwpDrill {
+        Box(Modifier.fillMaxSize().background(Wp8.Bg)) {
+            Column(Modifier.fillMaxSize()) {
+                UwpTopBar(
+                    title = "介面規範",
+                    busy = false,
+                    onMenu = null,
+                    onClose = onClose,
+                )
+                Box(Modifier.weight(1f)) { Wp8Gallery() }
             }
         }
     }

@@ -424,6 +424,32 @@ class ScreenshotTest {
         rule.waitForIdle()
     }
 
+    /**
+     * 迴歸：**從外殼點開 K75P 實時路線**（使用者實際觸發崩潰的路徑）。
+     *
+     * 崩潰點是外殼大 lambda 內「依條件建立 composable lambda」：
+     * `if (k75pOpen) UwpDrill { Wp8K75PPage(...) }` →
+     * java.lang.ClassCastException: java.lang.Boolean cannot be cast to ComposableLambdaImpl。
+     * 現在改為呼叫獨立 composable（K75POverlay）。
+     */
+    @Test
+    fun k75pFromShell() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
+        shoot("wp8-53-shell-home")
+        // 使用者實際路徑：首頁的 K75P 磁貼
+        rule.onNodeWithText("K75P · 天瑞", substring = true).performClick()
+        rule.waitForIdle()
+        rule.onNodeWithText("K75P 實時路線").assertIsDisplayed()
+        shoot("wp8-54-shell-k75p")
+        // 連續開關（群組反覆插入／移除）也要安全
+        rule.onNodeWithText("✕").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithText("K75P · 天瑞", substring = true).performClick()
+        rule.waitForIdle()
+        rule.onNodeWithText("K75P 實時路線").assertIsDisplayed()
+    }
+
     /** 啟動前就設為 Material：外殼要由 SenyouApp 正確分流並渲染 */
     @Test
     fun materialStyleAtLaunch() {
