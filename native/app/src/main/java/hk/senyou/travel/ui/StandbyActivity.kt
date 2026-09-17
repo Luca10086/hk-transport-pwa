@@ -49,19 +49,30 @@ class StandbyActivity : ComponentActivity() {
         /* W10M 全螢幕：狀態欄與觸控條（導航欄）一併隱藏；下滑可臨時喚出 */
 
         setContent {
-            SenyouTheme {
-                val act = this@StandbyActivity
-                val flow = remember { Store.settings(act) }
-                val settings by flow.collectAsState(initial = Settings())
-                val scope = rememberCoroutineScope()
-                StandbyScreen(
-                    onExit = { finish() },
-                    settings = settings,
-                    onSettings = { s -> scope.launch { Store.save(act, s) } },
-                )
+            val act = this@StandbyActivity
+            val flow = remember { Store.settings(act) }
+            val settings by flow.collectAsState(initial = Settings())
+            val scope = rememberCoroutineScope()
+            val save: (Settings) -> Unit = { s -> scope.launch { Store.save(act, s) } }
+            /* 依「介面風格」分流：兩套待機顯示為完全獨立的實作 */
+            if (settings.uiStyle == "material") {
+                hk.senyou.travel.ui.material.SenyouMaterialTheme(dark = settings.theme != "light") {
+                    hk.senyou.travel.ui.material.MaterialStandbyScreen(
+                        onExit = { finish() },
+                        settings = settings,
+                        onSettings = save,
+                    )
+                }
+            } else {
+                SenyouTheme {
+                    StandbyScreen(
+                        onExit = { finish() },
+                        settings = settings,
+                        onSettings = save,
+                    )
+                }
             }
-        }
-    }
+        }    }
 
     /** 隱藏狀態欄 + 觸控條（沉浸式，滑動可臨時喚出） */
     private fun hideSystemBars() {

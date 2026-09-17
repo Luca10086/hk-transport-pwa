@@ -52,7 +52,7 @@ import hk.senyou.travel.data.TrainRow
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MaterialRoutesPane() {
+fun MaterialRoutesPane(onOpenK75P: () -> Unit = {}) {
     var k75p by remember { mutableStateOf<List<BusMarker>>(emptyList()) }
     var expandedLine by remember { mutableStateOf<String?>(null) }
     var sheetStation by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -107,6 +107,14 @@ fun MaterialRoutesPane() {
                         },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     )
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        androidx.compose.material3.FilledTonalButton(onClick = onOpenK75P) {
+                            Text("查看地圖")
+                        }
+                    }
                     HorizontalDivider()
                     if (k75p.isEmpty()) {
                         ListItem(

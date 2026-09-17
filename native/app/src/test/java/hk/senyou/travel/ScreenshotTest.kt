@@ -342,6 +342,38 @@ class ScreenshotTest {
         rule.waitForIdle()
         shoot("wp8-41-material-settings")
     }
+
+    /** Material 3 待機顯示（獨立實作，與 W10M 版並存） */
+    @Test
+    fun materialStandby() {
+        load()
+        rule.setContent {
+            Frame {
+                hk.senyou.travel.ui.material.SenyouMaterialTheme(dark = true) {
+                    hk.senyou.travel.ui.material.MaterialStandbyScreen(
+                        onExit = {},
+                        settings = hk.senyou.travel.data.Settings(),
+                        onSettings = {},
+                    )
+                }
+            }
+        }
+        shoot("wp8-43-material-standby")
+    }
+
+    /** Material 3 版 K75P 實時頁（測試環境離線，顯示 M3 佔位而非地圖） */
+    @Test
+    fun materialK75P() {
+        load()
+        rule.setContent {
+            Frame {
+                hk.senyou.travel.ui.material.SenyouMaterialTheme(dark = true) {
+                    hk.senyou.travel.ui.material.MaterialK75PPage()
+                }
+            }
+        }
+        shoot("wp8-44-material-k75p")
+    }
     /**
      * 回歸測試：「⋯ 更多」選單必須貼齊右下、底欄之上（曾誤跑到右上角）。
      * 判據：面板色 (#221D31) 首次出現的列必須在畫面下半部。

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -79,11 +80,13 @@ fun MaterialApp() {
     val adaptive = LocalAdaptive.current
 
     var pane by remember { mutableIntStateOf(0) }
+    var k75pOpen by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<hk.senyou.travel.data.SearchItem>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     val drawer = rememberDrawerState(DrawerValue.Open)
 
+    androidx.activity.compose.BackHandler(enabled = k75pOpen) { k75pOpen = false }
     SenyouMaterialTheme(dark = settings.theme != "light") {
         val save: (Settings) -> Unit = { s -> scope.launch { Store.save(ctx, s) } }
 
@@ -91,7 +94,14 @@ fun MaterialApp() {
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text(M3_DESTS[pane].label) },
+                        title = { Text(if (k75pOpen) "K75P 實時路線" else M3_DESTS[pane].label) },
+                        navigationIcon = {
+                            if (k75pOpen) {
+                                IconButton(onClick = { k75pOpen = false }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                                }
+                            }
+                        },
                         actions = {
                             IconButton(onClick = { pane = 0 }) {
                                 Icon(Icons.Filled.Search, contentDescription = "搜尋")
@@ -138,7 +148,9 @@ fun MaterialApp() {
                         }
                     }
                     Box(Modifier.weight(1f).fillMaxSize()) {
-                        when (pane) {
+                        if (k75pOpen) {
+                            MaterialK75PPage()
+                        } else when (pane) {
                             0 -> MaterialHomePane(
                                 settings = settings,
                                 query = query,
@@ -164,7 +176,7 @@ fun MaterialApp() {
 
                             1 -> MaterialFavsPane(settings = settings)
                             2 -> MaterialSushiPane()
-                            3 -> MaterialRoutesPane()
+                            3 -> MaterialRoutesPane(onOpenK75P = { k75pOpen = true })
                             else -> MaterialSettingsPane(settings = settings, onSettings = save)
                         }
                     }
