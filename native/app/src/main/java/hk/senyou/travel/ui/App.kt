@@ -206,6 +206,21 @@ fun SenyouApp() {
         }
     }
 
+    /*
+     * 兩套介面在**最外層**分家：Material 3 不進入 W10M 的 composition 樹
+     * （不共用 SenyouTheme／LocalDensity／BoxWithConstraints／LocalAdaptive）。
+     *
+     * 這一層分流修掉一個真實崩潰：先前 Material 分支寫在
+     * `CompositionLocalProvider { ... }` 內容 lambda 內並用 `return@CompositionLocalProvider`
+     * 提前返回，切換風格時該 lambda 的 movable group 槽位錯位，導致
+     * java.lang.ClassCastException: java.lang.Boolean cannot be cast to ComposableLambdaImpl
+     * （Compose 1.8 `composableLambda()` 會把 `rememberedValue()` 直接轉成 ComposableLambdaImpl）。
+     */
+    if (settings.uiStyle == "material") {
+        hk.senyou.travel.ui.material.MaterialApp()
+        return
+    }
+
     SenyouTheme {
         CompositionLocalProvider(LocalDensity provides Density(baseDensity.density, fontScale)) {
             BoxWithConstraints(Modifier.fillMaxSize().background(Wp8.Bg)) {
@@ -233,11 +248,6 @@ fun SenyouApp() {
                 val masterDetail = permanentPane && detail != null
 
                 CompositionLocalProvider(LocalAdaptive provides adaptive) {
-                    /* ---- Material 3 風格：完全獨立實作，不經任何 W10M UI 程式碼 ---- */
-                    if (settings.uiStyle == "material") {
-                        hk.senyou.travel.ui.material.MaterialApp()
-                        return@CompositionLocalProvider
-                    }
                     key(settings.theme, settings.contrast) {
                     var refreshToken by remember { mutableIntStateOf(0) }
                     LaunchedEffect(pane) { refreshToken++ }

@@ -33,6 +33,7 @@ import hk.senyou.travel.ui.wp8.Wp8K75PPage
 import hk.senyou.travel.ui.wp8.Wp8MapPane
 import hk.senyou.travel.ui.wp8.Wp8SettingsPane
 import hk.senyou.travel.ui.wp8.Wp8SushiPane
+import kotlinx.coroutines.flow.first
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -397,6 +398,43 @@ class ScreenshotTest {
             }
         }
         shoot("wp8-45-material-favourites")
+    }
+
+    /**
+     * 迴歸：**切換介面風格／主題**不得崩潰。
+     *
+     * 曾在此路徑出現 java.lang.ClassCastException: java.lang.Boolean cannot be cast to
+     * ComposableLambdaImpl —— Material 分支原本寫在 `CompositionLocalProvider` 內容 lambda 內
+     * 並提前 return，切換風格時該 lambda 的 movable group 槽位錯位。修正後 Material 在最外層分家。
+     */
+    @Test
+    fun styleSwitchRegression() {
+        load()
+        rule.setContent { Frame { hk.senyou.travel.ui.SenyouApp() } }
+        shoot("wp8-50-shell-w10m-dark")
+
+        // W10M → Material
+        setSettings { it.copy(uiStyle = "material") }
+        rule.waitForIdle()
+        rule.onNodeWithText("壽司郎").assertIsDisplayed()          // Material 底部導覽列
+        shoot("wp8-51-shell-material")
+
+        // Material → W10M，同時改主題與對比度（會換掉 key(theme, contrast) 的組）
+        setSettings { it.copy(uiStyle = "w10m", theme = "light", contrast = true) }
+        rule.waitForIdle()
+        shoot("wp8-52-shell-w10m-light-contrast")
+
+        // 再切回 Material：來回切換都要安全
+        setSettings { it.copy(uiStyle = "material", theme = "dark") }
+        rule.waitForIdle()
+        rule.onNodeWithText("壽司郎").assertIsDisplayed()
+    }
+
+    /** 測試中改設定：直接寫 DataStore，讓 shell 的 settings 流觸發重組 */
+    private fun setSettings(f: (Settings) -> Settings) {
+        kotlinx.coroutines.runBlocking {
+            hk.senyou.travel.data.Store.save(ctx, f(hk.senyou.travel.data.Store.settings(ctx).first()))
+        }
     }
 
     /**
